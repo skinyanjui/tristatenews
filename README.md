@@ -1,1 +1,70 @@
-# tristatenews
+# Tri-State News
+
+Hourly local news from Evansville, Owensboro, Madisonville, Carbondale, Marion, Vincennes and the towns between them. Weather for Evansville sits in the top nav.
+
+## Deploy
+
+1. Unzip, then from this folder run `npx vercel deploy --prod` (log in when asked).
+2. Open the URL Vercel prints. No build step, no dependencies.
+
+## How it works
+
+- `api/news.js` fetches every feed in `SOURCES`, drops AP wire copy, keeps only regional stories from wider-market stations (`geo: true`), removes duplicates, and returns one list.
+- The response is cached at the edge for one hour (`s-maxage=3600`), so the feeds are re-pulled about once an hour. An open page also re-checks every hour.
+- `public/index.html` is the page. Headlines open the original article in a new tab. Weather comes from Open-Meteo.
+- A source that fails or returns nothing is hidden automatically.
+
+## Add feeds without editing code
+
+In the Vercel project, add an environment variable `EXTRA_FEEDS` containing a JSON array:
+
+```json
+[{"id":"usi","name":"USI News","area":"Evansville","kind":"institution","url":"https://example.edu/feed"},
+ {"id":"vcso","name":"Vanderburgh Sheriff","area":"Evansville","kind":"police","maxAgeDays":30,"url":"https://example.org/rss"}]
+```
+
+`kind` can be `institution`, `courts` or `police`. Add `"geo": true` for outlets that cover a wider region, so only stories naming a local place are kept. Redeploy after changing it.
+
+## Features
+
+Search, tabs in the top nav (All, News, Police & courts, Liked), "Show more" paging, hearts with counts, a breaking news card (only when an outlet labels a story "Breaking", "Just in" or "Developing story", for up to 12 hours), light/dark toggle, a refresh button, and a weather button that changes location (nine regional towns, or search any U.S. city). Active National Weather Service alerts for the chosen location show above the headlines.
+
+## Shared heart counts (optional)
+
+Hearts always work for the reader and are kept in their browser (the Liked tab). To make the counts shared across all readers, add the free **Upstash for Redis** integration to the Vercel project (Storage tab, Marketplace). It sets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, which `api/react.js` uses. Redeploy afterward. Without it, each story's count shows only your own heart (1 or nothing). One heart per browser per story; there are no accounts, so determined people can clear storage and heart again.
+
+## Feed status (checked October 7, 2026)
+
+Returned stories in today's run (19 of 40 sources): 14 News, Eyewitness News, Evansville Living, Owensboro Times, The Messenger (Madisonville), Daily Egyptian, Princeton Daily Clarion, KFVS12, Kentucky Lantern, WKDQ, WBKR, Owensboro Radio, WKMS, FBI Louisville, Indianapolis and Springfield, U.S. Attorney W.D. Kentucky and S.D. Illinois, and the Visit Madisonville events calendar. Messenger-Inquirer, Vincennes Sun-Commercial, Explore Evansville, Visit Owensboro and others returned stories in some runs and a rate-limit or block error in others, so they come and go.
+
+Working feeds that showed nothing because of the regional filter (statewide or national content with no local place named): WIKY, WTHI, Indiana Capital Chronicle, Capitol News Illinois, Illinois Public Media, WSTO.
+
+Blocked or failing from the test machine, kept in the list in case they work from Vercel: Courier & Press and Henderson Gleaner (HTTP 403), Daily Republican-Register (403), Pike County News, Murphysboro American, WEOA and WJPS (timeouts or errors), Washington Times-Herald, Dubois County Herald, WPSD and The Southern Illinoisan (429). A source that returns nothing is hidden automatically.
+
+Not included, no working feed found: Indiana State Police, Illinois State Police, local police and sheriff departments, county courts, city and county governments, WNIN, WSIU, USI, SIU, Vincennes University, the U.S. Attorney for S.D. Indiana.
+
+## Events tab
+
+The **Events** tab shows event cards (date tile, name, time, place, category) with category filters. Anyone can add an event (name, category, date, optional time and place, town, details, optional organizer contact) through `/api/listings?kind=event`; events come down the day after they happen, are rate-limited, reject links and are hidden after 3 reports. Upcoming items from any calendar feed (`kind: 'events'` sources in `api/news.js`, RSS or iCal) are merged into the same list. Sample events fill the page until there are 8 real ones.
+
+## Deals tab
+
+Local businesses can post a deal (business, offer, category, town, optional coupon code and end date, where to find it) from the Deals tab. Deals use the same `/api/listings` endpoint and Redis store as classifieds (`kind=deal`), come down on their end date or after 30 days, reject links, are rate-limited, and are hidden after 3 reports. The page shows deal cards only (no news stories). Without Upstash configured, only the sample deals show.
+
+## Classifieds tab
+
+Readers can post items for sale (title, price, town, details, contact). Listings are stored in the same Upstash Redis as the heart counts, expire after 30 days, are rate-limited (3 a day per browser, 8 per IP), reject links, and are hidden after 3 reader reports. A poster can remove their own listing; set `LISTINGS_ADMIN_KEY` to remove any listing with `DELETE /api/listings?id=<id>` and an `x-admin-key` header. Without Upstash configured, the tab shows only links to other local boards. Contact details are public, so consider a short posting policy.
+
+### Sample posts and forms
+
+Until there are 8 real posts, the Classifieds and Deals tabs fill the list with clearly labeled **Sample** posts (fictional businesses, no real phone numbers) so the tabs never look empty. They go away as real posts come in; edit or remove `SAMPLE_ITEMS` / `SAMPLE_DEALS` in `public/index.html` to change them. Classifieds posts have a category, condition, price (or Free) and a phone or email that is checked; deals have a category, optional coupon code and end date. Both forms show inline errors, and each list has category filters.
+
+## Photos and logos
+Classifieds, Deals and Events posts can include a photo; Deals can also include a business logo. The form re-encodes uploads to JPEG in the browser (photo: 800px longest edge; logo: 96px square). `api/listings.js` accepts only real JPEG data, stores the photo under its own key and serves it at `GET /api/listings?img=<id>` (cached one day). Logos are stored inline in the post. Photos and logos are only saved when Upstash Redis is configured.
+Posts without a photo show generated category art; businesses without a logo show an initials avatar. Events from feeds show their source's logo.
+
+## Submit news page
+The footer's "Submit news" button opens a submission form (type, headline, details, town, date, up to two photos, contact info, consent). `POST /api/submit` validates it, rate-limits 5 per IP per day, ignores bots via a hidden honeypot field, and delivers it by either or both of:
+- **Redis:** stored in the `tsn:tips` list (latest 500). Read them with `GET /api/submit` and header `x-admin-key: <LISTINGS_ADMIN_KEY>`.
+- **Email (Resend):** set `RESEND_API_KEY` and `TIPS_TO_EMAIL` (optional `TIPS_FROM_EMAIL`). Photos arrive as attachments and replies go to the submitter.
+With neither configured the form says submissions aren't open yet. Edit the "Good to know" policy lines in `public/index.html` (`renderSubmit`) to match your newsroom's rules.

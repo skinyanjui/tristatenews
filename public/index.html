@@ -1,0 +1,1393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Tri-State News</title>
+<meta name="description" content="Local news from across the Evansville, IN-KY metro, refreshed hourly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --background:#fff; --background-subtle:#fafafa; --foreground:#171717;
+  --gray-100:#f2f2f2; --gray-200:#ebebeb; --gray-300:#e0e0e0; --gray-400:#c9c9c9;
+  --gray-500:#a8a8a8; --gray-600:#8f8f8f; --gray-700:#666; --gray-800:#444; --gray-900:#2e2e2e; --gray-1000:#171717;
+  --blue:#0070f3; --blue-subtle:#e6f0fd; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
+  --border:var(--gray-300); --text-muted:var(--gray-700);
+  --radius-sm:6px; --radius-md:6px; --radius-lg:6px; --radius-xl:6px;
+  --shadow-md:0 4px 12px rgba(0,0,0,.08); --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+  --ease:cubic-bezier(.4,0,.2,1); --duration-fast:100ms; --duration-base:150ms;
+  --font-sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:"Geist Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+[data-theme="dark"] {
+  --background:#0a0a0a; --background-subtle:#111; --foreground:#ededed;
+  --gray-100:#1a1a1a; --gray-200:#1f1f1f; --gray-300:#2e2e2e; --gray-400:#454545;
+  --gray-500:#878787; --gray-600:#a1a1a1; --gray-700:#b4b4b4; --gray-800:#d4d4d4; --gray-900:#e3e3e3; --gray-1000:#ededed;
+  --blue:#3291ff; --blue-subtle:#10233c; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
+  --shadow-md:0 4px 12px rgba(0,0,0,.5); --shadow-lg:0 12px 32px rgba(0,0,0,.6);
+}
+*,*::before,*::after { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--background); color:var(--foreground); font:400 14px/20px var(--font-sans); -webkit-font-smoothing:antialiased; }
+a { color:inherit; text-decoration:none; }
+button { font:inherit; color:inherit; cursor:pointer; background:none; border:0; padding:0; }
+:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* top nav */
+.nav { position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--background) 88%, transparent); backdrop-filter:saturate(180%) blur(12px); -webkit-backdrop-filter:saturate(180%) blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
+.nav-in { max-width:960px; margin:0 auto; padding:0 16px; height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.brand { font-size:15px; line-height:24px; font-weight:600; letter-spacing:-.01em; flex:none; }
+.brand small { font:500 12px/16px var(--font-sans); color:var(--text-muted); letter-spacing:.01em; }
+.wx { position:relative; }
+.wx-btn { display:flex; align-items:center; gap:8px; min-height:32px; padding:0 10px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--background); font-weight:500; transition:background var(--duration-fast) var(--ease); }
+.wx-btn:hover { background:var(--gray-100); }
+.wx-temp { font-family:var(--font-mono); font-size:14px; }
+.wx-cond { color:var(--text-muted); }
+@media (max-width:479px) { .wx-cond { display:none; } .nav-r { gap:4px; } }
+.wx-sk { width:88px; height:16px; border-radius:var(--radius-sm); }
+.wx-pop { position:absolute; right:0; top:calc(100% + 8px); width:min(280px, calc(100vw - 32px)); background:var(--background); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-lg); padding:8px; opacity:0; transform:translateY(-4px); pointer-events:none; visibility:hidden; transition:opacity var(--duration-base) var(--ease), transform var(--duration-base) var(--ease), visibility 0s linear var(--duration-base); }
+.wx-pop.open { opacity:1; transform:none; pointer-events:auto; visibility:visible; transition-delay:0s; }
+.wx-head { padding:0 12px 8px; border-bottom:1px solid var(--border); margin-bottom:4px; }
+.wx-head b { display:block; font-size:18px; line-height:24px; font-weight:600; letter-spacing:-.01em; }
+.wx-head span { color:var(--text-muted); }
+.wx-loc { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 12px; min-height:36px; }
+.wx-loc button, .wx-pick button { min-height:44px; padding:0 12px; border-radius:var(--radius-md); font-weight:500; text-align:left; }
+.wx-loc .chg { color:var(--blue); }
+.wx-pick { display:grid; padding:4px; max-height:60vh; overflow:auto; }
+.wx-pick button { display:flex; justify-content:space-between; align-items:center; width:100%; }
+.wx-pick button:hover, .wx-loc button:hover { background:var(--gray-100); }
+.wx-pick button[aria-current="true"] { background:var(--gray-100); }
+.wx-search { margin:4px; min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); width:calc(100% - 8px); }
+.wx-note { padding:8px 12px; color:var(--text-muted); font-size:12px; line-height:16px; }
+.wx-row { display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:4px 12px; min-height:32px; border-radius:var(--radius-md); }
+.wx-row .d { font-weight:500; }
+.wx-row .c { color:var(--text-muted); font-size:12px; line-height:16px; }
+.wx-row .t { font-family:var(--font-mono); font-size:12px; line-height:16px; text-align:right; min-width:64px; }
+.wx-row .p { display:flex; align-items:center; justify-content:flex-end; gap:3px; font-size:12px; line-height:16px; color:var(--blue); min-width:44px; }
+
+/* nav right + theme */
+.nav-r { display:flex; align-items:center; gap:8px; flex:none; }
+.icon-btn { width:32px; height:32px; display:grid; place-items:center; border-radius:var(--radius-md); border:0; background:transparent; color:var(--foreground); transition:background var(--duration-fast) var(--ease); }
+.icon-btn:hover { background:var(--gray-100); }
+.icon-btn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* weather alerts */
+.alerts { display:grid; gap:8px; margin-bottom:16px; }
+.alerts:empty { display:none; }
+.alert { border:1px solid var(--border); border-left-width:4px; border-radius:var(--radius-lg); background:var(--background-subtle); }
+.alert.sev-severe { border-left-color:var(--red); }
+.alert.sev-mod { border-left-color:var(--amber); }
+.alert.sev-minor { border-left-color:var(--blue); }
+.alert summary { list-style:none; display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:44px; padding:8px 16px; cursor:pointer; font-weight:500; }
+.alert summary::-webkit-details-marker { display:none; }
+.alert summary span { color:var(--text-muted); font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .ab { padding:0 16px 12px; color:var(--text-muted); }
+.alert .ab p { margin:0 0 8px; }
+
+/* page */
+main { max-width:960px; margin:0 auto; padding:16px 16px 96px; }
+.head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px; }
+h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing:-.015em; }
+.meta { color:var(--text-muted); font-size:12px; line-height:16px; margin-top:4px; }
+.nav-q { flex:1 1 auto; min-width:0; max-width:420px; }
+.q { width:100%; min-height:32px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; }
+.q::placeholder { color:var(--gray-600); }
+.nav-tabs { max-width:960px; margin:0 auto; padding:0 16px; }
+.tabs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin-left:-12px; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { flex:none; min-height:36px; padding:0 12px; font-weight:500; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:8px; }
+.tab:hover { color:var(--foreground); }
+.tab[aria-selected="true"] { color:var(--foreground); border-bottom-color:var(--foreground); }
+.tab .n { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+.card.breaking { border-color:var(--red); background:var(--background); }
+.card.breaking a { display:block; padding:0; }
+.card.breaking .th, .card.breaking .ph { width:100%; height:auto; aspect-ratio:16/9; max-height:320px; border-radius:0; }
+.card.breaking .ph { aspect-ratio:auto; height:112px; }
+.card.breaking .bd { padding:16px; }
+.card.breaking h2 { font-size:22px; line-height:30px; letter-spacing:-.01em; }
+.card.breaking p { display:block; font-size:14px; }
+.card.breaking .like { background:color-mix(in srgb, var(--background) 88%, transparent); }
+.bk { position:absolute; top:12px; left:12px; z-index:1; display:inline-flex; align-items:center; gap:6px; padding:0 8px; min-height:20px; border-radius:var(--radius-md); background:#c4262c; color:#fff; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.bk i { width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.6s var(--ease) infinite; }
+@keyframes pulse { 50% { opacity:.3; } }
+[hidden] { display:none !important; }
+.cl { display:grid; gap:12px; margin-bottom:16px; }
+.cl-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.cl-go { min-height:36px; padding:0 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-weight:500; }
+.cl-go:disabled { opacity:.5; }
+.cl-form { display:grid; gap:14px; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
+.cl-f { display:grid; gap:4px; min-width:0; position:relative; }
+.cl-f > label { font-size:12px; line-height:16px; font-weight:500; color:var(--text-muted); }
+.cl-f input, .cl-f select, .cl-f textarea { width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; min-width:0; }
+.cl-f input:focus-visible, .cl-f select:focus-visible, .cl-f textarea:focus-visible, .cl-seg button:focus-visible { outline:2px solid var(--blue); outline-offset:1px; }
+.cl-f [aria-invalid="true"] { border-color:var(--red); }
+.cl-f textarea { resize:vertical; }
+.cl-hint, .cl-count { color:var(--text-muted); font-size:12px; line-height:16px; }
+.cl-count { text-align:right; }
+.cl-fe, .cl-err { color:var(--red); font-size:12px; line-height:16px; }
+.cl-fe:empty, .cl-err:empty { display:none; }
+.cl-two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:479px) { .cl-two { grid-template-columns:1fr; } }
+.cl-pricerow { display:flex; align-items:center; gap:12px; }
+.cl-price-in { position:relative; flex:1; min-width:0; }
+.cl-price-in span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
+.cl-price-in input { padding-left:24px; }
+.cl-check { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-weight:500; flex:none; }
+.cl-check input { width:24px; min-height:24px; height:24px; margin:0; }
+.cl-seg { display:flex; flex-wrap:wrap; gap:8px; }
+.cl-seg button { min-height:36px; padding:0 14px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; color:var(--text-muted); }
+.cl-seg button[aria-checked="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
+.cl-wide { width:100%; min-height:44px; }
+.cl-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+.cl-chips::-webkit-scrollbar { display:none; }
+.cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
+.cl-chip[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
+.cl-tag { display:inline-flex; align-items:center; flex:none; padding:0 8px; min-height:20px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--gray-100); font-size:11px; line-height:16px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
+.deal-grid { grid-template-columns:1fr; }
+@media (min-width:720px) { .deal-grid, #ev .cl-list { grid-template-columns:1fr 1fr; } }
+.deal { display:grid; gap:6px; align-content:start; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; background:var(--background); }
+.deal-head { display:flex; align-items:center; gap:8px; min-height:20px; }
+.deal-biz { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.deal-offer { margin:0; font-size:20px; line-height:26px; font-weight:600; letter-spacing:-.01em; text-wrap:balance; overflow-wrap:anywhere; }
+.deal-code { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:12px; line-height:16px; color:var(--text-muted); }
+.deal-code code { font-family:var(--font-mono); font-size:14px; letter-spacing:.06em; color:var(--foreground); border:1px dashed var(--gray-500); border-radius:var(--radius-sm); padding:4px 10px; user-select:all; }
+.ev { display:grid; grid-template-columns:80px 1fr; gap:16px; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; background:var(--background); }
+.ev-date { display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:start; width:80px; min-height:64px; padding:8px 0; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--gray-100); }
+.ev-mo { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--red-strong); }
+.ev-wd { font-size:12px; line-height:16px; font-weight:500; color:var(--text-muted); }
+.ev-tm { margin-top:4px; padding-top:4px; border-top:1px solid var(--border); align-self:stretch; text-align:center; font-size:11px; line-height:16px; font-weight:500; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.ev-day { font-size:24px; line-height:28px; font-weight:600; font-variant-numeric:tabular-nums; }
+.ev-body { display:grid; gap:4px; min-width:0; align-content:start; }
+.ev-title { margin:0; font-size:18px; line-height:24px; font-weight:600; letter-spacing:-.01em; overflow-wrap:anywhere; }
+.ev-title a:hover { color:var(--blue); }
+.ev-cat { font-size:12px; line-height:16px; color:var(--text-muted); }
+.cl-item { grid-template-columns:96px 1fr; gap:16px; align-items:start; }
+@media (min-width:640px) { .cl-item { grid-template-columns:128px 1fr; } }
+.cl-th { width:100%; aspect-ratio:1; border-radius:var(--radius-md); overflow:hidden; background:var(--gray-100); }
+.cl-th img { display:block; width:100%; height:100%; object-fit:cover; }
+.cl-main { display:grid; gap:4px; min-width:0; align-content:start; }
+.deal { padding:0; overflow:hidden; gap:0; }
+.deal-img { display:block; width:100%; aspect-ratio:16/9; max-height:180px; object-fit:cover; background:var(--gray-100); }
+.deal-body { display:grid; gap:4px; padding:16px; }
+.bav { width:28px; height:28px; border-radius:9999px; flex:none; object-fit:cover; background:var(--gray-100); border:1px solid var(--border); }
+.bav-i { display:inline-flex; align-items:center; justify-content:center; font-size:11px; line-height:1; font-weight:600; letter-spacing:.02em; background:hsl(var(--h) 45% 90%); color:hsl(var(--h) 55% 26%); border-color:transparent; }
+:root[data-theme="dark"] .bav-i { background:hsl(var(--h) 30% 22%); color:hsl(var(--h) 60% 82%); }
+.ev { grid-template-columns:80px 1fr; }
+.ev { overflow:hidden; position:relative; }
+.ev-pill { position:absolute; top:12px; left:12px; z-index:1; margin:0; background:var(--background); color:var(--foreground); box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.ev-img { grid-column:1 / -1; display:block; width:calc(100% + 32px); max-width:none; margin:-16px -16px 0; aspect-ratio:2/1; max-height:200px; object-fit:cover; border-radius:0; background:var(--gray-100); }
+.cl-photo { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.cl-addph { min-height:44px; padding:0 14px; border:1px dashed var(--gray-500); border-radius:var(--radius-md); font-weight:500; color:var(--text-muted); }
+.cl-addph:hover { color:var(--foreground); border-color:var(--foreground); }
+.cl-prev { display:flex; align-items:center; gap:12px; }
+.cl-prev img { width:96px; height:72px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--border); }
+.cl-foot .bav { width:20px; height:20px; font-size:9px; }
+.cl-dim { color:var(--text-muted); font-weight:400; }
+.cl-list { display:grid; gap:8px; }
+.cl-item { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; }
+.cl-top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+.cl-top b { font-weight:600; min-width:0; overflow-wrap:anywhere; }
+.cl-price { font-family:var(--font-mono); font-weight:500; flex:none; }
+.cl-meta { color:var(--text-muted); font-size:12px; line-height:16px; display:grid; justify-items:start; gap:4px; }
+.cl-desc { margin:0; overflow-wrap:anywhere; }
+.cl-foot:empty { display:none; }
+.cl-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:4px; }
+.cl-contact { font-weight:500; overflow-wrap:anywhere; min-width:0; }
+.cl-link { color:var(--text-muted); font-size:12px; min-height:32px; padding:0 4px; flex:none; }
+.cl-link:hover { color:var(--foreground); }
+.cl-empty { color:var(--text-muted); margin:8px 0; }
+.cl-more { display:grid; gap:8px; border-top:1px solid var(--border); padding-top:12px; }
+.cl-label { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.cl-links { display:flex; flex-wrap:wrap; gap:4px 16px; }
+.cl-links a { color:var(--blue); font-weight:500; min-height:32px; display:inline-flex; align-items:center; }
+.cl-code { display:flex; align-items:center; gap:8px; font-size:12px; line-height:16px; color:var(--text-muted); }
+.cl-code code { font-family:var(--font-mono); font-size:14px; color:var(--foreground); border:1px dashed var(--gray-400); border-radius:var(--radius-sm); padding:2px 8px; user-select:all; }
+.cl-note { color:var(--text-muted); font-size:12px; line-height:16px; margin:0; }
+.more { display:flex; justify-content:center; margin-top:24px; }
+.more button { min-height:44px; padding:0 16px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; background:var(--background); }
+.more button:hover { background:var(--gray-100); }
+.card { position:relative; }
+.card .bd { min-width:0; }
+.card .src { padding-right:40px; }
+.like { position:absolute; top:8px; right:8px; min-width:32px; height:32px; padding:0 6px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:9999px; color:var(--foreground); font:500 12px/16px var(--font-mono); font-variant-numeric:tabular-nums; }
+.like span:empty { display:none; }
+.like:hover { background:var(--gray-100); color:var(--foreground); }
+.like[aria-pressed="true"] { color:var(--red); }
+.like svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.75; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.like[aria-pressed="true"] svg { fill:currentColor; }
+.ghost { min-height:44px; padding:0 12px; border-radius:var(--radius-md); color:var(--gray-700); font-weight:500; transition:background var(--duration-fast) var(--ease); }
+.ghost:hover { background:var(--gray-100); color:var(--foreground); }
+
+/* story list */
+.list { display:grid; gap:12px; grid-template-columns:1fr; }
+.card { display:grid; grid-template-columns:1fr; background:var(--background); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; transition:border-color var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease); }
+.card:hover { border-color:var(--gray-400); background:var(--background-subtle); }
+.card a { display:grid; grid-template-columns:96px 1fr; gap:16px; padding:16px; min-height:44px; }
+.card a.noimg { grid-template-columns:1fr; }
+.src { display:flex; flex-wrap:wrap; gap:2px 8px; align-items:center; font-size:12px; line-height:16px; color:var(--text-muted); margin-bottom:8px; }
+.src .when { flex-basis:100%; }
+.src b { color:var(--foreground); font-weight:500; }
+.av { width:20px; height:20px; border-radius:50%; object-fit:contain; background:var(--gray-200); flex:none; }
+.ph { width:96px; height:96px; border-radius:var(--radius-md); background:var(--gray-200); display:grid; place-items:center; }
+.ph img { width:48px; height:48px; object-fit:contain; border-radius:var(--radius-sm); }
+.card h2 { margin:0; font-size:16px; line-height:24px; font-weight:600; letter-spacing:0; }
+.card p { margin:8px 0 0; color:var(--text-muted); display:none; }
+.card .th { width:96px; height:96px; object-fit:cover; border-radius:var(--radius-md); background:var(--gray-200); }
+.card a:hover h2 { color:var(--blue); }
+
+/* skeleton */
+.sk { background:var(--gray-200); position:relative; overflow:hidden; }
+.sk::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--background) 55%, transparent), transparent); animation:sh 1.5s var(--ease) infinite; }
+@keyframes sh { to { transform:translateX(100%); } }
+.sk-card { display:grid; grid-template-columns:96px 1fr; gap:16px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-lg); }
+.sk-line { height:16px; border-radius:var(--radius-sm); margin-bottom:8px; }
+.sk-img { width:96px; height:96px; border-radius:var(--radius-md); }
+
+/* states */
+.state { border:1px dashed var(--gray-400); border-radius:var(--radius-lg); padding:48px 24px; text-align:center; }
+.state h2 { margin:0 0 4px; font-size:20px; line-height:28px; font-weight:600; letter-spacing:-.01em; }
+.state p { margin:0 0 16px; color:var(--text-muted); }
+.primary { min-height:44px; padding:0 16px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-weight:500; transition:background var(--duration-fast) var(--ease); }
+.primary:hover { background:var(--gray-900); }
+[data-theme="dark"] .primary:hover { background:var(--gray-800); }
+.sn { max-width:640px; }
+.sn-lede { margin:0; color:var(--text-muted); font-size:14px; line-height:22px; }
+.sn-sec { display:grid; gap:12px; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
+.sn-sec h2 { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin:0; }
+.sn-sec p { margin:0; }
+.sn-list { margin:0; padding:0; list-style:none; display:grid; gap:8px; }
+.sn-list li { display:grid; grid-template-columns:20px 1fr; gap:8px; font-size:14px; line-height:20px; }
+.sn-list svg { width:16px; height:16px; margin-top:2px; stroke:var(--foreground); }
+.sn-alert { border-left:4px solid var(--red); border-radius:var(--radius-lg); background:var(--background-subtle); padding:12px 16px; font-size:14px; line-height:20px; }
+.sn-ph { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:479px) { .sn-ph { grid-template-columns:1fr; } }
+.sn-hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.sn-done { display:grid; gap:12px; justify-items:start; border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px 16px; }
+.sn-done h2 { margin:0; font-size:18px; line-height:24px; }
+.sn-ref { font-family:var(--font-mono); font-size:14px; border:1px dashed var(--gray-500); border-radius:var(--radius-md); padding:4px 10px; user-select:all; }
+.sn-sec .cl-check { align-items:flex-start; min-height:0; padding:6px 0; font-weight:400; font-size:14px; line-height:20px; }
+.sn-sec .cl-check input { margin-top:1px; flex:none; }
+.sfoot { position:fixed; left:0; right:0; bottom:0; z-index:15; background:color-mix(in srgb, var(--background) 88%, transparent); backdrop-filter:saturate(180%) blur(12px); -webkit-backdrop-filter:saturate(180%) blur(12px); border-top:1px solid var(--border); padding-bottom:env(safe-area-inset-bottom, 0px); }
+.sfoot-in { max-width:960px; margin:0 auto; min-height:36px; padding:6px 16px; display:flex; align-items:center; gap:12px; color:var(--text-muted); font-size:12px; line-height:16px; }
+.sfoot-btn { margin-left:auto; flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font-weight:500; font-size:12px; }
+.sfoot-btn:hover { background:var(--gray-100); }
+.sfoot-btn:focus-visible { outline:2px solid var(--blue); outline-offset:1px; }
+.sfoot-in b { color:var(--foreground); font-weight:600; flex:none; }
+.sfoot-in span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+@media (min-width:640px) {
+  .nav-in, .nav-tabs, main, .sfoot-in { padding-left:24px; padding-right:24px; }
+  .card p { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .card a { grid-template-columns:128px 1fr; }
+  .card .th, .ph { width:128px; height:96px; }
+  .sk-card { grid-template-columns:128px 1fr; }
+  .sk-img { width:128px; }
+}
+@media (min-width:1024px) {
+  .nav-in, .nav-tabs, main, .sfoot-in { padding-left:32px; padding-right:32px; }
+  h1 { font-size:32px; line-height:40px; letter-spacing:-.02em; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-in">
+    <div class="brand">Tristate</div>
+    <div class="nav-q"><input class="q" id="q" type="search" placeholder="Search" aria-label="Search stories" autocomplete="off"></div>
+    <div class="nav-r">
+      <button class="icon-btn" id="refresh" type="button" aria-label="Refresh stories" title="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+      <button class="icon-btn" id="themeBtn" type="button"></button>
+      <div class="wx">
+        <button class="wx-btn" id="wxBtn" aria-expanded="false" aria-controls="wxPop" aria-label="Weather">
+          <span class="sk wx-sk" id="wxSk"></span>
+        </button>
+        <div class="wx-pop" id="wxPop" role="region" aria-label="Forecast"></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-tabs"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"></div></div>
+</header>
+
+<main>
+  <div class="alerts" id="alerts" aria-live="polite"></div>
+  <h1 class="sr-only">Tristate news</h1>
+
+  <section id="cl" class="cl" hidden aria-label="Classifieds"></section>
+  <section id="dl" class="cl" hidden aria-label="Deals"></section>
+  <section id="ev" class="cl" hidden aria-label="Events"></section>
+  <section id="sn" class="cl sn" hidden aria-label="Submit news"></section>
+  <div id="list" class="list" aria-busy="true"></div>
+  <div class="more" id="more"></div>
+</main>
+
+<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · Refreshed hourly</span><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // theme: follows the system until the reader picks one with the toggle
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var themePref = null;
+  try { themePref = localStorage.getItem('tsn.theme'); } catch (e) {}
+  var themeBtn = document.getElementById('themeBtn');
+  function svg(d, extra) {
+    var ns = 'http://www.w3.org/2000/svg', n = document.createElementNS(ns, 'svg');
+    n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('aria-hidden', 'true');
+    d.forEach(function (x) { var p = document.createElementNS(ns, x[0]); Object.keys(x[1]).forEach(function (k) { p.setAttribute(k, x[1][k]); }); n.appendChild(p); });
+    return n;
+  }
+  var SUN = [['circle', { cx: 12, cy: 12, r: 4 }], ['path', { d: 'M12 2v2' }], ['path', { d: 'M12 20v2' }], ['path', { d: 'm4.93 4.93 1.41 1.41' }], ['path', { d: 'm17.66 17.66 1.41 1.41' }], ['path', { d: 'M2 12h2' }], ['path', { d: 'M20 12h2' }], ['path', { d: 'm6.34 17.66-1.41 1.41' }], ['path', { d: 'm19.07 4.93-1.41 1.41' }]];
+  var MOON = [['path', { d: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' }]];
+  function isDark() { return themePref ? themePref === 'dark' : mq.matches; }
+  function applyTheme() {
+    var dark = isDark();
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    themeBtn.textContent = '';
+    themeBtn.appendChild(svg(dark ? SUN : MOON));
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+  themeBtn.addEventListener('click', function () {
+    themePref = isDark() ? 'light' : 'dark';
+    try { localStorage.setItem('tsn.theme', themePref); } catch (e) {}
+    applyTheme();
+  });
+  applyTheme();
+  if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+
+  var HOUR = 60 * 60 * 1000;
+  var PAGE = 24;
+  var state = { items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'all', limit: PAGE, saved: [], alerts: [], counts: {}, shared: false };
+  try { var sv = JSON.parse(localStorage.getItem('tsn.saved') || '[]'); if (Array.isArray(sv)) state.saved = sv.filter(function (x) { return x && x.link && x.title; }); } catch (e) {}
+  function storyId(link) { // short stable id from the story link (cyrb53)
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0; i < link.length; i++) { var c = link.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 'h' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+  var uid = null;
+  try { uid = localStorage.getItem('tsn.uid'); if (!uid) { uid = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('tsn.uid', uid); } } catch (e) {}
+  if (!uid) uid = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  function likeCount(it) {
+    if (state.shared) return state.counts[storyId(it.link)] || 0;
+    return isSaved(it.link) ? 1 : 0;
+  }
+  function persistSaved() { try { localStorage.setItem('tsn.saved', JSON.stringify(state.saved.slice(0, 200))); } catch (e) {} }
+  function isSaved(link) { return state.saved.some(function (x) { return x.link === link; }); }
+  function toggleSaved(it) {
+    if (isSaved(it.link)) state.saved = state.saved.filter(function (x) { return x.link !== it.link; });
+    else state.saved.unshift({ title: it.title, link: it.link, summary: it.summary || '', image: it.image || '', published: it.published, source: it.source, sourceId: it.sourceId });
+    persistSaved();
+    var on = isSaved(it.link), id = storyId(it.link);
+    if (state.shared) {
+      state.counts[id] = Math.max(0, (state.counts[id] || 0) + (on ? 1 : -1));
+      fetch('/api/react', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: id, uid: uid, liked: on }) })
+        .then(function (r) { return r.json(); }).then(function (d) { if (d && typeof d.count === 'number') { state.counts[id] = d.count; render(); } })
+        .catch(function () {});
+    }
+  }
+  function loadCounts() {
+    var ids = state.items.map(function (i) { return storyId(i.link); }).concat(state.saved.map(function (i) { return storyId(i.link); }));
+    ids = ids.filter(function (x, k) { return ids.indexOf(x) === k; }).slice(0, 300);
+    if (!ids.length) return;
+    fetch('/api/react?ids=' + ids.join(','), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      state.shared = !!(d && d.configured); state.counts = (d && d.counts) || {};
+      render();
+    }).catch(function () {});
+  }
+  function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : 'news'; }
+  var CATS = [
+    { id: 'all', label: 'All' },
+    { id: 'news', label: 'News' },
+    { id: 'safety', label: 'Police & courts' },
+    { id: 'institution', label: 'Institutions' },
+    { id: 'events', label: 'Events' },
+    { id: 'deals', label: 'Deals' },
+    { id: 'classifieds', label: 'Classifieds' },
+    { id: 'saved', label: 'Liked' }
+  ];
+  function inCat(it, cat) {
+    var k = kindOf(it.sourceId);
+    if (cat === 'deals') return false;
+    if (cat === 'events') return false;
+    if (cat === 'all') return k !== 'events';
+    if (cat === 'safety') return k === 'police' || k === 'courts';
+    return k === cat;
+  }
+  function filtered() {
+    var base = state.cat === 'saved' ? state.saved : state.items.filter(function (i) { return inCat(i, state.cat); });
+    var q = state.q.trim().toLowerCase();
+    if (q) {
+      var words = q.split(/\s+/);
+      base = base.filter(function (i) {
+        var hay = (i.title + ' ' + (i.summary || '') + ' ' + i.source).toLowerCase();
+        return words.every(function (w) { return hay.indexOf(w) >= 0; });
+      });
+    }
+    return base;
+  }
+  function resetPaging() { state.limit = PAGE; }
+  // A story counts as breaking only when the outlet itself labels it so, and only for 12 hours.
+  var BREAKING_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\b|\bbreaking( news)?\s*[:|\u2013\u2014-]|[\[(]breaking[\])]/i;
+  function isBreaking(it) {
+    if (it.breaking === true) return true;
+    var t = Date.parse(it.published);
+    if (!BREAKING_RE.test(it.title) || isNaN(t) || Date.now() - t > 12 * 3600 * 1000) return false;
+    return true;
+  }
+
+  function el(tagName, cls, text) {
+    var n = document.createElement(tagName);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function safeHref(u) {
+    try { var x = new URL(u); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '#'; } catch (e) { return '#'; }
+  }
+
+  function timeAgo(iso) {
+    if (!iso || isNaN(Date.parse(iso))) return '';
+    var d = new Date(iso), z = 'America/Chicago';
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: z }) + ' · ' +
+      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: z });
+  }
+
+  /* ---------- weather (Open-Meteo) ---------- */
+  var LOCS = [
+    { name: 'Evansville, IN', lat: 37.9716, lon: -87.5711 },
+    { name: 'Henderson, KY', lat: 37.8361, lon: -87.59 },
+    { name: 'Owensboro, KY', lat: 37.7742, lon: -87.1133 },
+    { name: 'Madisonville, KY', lat: 37.3281, lon: -87.4986 },
+    { name: 'Vincennes, IN', lat: 38.6773, lon: -87.5286 },
+    { name: 'Jasper, IN', lat: 38.3914, lon: -86.9311 },
+    { name: 'Mt. Vernon, IN', lat: 37.9323, lon: -87.895 },
+    { name: 'Carbondale, IL', lat: 37.7273, lon: -89.2168 },
+    { name: 'Marion, IL', lat: 37.7306, lon: -88.9331 },
+    { name: 'Albion, IL', lat: 38.3786, lon: -88.0575 },
+    { name: 'Anna, IL', lat: 37.4603, lon: -89.2468 },
+    { name: 'Beaver Dam, KY', lat: 37.4011, lon: -86.8756 },
+    { name: 'Benton, IL', lat: 37.9965, lon: -88.9201 },
+    { name: 'Boonville, IN', lat: 38.0492, lon: -87.2742 },
+    { name: 'Calhoun, KY', lat: 37.5387, lon: -87.2619 },
+    { name: 'Cannelton, IN', lat: 37.9111, lon: -86.744 },
+    { name: 'Carmi, IL', lat: 38.0906, lon: -88.1584 },
+    { name: 'Cave-In-Rock, IL', lat: 37.4692, lon: -88.1636 },
+    { name: 'Central City, KY', lat: 37.2923, lon: -87.1233 },
+    { name: 'Chandler, IN', lat: 38.0289, lon: -87.3686 },
+    { name: 'Clay, KY', lat: 37.4756, lon: -87.8228 },
+    { name: 'Cobden, IL', lat: 37.5334, lon: -89.2531 },
+    { name: 'Corydon, KY', lat: 37.7426, lon: -87.7156 },
+    { name: 'Dixon, KY', lat: 37.5156, lon: -87.6919 },
+    { name: 'Du Quoin, IL', lat: 38.0112, lon: -89.2362 },
+    { name: 'Earlington, KY', lat: 37.2711, lon: -87.5122 },
+    { name: 'Eldorado, IL', lat: 37.8109, lon: -88.447 },
+    { name: 'Fairfield, IL', lat: 38.3787, lon: -88.3598 },
+    { name: 'Ferdinand, IN', lat: 38.2253, lon: -86.8678 },
+    { name: 'Fort Branch, IN', lat: 38.2523, lon: -87.5836 },
+    { name: 'Golconda, IL', lat: 37.3689, lon: -88.4881 },
+    { name: 'Grayville, IL', lat: 38.257, lon: -87.9967 },
+    { name: 'Greenville, KY', lat: 37.2042, lon: -87.1639 },
+    { name: 'Harrisburg, IL', lat: 37.7384, lon: -88.5406 },
+    { name: 'Hartford, KY', lat: 37.4519, lon: -86.9097 },
+    { name: 'Haubstadt, IN', lat: 38.2072, lon: -87.5719 },
+    { name: 'Hawesville, KY', lat: 37.9017, lon: -86.7525 },
+    { name: 'Herrin, IL', lat: 37.8031, lon: -89.0287 },
+    { name: 'Huntingburg, IN', lat: 38.2978, lon: -86.9556 },
+    { name: 'Johnston City, IL', lat: 37.8209, lon: -88.9234 },
+    { name: 'Lawrenceville, IL', lat: 38.7303, lon: -87.6828 },
+    { name: 'Linton, IN', lat: 39.0342, lon: -87.1658 },
+    { name: 'Lynnville, IN', lat: 38.1992, lon: -87.3153 },
+    { name: 'Marion, KY', lat: 37.3331, lon: -88.0817 },
+    { name: 'McLeansboro, IL', lat: 38.0956, lon: -88.5384 },
+    { name: 'Morganfield, KY', lat: 37.6842, lon: -87.9167 },
+    { name: 'Mt. Carmel, IL', lat: 38.4109, lon: -87.7614 },
+    { name: 'Mt. Vernon, IL', lat: 38.3173, lon: -88.9031 },
+    { name: 'Murphysboro, IL', lat: 37.7645, lon: -89.3351 },
+    { name: 'New Harmony, IN', lat: 38.1281, lon: -87.9372 },
+    { name: 'Newburgh, IN', lat: 37.9445, lon: -87.4047 },
+    { name: 'Olney, IL', lat: 38.7309, lon: -87.7456 },
+    { name: 'Petersburg, IN', lat: 38.4917, lon: -87.2786 },
+    { name: 'Poseyville, IN', lat: 38.1717, lon: -87.7886 },
+    { name: 'Princeton, IN', lat: 38.3553, lon: -87.5681 },
+    { name: 'Princeton, KY', lat: 37.1086, lon: -87.8761 },
+    { name: 'Providence, KY', lat: 37.3978, lon: -87.7456 },
+    { name: 'Robinson, IL', lat: 39.0058, lon: -87.7389 },
+    { name: 'Rockport, IN', lat: 37.8828, lon: -87.0486 },
+    { name: 'Santa Claus, IN', lat: 38.1203, lon: -86.9125 },
+    { name: 'Sebree, KY', lat: 37.6089, lon: -87.5333 },
+    { name: 'Shawneetown, IL', lat: 37.7117, lon: -88.1359 },
+    { name: 'Sturgis, KY', lat: 37.547, lon: -87.9753 },
+    { name: 'Sullivan, IN', lat: 39.0956, lon: -87.4086 },
+    { name: 'Tell City, IN', lat: 37.9514, lon: -86.7678 },
+    { name: 'Uniontown, KY', lat: 37.7714, lon: -87.9303 },
+    { name: 'Vienna, IL', lat: 37.4153, lon: -88.8975 },
+    { name: 'Washington, IN', lat: 38.6592, lon: -87.1728 },
+    { name: 'West Frankfort, IL', lat: 37.8978, lon: -88.9312 }
+  ];
+  var wxLoc = LOCS[0];
+  try { var saved = JSON.parse(localStorage.getItem('wxLoc') || 'null'); if (saved && typeof saved.lat === 'number' && typeof saved.lon === 'number' && saved.name) wxLoc = saved; } catch (e) {}
+  function wxUrl(l) {
+    return 'https://api.open-meteo.com/v1/forecast?latitude=' + l.lat + '&longitude=' + l.lon +
+      '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=5';
+  }
+  function wxText(c) {
+    if (c === 0) return 'Clear';
+    if (c === 1) return 'Mostly clear';
+    if (c === 2) return 'Partly cloudy';
+    if (c === 3) return 'Overcast';
+    if (c === 45 || c === 48) return 'Fog';
+    if (c >= 51 && c <= 57) return 'Drizzle';
+    if (c >= 61 && c <= 65) return 'Rain';
+    if (c === 66 || c === 67) return 'Freezing rain';
+    if (c >= 71 && c <= 77) return 'Snow';
+    if (c >= 80 && c <= 82) return 'Showers';
+    if (c === 85 || c === 86) return 'Snow showers';
+    if (c >= 95) return 'Thunderstorms';
+    return 'Weather';
+  }
+  var wxBtn = document.getElementById('wxBtn');
+  var wxPop = document.getElementById('wxPop');
+
+  function shortName(n) { return n.split(',')[0]; }
+  function setLoc(l) {
+    wxLoc = l;
+    try { localStorage.setItem('wxLoc', JSON.stringify(l)); } catch (e) {}
+    loadWeather();
+  }
+  function showPicker() {
+    wxPop.textContent = '';
+    var search = el('input', 'wx-search');
+    search.type = 'search'; search.placeholder = 'Search for a city'; search.setAttribute('aria-label', 'Search for a city');
+    var list = el('div', 'wx-pick');
+    function fill(items) {
+      list.textContent = '';
+      items.forEach(function (l) {
+        var b = el('button'); b.type = 'button';
+        b.appendChild(el('span', null, l.name));
+        if (l.name === wxLoc.name) b.setAttribute('aria-current', 'true');
+        b.addEventListener('click', function (e) { e.stopPropagation(); setLoc(l); });
+        list.appendChild(b);
+      });
+    }
+    fill(LOCS);
+    var timer = null;
+    search.addEventListener('input', function () {
+      clearTimeout(timer);
+      var q = search.value.trim();
+      if (q.length < 2) { fill(LOCS); return; }
+      var ql = q.toLowerCase(), hit = LOCS.filter(function (l) { return l.name.toLowerCase().indexOf(ql) >= 0; });
+      if (hit.length) { fill(hit); return; }
+      timer = setTimeout(function () {
+        fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=en&format=json&name=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); }).then(function (g) {
+            var res = (g.results || []).filter(function (x) { return x.country_code === 'US'; }).map(function (x) {
+              return { name: x.name + (x.admin1 ? ', ' + x.admin1 : ''), lat: x.latitude, lon: x.longitude };
+            });
+            if (res.length) fill(res); else { list.textContent = ''; list.appendChild(el('div', 'wx-note', 'No U.S. places match “' + q + '”.')); }
+          }).catch(function () { list.textContent = ''; list.appendChild(el('div', 'wx-note', 'Search is unavailable right now.')); });
+      }, 250);
+    });
+    search.addEventListener('click', function (e) { e.stopPropagation(); });
+    wxPop.appendChild(search);
+    wxPop.appendChild(list);
+    search.focus();
+  }
+
+  function loadWeather() {
+    loadAlerts();
+    fetch(wxUrl(wxLoc)).then(function (r) { if (!r.ok) throw new Error('wx'); return r.json(); }).then(function (w) {
+      var cur = w.current, dly = w.daily;
+      wxBtn.disabled = false;
+      wxBtn.setAttribute('aria-label', 'Weather in ' + wxLoc.name + '. Change location');
+      wxBtn.textContent = '';
+      wxBtn.appendChild(el('span', 'wx-temp', Math.round(cur.temperature_2m) + '°F'));
+      wxBtn.appendChild(el('span', 'wx-cond', shortName(wxLoc.name)));
+
+      wxPop.textContent = '';
+      var loc = el('div', 'wx-loc');
+      loc.appendChild(el('b', null, wxLoc.name));
+      var chg = el('button', 'chg', 'Change'); chg.type = 'button';
+      chg.addEventListener('click', function (e) { e.stopPropagation(); showPicker(); });
+      loc.appendChild(chg);
+      wxPop.appendChild(loc);
+      var head = el('div', 'wx-head');
+      head.appendChild(el('b', null, Math.round(cur.temperature_2m) + '°F · ' + wxText(cur.weather_code)));
+      wxPop.appendChild(head);
+      for (var i = 0; i < dly.time.length; i++) {
+        var row = el('div', 'wx-row');
+        var day = new Date(dly.time[i] + 'T12:00:00');
+        var left = el('div');
+        left.appendChild(el('div', 'd', i === 0 ? 'Today' : day.toLocaleDateString(undefined, { weekday: 'long' })));
+        row.appendChild(left);
+        var pr = dly.precipitation_probability_max[i];
+        var pe = el('div', 'p');
+        if (pr != null && pr >= 20) {
+          pe.textContent = pr + '% rain';
+        }
+        row.appendChild(pe);
+        row.appendChild(el('div', 't', Math.round(dly.temperature_2m_max[i]) + '° / ' + Math.round(dly.temperature_2m_min[i]) + '°'));
+        wxPop.appendChild(row);
+      }
+    }).catch(function () {
+      wxBtn.textContent = '';
+      wxBtn.appendChild(el('span', 'wx-cond', 'Weather unavailable'));
+      wxBtn.firstChild.style.display = 'inline';
+      wxBtn.disabled = true;
+    });
+  }
+  function setWx(open) { wxPop.classList.toggle('open', open); wxBtn.setAttribute('aria-expanded', String(open)); }
+  wxBtn.addEventListener('click', function (e) { e.stopPropagation(); setWx(!wxPop.classList.contains('open')); });
+
+  document.addEventListener('click', function () { setWx(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setWx(false); });
+
+  /* ---------- tabs and search ---------- */
+  var tabsEl = document.getElementById('tabs');
+  function renderTabs() {
+    tabsEl.textContent = '';
+    CATS.forEach(function (c) {
+      var n = c.id === 'saved' ? state.saved.length : state.items.filter(function (i) { return inCat(i, c.id); }).length;
+      if (c.id === 'deals') n = shownItems(boards.deal, 'deal').length;
+      if (c.id === 'events') n = shownItems(boards.event, 'event').length;
+      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && n === 0) return;
+      var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(state.cat === c.id));
+      b.appendChild(el('span', null, c.label));
+      if (c.id !== 'classifieds') b.appendChild(el('span', 'n', String(n)));
+      b.addEventListener('click', function () { state.cat = c.id; resetPaging(); render(); });
+      tabsEl.appendChild(b);
+    });
+  }
+  var qEl = document.getElementById('q'), qTimer = null;
+  qEl.addEventListener('input', function () {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function () { state.q = qEl.value; if (state.cat === 'submit') state.cat = state.prevCat || 'all'; resetPaging(); render(); }, 150);
+  });
+
+  /* ---------- weather alerts (National Weather Service) ---------- */
+  var alertsEl = document.getElementById('alerts');
+  function renderAlerts() {
+    alertsEl.textContent = '';
+    state.alerts.slice(0, 3).forEach(function (p) {
+      var sev = p.severity === 'Extreme' || p.severity === 'Severe' ? 'sev-severe' : p.severity === 'Moderate' ? 'sev-mod' : 'sev-minor';
+      var d = el('details', 'alert ' + sev);
+      var sm = el('summary'); sm.appendChild(el('b', null, p.event));
+      var until = p.ends || p.expires;
+      if (until && !isNaN(Date.parse(until))) sm.appendChild(el('span', null, 'Until ' + new Date(until).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+      d.appendChild(sm);
+      var body = el('div', 'ab');
+      if (p.headline) body.appendChild(el('p', null, p.headline));
+      if (p.areaDesc) body.appendChild(el('p', null, p.areaDesc));
+      var a = el('a', null, 'More at weather.gov'); a.href = 'https://www.weather.gov/'; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'var(--blue)';
+      body.appendChild(a);
+      d.appendChild(body);
+      alertsEl.appendChild(d);
+    });
+    if (state.alerts.length > 3) alertsEl.appendChild(el('div', 'meta', 'and ' + (state.alerts.length - 3) + ' more active alert' + (state.alerts.length - 3 === 1 ? '' : 's') + ' for this area'));
+  }
+  function loadAlerts() {
+    var url = 'https://api.weather.gov/alerts/active?point=' + wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
+    fetch(url, { headers: { accept: 'application/geo+json' } }).then(function (r) { if (!r.ok) throw new Error('alerts'); return r.json(); }).then(function (g) {
+      var seen = {};
+      state.alerts = (g.features || []).map(function (f) { return f.properties || {}; }).filter(function (p) { if (!p.event || seen[p.event]) return false; seen[p.event] = 1; return true; });
+      var rank = { Extreme: 0, Severe: 1, Moderate: 2, Minor: 3 };
+      state.alerts.sort(function (a, b) { return (rank[a.severity] == null ? 4 : rank[a.severity]) - (rank[b.severity] == null ? 4 : rank[b.severity]); });
+      renderAlerts();
+    }).catch(function () { state.alerts = []; renderAlerts(); });
+  }
+
+  /* ---------- list ---------- */
+  var listEl = document.getElementById('list');
+  var metaEl = document.createElement('div'); // headline count is no longer shown
+
+  function skeletons() {
+    listEl.textContent = '';
+    listEl.setAttribute('aria-busy', 'true');
+    for (var i = 0; i < 8; i++) {
+      var c = el('div', 'sk-card');
+      var l = el('div');
+      var a = el('div', 'sk sk-line'); a.style.width = '30%'; l.appendChild(a);
+      var b = el('div', 'sk sk-line'); b.style.width = '100%'; l.appendChild(b);
+      var d = el('div', 'sk sk-line'); d.style.width = '60%'; l.appendChild(d);
+      c.appendChild(el('div', 'sk sk-img')); c.appendChild(l);
+      listEl.appendChild(c);
+    }
+  }
+
+  function stateBox(title, body, btnLabel, fn) {
+    listEl.textContent = '';
+    listEl.setAttribute('aria-busy', 'false');
+    var s = el('div', 'state');
+    s.style.gridColumn = '1 / -1';
+    s.appendChild(el('h2', null, title));
+    s.appendChild(el('p', null, body));
+    if (btnLabel) { var b = el('button', 'primary', btnLabel); b.type = 'button'; b.addEventListener('click', fn); s.appendChild(b); }
+    listEl.appendChild(s);
+  }
+
+  /* ---------- classifieds and deals: posted by readers and local businesses ---------- */
+  var CL = [
+    { name: 'Evansville', host: 'evansville.craigslist.org' },
+    { name: 'Western Kentucky', host: 'westky.craigslist.org' },
+    { name: 'Southern Illinois', host: 'carbondale.craigslist.org' },
+    { name: 'Terre Haute', host: 'terrehaute.craigslist.org' }
+  ];
+  var CATS_ITEM = ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'];
+  var CATS_DEAL = ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'];
+  var CATS_EVENT = ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'];
+  var CONDS = ['New', 'Like new', 'Good', 'Fair'];
+  var PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/, EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function ago(d) { return new Date(Date.now() - d * 864e5).toISOString(); }
+  var SAMPLE_ITEMS = [
+    { title: 'Weber charcoal grill with cover', price: '$80', town: 'Newburgh, IN', category: 'Home & garden', condition: 'Good', desc: 'Used two summers. Cover and chimney starter included.', at: ago(0) },
+    { title: 'Oak dresser, 5 drawers', price: '$120', town: 'Evansville, IN', category: 'Furniture', condition: 'Good', desc: 'Solid wood, dovetail drawers. Some wear on the top.', at: ago(1) },
+    { title: 'Cordless drill and bit set', price: '$60', town: 'Henderson, KY', category: 'Tools', condition: 'Like new', desc: 'Two batteries and charger, hard case.', at: ago(1) },
+    { title: '20-inch kids bike', price: '$35', town: 'Boonville, IN', category: 'Toys & kids', condition: 'Good', desc: 'Blue, new tires. Outgrown.', at: ago(2) },
+    { title: '55-inch smart TV', price: '$150', town: 'Owensboro, KY', category: 'Electronics', condition: 'Like new', desc: 'Remote and wall mount included.', at: ago(3) },
+    { title: 'Seasoned firewood, you haul', price: 'Free', town: 'Mt. Vernon, IN', category: 'Home & garden', condition: '', desc: 'About a half cord, stacked behind the barn.', at: ago(3) },
+    { title: 'Women’s winter coat, size M', price: '$25', town: 'Jasper, IN', category: 'Clothing', condition: 'Like new', desc: 'Warm, hooded, worn one season.', at: ago(4) },
+    { title: '2014 Honda Civic, 98k miles', price: '$6,500', town: 'Carbondale, IL', category: 'Vehicles', condition: 'Good', desc: 'One owner, service records.', at: ago(5) }
+  ].map(function (x, k) { x.id = 'sample-i' + k; x.sample = true; x.contact = 'Sample listing'; return x; });
+  function inDays(n) { var d = new Date(Date.now() + n * 864e5); return d.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
+  var SAMPLE_DEALS = [
+    { business: 'Sample Diner', title: '2-for-1 burgers on Tuesdays', town: 'Evansville, IN', category: 'Food & drink', code: 'BURGER2', ends: inDays(24), desc: 'Dine in only. One coupon per table.' },
+    { business: 'Sample Pizza Co.', title: 'Free garlic knots with any large pizza', town: 'Newburgh, IN', category: 'Food & drink', code: 'KNOTS', ends: inDays(14), desc: 'Carryout or delivery.' },
+    { business: 'Sample Auto Care', title: '$20 off any oil change', town: 'Henderson, KY', category: 'Auto', code: '', ends: inDays(30), desc: 'Synthetic blend or better. Appointments suggested.' },
+    { business: 'Sample Boutique', title: '25% off fall styles', town: 'Owensboro, KY', category: 'Shopping', code: 'FALL25', ends: inDays(10), desc: 'In store only. Excludes clearance.' },
+    { business: 'Sample Cinema', title: '$6 tickets every Tuesday', town: 'Madisonville, KY', category: 'Entertainment', code: '', ends: '', desc: 'All showtimes.' },
+    { business: 'Sample Hardware', title: 'Buy one, get one free leaf bags', town: 'Carbondale, IL', category: 'Shopping', code: '', ends: inDays(18), desc: 'While supplies last.' },
+    { business: 'Sample Salon', title: '$15 off a cut and color', town: 'Jasper, IN', category: 'Services', code: 'FALL15', ends: inDays(21), desc: 'New clients, weekdays.' },
+    { business: 'Sample Coffee Shop', title: 'Buy a latte, get a pastry free', town: 'Mt. Vernon, IN', category: 'Food & drink', code: '', ends: inDays(7), desc: 'Before 10 a.m.' }
+  ].map(function (x, k) { x.id = 'sample-d' + k; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
+  var SAMPLE_EVENTS = [
+    { title: 'Friday Night Football', date: inDays(3), time: '19:00', place: 'Sample High School Stadium', town: 'Boonville, IN', category: 'Sports', desc: 'Home opener under the lights. Concessions open at 6.' },
+    { title: 'Fall Harvest Market', date: inDays(5), time: '09:00', place: 'Sample Park Pavilion', town: 'Evansville, IN', category: 'Community', desc: 'Local growers, baked goods and crafts.' },
+    { title: 'Live Music on the Riverfront', date: inDays(8), time: '18:30', place: 'Sample Amphitheater', town: 'Henderson, KY', category: 'Music', desc: 'Local bands, food trucks and lawn seating.' },
+    { title: 'Art Walk', date: inDays(10), time: '17:00', place: 'Downtown', town: 'Carbondale, IL', category: 'Arts', desc: 'Galleries and shops stay open late.' },
+    { title: 'Pancake Breakfast Fundraiser', date: inDays(11), time: '08:00', place: 'Sample Fire Station', town: 'Jasper, IN', category: 'Food & drink', desc: 'All you can eat. Proceeds help buy new equipment.' },
+    { title: 'Community 5K Fun Run', date: inDays(12), time: '08:30', place: 'Sample Riverside Trail', town: 'Owensboro, KY', category: 'Sports', desc: 'Walkers and strollers welcome.' },
+    { title: 'Trunk-or-Treat', date: inDays(19), time: '17:30', place: 'Sample Church Lot', town: 'Madisonville, KY', category: 'Family', desc: 'Costumes, candy and games for kids.' }
+  ].map(function (x, k) { x.id = 'sample-e' + k; x.sample = true; x.contact = ''; x.at = ago(0); return x; });
+
+  var clEl = document.getElementById('cl');
+  var boards = {
+    item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, samples: SAMPLE_ITEMS, el: clEl },
+    deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, samples: SAMPLE_DEALS, el: document.getElementById('dl') },
+    event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, samples: SAMPLE_EVENTS, el: document.getElementById('ev') }
+  };
+  Object.keys(boards).forEach(function (k) { try { boards[k].mine = JSON.parse(localStorage.getItem(boards[k].key) || '[]'); } catch (e) {} });
+  var dls = boards.deal;
+  function saveMine(b) { try { localStorage.setItem(b.key, JSON.stringify(b.mine.slice(-50))); } catch (e) {} }
+  function loadBoard(kind) {
+    var b = boards[kind];
+    return fetch('/api/listings?kind=' + kind, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      b.configured = !!(d && d.configured); b.items = d && d.items ? d.items : []; b.loaded = true;
+    }).catch(function () { b.loaded = true; b.configured = false; }).then(function () { renderTabs(); drawBoard(kind); });
+  }
+  function loadDeals() { return loadBoard('deal'); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function feedEvents() {
+    var today = inDays(0);
+    return state.items.filter(function (i) { return kindOf(i.sourceId) === 'events' && i.published; }).map(function (i) {
+      var d = new Date(i.published), z = 'America/Chicago';
+      var date = d.toLocaleDateString('en-CA', { timeZone: z });
+      var hm = d.toLocaleTimeString('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false }).replace(/^24/, '00');
+      return { id: 'feed-' + i.id, title: i.title, date: date, time: (hm === '00:00' || hm < '06:00') ? '' : hm, place: '', town: i.area || '', category: 'Community', desc: (i.summary || '').replace(/\s*…\s*more:.*$/, '…'), contact: '', link: i.link, feed: true, source: i.source, logo: (state.sources.filter(function (x) { return x.id === i.sourceId; })[0] || {}).logo || '' };
+    }).filter(function (x) { return x.date >= today; });
+  }
+  function shownItems(b, kind) {
+    var real = b.items.slice();
+    if (kind === 'event') real = real.concat(feedEvents());
+    var need = Math.max(0, 8 - real.length);
+    var all = real.concat(b.samples.slice(0, need));
+    if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
+    if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
+    var q = state.q.trim().toLowerCase();
+    if (q && kind !== 'item') {
+      var words = q.split(/\s+/);
+      all = all.filter(function (x) { var hay = [x.title, x.business, x.desc, x.town, x.place, x.category].join(' ').toLowerCase(); return words.every(function (w) { return hay.indexOf(w) >= 0; }); });
+    }
+    return all;
+  }
+  var RENDER = { item: function () { renderClassifieds(); }, deal: function () { renderDeals(); }, event: function () { renderEvents(); } };
+  var TABOF = { item: 'classifieds', deal: 'deals', event: 'events' };
+  function drawBoard(kind) { if (state.cat === TABOF[kind]) RENDER[kind](); }
+
+  /* images: category art for posts without a photo, initials avatars, and client-side photo resizing */
+  var ART = {
+    'Furniture': ['M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6H3z', 'M5 9V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2', 'M5 17v3', 'M19 17v3'],
+    'Electronics': ['M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16'],
+    'Vehicles': ['M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2', 'M9 17h6', 'circle:7:17:2', 'circle:17:17:2'],
+    'Tools': ['M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'],
+    'Home & garden': ['m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M9 22V12h6v10'],
+    'Clothing': ['M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z'],
+    'Sports & outdoors': ['M6 9H4.5a2.5 2.5 0 0 1 0-5H6', 'M18 9h1.5a2.5 2.5 0 0 0 0-5H18', 'M4 22h16', 'M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22', 'M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22', 'M18 2H6v7a6 6 0 0 0 12 0V2Z'],
+    'Sports': ['M6 9H4.5a2.5 2.5 0 0 1 0-5H6', 'M18 9h1.5a2.5 2.5 0 0 0 0-5H18', 'M4 22h16', 'M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22', 'M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22', 'M18 2H6v7a6 6 0 0 0 12 0V2Z'],
+    'Toys & kids': ['circle:12:12:10', 'M8 14s1.5 2 4 2 4-2 4-2', 'M9 9h.01', 'M15 9h.01'],
+    'Family': ['circle:12:12:10', 'M8 14s1.5 2 4 2 4-2 4-2', 'M9 9h.01', 'M15 9h.01'],
+    'Food & drink': ['M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2', 'M7 2v20', 'M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'],
+    'Shopping': ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+    'Services': ['M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'],
+    'Auto': ['M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2', 'M9 17h6', 'circle:7:17:2', 'circle:17:17:2'],
+    'Entertainment': ['M9 18V5l12-2v13', 'circle:6:18:3', 'circle:18:16:3'],
+    'Music': ['M9 18V5l12-2v13', 'circle:6:18:3', 'circle:18:16:3'],
+    'Arts': ['rect:3:3:18:18:2', 'circle:9:9:2', 'm21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'],
+    'Community': ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'circle:9:7:4', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'],
+    'Other': ['M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z', 'circle:7.5:7.5:.5']
+  };
+  var HUE = { 'Furniture': 28, 'Electronics': 215, 'Vehicles': 200, 'Tools': 18, 'Home & garden': 130, 'Clothing': 320, 'Sports & outdoors': 150, 'Sports': 150, 'Toys & kids': 45, 'Family': 45, 'Food & drink': 12, 'Shopping': 290, 'Services': 190, 'Auto': 200, 'Entertainment': 265, 'Music': 265, 'Arts': 335, 'Community': 170, 'Other': 230 };
+  var artCache = {};
+  function artUri(cat) {
+    if (artCache[cat]) return artCache[cat];
+    var parts = (ART[cat] || ART.Other).map(function (d) {
+      var a = d.split(':');
+      if (a[0] === 'circle') return '<circle cx="' + a[1] + '" cy="' + a[2] + '" r="' + a[3] + '"/>';
+      if (a[0] === 'rect') return '<rect x="' + a[1] + '" y="' + a[2] + '" width="' + a[3] + '" height="' + a[4] + '" rx="' + a[5] + '"/>';
+      return '<path d="' + d + '"/>';
+    }).join('');
+    var h = HUE[cat] != null ? HUE[cat] : 230;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120"><rect width="160" height="120" fill="hsl(' + h + ' 45% 50% / .16)"/><g transform="translate(56 36) scale(2)" fill="none" stroke="hsl(' + h + ' 45% 42%)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + parts + '</g></svg>';
+    return (artCache[cat] = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg));
+  }
+  function photoSrc(it) { return it.imgData || (it.img ? '/api/listings?img=' + encodeURIComponent(it.id) : ''); }
+  function hueOf(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; }
+  function initials(name) { var w = String(name || '?').replace(/^sample\s+/i, '').split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w.length > 1 ? w[1].charAt(0) : '')).toUpperCase(); }
+  function bizAvatar(name, logo) {
+    if (logo) { var im = el('img', 'bav'); im.src = logo; im.alt = ''; im.width = 28; im.height = 28; im.loading = 'lazy'; return im; }
+    var a = el('span', 'bav bav-i', initials(name)); a.style.setProperty('--h', String(hueOf(name || '?'))); a.setAttribute('aria-hidden', 'true'); return a;
+  }
+  // Re-encode an uploaded image through a canvas: max edge in px, optional square crop, JPEG under a size cap.
+  function processImage(file, maxEdge, square, cap) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error('Choose an image file.'));
+      if (file.size > 15 * 1024 * 1024) return reject(new Error('That image is too large.'));
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0, cw = sw, ch = sh, tw, th;
+        if (square) { var m = Math.min(sw, sh); sx = (sw - m) / 2; sy = (sh - m) / 2; cw = ch = m; tw = th = Math.min(maxEdge, m); }
+        else { var k = Math.min(1, maxEdge / Math.max(sw, sh)); tw = Math.round(sw * k); th = Math.round(sh * k); }
+        var cv = document.createElement('canvas'); cv.width = tw; cv.height = th;
+        var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, tw, th); cx.drawImage(img, sx, sy, cw, ch, 0, 0, tw, th);
+        var q = 0.8, out = cv.toDataURL('image/jpeg', q);
+        while (out.length > cap && q > 0.35) { q -= 0.1; out = cv.toDataURL('image/jpeg', q); }
+        if (out.length > cap) return reject(new Error('That image is too detailed. Try a smaller one.'));
+        resolve(out);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Couldn’t read that image.')); };
+      img.src = url;
+    });
+  }
+  function photoPicker(label, opts) {
+    var wrap = el('div', 'cl-photo'), input = el('input'); input.type = 'file'; input.accept = 'image/*'; input.hidden = true;
+    var add = el('button', 'cl-addph', label); add.type = 'button'; add.id = 'f-ph' + (++uidSeq);
+    var prev = el('div', 'cl-prev'); prev.hidden = true;
+    var pi = el('img'); pi.alt = ''; var rm = el('button', 'cl-link', 'Remove'); rm.type = 'button';
+    prev.appendChild(pi); prev.appendChild(rm);
+    wrap.appendChild(add); wrap.appendChild(input); wrap.appendChild(prev);
+    wrap.value = ''; wrap.msg = el('div', 'cl-fe');
+    add.addEventListener('click', function () { input.click(); });
+    input.addEventListener('change', function () {
+      wrap.msg.textContent = '';
+      var file = input.files && input.files[0]; if (!file) return;
+      add.disabled = true;
+      processImage(file, opts.edge, opts.square, opts.cap).then(function (d) { wrap.value = d; pi.src = d; prev.hidden = false; add.hidden = true; })
+        .catch(function (e) { wrap.msg.textContent = e.message || 'Couldn’t use that image.'; }).then(function () { add.disabled = false; input.value = ''; });
+    });
+    rm.addEventListener('click', function () { wrap.value = ''; prev.hidden = true; add.hidden = false; pi.removeAttribute('src'); });
+    wrap.appendChild(wrap.msg);
+    return wrap;
+  }
+
+  /* form helpers */
+  function field(label, node, o) {
+    o = o || {};
+    var w = el('div', 'cl-f' + (o.cls ? ' ' + o.cls : ''));
+    var lab = el('label', null, label + (o.req ? '' : ' (optional)')); if (node.id) lab.setAttribute('for', node.id);
+    w.appendChild(lab); w.appendChild(node);
+    if (o.hint) w.appendChild(el('div', 'cl-hint', o.hint));
+    var fe = el('div', 'cl-fe'); fe.setAttribute('role', 'alert'); w.appendChild(fe);
+    w.err = function (m) { fe.textContent = m || ''; node.setAttribute('aria-invalid', m ? 'true' : 'false'); };
+    return w;
+  }
+  var uidSeq = 0;
+  function input(type, name, max, ph) { var i = el('input'); i.type = type; i.name = name; i.maxLength = max; i.id = 'f-' + name + (++uidSeq); if (ph) i.placeholder = ph; if (type === 'text') i.autocomplete = 'off'; return i; }
+  function select(name, opts, blank) {
+    var sel = el('select'); sel.name = name; sel.id = 'f-' + name + (++uidSeq);
+    if (blank) { var o0 = el('option', null, blank); o0.value = ''; sel.appendChild(o0); }
+    opts.forEach(function (x) { var o = el('option', null, x); o.value = x; sel.appendChild(o); });
+    return sel;
+  }
+  function counter(node, max) {
+    var c = el('div', 'cl-count'); function up() { c.textContent = node.value.length + '/' + max; } node.addEventListener('input', up); up(); return c;
+  }
+  function segmented(name, opts) {
+    var wrap = el('div', 'cl-seg'); wrap.setAttribute('role', 'radiogroup'); wrap.value = '';
+    opts.forEach(function (o) {
+      var b = el('button', null, o); b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+      b.addEventListener('click', function () {
+        var on = wrap.value !== o; wrap.value = on ? o : '';
+        Array.prototype.forEach.call(wrap.children, function (x) { x.setAttribute('aria-checked', String(x === b && on)); });
+      });
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+  function townSelect() { var t = select('town', LOCS.map(function (l) { return l.name; }), 'Choose a town'); return t; }
+
+  function fmtTime(hm) { if (!hm) return ''; var h = +hm.slice(0, 2), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function buildForm(kind, b) {
+    var isDeal = kind === 'deal', isEv = kind === 'event', isItem = kind === 'item';
+    var noun = isDeal ? 'deal' : isEv ? 'event' : 'item';
+    var f = el('form', 'cl-form'); f.noValidate = true;
+    var F = {}, els = {};
+    els.title = input('text', 'title', 80, isDeal ? '2-for-1 burgers on Tuesdays' : isEv ? 'Fall Harvest Market' : 'What are you selling?');
+    els.category = select('category', b.cats, 'Choose a category');
+    els.town = townSelect();
+    els.desc = el('textarea'); els.desc.name = 'desc'; els.desc.id = 'f-desc' + (++uidSeq); els.desc.maxLength = 300; els.desc.rows = 3;
+    els.desc.placeholder = isDeal ? 'Details, limits, hours' : isEv ? 'What to expect, cost, parking' : 'Size, age, pickup details';
+    els.contact = input('text', 'contact', 80, isDeal ? 'Address or phone' : isEv ? 'Phone or email' : '812-555-0142 or name@email.com');
+    if (isDeal) { els.business = input('text', 'business', 50, 'Joe’s Diner'); F.business = field('Business', els.business, { req: true }); }
+    F.title = field(isDeal ? 'Offer' : isEv ? 'Event name' : 'Title', els.title, { req: true });
+    F.category = field('Category', els.category, { req: true });
+    F.town = field('Town', els.town, { req: true });
+    if (isDeal) {
+      els.code = input('text', 'code', 20, 'FALL25'); els.code.style.textTransform = 'uppercase';
+      els.ends = input('date', 'ends', 10); els.ends.min = inDays(0);
+      F.code = field('Coupon code', els.code, { hint: 'Letters, numbers and dashes' }); F.ends = field('Ends', els.ends);
+    } else if (isEv) {
+      els.date = input('date', 'date', 10); els.date.min = inDays(0);
+      els.time = input('time', 'time', 5); els.place = input('text', 'place', 60, 'Garvin Park, VFW Hall…');
+      F.date = field('Date', els.date, { req: true }); F.time = field('Start time', els.time); F.place = field('Where', els.place);
+    } else {
+      els.price = input('text', 'price', 12, '50'); els.price.inputMode = 'decimal';
+      var pw = el('div', 'cl-price-in'); pw.appendChild(el('span', null, '$')); pw.appendChild(els.price);
+      els.free = el('input'); els.free.type = 'checkbox'; els.free.id = 'f-free' + (++uidSeq);
+      var fl = el('label', 'cl-check'); fl.setAttribute('for', els.free.id); fl.appendChild(els.free); fl.appendChild(document.createTextNode('Free'));
+      els.free.addEventListener('change', function () { els.price.disabled = els.free.checked; if (els.free.checked) els.price.value = ''; });
+      var pr = el('div', 'cl-pricerow'); pr.appendChild(pw); pr.appendChild(fl);
+      F.price = field('Price', pr);
+      els.cond = segmented('condition', CONDS); F.condition = field('Condition', els.cond);
+    }
+    els.photo = photoPicker(isDeal ? 'Add a photo of the offer' : isEv ? 'Add an event photo' : 'Add a photo', { edge: 800, cap: 190000 });
+    F.photo = field('Photo', els.photo);
+    if (isDeal) { els.logo = photoPicker('Add your logo', { edge: 96, square: true, cap: 14000 }); F.logo = field('Business logo', els.logo, { hint: 'Shown next to your business name.' }); }
+    F.desc = field('Details', els.desc); F.desc.appendChild(counter(els.desc, 300));
+    F.contact = field(isDeal ? 'Where to find it' : isEv ? 'Organizer contact' : 'Contact', els.contact, { req: !isEv, hint: isEv ? 'Optional. Shown publicly.' : isDeal ? 'Shown publicly' : 'Phone or email. Shown publicly so buyers can reach you.' });
+    function two(a, c) { var r = el('div', 'cl-two'); r.appendChild(F[a]); r.appendChild(F[c]); f.appendChild(r); }
+    if (isDeal) { f.appendChild(F.business); f.appendChild(F.title); two('category', 'town'); two('code', 'ends'); }
+    else if (isEv) { f.appendChild(F.title); two('category', 'town'); two('date', 'time'); f.appendChild(F.place); }
+    else { f.appendChild(F.title); two('category', 'town'); f.appendChild(F.price); f.appendChild(F.condition); }
+    f.appendChild(F.photo); if (isDeal) f.appendChild(F.logo);
+    f.appendChild(F.desc); f.appendChild(F.contact);
+    var top = el('div', 'cl-err'); top.setAttribute('role', 'alert');
+    var label = 'Post ' + noun;
+    var go = el('button', 'cl-go cl-wide', label); go.type = 'submit';
+    f.appendChild(top); f.appendChild(go);
+    f.appendChild(el('p', 'cl-note', 'No links. ' + (isDeal ? 'Deals come down on their end date or after 30 days.' : isEv ? 'Events come down after they happen.' : 'Listings expire after 30 days.') + ' Anyone can report a post.'));
+    var order = isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact'] : ['title', 'category', 'town', 'price', 'contact'];
+    function clientCheck() {
+      var e = {};
+      if (isDeal && els.business.value.trim().length < 2) e.business = 'Add the business name.';
+      if (els.title.value.trim().length < 3) e.title = isDeal ? 'Describe the offer.' : isEv ? 'Add an event name.' : 'Add a title (at least 3 characters).';
+      if (!els.category.value) e.category = 'Choose a category.';
+      if (!els.town.value) e.town = 'Choose a town.';
+      var c = els.contact.value.trim();
+      if (isDeal) { if (c.length < 5) e.contact = 'Add the address or phone number.'; }
+      else if (isEv) { if (c && c.length < 5) e.contact = 'Add a phone number or email, or leave it blank.'; if (!els.date.value) e.date = 'Pick a date.'; else if (els.date.value < inDays(0)) e.date = 'Pick today or a later date.'; }
+      else { if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Enter a phone number like 812-555-0142 or an email address.';
+        if (!els.free.checked && els.price.value.trim() && !/^\d[\d,]*(\.\d{2})?$/.test(els.price.value.trim().replace(/^\$/, ''))) e.price = 'Enter an amount like 50 or 1,200.'; }
+      return e;
+    }
+    function show(e) {
+      order.forEach(function (k) { if (F[k]) F[k].err(e[k] || ''); });
+      var first = order.filter(function (k) { return e[k]; })[0];
+      if (first) { var n = F[first].querySelector('input,select'); if (n) n.focus(); }
+    }
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); top.textContent = '';
+      var e = clientCheck(); show(e); if (Object.keys(e).length) return;
+      go.disabled = true; go.textContent = 'Posting…';
+      var body = { img: els.photo.value || undefined, logo: els.logo ? (els.logo.value || undefined) : undefined, kind: kind, title: els.title.value, category: els.category.value, town: els.town.value, desc: els.desc.value, contact: els.contact.value, uid: uid };
+      if (isDeal) { body.business = els.business.value; body.code = els.code.value; body.ends = els.ends.value; }
+      else if (isEv) { body.date = els.date.value; body.time = els.time.value; body.place = els.place.value; }
+      else { body.price = els.free.checked ? 'Free' : (els.price.value.trim() ? '$' + els.price.value.trim().replace(/^\$/, '') : ''); body.condition = els.cond.value; }
+      fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (o) {
+          go.disabled = false; go.textContent = label;
+          if (!o.ok || !o.d.item) { var m = (o.d && o.d.error) || 'Couldn’t post that. Try again.'; if (o.d && o.d.field && F[o.d.field]) { var q = {}; q[o.d.field] = m; show(q); } else top.textContent = m; return; }
+          if (els.photo.value) o.d.item.imgData = els.photo.value; if (els.logo && els.logo.value) o.d.item.logo = els.logo.value;
+          b.items.unshift(o.d.item); b.mine.push(o.d.item.id); saveMine(b); b.form = false; renderTabs(); drawBoard(kind);
+        }).catch(function () { go.disabled = false; go.textContent = label; top.textContent = 'Couldn’t post that. Check your connection and try again.'; });
+    });
+    return f;
+  }
+  function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
+  function actions(it, kind, b, foot) {
+    if (it.sample || it.feed) return;
+    var mine = b.mine.indexOf(it.id) >= 0;
+    var act = el('button', 'cl-link', mine ? 'Remove' : 'Report'); act.type = 'button';
+    act.addEventListener('click', function () {
+      act.disabled = true;
+      var req = mine ? fetch('/api/listings?kind=' + kind + '&id=' + encodeURIComponent(it.id) + '&uid=' + encodeURIComponent(uid), { method: 'DELETE' })
+                     : fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: kind, action: 'report', id: it.id, uid: uid }) });
+      req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); renderTabs(); drawBoard(kind); } else { act.textContent = 'Reported'; } }).catch(function () { act.disabled = false; });
+    });
+    foot.appendChild(act);
+  }
+  function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
+  function dealCard(it, b) {
+    var c = el('article', 'deal');
+    var src = photoSrc(it) || (it.sample ? artUri(it.category) : '');
+    if (src) { var im = el('img', 'deal-img'); im.src = src; im.alt = ''; im.loading = 'lazy'; c.appendChild(im); }
+    var body = el('div', 'deal-body');
+    var head = el('div', 'deal-head');
+    head.appendChild(bizAvatar(it.business || it.title, it.logo));
+    head.appendChild(el('span', 'deal-biz', it.business || ''));
+    head.appendChild(catPill(it));
+    body.appendChild(head);
+    body.appendChild(el('h3', 'deal-offer', it.title));
+    if (it.desc) body.appendChild(el('p', 'cl-desc', it.desc));
+    var meta = [it.town]; if (it.ends) meta.push('Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    body.appendChild(el('div', 'cl-meta', meta.filter(Boolean).join(' · ')));
+    if (it.code) { var cd = el('div', 'deal-code'); cd.appendChild(el('span', null, 'Use code')); cd.appendChild(el('code', null, it.code)); body.appendChild(cd); }
+    var foot = el('div', 'cl-foot'); foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact)); actions(it, 'deal', b, foot); body.appendChild(foot);
+    c.appendChild(body);
+    return c;
+  }
+  function eventCard(it, b) {
+    var c = el('article', 'ev');
+    var evSrc = photoSrc(it) || (it.sample ? artUri(it.category) : '');
+    if (evSrc) { var eim = el('img', 'ev-img'); eim.src = evSrc; eim.alt = ''; eim.loading = 'lazy'; c.appendChild(eim); }
+    var d = new Date(it.date + 'T12:00:00');
+    var tile = el('div', 'ev-date');
+    tile.appendChild(el('span', 'ev-mo', d.toLocaleDateString('en-US', { month: 'short' })));
+    tile.appendChild(el('span', 'ev-day', String(d.getDate())));
+    tile.appendChild(el('span', 'ev-wd', d.toLocaleDateString('en-US', { weekday: 'long' })));
+    if (it.time) tile.appendChild(el('span', 'ev-tm', fmtTime(it.time)));
+    c.appendChild(tile);
+    var body = el('div', 'ev-body');
+    var h = el('h3', 'ev-title');
+    if (it.link) { var a = el('a', null, it.title); a.href = it.link; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a); } else h.textContent = it.title;
+    body.appendChild(h);
+    var where = [it.place, it.town].filter(Boolean).join(' · ');
+    var wl = el('div', 'cl-meta', where); if (evSrc) { var cp = catPill(it); cp.classList.add('ev-pill'); c.appendChild(cp); } else wl.insertBefore(catPill(it), wl.firstChild);
+    body.appendChild(wl);
+    if (it.desc) body.appendChild(el('p', 'cl-desc', it.desc));
+    var foot = el('div', 'cl-foot');
+    if (it.feed) { foot.appendChild(bizAvatar(it.source, it.logo)); foot.appendChild(el('span', 'ev-cat', it.source)); }
+    
+    if (it.contact) foot.appendChild(el('span', 'cl-contact', it.contact));
+    actions(it, 'event', b, foot);
+    body.appendChild(foot);
+    c.appendChild(body);
+    return c;
+  }
+  function card(it, kind, b) {
+    if (kind === 'deal') return dealCard(it, b);
+    if (kind === 'event') return eventCard(it, b);
+    var c = el('article', 'cl-item');
+    var th = el('div', 'cl-th'), ti = el('img'); ti.src = photoSrc(it) || artUri(it.category); ti.alt = ''; ti.loading = 'lazy'; th.appendChild(ti); c.appendChild(th);
+    var main = el('div', 'cl-main');
+    var top = el('div', 'cl-top');
+    top.appendChild(el('b', null, it.title));
+    if (it.price) top.appendChild(el('span', 'cl-price', priceText(it.price)));
+    main.appendChild(top);
+    var meta = el('div', 'cl-meta');
+    var bits = [it.town]; if (it.condition) bits.push(it.condition);
+    bits.push(new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }));
+    meta.textContent = bits.filter(Boolean).join(' · ');
+    meta.insertBefore(catPill(it), meta.firstChild);
+    main.appendChild(meta);
+    if (it.desc) main.appendChild(el('p', 'cl-desc', it.desc));
+    var foot = el('div', 'cl-foot');
+    foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+    actions(it, 'item', b, foot);
+    main.appendChild(foot);
+    c.appendChild(main);
+    return c;
+  }
+  function chips(b, kind) {
+    var present = {}; b.items.concat(b.samples, kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
+    var row = el('div', 'cl-chips');
+    ['All'].concat(b.cats.filter(function (c) { return present[c]; })).forEach(function (c) {
+      var on = (c === 'All' && !b.filter) || c === b.filter;
+      var x = el('button', 'cl-chip', c); x.type = 'button'; x.setAttribute('aria-pressed', String(on));
+      x.addEventListener('click', function () { b.filter = c === 'All' ? '' : c; drawBoard(kind); });
+      row.appendChild(x);
+    });
+    return row;
+  }
+  function drawBody(kind, title, postLabel) {
+    var b = boards[kind], root = b.el;
+    root.textContent = '';
+    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, title));
+    if (b.configured !== false) {
+      var post = el('button', 'cl-go', b.form ? 'Cancel' : postLabel); post.type = 'button';
+      post.addEventListener('click', function () { b.form = !b.form; drawBoard(kind); });
+      bar.appendChild(post);
+    }
+    root.appendChild(bar);
+    if (b.form) root.appendChild(buildForm(kind, b));
+    root.appendChild(chips(b, kind));
+    var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : 'cl-list'), items = shownItems(b, kind);
+    items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
+    if (!items.length) list.appendChild(el('p', 'cl-empty', state.q.trim() ? 'Nothing matches your search.' : 'Nothing in this category yet.'));
+    root.appendChild(list);
+    if (items.some(function (x) { return x.sample; })) root.appendChild(el('p', 'cl-note', 'Sample posts show how this page looks. They go away as real ones come in.'));
+    return root;
+  }
+  function renderClassifieds() {
+    var root = drawBody('item', 'For sale', 'Post an item');
+    var more = el('div', 'cl-more');
+    more.appendChild(el('div', 'cl-label', 'More local classifieds'));
+    var links = el('div', 'cl-links');
+    CL.forEach(function (r) { var a = el('a', null, r.name); a.href = 'https://' + r.host + '/search/sss'; a.target = '_blank'; a.rel = 'noopener'; links.appendChild(a); });
+    var fb = el('a', null, 'Facebook Marketplace'); fb.href = 'https://www.facebook.com/marketplace/evansville/'; fb.target = '_blank'; fb.rel = 'noopener'; links.appendChild(fb);
+    more.appendChild(links);
+    more.appendChild(el('p', 'cl-note', 'Meet in a public place and never send money before you see the item.'));
+    root.appendChild(more);
+  }
+  var dlEl = boards.deal.el;
+  function renderDeals() { drawBody('deal', 'Local deals and coupons', 'Post a deal'); }
+  function renderEvents() { drawBody('event', 'Upcoming events', 'Add an event'); }
+
+  /* ---------- submit news ---------- */
+  var snEl = document.getElementById('sn'), SN_TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
+  var SN_DONE = '';
+  function icoCheck() { var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke-width', '2'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round'); n.setAttribute('aria-hidden', 'true'); var p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M20 6 9 17l-5-5'); n.appendChild(p); return n; }
+  function openSubmit() { SN_DONE = ''; state.prevCat = state.cat === 'submit' ? (state.prevCat || 'all') : state.cat; state.cat = 'submit'; resetPaging(); render(); window.scrollTo(0, 0); }
+  function closeSubmit() { state.cat = state.prevCat || 'all'; resetPaging(); render(); window.scrollTo(0, 0); }
+  function renderSubmit() {
+    snEl.textContent = '';
+    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, 'Submit news'));
+    var back = el('button', 'cl-go', 'Back to news'); back.type = 'button'; back.addEventListener('click', closeSubmit); bar.appendChild(back); snEl.appendChild(bar);
+    if (SN_DONE) {
+      var d = el('div', 'sn-done'); d.setAttribute('role', 'status');
+      d.appendChild(el('h2', null, 'Thanks, we got it'));
+      d.appendChild(el('p', 'sn-lede', 'Your submission is with our team. Not every tip is published, and we may contact you for more detail. Keep this reference number if you need to follow up:'));
+      d.appendChild(el('span', 'sn-ref', SN_DONE));
+      var again = el('button', 'cl-go', 'Send another'); again.type = 'button'; again.addEventListener('click', function () { SN_DONE = ''; renderSubmit(); });
+      d.appendChild(again); snEl.appendChild(d); return;
+    }
+    snEl.appendChild(el('p', 'sn-lede', 'See something happening in the Tri-State? Send us a tip, a photo, a press release or a correction. We review every submission.'));
+    var al = el('div', 'sn-alert'); al.appendChild(el('b', null, 'Emergency? Call 911. ')); al.appendChild(document.createTextNode('This form isn’t monitored around the clock.')); snEl.appendChild(al);
+
+    var f = el('form', 'cl-form'); f.noValidate = true;
+    var F = {}, els = {};
+    els.type = segmented('type', SN_TYPES); F.type = field('What are you sending?', els.type, { req: true });
+    els.headline = input('text', 'headline', 120, 'Road closed on Highway 41 after crash'); F.headline = field('Headline', els.headline, { req: true, hint: 'A short summary, like a newspaper headline.' });
+    els.details = el('textarea'); els.details.name = 'details'; els.details.id = 'f-details' + (++uidSeq); els.details.rows = 6; els.details.maxLength = 3000; els.details.placeholder = 'Who, what, where, when. Include names, spellings and anything we can check.';
+    F.details = field('What happened', els.details, { req: true }); F.details.appendChild(counter(els.details, 3000));
+    els.town = townSelect(); F.town = field('Nearest town', els.town, { req: true });
+    els.when = input('date', 'when', 10); els.when.max = inDays(0); F.when = field('Date it happened', els.when);
+    els.ph1 = photoPicker('Add a photo', { edge: 1000, cap: 190000 }); els.ph2 = photoPicker('Add another', { edge: 1000, cap: 190000 });
+    var phw = el('div', 'sn-ph'); phw.appendChild(els.ph1); phw.appendChild(els.ph2);
+    F.photos = field('Photos', phw, { hint: 'Up to two. Only send photos you took or have permission to share.' });
+    els.name = input('text', 'name', 60, 'Your name'); els.name.autocomplete = 'name'; F.name = field('Your name', els.name, { req: true });
+    els.email = input('email', 'email', 80, 'name@email.com'); els.email.autocomplete = 'email'; F.email = field('Email', els.email, { req: true, hint: 'Only used to follow up. Never published.' });
+    els.phone = input('tel', 'phone', 20, '812-555-0142'); els.phone.autocomplete = 'tel'; F.phone = field('Phone', els.phone);
+    els.hp = input('text', 'website', 40); els.hp.tabIndex = -1; els.hp.autocomplete = 'off'; var hp = el('div', 'sn-hp'); hp.setAttribute('aria-hidden', 'true'); hp.appendChild(els.hp);
+
+    function check(id, text) { var i = el('input'); i.type = 'checkbox'; i.id = 'f-' + id + (++uidSeq); var l = el('label', 'cl-check'); l.setAttribute('for', i.id); l.appendChild(i); l.appendChild(document.createTextNode(text)); l.input = i; return l; }
+    els.anon = check('anon', 'Don’t publish my name if you use this');
+    els.consent = check('consent', 'I’m the source of this information or have permission to share it, and I understand submitting doesn’t guarantee it will be published.');
+    F.consent = el('div', 'sn-sec'); F.consent.appendChild(els.consent); var ce = el('div', 'cl-fe'); ce.setAttribute('role', 'alert'); F.consent.appendChild(ce); F.consent.err = function (m) { ce.textContent = m || ''; };
+
+    function sec(title) { var s = el('div', 'sn-sec'); s.appendChild(el('h2', null, title)); return s; }
+    function bare(x) { f.appendChild(x); }
+    var s1 = sec('Your story'); [F.type, F.headline, F.details].forEach(function (x) { s1.appendChild(x); });
+    var r1 = el('div', 'cl-two'); r1.appendChild(F.town); r1.appendChild(F.when); s1.appendChild(r1); s1.appendChild(F.photos);
+    var s2 = sec('Your contact info'); s2.appendChild(F.name); var r2 = el('div', 'cl-two'); r2.appendChild(F.email); r2.appendChild(F.phone); s2.appendChild(r2); s2.appendChild(els.anon); 
+    f.style.border = '0'; f.style.padding = '0';
+    bare(s1); bare(s2); bare(hp); bare(F.consent);
+    var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); bare(top);
+    var go = el('button', 'cl-go cl-wide', 'Send submission'); go.type = 'submit'; bare(go);
+    snEl.appendChild(f);
+
+    var tips = sec('What we’re looking for');
+    var ul = el('ul', 'sn-list');
+    ['Local news: crashes, closures, openings, council and school board decisions', 'Photos and video of events in our area (with permission to share)', 'Press releases from local businesses, schools, churches and nonprofits', 'Corrections to anything we link to or summarize'].forEach(function (t) { var li = el('li'); li.appendChild(icoCheck()); li.appendChild(el('span', null, t)); ul.appendChild(li); });
+    tips.appendChild(ul); snEl.appendChild(tips);
+    var fine = sec('Good to know');
+    ['Please be accurate and stick to what you know firsthand. We may verify before using anything.', 'We don’t publish tips that name private individuals accused of a crime.', 'Your email and phone number are never published.'].forEach(function (t) { fine.appendChild(el('p', 'cl-note', t)); });
+    snEl.appendChild(fine);
+
+    var order = ['headline', 'details', 'town', 'when', 'name', 'email', 'phone', 'consent'];
+    function show(e) {
+      order.forEach(function (k) { if (F[k]) F[k].err(e[k] || ''); });
+      var first = order.filter(function (k) { return e[k]; })[0];
+      if (first) { var n = F[first].querySelector('input,select,textarea'); if (n) n.focus(); }
+    }
+    function clientCheck() {
+      var e = {};
+      if (els.headline.value.trim().length < 5) e.headline = 'Add a short headline (at least 5 characters).';
+      if (els.details.value.trim().length < 30) e.details = 'Tell us a little more (at least 30 characters).';
+      if (!els.town.value) e.town = 'Choose the nearest town.';
+      if (els.when.value && els.when.value > inDays(0)) e.when = 'Pick a date that has already happened.';
+      if (els.name.value.trim().length < 2) e.name = 'Add your name.';
+      if (!EMAIL_RE.test(els.email.value.trim())) e.email = 'Enter a valid email address.';
+      if (els.phone.value.trim() && !PHONE_RE.test(els.phone.value.trim())) e.phone = 'Enter a phone number like 812-555-0142, or leave it blank.';
+      if (!els.consent.input.checked) e.consent = 'Please confirm this statement.';
+      return e;
+    }
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); top.textContent = '';
+      var e = clientCheck(); show(e); if (Object.keys(e).length) return;
+      go.disabled = true; go.textContent = 'Sending…';
+      var body = { type: els.type.value || 'News tip', headline: els.headline.value, details: els.details.value, town: els.town.value, when: els.when.value, name: els.name.value, email: els.email.value, phone: els.phone.value, anon: els.anon.input.checked, consent: true, website: els.hp.value, photos: [els.ph1.value, els.ph2.value].filter(Boolean) };
+      fetch('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (o) {
+          go.disabled = false; go.textContent = 'Send submission';
+          if (!o.ok || !o.d.ok) { var m = (o.d && o.d.error) || 'Couldn’t send that. Try again.'; if (o.d && o.d.field && F[o.d.field]) { var q = {}; q[o.d.field] = m; show(q); } else top.textContent = m; return; }
+          SN_DONE = o.d.ref || 'Received'; renderSubmit(); window.scrollTo(0, 0);
+        }).catch(function () { go.disabled = false; go.textContent = 'Send submission'; top.textContent = 'Couldn’t send that. Check your connection and try again.'; });
+    });
+  }
+  document.getElementById('snOpen').addEventListener('click', openSubmit);
+
+  function render() {
+    renderTabs();
+    var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isSn;
+    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; listEl.hidden = board; document.getElementById('more').hidden = board;
+    if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
+    if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); return; }
+    if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
+    if (isEv) { renderEvents(); metaEl.textContent = ''; if (!boards.event.loaded) loadBoard('event'); return; }
+    if (!state.loaded) return;
+    if (state.error && !state.items.length) {
+      metaEl.textContent = 'Couldn’t load headlines';
+      return stateBox('Couldn’t reach the news feeds', 'Check your connection and try again.', 'Try again', function () { load(true); });
+    }
+    var all = filtered();
+    var brk = (!state.q.trim() && (state.cat === 'all' || state.cat === 'news')) ? all.filter(isBreaking).slice(0, 2) : [];
+    var rest = brk.length ? all.filter(function (i) { return brk.indexOf(i) < 0; }) : all;
+    var shown = rest.slice(0, state.limit);
+    var moreEl = document.getElementById('more'); moreEl.textContent = '';
+    var seenSrc = {}; all.forEach(function (i) { seenSrc[i.sourceId] = 1; });
+    var n = Object.keys(seenSrc).length;
+    metaEl.textContent = all.length + ' stor' + (all.length === 1 ? 'y' : 'ies') + ' from ' + n + ' source' + (n === 1 ? '' : 's') +
+      ' · Updated ' + new Date(state.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    if (!shown.length && !brk.length) {
+      var noQ = !state.q.trim();
+      if (state.cat === 'saved' && noQ) return stateBox('Nothing liked yet', 'Tap the heart on any story to keep it here.', 'See all stories', function () { state.cat = 'all'; resetPaging(); render(); });
+      return stateBox('No stories to show', noQ ? 'Nothing has been published by these sources recently.' : 'Nothing matches. Try different words.', noQ ? 'Refresh' : 'Clear search', function () { if (noQ) { load(true); } else { state.q = ''; qEl.value = ''; resetPaging(); render(); } });
+    }
+    listEl.textContent = '';
+    listEl.setAttribute('aria-busy', 'false');
+    var logos = {};
+    state.sources.forEach(function (x) { logos[x.id] = x.logo; });
+    function makeCard(it, big) {
+      var card = el('article', big ? 'card breaking' : 'card');
+      var logo = logos[it.sourceId] || '';
+      var a = el('a', it.image || logo ? '' : 'noimg');
+      a.href = safeHref(it.link);
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      var body = el('div', 'bd');
+      var src = el('div', 'src');
+      if (logo) {
+        var av = el('img', 'av'); av.src = logo; av.alt = ''; av.loading = 'lazy'; av.referrerPolicy = 'no-referrer';
+        av.addEventListener('error', function () { av.remove(); });
+        src.appendChild(av);
+      }
+      src.appendChild(el('b', null, it.source));
+      src.appendChild(el('span', 'when', timeAgo(it.published)));
+      body.appendChild(src);
+      body.appendChild(el('h2', null, it.title));
+      if (it.summary) body.appendChild(el('p', null, it.summary));
+      function placeholder() {
+        if (!logo) { a.className = 'noimg'; return null; }
+        var ph = el('div', 'ph'); var li = el('img'); li.src = logo; li.alt = ''; li.referrerPolicy = 'no-referrer';
+        li.addEventListener('error', function () { ph.remove(); a.className = 'noimg'; });
+        ph.appendChild(li); return ph;
+      }
+      var lead = null;
+      if (it.image) {
+        lead = el('img', 'th');
+        lead.src = it.image; lead.alt = ''; lead.loading = 'lazy'; lead.decoding = 'async'; lead.referrerPolicy = 'no-referrer';
+        lead.addEventListener('error', function () { var p = placeholder(); if (p) a.replaceChild(p, lead); else lead.remove(); });
+      } else { lead = placeholder(); }
+      if (lead) a.appendChild(lead);
+      a.appendChild(body);
+      card.appendChild(a);
+      var sb = el('button', 'like'); sb.type = 'button';
+      var cnt = el('span');
+      function paintSave() {
+        var on = isSaved(it.link), n = likeCount(it);
+        sb.setAttribute('aria-pressed', String(on));
+        sb.setAttribute('aria-label', (on ? 'Unlike: ' : 'Like: ') + it.title + (n ? ' (' + n + ' like' + (n === 1 ? '' : 's') + ')' : ''));
+        cnt.textContent = n > 0 ? String(n) : '';
+      }
+      sb.appendChild(svg([['path', { d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z' }]]));
+      sb.appendChild(cnt);
+      paintSave();
+      sb.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        toggleSaved(it);
+        if (state.cat === 'saved') render(); else { paintSave(); renderTabs(); }
+      });
+      card.appendChild(sb);
+      if (big) { var tag = el('div', 'bk'); tag.appendChild(el('i')); tag.appendChild(document.createTextNode('Breaking')); card.appendChild(tag); }
+      return card;
+    }
+    brk.forEach(function (it) { listEl.appendChild(makeCard(it, true)); });
+    shown.forEach(function (it) { listEl.appendChild(makeCard(it, false)); });
+    if (rest.length > shown.length) {
+      var mb = el('button', null, 'Show more (' + (rest.length - shown.length) + ' left)'); mb.type = 'button';
+      mb.addEventListener('click', function () { state.limit += PAGE; render(); });
+      moreEl.appendChild(mb);
+    }
+  }
+
+  function load(force) {
+    var first = !state.loaded;
+    if (first || force) { if (first || !state.items.length) skeletons(); }
+    return fetch('/api/news', force ? { cache: 'reload' } : undefined).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
+      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now();
+      state.error = false; state.loaded = true;
+      render();
+      loadCounts();
+    }).catch(function () {
+      state.error = true; state.loaded = true;
+      render();
+    });
+  }
+
+  document.getElementById('refresh').addEventListener('click', function () { load(true); });
+
+  // hourly refresh while open, plus catch-up when the tab becomes visible after a long time away
+  setInterval(function () { load(false); }, HOUR);
+  // weather updates continuously: every 10 minutes, and right away when the tab returns or the connection comes back
+  var WX_EVERY = 10 * 60 * 1000, wxAt = Date.now();
+  function wxTick() { if (wxPop.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return; wxAt = Date.now(); loadWeather(); }
+  setInterval(function () { if (!document.hidden) wxTick(); }, WX_EVERY);
+  window.addEventListener('online', wxTick);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    if (Date.now() - state.fetchedAt > HOUR) load(false);
+    if (Date.now() - wxAt > 2 * 60 * 1000) wxTick();
+  });
+  // keep "x min ago" honest
+  setInterval(function () { if (state.items.length && !document.hidden) render(); }, 5 * 60 * 1000);
+
+  loadWeather();
+  load(false);
+  loadDeals(); loadBoard('event');
+})();
+</script>
+</body>
+</html>

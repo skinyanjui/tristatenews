@@ -1,0 +1,7 @@
+{
+  "name": "tristate-news",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hourly local news aggregate for the Evansville, IN-KY metro",
+  "engines": { "node": ">=20" }
+}

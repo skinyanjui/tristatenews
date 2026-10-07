@@ -1,0 +1,28 @@
+# Keeps the news snapshot fresh by calling /api/refresh on a schedule (free, works on Vercel's Hobby plan,
+# where Vercel Cron can only run once a day).
+# Setup: in the GitHub repo, Settings > Secrets and variables > Actions, add
+#   SITE_URL     e.g. https://tristatenews.vercel.app   (no trailing slash)
+#   CRON_SECRET  the same value as the CRON_SECRET environment variable in Vercel
+name: Refresh news
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # fast tier: TV, daily papers, law enforcement
+    - cron: '7,37 * * * *'   # every source, twice an hour
+  workflow_dispatch:
+concurrency:
+  group: refresh-news
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call /api/refresh
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ -z "$SITE_URL" ] || [ -z "$CRON_SECRET" ]; then echo "Add SITE_URL and CRON_SECRET repository secrets."; exit 0; fi
+          TIER=all; [ "$SCHEDULE" = "*/10 * * * *" ] && TIER=fast
+          curl -fsS --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=$TIER"

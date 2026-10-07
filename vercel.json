@@ -1,6 +1,7 @@
 {
   "functions": {
-    "api/news.js": { "maxDuration": 20 }
+    "api/news.js": { "maxDuration": 30 },
+    "api/refresh.js": { "maxDuration": 30 }
   },
   "headers": [
     {

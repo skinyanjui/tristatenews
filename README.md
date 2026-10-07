@@ -33,6 +33,21 @@ Search, tabs in the top nav (All, News, Police & courts, Liked), "Show more" pag
 
 Hearts always work for the reader and are kept in their browser (the Liked tab). To make the counts shared across all readers, add the free **Upstash for Redis** integration to the Vercel project (Storage tab, Marketplace). It sets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, which `api/react.js` uses. Redeploy afterward. Without it, each story's count shows only your own heart (1 or nothing). One heart per browser per story; there are no accounts, so determined people can clear storage and heart again.
 
+## How the news is fetched
+A scheduled job calls `/api/refresh`, which fetches every feed, merges the stories and saves them in Redis. `/api/news` only serves that saved snapshot, so pages load instantly and never wait on a slow publisher.
+- **Per-source memory:** each source keeps its last good stories (up to 80, within the age window). A failed or rate-limited fetch keeps them and marks the source `stale` in the `sources` list instead of making it vanish.
+- **Conditional requests:** the ETag / Last-Modified from the last fetch is sent back, so unchanged feeds answer 304 and cost almost nothing. The URL that worked last time is tried first.
+- **Two tiers:** `?tier=fast` (TV stations, daily papers, FBI and U.S. Attorney releases) every 10 minutes and `?tier=all` twice an hour.
+- **Self-healing:** with no snapshot, or one older than 3 hours, the first visitor to `/api/news` triggers a refresh (guarded by a short lock). Without Redis the site works as before, fetching live when the hourly cache expires.
+
+Setup (about five minutes):
+1. Add the Upstash Redis integration in Vercel (see Shared heart counts) if you haven't.
+2. Add an environment variable `CRON_SECRET` in Vercel (any long random string) and redeploy.
+3. In this GitHub repo add the secrets `CRON_SECRET` (same value) and `SITE_URL` (for example `https://tristatenews.vercel.app`). The workflow in `.github/workflows/refresh-news.yml` then runs on schedule. You can also run it by hand from the Actions tab.
+4. On Vercel Pro you can use Vercel Cron instead: add `"crons": [{ "path": "/api/refresh?tier=all", "schedule": "*/30 * * * *" }]` to `vercel.json`. On the Hobby plan Vercel rejects crons that run more than once a day, which is why the repo uses GitHub Actions.
+
+Check it works: `curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=all"` returns how many stories were stored, how many sources answered 304, and which sources are failing.
+
 ## Feed status (checked October 7, 2026)
 
 Returned stories in today's run (19 of 40 sources): 14 News, Eyewitness News, Evansville Living, Owensboro Times, The Messenger (Madisonville), Daily Egyptian, Princeton Daily Clarion, KFVS12, Kentucky Lantern, WKDQ, WBKR, Owensboro Radio, WKMS, FBI Louisville, Indianapolis and Springfield, U.S. Attorney W.D. Kentucky and S.D. Illinois, and the Visit Madisonville events calendar. Messenger-Inquirer, Vincennes Sun-Commercial, Explore Evansville, Visit Owensboro and others returned stories in some runs and a rate-limit or block error in others, so they come and go.

@@ -1,7 +1,8 @@
 // Tri-State (Evansville, IN-KY MSA) news aggregator.
-// Fetches every configured feed server-side, normalizes, dedupes, and returns one list.
-// The CDN caches the response for one hour (s-maxage=3600), so each hour's first visit
-// refreshes every source and everyone else gets the cached copy.
+// A scheduled job (api/refresh.js) fetches every configured feed, normalizes, dedupes, and stores
+// the result in Redis; this endpoint just serves that stored snapshot, so pages load instantly and a
+// source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
+// is more than 3 hours old, the first visitor triggers a refresh instead.
 
 // Coverage area: Evansville MSA plus Owensboro, Madisonville, Carbondale, Marion, Vincennes
 // and the towns in between (southwest Indiana, western Kentucky, southern Illinois).
@@ -225,32 +226,39 @@ function parseIcal(text, source) {
   return items;
 }
 
-async function tryUrl(source, url) {
+// Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
+// sent so an unchanged feed answers 304 and costs almost nothing.
+async function tryUrl(source, url, prev) {
   try {
-    const r = await fetch(url, {
-      headers: { 'user-agent': 'TriStateNewsAggregator/1.0 (+RSS reader)', accept: 'application/rss+xml, application/xml, text/xml, */*' },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!r.ok) return { items: [], error: 'HTTP ' + r.status };
+    const headers = { 'user-agent': 'TriStateNewsAggregator/1.0 (+RSS reader)', accept: 'application/rss+xml, application/xml, text/xml, */*' };
+    if (prev && prev.url === url) {
+      if (prev.etag) headers['if-none-match'] = prev.etag;
+      if (prev.lastModified) headers['if-modified-since'] = prev.lastModified;
+    }
+    const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+    if (r.status === 304) return { items: [], notModified: true, error: null, url };
+    if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
     const xml = await r.text();
     const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, source))
       .filter(it => !isWire(it))
       .filter(it => !source.geo || inRegion(it));
-    return { items, error: items.length ? null : 'no items' };
+    return { items, error: items.length ? null : 'no items', url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
-    return { items: [], error: String(e && e.message || e).slice(0, 80) };
+    return { items: [], error: String(e && e.message || e).slice(0, 80), url };
   }
 }
 
-// Tries the main URL, then any altUrls, and keeps the first one that returns stories.
-async function loadSource(source) {
+// Tries the URL that worked last time first, then the main URL and any altUrls, and keeps the first
+// one that returns stories (or confirms nothing changed).
+async function loadSource(source, prev) {
+  const urls = [source.url].concat(source.altUrls || []);
+  if (prev && prev.url && urls.includes(prev.url)) urls.splice(urls.indexOf(prev.url), 1), urls.unshift(prev.url);
   let last = { items: [], error: 'no url' };
-  for (const url of [source.url].concat(source.altUrls || [])) {
-    last = await tryUrl(source, url);
-    if (last.items.length) break;
+  for (const url of urls) {
+    last = await tryUrl(source, url, prev);
+    if (last.items.length || last.notModified) break;
   }
-  return { source, items: last.items, error: last.error };
+  return { source, ...last };
 }
 
 function normKey(item) {
@@ -290,15 +298,107 @@ function logoFor(url) {
   try { return 'https://www.google.com/s2/favicons?sz=128&domain=' + new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
 }
 
+// ---------- storage (Upstash Redis) ----------
+// Each source keeps its own record (last good stories + validators + health), so one failed or rate-limited
+// run never makes a source's stories disappear. The merged page data is stored as one snapshot that
+// /api/news serves, so visitors never wait on the feeds.
+const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const stored = () => !!(URL_ && TOKEN);
+const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
+const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
+const KEEP_ITEMS = 80;                  // stories kept per source
+const FAST_IDS = new Set(['wfie', 'weht', 'owtimes', 'messinq', 'courier', 'gleaner', 'msgr', 'kfvs', 'wthi', 'wpsd', 'sunc', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
+
+async function redis(commands) {
+  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
+    method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' },
+    body: JSON.stringify(commands), signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok) throw new Error('store ' + r.status);
+  return r.json();
+}
+const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
+
+async function readSnapshot() {
+  if (!stored()) return null;
+  try { const out = await redis([['GET', SNAP_KEY]]); return parse(out[0] && out[0].result); } catch (e) { return null; }
+}
+
+// Folds a fetch result into the source's previous record. Failures keep the earlier stories.
+function mergeState(source, prev, res, now) {
+  prev = prev || { items: [] };
+  const state = { items: prev.items || [], url: prev.url || '', etag: prev.etag || '', lastModified: prev.lastModified || '', lastOk: prev.lastOk || null, fails: prev.fails || 0, error: null, lastTry: new Date(now).toISOString() };
+  if (res.notModified || res.items.length || res.error === 'no items') { // 'no items': the feed works but has nothing local right now
+    if (res.items.length) {
+      const fresh = new Set(res.items.map(i => i.link));
+      state.items = res.items.concat(state.items.filter(i => !fresh.has(i.link)));
+      state.etag = res.etag || ''; state.lastModified = res.lastModified || ''; state.url = res.url;
+    }
+    state.lastOk = new Date(now).toISOString(); state.fails = 0;
+  } else { state.fails += 1; state.error = res.error || 'failed'; }
+  // drop stories past their window (events stay until the day after they happen)
+  state.items = state.items.filter(it => {
+    const ts = it.published ? Date.parse(it.published) : null;
+    if (it.isEvent) return ts !== null && ts >= now - 864e5;
+    if (ts === null) return res.items.includes(it);
+    return ts >= now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
+  }).slice(0, KEEP_ITEMS);
+  return state;
+}
+
+function buildSnapshot(states, now) {
+  const results = SOURCES.map(src => ({ source: src, items: (states[src.id] && states[src.id].items) || [] }));
+  const items = combine(results, now);
+  const sources = SOURCES.map(src => {
+    const st = states[src.id] || { items: [] };
+    return { logo: logoFor(src.url), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, error: st.error || null, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
+  });
+  return { updatedAt: new Date(now).toISOString(), sources, items };
+}
+
+// Fetches sources (all of them, or just the fast tier), updates their records, and rebuilds the snapshot.
+// Without Redis nothing is saved: the result is just computed fresh, as before.
+async function refreshAll(opts) {
+  opts = opts || {};
+  const now = Date.now();
+  const targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
+  const persist = stored();
+  let prevStates = {};
+  if (persist) {
+    const out = await redis(SOURCES.map(s => ['GET', srcKey(s.id)]));
+    SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
+  }
+  const fetched = await Promise.all(targets.map(s => loadSource(s, prevStates[s.id])));
+  const states = Object.assign({}, prevStates);
+  const report = [];
+  for (const r of fetched) {
+    states[r.source.id] = mergeState(r.source, prevStates[r.source.id], r, now);
+    report.push({ id: r.source.id, result: r.notModified ? '304' : r.items.length ? 'ok ' + r.items.length : 'fail: ' + r.error });
+  }
+  // sources not fetched this round (fast tier) still need a record
+  SOURCES.forEach(s => { if (!states[s.id]) states[s.id] = { items: [], error: null, lastOk: null }; });
+  const snap = buildSnapshot(states, now);
+  if (persist) {
+    const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
+    cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
+    await redis(cmds);
+  }
+  return { snapshot: snap, report };
+}
+
 async function handler(req, res) {
-  const results = await Promise.all(SOURCES.map(loadSource));
-  const items = combine(results, Date.now());
-  const sources = results.map(r => ({
-    logo: logoFor(r.source.url), id: r.source.id, name: r.source.name, area: r.source.area || '', kind: r.source.kind || 'news', ok: !r.error, count: items.filter(i => i.sourceId === r.source.id).length, error: r.error,
-  }));
-  res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=900, max-age=300');
+  let snap = await readSnapshot();
+  if (!snap || Date.now() - Date.parse(snap.updatedAt) > SNAP_MAX_AGE) {
+    // No fresh snapshot (cron not set up yet, or it stopped): refresh now. A short lock keeps a burst of
+    // visitors from each re-fetching every feed.
+    let locked = false;
+    if (stored()) { try { const l = await redis([['SET', LOCK_KEY, '1', 'NX', 'EX', '90']]); locked = !(l[0] && l[0].result === 'OK'); } catch (e) { /* carry on */ } }
+    if (!locked || !snap) { try { snap = (await refreshAll({})).snapshot; } catch (e) { if (!snap) throw e; } }
+  }
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900, max-age=120');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(200).send(JSON.stringify({ updatedAt: new Date().toISOString(), sources, items }));
+  res.status(200).send(JSON.stringify(snap));
 }
 
 module.exports = handler;
@@ -307,3 +407,7 @@ module.exports.combine = combine;
 module.exports.inRegion = inRegion;
 module.exports.isWire = isWire;
 module.exports.parseIcal = parseIcal;
+module.exports.refreshAll = refreshAll;
+module.exports.SOURCES = SOURCES;
+module.exports.mergeState = mergeState;
+module.exports.stored = stored;

@@ -40,7 +40,7 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 /* top nav */
 .nav { position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--background) 88%, transparent); backdrop-filter:saturate(180%) blur(12px); -webkit-backdrop-filter:saturate(180%) blur(12px); border-bottom:1px solid var(--border); padding-top:env(safe-area-inset-top); }
 .nav-in { max-width:960px; margin:0 auto; padding:0 16px; height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.brand { font-size:15px; line-height:24px; font-weight:600; letter-spacing:-.01em; flex:none; }
+.brand { display:inline-flex; align-items:center; min-height:32px; color:var(--foreground); text-decoration:none; font-size:15px; line-height:24px; font-weight:600; letter-spacing:-.01em; flex:none; }
 .brand small { font:500 12px/16px var(--font-sans); color:var(--text-muted); letter-spacing:.01em; }
 .wx { position:relative; }
 .wx-btn { display:flex; align-items:center; gap:8px; min-height:32px; padding:0 10px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--background); font-weight:500; transition:background var(--duration-fast) var(--ease); }
@@ -299,7 +299,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 <body>
 <header class="nav">
   <div class="nav-in">
-    <div class="brand">Tristate</div>
+    <a class="brand" id="home" href="/" aria-label="Tristate home">Tristate</a>
     <div class="nav-q"><input class="q" id="q" type="search" placeholder="Search" aria-label="Search stories" autocomplete="off"></div>
     <div class="nav-r">
       <button class="icon-btn" id="refresh" type="button" aria-label="Refresh stories" title="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
@@ -670,6 +670,13 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
     });
   }
   var qEl = document.getElementById('q'), qTimer = null;
+  document.getElementById('home').addEventListener('click', function (ev) {
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
+    ev.preventDefault();
+    clearTimeout(qTimer); qEl.value = ''; state.q = ''; state.cat = 'all'; SN_DONE = '';
+    if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; });
+    resetPaging(); render(); window.scrollTo({ top: 0 });
+  });
   qEl.addEventListener('input', function () {
     clearTimeout(qTimer);
     qTimer = setTimeout(function () { state.q = qEl.value; if (state.cat === 'submit') state.cat = state.prevCat || 'all'; resetPaging(); render(); }, 150);

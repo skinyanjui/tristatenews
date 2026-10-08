@@ -1,5 +1,5 @@
 {
-  "note": "Edit this file to sell sponsor spots. A slot with a sponsor shows a small 'Sponsored' line; a slot set to null shows 'Your business here'. Slots: news, jobs, deals, events, classifieds, weather. Fields: name, text, url (https only).",
+  "note": "Edit this file to sell sponsor spots. A slot with a sponsor shows a small 'Sponsored' line; a slot set to null shows 'Your business here' on boards. Slots: news, jobs, deals, events, classifieds. Fields: name, text, url (https only). Optional Google AdSense for the news feed once approved: set adsense to {\"client\": \"ca-pub-1234567890\", \"slot\": \"1234567890\"}.",
   "slots": {
     "news": null,
     "jobs": null,
@@ -7,5 +7,6 @@
     "events": null,
     "classifieds": null,
     "weather": null
-  }
+  },
+  "adsense": null
 }

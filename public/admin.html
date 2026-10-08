@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tri-State News admin</title>
+<style>
+:root { --bg:#fff; --fg:#111; --muted:#666; --border:#e2e2e2; --card:#fafafa; --accent:#0070f3; color-scheme:light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0a0a0a; --fg:#ededed; --muted:#a1a1a1; --border:#2e2e2e; --card:#111; --accent:#3291ff; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/20px system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:900px; margin:0 auto; padding:24px 16px 64px; display:grid; gap:24px; }
+h1 { margin:0; font-size:24px; line-height:32px; }
+h2 { margin:0 0 8px; font-size:16px; line-height:24px; }
+p { margin:0; color:var(--muted); }
+form { display:flex; flex-wrap:wrap; gap:8px; }
+input { flex:1 1 240px; min-width:0; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
+button { min-height:44px; padding:0 16px; border:0; border-radius:6px; background:var(--fg); color:var(--bg); font:inherit; font-weight:500; cursor:pointer; }
+button.ghost { background:transparent; color:var(--fg); border:1px solid var(--border); }
+section { border:1px solid var(--border); border-radius:8px; padding:16px; background:var(--card); }
+.row { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+.item { border-top:1px solid var(--border); padding:12px 0; overflow-wrap:anywhere; }
+.item b { font-weight:600; }
+.item .m { color:var(--muted); font-size:12px; line-height:16px; }
+.err { color:#e5484d; }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tri-State News admin</h1>
+  <form id="key"><input id="k" type="password" placeholder="Admin key (LISTINGS_ADMIN_KEY)" aria-label="Admin key" autocomplete="off"><button type="submit">Load</button></form>
+  <p class="err" id="err" role="alert" hidden></p>
+  <div id="out" hidden>
+    <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV</button></div><div id="nl"></div></section>
+    <section><h2 id="adh">Advertising inquiries</h2><div id="ad"></div></section>
+    <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var key = '', emails = [];
+  function $(id) { return document.getElementById(id); }
+  function get(path) { return fetch(path, { headers: { 'x-admin-key': key }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'Wrong key, or that feature isn’t set up yet.' : 'Error ' + r.status); return r.json(); }); }
+  function line(parent, bold, meta, body) {
+    var d = document.createElement('div'); d.className = 'item';
+    var b = document.createElement('b'); b.textContent = bold; d.appendChild(b);
+    var m = document.createElement('div'); m.className = 'm'; m.textContent = meta; d.appendChild(m);
+    if (body) { var p = document.createElement('div'); p.style.whiteSpace = 'pre-wrap'; p.textContent = body; d.appendChild(p); }
+    parent.appendChild(d);
+  }
+  function empty(parent, t) { var p = document.createElement('p'); p.textContent = t; parent.appendChild(p); }
+  $('key').addEventListener('submit', function (e) {
+    e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
+    Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; })]).then(function (r) {
+      if (!r[0] && !r[1] && !r[2]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
+      $('out').hidden = false;
+      emails = r[0] ? r[0].emails.slice().sort() : [];
+      $('nlh').textContent = 'Newsletter subscribers (' + emails.length + ')'; $('nl').textContent = '';
+      if (emails.length) emails.forEach(function (x) { line($('nl'), x, ''); }); else empty($('nl'), r[0] ? 'No subscribers yet.' : 'Not available.');
+      var ads = r[1] ? r[1].items : []; $('adh').textContent = 'Advertising inquiries (' + ads.length + ')'; $('ad').textContent = '';
+      if (ads.length) ads.forEach(function (a) { line($('ad'), a.business + ' · ' + a.interest, a.name + ' · ' + a.email + (a.phone ? ' · ' + a.phone : '') + ' · ' + new Date(a.at).toLocaleString() + ' · ' + a.ref, a.message); }); else empty($('ad'), 'No inquiries yet.');
+      var tips = r[2] ? r[2].items : []; $('tph').textContent = 'News tips (' + tips.length + ')'; $('tp').textContent = '';
+      if (tips.length) tips.forEach(function (t) { line($('tp'), '[' + t.type + '] ' + t.headline, t.name + ' · ' + t.email + ' · ' + t.town + ' · ' + new Date(t.at).toLocaleString(), t.details); }); else empty($('tp'), 'No tips yet.');
+    });
+  });
+  $('csv').addEventListener('click', function () {
+    var blob = new Blob(['email\n' + emails.join('\n') + '\n'], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'subscribers.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+})();
+</script>
+</body>
+</html>

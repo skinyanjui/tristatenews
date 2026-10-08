@@ -115,6 +115,8 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .is-featured { position:relative; border-color:var(--amber) !important; background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
 .feat-badge { position:absolute; top:-10px; left:16px; z-index:2; display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:var(--radius-md); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
 .spon-wrap:empty { display:none; }
+.spon-ad { margin:0 0 12px; min-height:0; }
+.spon-ad ins { display:block; }
 .spon { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; width:100%; min-height:44px; padding:8px 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
 .spon:hover { background:var(--gray-100); }
 .spon-tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
@@ -523,6 +525,16 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
         return row;
       },
+      // Optional Google AdSense unit, used only when sponsors.json has an "adsense" entry and the news slot is open.
+      adsense: function (cfg) {
+        if (!/^ca-pub-\d+$/.test(cfg.client) || !/^\d+$/.test(cfg.slot)) return null;
+        var w = el('div', 'spon-ad'); w.setAttribute('aria-label', 'Advertisement');
+        var ins = el('ins', 'adsbygoogle'); ins.setAttribute('data-ad-client', cfg.client); ins.setAttribute('data-ad-slot', cfg.slot); ins.setAttribute('data-ad-format', 'auto'); ins.setAttribute('data-full-width-responsive', 'true');
+        w.appendChild(ins);
+        if (!document.getElementById('adsense-js')) { var sc = document.createElement('script'); sc.id = 'adsense-js'; sc.async = true; sc.crossOrigin = 'anonymous'; sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + cfg.client; document.head.appendChild(sc); }
+        setTimeout(function () { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} }, 0);
+        return w;
+      },
       badge: function (label) { return el('span', 'feat-badge', label); },
       // A sponsor line for a page section, or a "your business here" house ad when the slot is open.
       sponsor: function (slot, houseAd) {
@@ -532,6 +544,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
           a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
           return a;
         }
+        if (SPONSORS && SPONSORS.adsense && SPONSORS.adsense.client && SPONSORS.adsense.slot && slot === 'news') return UI.adsense(SPONSORS.adsense);
         if (!houseAd) return null;
         var h = el('button', 'spon spon-house'); h.type = 'button';
         h.appendChild(el('span', 'spon-tag', 'Sponsor')); h.appendChild(el('span', null, 'Your business here. Reach local readers.')); h.appendChild(el('b', null, 'Advertise'));

@@ -31,7 +31,10 @@
   --background:#fff; --background-subtle:#fafafa; --foreground:#171717;
   --gray-100:#f2f2f2; --gray-200:#ebebeb; --gray-300:#e0e0e0; --gray-400:#c9c9c9;
   --gray-500:#a8a8a8; --gray-600:#8f8f8f; --gray-700:#666; --gray-800:#444; --gray-900:#2e2e2e; --gray-1000:#171717;
-  --blue:#0070f3; --blue-subtle:#e6f0fd; --blue-text:#0050b3; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
+  --blue:#0070f3; --blue-subtle:#e6f0fd; --blue-text:#0050b3;
+  --brand:#0b6b86; --brand-fg:#fff; --brand-subtle:#e4f3f7;   /* Ohio River teal */
+  --c-news:#0b6b86; --c-safety:#c4262c; --c-institution:#5b4bd6; --c-events:#c2410c; --c-obits:#64748b; --c-jobs:#1d4ed8; --c-deals:#136f35; --c-classifieds:#a16207; --c-saved:#c4262c;
+  --h-music:#7b3fe4; --h-food:#c2410c; --h-family:#136f35; --h-sports:#1d4ed8; --h-arts:#be185d; --h-community:#0b6b86; --h-other:#64748b; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
   --border:var(--gray-300); --text-muted:var(--gray-700);
   --radius-sm:6px; --radius-md:6px; --radius-lg:6px; --radius-xl:6px;
   --shadow-md:0 4px 12px rgba(0,0,0,.08); --shadow-lg:0 12px 32px rgba(0,0,0,.12);
@@ -43,7 +46,10 @@
   --background:#0a0a0a; --background-subtle:#111; --foreground:#ededed;
   --gray-100:#1a1a1a; --gray-200:#1f1f1f; --gray-300:#2e2e2e; --gray-400:#454545;
   --gray-500:#878787; --gray-600:#a1a1a1; --gray-700:#b4b4b4; --gray-800:#d4d4d4; --gray-900:#e3e3e3; --gray-1000:#ededed;
-  --blue:#3291ff; --blue-subtle:#10233c; --blue-text:#6cb0ff; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
+  --blue:#3291ff; --blue-subtle:#10233c; --blue-text:#6cb0ff;
+  --brand:#4cc3dd; --brand-fg:#04222b; --brand-subtle:#0c2a33;
+  --c-news:#4cc3dd; --c-safety:#ff6369; --c-institution:#a79bff; --c-events:#ff9f6b; --c-obits:#a1aab8; --c-jobs:#6cb0ff; --c-deals:#5dc36f; --c-classifieds:#f7b955; --c-saved:#ff6369;
+  --h-music:#b99cff; --h-food:#ff9f6b; --h-family:#5dc36f; --h-sports:#6cb0ff; --h-arts:#ff7eb6; --h-community:#4cc3dd; --h-other:#a1aab8; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
   --shadow-md:0 4px 12px rgba(0,0,0,.5); --shadow-lg:0 12px 32px rgba(0,0,0,.6);
 }
 *,*::before,*::after { box-sizing:border-box; }
@@ -102,9 +108,9 @@ main:focus { outline:none; }
 /* banners: breaking news + weather */
 .banners { display:grid; gap:8px; margin-bottom:12px; }
 .banners:not(:has(.bn:not([hidden]))) { display:none; }
-.bn { display:flex; align-items:center; gap:12px; min-height:44px; padding:8px 12px 8px 16px; border:1px solid var(--border); border-left-width:4px; border-radius:var(--radius-lg); background:var(--background-subtle); min-width:0; }
+.bn { display:flex; align-items:center; gap:12px; min-height:44px; padding:8px 12px 8px 16px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--background-subtle); min-width:0; }
 .bn[hidden] { display:none; }
-.bn-break { border-left-color:var(--red); }
+.bn-break { border-color:var(--red); background:color-mix(in srgb, var(--red) 10%, var(--background)); }
 .bn .tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
 .bn-break .tag { color:var(--red); }
 .bn .tx { flex:1; min-width:0; }
@@ -440,7 +446,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .sn-list { margin:0; padding:0; list-style:none; display:grid; gap:8px; }
 .sn-list li { display:grid; grid-template-columns:20px 1fr; gap:8px; font-size:14px; line-height:20px; }
 .sn-list svg { width:16px; height:16px; margin-top:2px; stroke:var(--foreground); }
-.sn-alert { border-left:4px solid var(--red); border-radius:var(--radius-lg); background:var(--background-subtle); padding:12px 16px; font-size:14px; line-height:20px; }
+.sn-alert { border:1px solid var(--red); border-radius:var(--radius-lg); background:color-mix(in srgb, var(--red) 10%, var(--background)); padding:12px 16px; font-size:14px; line-height:20px; }
 .sn-ph { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 @media (max-width:479px) { .sn-ph { grid-template-columns:1fr; } }
 .sn-hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
@@ -472,6 +478,27 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+/* color: one brand (river teal) plus a hue per section; tints are mixed from the same tokens so dark mode follows */
+[data-sec="all"], [data-sec="news"] { --c:var(--c-news); } [data-sec="safety"] { --c:var(--c-safety); } [data-sec="institution"] { --c:var(--c-institution); }
+[data-sec="events"] { --c:var(--c-events); } [data-sec="obits"] { --c:var(--c-obits); } [data-sec="jobs"] { --c:var(--c-jobs); }
+[data-sec="deals"] { --c:var(--c-deals); } [data-sec="classifieds"] { --c:var(--c-classifieds); } [data-sec="saved"] { --c:var(--c-saved); }
+.brand { color:var(--brand); }
+:focus-visible { outline-color:var(--brand); }
+.tab { padding:0 8px; gap:6px; }
+.tab::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--c); flex:none; }
+.tab .n { margin-left:2px; }
+.ev-date { border-color:color-mix(in srgb, var(--c-events) 45%, var(--background)); }
+.tab[aria-selected="true"] { color:var(--foreground); border-bottom-color:var(--c); }
+.cl-go, .primary, .ev-go, .job-apply a { background:var(--brand); color:var(--brand-fg); }
+.cl-go:hover, .primary:hover, .ev-go:hover, .job-apply a:hover { background:color-mix(in srgb, var(--brand) 85%, var(--foreground)); }
+.card { border-color:color-mix(in srgb, var(--c, var(--c-news)) 45%, var(--background)); }
+.card:hover { border-color:var(--c, var(--c-news)); }
+.spon { background:var(--brand-subtle); border-color:color-mix(in srgb, var(--brand) 45%, var(--background)); }
+.pill-hue { background:color-mix(in srgb, var(--c) 14%, var(--background)); color:var(--c); border-color:transparent; }
+.deal-offer { color:var(--c-deals); }
+.job-pay { color:var(--c-jobs); }
+.cl-chip[aria-pressed="true"] { background:var(--brand); border-color:var(--brand); color:var(--brand-fg); }
+.card .src b { color:var(--foreground); }
 </style>
 </head>
 <body>
@@ -621,7 +648,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       },
       // A label pill. o: {label, icon (svg parts), tone: 'over'|'feat'|'red', dot}
       pill: function (o) {
-        var p = el('span', 'pill' + (o.tone ? ' pill-' + o.tone : ''));
+        var p = el('span', 'pill' + (o.tone ? ' pill-' + o.tone : '') + (o.hue ? ' pill-hue' : ''));
+        if (o.hue) p.style.setProperty('--c', 'var(--h-' + o.hue + ')');
         if (o.icon) p.appendChild(svg(o.icon));
         if (o.dot) p.appendChild(el('i'));
         p.appendChild(document.createTextNode(o.label));
@@ -987,7 +1015,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       if (c.id === 'obits') n += boards.obit.items.length;
       if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && c.id !== 'obits' && n === 0) return;
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id;
+      b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id; b.dataset.sec = c.id;
       b.appendChild(el('span', null, c.label));
       if (c.id !== 'classifieds') b.appendChild(el('span', 'n', String(n)));
       b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); });
@@ -1563,6 +1591,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     c.appendChild(body);
     return c;
   }
+  var EV_HUE = { 'Music': 'music', 'Food & drink': 'food', 'Family': 'family', 'Sports': 'sports', 'Arts': 'arts', 'Community': 'community' };
   var EV_ICON = {
     Music: [['path', { d: 'M9 18V5l12-2v13' }], ['circle', { cx: 6, cy: 18, r: 3 }], ['circle', { cx: 18, cy: 16, r: 3 }]],
     'Food & drink': [['path', { d: 'M3 2v7a3 3 0 0 0 3 3 3 3 0 0 0 3-3V2M6 2v20M19 2c-2.5 1.5-4 4-4 7s1.5 4.5 4 5V2zM19 14v8' }]],
@@ -1584,7 +1613,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var eim = el('img', 'ev-img'); eim.src = evSrc || artUri(it.category); eim.alt = ''; eim.loading = 'lazy'; eim.decoding = 'async'; if (it.image) eim.referrerPolicy = 'no-referrer';
     eim.addEventListener('error', function () { eim.src = artUri(it.category); });
     hero.appendChild(eim);
-    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, tone: 'over' });
+    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, tone: 'over', hue: EV_HUE[it.category] || 'other' });
     hero.appendChild(cp);
     if (it.feed && it.link) {
       var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
@@ -1640,7 +1669,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
     body.appendChild(h);
     var meta = el('div', 'ev-meta');
-    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other });
+    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, hue: EV_HUE[it.category] || 'other' });
     meta.appendChild(cp);
     var where = [it.place, it.town].filter(Boolean).join(' \u00B7 ');
     if (where) meta.appendChild(el('span', 'ev-where', where));
@@ -2277,6 +2306,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
   function makeCard(it, big) {
     var card = el('article', big ? 'card breaking' : 'card');
+    var kd = kindOf(it.sourceId); card.dataset.sec = kd === 'police' || kd === 'courts' ? 'safety' : kd === 'institution' ? 'institution' : 'news';
     var logo = logoMap[it.sourceId] || '';
     var a = el('a', it.image || logo ? '' : 'noimg');
     a.href = safeHref(it.link);

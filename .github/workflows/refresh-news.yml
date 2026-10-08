@@ -19,10 +19,10 @@ jobs:
     steps:
       - name: Call /api/refresh
         env:
-          SITE_URL: ${{ secrets.SITE_URL }}
+          SITE_URL: ${{ secrets.SITE_URL || 'https://tristatenewss.vercel.app' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SCHEDULE: ${{ github.event.schedule }}
         run: |
-          if [ -z "$SITE_URL" ] || [ -z "$CRON_SECRET" ]; then echo "Add SITE_URL and CRON_SECRET repository secrets."; exit 0; fi
+          if [ -z "$CRON_SECRET" ]; then echo "::error::Add the CRON_SECRET repository secret (same value as the CRON_SECRET variable in Vercel). Nothing is being refreshed until then."; exit 1; fi
           TIER=all; [ "$SCHEDULE" = "*/10 * * * *" ] && TIER=fast
           curl -fsS --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=$TIER"

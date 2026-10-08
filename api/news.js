@@ -241,7 +241,7 @@ function parseIcal(text, source) {
     const att = /^ATTACH[^:\r\n]*:(https?:\/\/\S+)/mi.exec(b);
     const image = att && /image\/|\.(jpe?g|png|webp|gif)(\?|$)/i.test(att[0]) ? safeUrl(att[1], true) : '';
     const loc = (unesc(get('LOCATION')).split(',').map(x => x.trim()).find(x => x.length > 3) || '').slice(0, 60);
-    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: loc });
+    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: loc, area: source.area });
   }
   return items;
 }
@@ -268,7 +268,7 @@ function parseVenue(html, source, base) {
     summary = summary.replace(/\b(Doors Open|Show Starts):\s*[\d:]+\s*[AP]M\s*/gi, '').trim();
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
     if (!link) continue;
-    items.push({ title: name, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: source.name });
+    items.push({ title: name, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: source.name, area: source.area });
   }
   // an image shared by several events is the venue's placeholder, not a photo of the event
   const uses = {};
@@ -307,7 +307,7 @@ async function fetchTicketmaster(source, url) {
       const city = [v.city && v.city.name, v.state && v.state.stateCode].filter(Boolean).join(', ');
       let summary = stripHtml(e.info || e.pleaseNote || '');
       if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
-      items.push({ title: stripHtml(e.name), link, summary, image: safeUrl(imgs[0] && imgs[0].url, true), published, source: source.name, sourceId: source.id, isEvent: true, fromPrice, venue: [v.name, city].filter(Boolean).join(' · ').slice(0, 70), cat: genre === 'Family' ? 'Family' : (TM_SEGMENT[seg] || 'Community') });
+      items.push({ title: stripHtml(e.name), link, summary, image: safeUrl(imgs[0] && imgs[0].url, true), published, source: source.name, sourceId: source.id, isEvent: true, fromPrice, area: (v.city && v.city.name) || source.area, venue: [v.name, city].filter(Boolean).join(' · ').slice(0, 70), cat: genre === 'Family' ? 'Family' : (TM_SEGMENT[seg] || 'Community') });
     }
     if (!d.page || page + 1 >= d.page.totalPages) break;
   }

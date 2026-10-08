@@ -185,6 +185,10 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inherit; border-radius:3px; padding:0 1px; }
 .sr { display:grid; gap:16px; }
 .sr[hidden] { display:none; }
+.ev-filters { display:grid; gap:8px; margin-bottom:8px; }
+@media (min-width:720px) { .ev-filters { grid-template-columns:1fr auto; align-items:center; } }
+.ev-town select { min-height:44px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; max-width:100%; }
+.cl-empty { display:grid; gap:12px; justify-items:start; }
 .sr-bar { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
 .sr-bar::-webkit-scrollbar { display:none; }
 .sr-sec { display:grid; gap:12px; }
@@ -746,7 +750,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
     ev.preventDefault();
     clearTimeout(qTimer); qEl.value = ''; state.q = ''; state.cat = 'all'; SN_DONE = '';
-    if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; });
+    if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; boards[k].when = 'any'; boards[k].town = ''; });
     resetPaging(); render(); window.scrollTo({ top: 0 });
   });
   qEl.addEventListener('input', function () {
@@ -913,6 +917,21 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       return { id: 'feed-' + i.id, title: i.title, date: date, time: (hm === '00:00' || hm < '06:00') ? '' : hm, place: i.venue || '', town: i.area || '', start: i.published, image: i.image || '', fromPrice: i.fromPrice || '', category: evCat(i), desc: (i.summary || '').replace(/\s*…\s*more:.*$/, '…'), contact: '', link: i.link, feed: true, source: i.source, logo: (state.sources.filter(function (x) { return x.id === i.sourceId; })[0] || {}).logo || '' };
     }).filter(function (x) { return x.date >= today; });
   }
+  function townOf(x) { return String(x.town || '').split(',')[0].trim(); }
+  function weekendRange() {
+    var dow = new Date(inDays(0) + 'T12:00:00').getDay();
+    if (dow === 6) return [inDays(0), inDays(1)];
+    if (dow === 0) return [inDays(0), inDays(0)];
+    if (dow === 5) return [inDays(0), inDays(2)];
+    return [inDays(5 - dow), inDays(7 - dow)];
+  }
+  function whenOk(x, when) {
+    if (!when || when === 'any') return true;
+    if (when === 'today') return x.date === inDays(0);
+    if (when === 'week') return x.date >= inDays(0) && x.date <= inDays(6);
+    if (when === 'weekend') { var r = weekendRange(); return x.date >= r[0] && x.date <= r[1]; }
+    return true;
+  }
   function shownItems(b, kind, ignoreQ) {
     var real = b.items.slice();
     if (kind === 'event') real = real.concat(feedEvents());
@@ -920,6 +939,10 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var all = real.concat(b.samples.slice(0, need));
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
+    if (kind === 'event' && !ignoreQ) {
+      if (b.when && b.when !== 'any') all = all.filter(function (x) { return whenOk(x, b.when); });
+      if (b.town) all = all.filter(function (x) { return townOf(x) === b.town; });
+    }
     var q = ignoreQ ? '' : state.q.trim().toLowerCase();
     if (q && kind !== 'item') {
       var words = q.split(/\s+/);
@@ -1317,6 +1340,29 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     });
     return row;
   }
+  function eventFilters(b) {
+    var bar = el('div', 'ev-filters');
+    var row = el('div', 'cl-chips'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'When');
+    [['any', 'Any date'], ['today', 'Today'], ['weekend', 'This weekend'], ['week', 'Next 7 days']].forEach(function (w) {
+      var on = (b.when || 'any') === w[0];
+      var x = el('button', 'cl-chip', w[1]); x.type = 'button'; x.setAttribute('aria-pressed', String(on));
+      x.addEventListener('click', function () { b.when = w[0]; drawBoard('event'); });
+      row.appendChild(x);
+    });
+    bar.appendChild(row);
+    var counts = {};
+    b.items.concat(feedEvents()).forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
+    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
+    if (towns.length > 1) {
+      var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', 'Town'));
+      var sel = el('select'); sel.setAttribute('aria-label', 'Town');
+      var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
+      towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () { b.town = sel.value; drawBoard('event'); });
+      lab.appendChild(sel); bar.appendChild(lab);
+    }
+    return bar;
+  }
   function drawBody(kind, title, postLabel) {
     var b = boards[kind], root = b.el;
     root.textContent = '';
@@ -1328,10 +1374,16 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     }
     root.appendChild(bar);
     if (b.form) root.appendChild(buildForm(kind, b));
+    if (kind === 'event') root.appendChild(eventFilters(b));
     root.appendChild(chips(b, kind));
     var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : 'cl-list'), items = shownItems(b, kind);
     items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
-    if (!items.length) list.appendChild(el('p', 'cl-empty', state.q.trim() ? 'Nothing matches your search.' : 'Nothing in this category yet.'));
+    if (!items.length) {
+      var emp = el('div', 'cl-empty');
+      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : 'Nothing in this category yet.'));
+      if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { var cf = el('button', 'primary', 'Clear filters'); cf.type = 'button'; cf.addEventListener('click', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); }); emp.appendChild(cf); }
+      list.appendChild(emp);
+    }
     root.appendChild(list);
     if (items.some(function (x) { return x.sample; })) root.appendChild(el('p', 'cl-note', 'Sample posts show how this page looks. They go away as real ones come in.'));
     return root;

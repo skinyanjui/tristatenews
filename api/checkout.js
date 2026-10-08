@@ -10,7 +10,6 @@ const PRICES = {
   job: { cents: 2900, days: 30, label: 'Featured job' },
   deal: { cents: 1900, days: 14, label: 'Featured deal' },
   event: { cents: 1500, days: 7, label: 'Featured event' },
-  obit: { cents: 3900, days: 14, label: 'Featured tribute' },
   item: { cents: 500, days: 7, label: 'Featured listing' }
 };
 const ID_RE = /^[a-z0-9]{6,20}$/;

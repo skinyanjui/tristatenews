@@ -95,14 +95,14 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 /* weather alerts */
 .alerts { display:grid; gap:8px; margin-bottom:16px; }
 .alerts:empty { display:none; }
-.alert { border:1px solid var(--border); border-left-width:4px; border-radius:var(--radius-lg); background:var(--background-subtle); }
-.alert.sev-severe { border-left-color:var(--red); }
-.alert.sev-mod { border-left-color:var(--amber); }
-.alert.sev-minor { border-left-color:var(--blue); }
+.alert { --sev:var(--blue); border:1px solid var(--sev); border-radius:var(--radius-lg); background:color-mix(in srgb, var(--sev) 16%, var(--background)); color:var(--foreground); }
+.alert.sev-severe { --sev:var(--red); }
+.alert.sev-mod { --sev:var(--amber); }
+.alert.sev-minor { --sev:var(--blue); }
 .alert summary { list-style:none; display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:44px; padding:8px 16px; cursor:pointer; font-weight:500; }
 .alert summary::-webkit-details-marker { display:none; }
-.alert summary span { color:var(--text-muted); font-weight:400; font-size:12px; line-height:16px; text-align:right; }
-.alert .ab { padding:0 16px 12px; color:var(--text-muted); }
+.alert summary span { color:var(--foreground); opacity:.75; font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .ab { padding:0 16px 12px; color:var(--foreground); }
 .alert .ab p { margin:0 0 8px; }
 
 /* page */
@@ -792,7 +792,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       if (p.headline) body.appendChild(el('p', null, p.headline));
       if (p.areaDesc) body.appendChild(el('p', null, p.areaDesc));
       var by = el('p', null, 'Source: National Weather Service' + (p.senderName ? ' · ' + p.senderName : '')); body.appendChild(by);
-      var a = el('a', null, 'Full alert and forecast at weather.gov'); a.href = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'var(--blue)';
+      var a = el('a', null, 'Full alert and forecast at weather.gov'); a.href = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'inherit'; a.style.textDecoration = 'underline';
       body.appendChild(a);
       d.appendChild(body);
       alertsEl.appendChild(d);

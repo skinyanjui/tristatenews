@@ -1,8 +1,8 @@
-// Community board: classifieds (kind 'item'), local deals/coupons (kind 'deal') and events (kind 'event').
-// Items and deals expire after 30 days (deals also on their end date); events drop off after their date.
+// Community board: classifieds (kind 'item'), local deals/coupons (kind 'deal'), events (kind 'event') and jobs (kind 'job').
+// Items and deals expire after 30 days (deals also on their end date); jobs after 45 days; events drop off after their date.
 // Stored in Upstash Redis (same variables as api/react.js). Without it the page shows only links.
 //   GET    /api/listings?img=<id>             -> the listing's photo (JPEG)
-//   GET    /api/listings?kind=item|deal|event        -> { configured, items: [...] }   newest first
+//   GET    /api/listings?kind=item|deal|event|job    -> { configured, items: [...] }   newest first
 //   POST   /api/listings  {title,price,town,desc,contact,uid}  -> { ok, item }
 //   POST   /api/listings  {action:'report', id, uid}           -> hides a listing after 3 reports
 //   DELETE /api/listings?id=...&uid=...                        -> the poster removes their own listing
@@ -10,11 +10,11 @@
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
-const DAYS = 30, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
+const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
-const indexFor = kind => kind === 'deal' ? 'tsn:dl:index' : kind === 'event' ? 'tsn:ev:index' : 'tsn:ls:index';
-const kindOf = v => v === 'deal' ? 'deal' : v === 'event' ? 'event' : 'item';
+const indexFor = kind => kind === 'deal' ? 'tsn:dl:index' : kind === 'event' ? 'tsn:ev:index' : kind === 'job' ? 'tsn:jb:index' : 'tsn:ls:index';
+const kindOf = v => v === 'deal' ? 'deal' : v === 'event' ? 'event' : v === 'job' ? 'job' : 'item';
 const todayChi = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
 const rec = id => 'tsn:ls:' + id;
 const imgKey = id => 'tsn:ls:img:' + id;
@@ -40,7 +40,8 @@ async function pipeline(commands) {
   return r.json();
 }
 
-const CATS = { item: ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'], deal: ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'], event: ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'] };
+const CATS = { item: ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'], deal: ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'], event: ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'], job: ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'] };
+const JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
 const CONDS = ['New', 'Like new', 'Good', 'Fair'];
 const PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -53,6 +54,14 @@ function validate(b, kind) {
   if (title.length < 3) return { error: kind === 'deal' ? 'Describe the offer.' : kind === 'event' ? 'Add an event name.' : 'Add a title (at least 3 characters).', field: 'title' };
   if (!town) return { error: 'Choose a town.', field: 'town' };
   if (hasLink(title + ' ' + desc) || /https?:\/\/|www\./i.test(contact)) return { error: 'Links aren’t allowed.', field: 'title' };
+  if (kind === 'job') {
+    const employer = clean(b.employer || b.business, 50), pay = clean(b.pay, 40);
+    if (employer.length < 2) return { error: 'Add the employer name.', field: 'employer' };
+    if (!JOB_TYPES.includes(b.jobType)) return { error: 'Choose full-time, part-time, seasonal or contract.', field: 'jobType' };
+    if (hasLink(pay) || (pay && !/\d|negotiable|competitive|commission|tips?/i.test(pay))) return { error: 'Pay should look like $18-22/hr or $55,000/yr.', field: 'pay' };
+    if (!PHONE_RE.test(contact) && !EMAIL_RE.test(contact)) return { error: 'Add a phone number like 812-555-0142 or an email address for applicants.', field: 'contact' };
+    return { title, business: employer, town, desc, contact, category, jobType: b.jobType, pay };
+  }
   if (kind === 'event') {
     const date = clean(b.date, 10), time = clean(b.time, 5), place = clean(b.place, 60);
     const t = Date.parse(date + 'T12:00:00Z');
@@ -105,7 +114,7 @@ async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      const cutoff = kind === 'event' ? now - 2 * 864e5 : now - DAYS * 864e5;
+      const cutoff = kind === 'event' ? now - 2 * 864e5 : now - (kind === 'job' ? JOB_DAYS : DAYS) * 864e5;
       const idx = await pipeline([['ZREMRANGEBYSCORE', INDEX, '-inf', String(cutoff)], [kind === 'event' ? 'ZRANGE' : 'ZREVRANGE', INDEX, '0', String(MAX_SHOWN - 1)]]);
       const ids = (idx[1] && idx[1].result || []).filter(x => ID_RE.test(x));
       if (!ids.length) return send(200, { configured: true, items: [] });
@@ -113,7 +122,7 @@ async function handler(req, res) {
       const items = [];
       got.forEach((g, i) => {
         if (!g || !g.result) return;
-        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
+        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
       });
       const today = todayChi();
       return send(200, { configured: true, items: items.filter(x => (!x.ends || x.ends >= today) && (!x.date || x.date >= today)) });
@@ -123,7 +132,7 @@ async function handler(req, res) {
       if (!ID_RE.test(String(body.id)) || !UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
       const rip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || body.uid;
       const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, rip], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
-      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id]]);
+      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id]]);
       return send(200, { ok: true });
     }
 
@@ -135,13 +144,13 @@ async function handler(req, res) {
       const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400', 'NX'], ['INCR', 'tsn:ls:rlip:' + ip], ['EXPIRE', 'tsn:ls:rlip:' + ip, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_UID || (Number(rl[2] && rl[2].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve posted a few items today. Try again tomorrow.' });
       const id = now.toString(36) + Math.random().toString(36).slice(2, 8);
-      const photo = goodImage(body.img, MAX_PHOTO), logo = kind === 'deal' ? goodImage(body.logo, MAX_LOGO) : '';
+      const photo = goodImage(body.img, MAX_PHOTO), logo = kind === 'deal' || kind === 'job' ? goodImage(body.logo, MAX_LOGO) : '';
       const item = { ...v, at: new Date(now).toISOString(), uid: body.uid, img: !!photo, logo };
       const score = kind === 'event' ? Date.parse(v.date + 'T12:00:00Z') : now;
-      const ttl = kind === 'event' ? Math.min(400 * 86400, Math.max(86400, Math.ceil((score + 2 * 864e5 - now) / 1000))) : v.ends ? Math.min(DAYS * 86400, Math.max(86400, Math.ceil((Date.parse(v.ends + 'T23:59:59Z') + 864e5 - now) / 1000))) : DAYS * 86400;
+      const ttl = kind === 'event' ? Math.min(400 * 86400, Math.max(86400, Math.ceil((score + 2 * 864e5 - now) / 1000))) : kind === 'job' ? JOB_DAYS * 86400 : v.ends ? Math.min(DAYS * 86400, Math.max(86400, Math.ceil((Date.parse(v.ends + 'T23:59:59Z') + 864e5 - now) / 1000))) : DAYS * 86400;
       const cmds = photo ? [['SET', imgKey(id), photo, 'EX', String(ttl)]] : [];
       await pipeline(cmds.concat([['SET', rec(id), JSON.stringify(item), 'EX', String(ttl)], ['ZADD', INDEX, String(score), id]]));
-      return send(200, { ok: true, item: { id, title: v.title, price: v.price, town: v.town, desc: v.desc, contact: v.contact, at: item.at, code: v.code, ends: v.ends, category: v.category, condition: v.condition, business: v.business, date: v.date, time: v.time, place: v.place, img: !!photo, logo } });
+      return send(200, { ok: true, item: { id, title: v.title, price: v.price, town: v.town, desc: v.desc, contact: v.contact, at: item.at, code: v.code, ends: v.ends, category: v.category, condition: v.condition, business: v.business, date: v.date, time: v.time, place: v.place, jobType: v.jobType, pay: v.pay, img: !!photo, logo } });
     }
 
     if (req.method === 'DELETE') {
@@ -154,7 +163,7 @@ async function handler(req, res) {
         let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
         if (!o || o.uid !== uid) return send(403, { error: 'not yours' });
       }
-      await pipeline([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id]]);
+      await pipeline([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id]]);
       return send(200, { ok: true });
     }
     return send(405, { error: 'method' });

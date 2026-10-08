@@ -93,3 +93,7 @@ With neither configured the form says submissions aren't open yet. Edit the "Goo
 - **Breaking banner**: shows only stories the outlet itself labels breaking (see `BREAKING_RE`), for 12 hours, with the outlet name and a link.
 
 - **Ticketmaster events** (concerts, sports, theater within 75 miles of Evansville): set `TICKETMASTER_API_KEY` (free key from developer.ticketmaster.com) in the Vercel environment variables and redeploy. Without it the source is skipped. The key is read on the server only and never stored with the feed data or sent to the browser.
+
+## Jobs
+
+The Jobs tab is a community board like Classifieds and Deals: employers post openings (title, employer, industry, town, full-time/part-time/seasonal/contract, pay, how to apply by phone or email, optional logo) through `POST /api/listings` with `kind: "job"`. Jobs expire after 45 days, can be reported (hidden at 3 reports) or removed by their poster, and are searchable with the rest of the site. The tab also links to Indeed, LinkedIn, the Indiana, Kentucky and Illinois state job sites and USAJOBS. Until real postings arrive it shows clearly labeled sample jobs. Public job feeds for the area were checked and none were available without an API key or login.

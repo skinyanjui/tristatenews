@@ -92,6 +92,21 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .bn .x:hover { background:var(--gray-100); }
 @media (max-width:479px) { .bn { align-items:flex-start; flex-wrap:wrap; } .bn .tag { width:100%; } }
 
+/* jobs */
+.job { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; gap:8px; align-content:start; min-width:0; background:var(--background); }
+.job-head { display:flex; align-items:center; gap:8px; min-height:28px; flex-wrap:wrap; }
+.job-co { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); min-width:0; overflow-wrap:anywhere; }
+.job-type { margin-left:auto; flex:none; display:inline-flex; align-items:center; min-height:24px; padding:0 8px; border-radius:var(--radius-md); font-size:12px; line-height:16px; font-weight:600; background:var(--blue-subtle); color:var(--blue); }
+.job-title { margin:0; font-size:16px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
+.job-pay { font-family:var(--font-mono); font-weight:500; }
+.job-apply { display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; font-size:12px; line-height:16px; color:var(--text-muted); }
+.job-apply a { display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:14px; font-weight:500; overflow-wrap:anywhere; }
+.job-apply a:hover { opacity:.88; }
+.job-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.job-grid { grid-template-columns:1fr; }
+@media (min-width:720px) { .job-grid { grid-template-columns:1fr 1fr; } }
+.job-links { display:flex; flex-wrap:wrap; gap:4px 16px; }
+
 /* weather alerts */
 .alerts { display:grid; gap:8px; margin-bottom:16px; }
 .alerts:empty { display:none; }
@@ -401,6 +416,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   <section id="cl" class="cl" hidden aria-label="Classifieds"></section>
   <section id="dl" class="cl" hidden aria-label="Deals"></section>
   <section id="ev" class="cl" hidden aria-label="Events"></section>
+  <section id="jb" class="cl" hidden aria-label="Jobs"></section>
   <section id="sn" class="cl sn" hidden aria-label="Submit news"></section>
   <section id="sr" class="sr" hidden aria-label="Search results"></section>
   <div id="list" class="list" aria-busy="true"></div>
@@ -491,6 +507,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { id: 'institution', label: 'Institutions' },
     { id: 'events', label: 'Events' },
     { id: 'obits', label: 'Obituaries' },
+    { id: 'jobs', label: 'Jobs' },
     { id: 'deals', label: 'Deals' },
     { id: 'classifieds', label: 'Classifieds' },
     { id: 'saved', label: 'Liked' }
@@ -498,7 +515,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function inCat(it, cat) {
     var k = kindOf(it.sourceId);
     if (cat === 'deals') return false;
-    if (cat === 'events') return false;
+    if (cat === 'events' || cat === 'jobs') return false;
     if (cat === 'all') return k !== 'events' && k !== 'obits';
     if (cat === 'safety') return k === 'police' || k === 'courts';
     return k === cat;
@@ -741,7 +758,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       var n = c.id === 'saved' ? state.saved.length : state.items.filter(function (i) { return inCat(i, c.id); }).length;
       if (c.id === 'deals') n = shownItems(boards.deal, 'deal', true).length;
       if (c.id === 'events') n = shownItems(boards.event, 'event', true).length;
-      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && n === 0) return;
+      if (c.id === 'jobs') n = shownItems(boards.job, 'job', true).length;
+      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && n === 0) return;
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(state.cat === c.id));
       b.appendChild(el('span', null, c.label));
@@ -755,7 +773,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
     ev.preventDefault();
     clearTimeout(qTimer); qEl.value = ''; state.q = ''; state.cat = 'all'; SN_DONE = '';
-    if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; boards[k].when = 'any'; boards[k].town = ''; });
+    if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; boards[k].when = 'any'; boards[k].town = ''; boards[k].jt = ''; });
     resetPaging(); render(); window.scrollTo({ top: 0 });
   });
   qEl.addEventListener('input', function () {
@@ -898,11 +916,25 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { title: 'Trunk-or-Treat', date: inDays(19), time: '17:30', place: 'Sample Church Lot', town: 'Madisonville, KY', category: 'Family', desc: 'Costumes, candy and games for kids.' }
   ].map(function (x, k) { x.id = 'sample-e' + k; x.sample = true; x.contact = ''; x.at = ago(0); return x; });
 
+  var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
+  var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
+  var SAMPLE_JOBS = [
+    { title: 'Line cook', business: 'Sample Diner', town: 'Evansville, IN', category: 'Retail & food service', jobType: 'Full-time', pay: '$16-19/hr', desc: 'Breakfast and lunch shifts. Experience helps, we will train the right person.' },
+    { title: 'Certified nursing assistant', business: 'Sample Care Center', town: 'Henderson, KY', category: 'Healthcare', jobType: 'Full-time', pay: '$18-22/hr', desc: 'Day and night shifts, sign-on bonus, paid training.' },
+    { title: 'HVAC service technician', business: 'Sample Heating & Air', town: 'Newburgh, IN', category: 'Trades & construction', jobType: 'Full-time', pay: '$55,000-75,000/yr', desc: 'Residential service calls. Truck and tools provided.' },
+    { title: 'Warehouse associate', business: 'Sample Distribution', town: 'Owensboro, KY', category: 'Warehouse & driving', jobType: 'Full-time', pay: '$17/hr', desc: 'Forklift a plus. Weekly pay, overtime available.' },
+    { title: 'Seasonal retail associate', business: 'Sample Hardware', town: 'Jasper, IN', category: 'Retail & food service', jobType: 'Seasonal', pay: '$14/hr', desc: 'October through January. Flexible hours.' },
+    { title: 'Front office assistant', business: 'Sample Dental', town: 'Mt. Vernon, IN', category: 'Office & admin', jobType: 'Part-time', pay: '$15-17/hr', desc: 'Scheduling, phones and check-in. Mornings.' },
+    { title: 'Substitute teacher aide', business: 'Sample School District', town: 'Carbondale, IL', category: 'Education', jobType: 'Part-time', pay: '$13/hr', desc: 'Help in classrooms on days teachers are out.' },
+    { title: 'Delivery driver', business: 'Sample Freight', town: 'Madisonville, KY', category: 'Warehouse & driving', jobType: 'Contract', pay: '$20-25/hr', desc: 'Box truck, no CDL needed. Regional routes.' }
+  ].map(function (x, k) { x.id = 'sample-j' + k; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
+
   var clEl = document.getElementById('cl');
   var boards = {
     item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, samples: SAMPLE_ITEMS, el: clEl },
     deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, samples: SAMPLE_DEALS, el: document.getElementById('dl') },
-    event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, samples: SAMPLE_EVENTS, el: document.getElementById('ev') }
+    event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, samples: SAMPLE_EVENTS, el: document.getElementById('ev') },
+    job: { items: [], loaded: false, configured: null, form: false, filter: '', jt: '', town: '', mine: [], key: 'tsn.mineJobs', cats: CATS_JOB, samples: SAMPLE_JOBS, el: document.getElementById('jb') }
   };
   Object.keys(boards).forEach(function (k) { try { boards[k].mine = JSON.parse(localStorage.getItem(boards[k].key) || '[]'); } catch (e) {} });
   function saveMine(b) { try { localStorage.setItem(b.key, JSON.stringify(b.mine.slice(-50))); } catch (e) {} }
@@ -952,21 +984,26 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (kind === 'event') real = real.concat(feedEvents());
     var need = Math.max(0, 8 - real.length);
     var all = real.concat(b.samples.slice(0, need));
+    if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
     if (kind === 'event' && !ignoreQ) {
       if (b.when && b.when !== 'any') all = all.filter(function (x) { return whenOk(x, b.when); });
       if (b.town) all = all.filter(function (x) { return townOf(x) === b.town; });
     }
+    if (kind === 'job' && !ignoreQ) {
+      if (b.jt) all = all.filter(function (x) { return x.jobType === b.jt; });
+      if (b.town) all = all.filter(function (x) { return townOf(x) === b.town; });
+    }
     var q = ignoreQ ? '' : state.q.trim().toLowerCase();
     if (q && kind !== 'item') {
       var words = q.split(/\s+/);
-      all = all.filter(function (x) { var hay = [x.title, x.business, x.desc, x.town, x.place, x.category].join(' ').toLowerCase(); return words.every(function (w) { return hay.indexOf(w) >= 0; }); });
+      all = all.filter(function (x) { var hay = [x.title, x.business, x.desc, x.town, x.place, x.category, x.jobType, x.pay].join(' ').toLowerCase(); return words.every(function (w) { return hay.indexOf(w) >= 0; }); });
     }
     return all;
   }
-  var RENDER = { item: function () { renderClassifieds(); }, deal: function () { renderDeals(); }, event: function () { renderEvents(); } };
-  var TABOF = { item: 'classifieds', deal: 'deals', event: 'events' };
+  var RENDER = { item: function () { renderClassifieds(); }, deal: function () { renderDeals(); }, event: function () { renderEvents(); }, job: function () { renderJobs(); } };
+  var TABOF = { item: 'classifieds', deal: 'deals', event: 'events', job: 'jobs' };
   function drawBoard(kind) { if (state.cat === TABOF[kind]) RENDER[kind](); }
 
   /* images: category art for posts without a photo, initials avatars, and client-side photo resizing */
@@ -1093,18 +1130,19 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
   function fmtTime(hm) { if (!hm) return ''; var h = +hm.slice(0, 2), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
   function buildForm(kind, b) {
-    var isDeal = kind === 'deal', isEv = kind === 'event';
-    var noun = isDeal ? 'deal' : isEv ? 'event' : 'item';
+    var isDeal = kind === 'deal', isEv = kind === 'event', isJob = kind === 'job';
+    var noun = isDeal ? 'deal' : isEv ? 'event' : isJob ? 'job' : 'item';
     var f = el('form', 'cl-form'); f.noValidate = true;
     var F = {}, els = {};
-    els.title = input('text', 'title', 80, isDeal ? '2-for-1 burgers on Tuesdays' : isEv ? 'Fall Harvest Market' : 'What are you selling?');
+    els.title = input('text', 'title', 80, isJob ? 'Line cook, CNA, delivery driver' : isDeal ? '2-for-1 burgers on Tuesdays' : isEv ? 'Fall Harvest Market' : 'What are you selling?');
     els.category = select('category', b.cats, 'Choose a category');
     els.town = townSelect();
     els.desc = el('textarea'); els.desc.name = 'desc'; els.desc.id = 'f-desc' + (++uidSeq); els.desc.maxLength = 300; els.desc.rows = 3;
-    els.desc.placeholder = isDeal ? 'Details, limits, hours' : isEv ? 'What to expect, cost, parking' : 'Size, age, pickup details';
-    els.contact = input('text', 'contact', 80, isDeal ? 'Address or phone' : isEv ? 'Phone or email' : '812-555-0142 or name@email.com');
+    els.desc.placeholder = isJob ? 'Duties, schedule, requirements' : isDeal ? 'Details, limits, hours' : isEv ? 'What to expect, cost, parking' : 'Size, age, pickup details';
+    els.contact = input('text', 'contact', 80, isJob ? '812-555-0142 or hiring@company.com' : isDeal ? 'Address or phone' : isEv ? 'Phone or email' : '812-555-0142 or name@email.com');
     if (isDeal) { els.business = input('text', 'business', 50, 'Joe’s Diner'); F.business = field('Business', els.business, { req: true }); }
-    F.title = field(isDeal ? 'Offer' : isEv ? 'Event name' : 'Title', els.title, { req: true });
+    if (isJob) { els.employer = input('text', 'employer', 50, 'Joe’s Diner'); F.employer = field('Employer', els.employer, { req: true }); }
+    F.title = field(isJob ? 'Job title' : isDeal ? 'Offer' : isEv ? 'Event name' : 'Title', els.title, { req: true });
     F.category = field('Category', els.category, { req: true });
     F.town = field('Town', els.town, { req: true });
     if (isDeal) {
@@ -1115,6 +1153,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       els.date = input('date', 'date', 10); els.date.min = inDays(0);
       els.time = input('time', 'time', 5); els.place = input('text', 'place', 60, 'Garvin Park, VFW Hall…');
       F.date = field('Date', els.date, { req: true }); F.time = field('Start time', els.time); F.place = field('Where', els.place);
+    } else if (isJob) {
+      els.jobType = segmented('jobType', JOB_TYPES); F.jobType = field('Type', els.jobType, { req: true });
+      els.pay = input('text', 'pay', 40, '$18-22/hr'); F.pay = field('Pay', els.pay, { hint: 'Hourly or yearly. Leave blank if it depends.' });
     } else {
       els.price = input('text', 'price', 12, '50'); els.price.inputMode = 'decimal';
       var pw = el('div', 'cl-price-in'); pw.appendChild(el('span', null, '$')); pw.appendChild(els.price);
@@ -1127,29 +1168,34 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     }
     els.photo = photoPicker(isDeal ? 'Add a photo of the offer' : isEv ? 'Add an event photo' : 'Add a photo', { edge: 800, cap: 190000 });
     F.photo = field('Photo', els.photo);
-    if (isDeal) { els.logo = photoPicker('Add your logo', { edge: 96, square: true, cap: 14000 }); F.logo = field('Business logo', els.logo, { hint: 'Shown next to your business name.' }); }
-    F.desc = field('Details', els.desc); F.desc.appendChild(counter(els.desc, 300));
-    F.contact = field(isDeal ? 'Where to find it' : isEv ? 'Organizer contact' : 'Contact', els.contact, { req: !isEv, hint: isEv ? 'Optional. Shown publicly.' : isDeal ? 'Shown publicly' : 'Phone or email. Shown publicly so buyers can reach you.' });
+    if (isDeal || isJob) { els.logo = photoPicker('Add your logo', { edge: 96, square: true, cap: 14000 }); F.logo = field(isJob ? 'Employer logo' : 'Business logo', els.logo, { hint: 'Shown next to the ' + (isJob ? 'employer' : 'business') + ' name.' }); }
+    F.desc = field(isJob ? 'About the job' : 'Details', els.desc); F.desc.appendChild(counter(els.desc, 300));
+    F.contact = field(isJob ? 'How to apply' : isDeal ? 'Where to find it' : isEv ? 'Organizer contact' : 'Contact', els.contact, { req: !isEv, hint: isJob ? 'Phone number or email. Shown publicly, no links.' : isEv ? 'Optional. Shown publicly.' : isDeal ? 'Shown publicly' : 'Phone or email. Shown publicly so buyers can reach you.' });
     function two(a, c) { var r = el('div', 'cl-two'); r.appendChild(F[a]); r.appendChild(F[c]); f.appendChild(r); }
     if (isDeal) { f.appendChild(F.business); f.appendChild(F.title); two('category', 'town'); two('code', 'ends'); }
+    else if (isJob) { f.appendChild(F.employer); f.appendChild(F.title); two('category', 'town'); f.appendChild(F.jobType); f.appendChild(F.pay); }
     else if (isEv) { f.appendChild(F.title); two('category', 'town'); two('date', 'time'); f.appendChild(F.place); }
     else { f.appendChild(F.title); two('category', 'town'); f.appendChild(F.price); f.appendChild(F.condition); }
-    f.appendChild(F.photo); if (isDeal) f.appendChild(F.logo);
+    if (!isJob) f.appendChild(F.photo); if (isDeal || isJob) f.appendChild(F.logo);
     f.appendChild(F.desc); f.appendChild(F.contact);
     var top = el('div', 'cl-err'); top.setAttribute('role', 'alert');
     var label = 'Post ' + noun;
     var go = el('button', 'cl-go cl-wide', label); go.type = 'submit';
     f.appendChild(top); f.appendChild(go);
-    f.appendChild(el('p', 'cl-note', 'No links. ' + (isDeal ? 'Deals come down on their end date or after 30 days.' : isEv ? 'Events come down after they happen.' : 'Listings expire after 30 days.') + ' Anyone can report a post.'));
-    var order = isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact'] : ['title', 'category', 'town', 'price', 'contact'];
+    f.appendChild(el('p', 'cl-note', 'No links. ' + (isJob ? 'Jobs come down after 45 days. Post only real openings.' : isDeal ? 'Deals come down on their end date or after 30 days.' : isEv ? 'Events come down after they happen.' : 'Listings expire after 30 days.') + ' Anyone can report a post.'));
+    var order = isJob ? ['employer', 'title', 'category', 'town', 'jobType', 'pay', 'contact'] : isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact'] : ['title', 'category', 'town', 'price', 'contact'];
     function clientCheck() {
       var e = {};
       if (isDeal && els.business.value.trim().length < 2) e.business = 'Add the business name.';
+      if (isJob && els.employer.value.trim().length < 2) e.employer = 'Add the employer name.';
+      if (isJob && !els.jobType.value) e.jobType = 'Choose full-time, part-time, seasonal or contract.';
+      if (isJob && els.pay.value.trim() && !/\d|negotiable|competitive|commission|tips?/i.test(els.pay.value)) e.pay = 'Pay should look like $18-22/hr or $55,000/yr.';
       if (els.title.value.trim().length < 3) e.title = isDeal ? 'Describe the offer.' : isEv ? 'Add an event name.' : 'Add a title (at least 3 characters).';
       if (!els.category.value) e.category = 'Choose a category.';
       if (!els.town.value) e.town = 'Choose a town.';
       var c = els.contact.value.trim();
-      if (isDeal) { if (c.length < 5) e.contact = 'Add the address or phone number.'; }
+      if (isJob) { if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Add a phone number like 812-555-0142 or an email address for applicants.'; }
+      else if (isDeal) { if (c.length < 5) e.contact = 'Add the address or phone number.'; }
       else if (isEv) { if (c && c.length < 5) e.contact = 'Add a phone number or email, or leave it blank.'; if (!els.date.value) e.date = 'Pick a date.'; else if (els.date.value < inDays(0)) e.date = 'Pick today or a later date.'; }
       else { if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Enter a phone number like 812-555-0142 or an email address.';
         if (!els.free.checked && els.price.value.trim() && !/^\d[\d,]*(\.\d{2})?$/.test(els.price.value.trim().replace(/^\$/, ''))) e.price = 'Enter an amount like 50 or 1,200.'; }
@@ -1165,7 +1211,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       var e = clientCheck(); show(e); if (Object.keys(e).length) return;
       go.disabled = true; go.textContent = 'Posting…';
       var body = { img: els.photo.value || undefined, logo: els.logo ? (els.logo.value || undefined) : undefined, kind: kind, title: els.title.value, category: els.category.value, town: els.town.value, desc: els.desc.value, contact: els.contact.value, uid: uid };
-      if (isDeal) { body.business = els.business.value; body.code = els.code.value; body.ends = els.ends.value; }
+      if (isJob) { body.employer = els.employer.value; body.jobType = els.jobType.value; body.pay = els.pay.value; }
+      else if (isDeal) { body.business = els.business.value; body.code = els.code.value; body.ends = els.ends.value; }
       else if (isEv) { body.date = els.date.value; body.time = els.time.value; body.place = els.place.value; }
       else { body.price = els.free.checked ? 'Free' : (els.price.value.trim() ? '$' + els.price.value.trim().replace(/^\$/, '') : ''); body.condition = els.cond.value; }
       fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
@@ -1320,7 +1367,31 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     c.appendChild(body);
     return c;
   }
+  function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
+  function jobCard(it, b) {
+    var c = el('article', 'job');
+    var head = el('div', 'job-head');
+    head.appendChild(bizAvatar(it.business || it.title, it.logo));
+    head.appendChild(el('span', 'job-co', it.business || ''));
+    if (it.jobType) head.appendChild(el('span', 'job-type', it.jobType));
+    c.appendChild(head);
+    c.appendChild(el('h3', 'job-title', it.title));
+    var meta = el('div', 'cl-meta');
+    var pay = it.pay ? el('span', 'job-pay', it.pay) : null;
+    var rest = [it.town, new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ');
+    var line = el('span'); if (pay) { line.appendChild(pay); line.appendChild(document.createTextNode(' · ')); } line.appendChild(document.createTextNode(rest));
+    meta.appendChild(catPill(it)); meta.appendChild(line);
+    c.appendChild(meta);
+    if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
+    var foot = el('div', 'job-foot'), ap = el('div', 'job-apply'), href = it.sample ? '' : applyHref(it.contact);
+    if (href) { var a = el('a', null, 'Apply: ' + it.contact); a.href = href; a.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); ap.appendChild(a); }
+    else ap.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+    foot.appendChild(ap); actions(it, 'job', b, foot);
+    c.appendChild(foot);
+    return c;
+  }
   function card(it, kind, b) {
+    if (kind === 'job') return jobCard(it, b);
     if (kind === 'deal') return dealCard(it, b);
     if (kind === 'event') return eventCard(it, b);
     var c = el('article', 'cl-item');
@@ -1378,6 +1449,28 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     }
     return bar;
   }
+  function jobFilters(b) {
+    var bar = el('div', 'ev-filters');
+    var row = el('div', 'cl-chips'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Job type');
+    [''].concat(JOB_TYPES).forEach(function (t) {
+      var x = el('button', 'cl-chip', t || 'Any type'); x.type = 'button'; x.setAttribute('aria-pressed', String((b.jt || '') === t));
+      x.addEventListener('click', function () { b.jt = t; drawBoard('job'); });
+      row.appendChild(x);
+    });
+    bar.appendChild(row);
+    var counts = {};
+    b.items.concat(b.items.length ? [] : b.samples).forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
+    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
+    if (towns.length > 1) {
+      var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', 'Town'));
+      var sel = el('select'); sel.setAttribute('aria-label', 'Town');
+      var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
+      towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () { b.town = sel.value; drawBoard('job'); });
+      lab.appendChild(sel); bar.appendChild(lab);
+    }
+    return bar;
+  }
   function drawBody(kind, title, postLabel) {
     var b = boards[kind], root = b.el;
     root.textContent = '';
@@ -1390,13 +1483,15 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     root.appendChild(bar);
     if (b.form) root.appendChild(buildForm(kind, b));
     if (kind === 'event') root.appendChild(eventFilters(b));
+    if (kind === 'job') root.appendChild(jobFilters(b));
     root.appendChild(chips(b, kind));
-    var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : 'cl-list'), items = shownItems(b, kind);
+    var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
     items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
     if (!items.length) {
       var emp = el('div', 'cl-empty');
-      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : 'Nothing in this category yet.'));
+      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : (kind === 'job' && (b.jt || b.town || b.filter)) ? 'No jobs match these filters.' : 'Nothing in this category yet.'));
       if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { var cf = el('button', 'primary', 'Clear filters'); cf.type = 'button'; cf.addEventListener('click', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); }); emp.appendChild(cf); }
+      if (kind === 'job' && (b.jt || b.town || b.filter)) { var cj = el('button', 'primary', 'Clear filters'); cj.type = 'button'; cj.addEventListener('click', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard('job'); }); emp.appendChild(cj); }
       list.appendChild(emp);
     }
     root.appendChild(list);
@@ -1417,6 +1512,25 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   var dlEl = boards.deal.el;
   function renderDeals() { drawBody('deal', 'Local deals and coupons', 'Post a deal'); }
   function renderEvents() { drawBody('event', 'Upcoming events', 'Add an event'); }
+  var JOB_BOARDS = [
+    ['Indeed: Evansville', 'https://www.indeed.com/jobs?l=Evansville%2C+IN'],
+    ['Indeed: Owensboro', 'https://www.indeed.com/jobs?l=Owensboro%2C+KY'],
+    ['LinkedIn: Evansville', 'https://www.linkedin.com/jobs/search/?location=Evansville%2C%20Indiana'],
+    ['Indiana Career Connect', 'https://www.indianacareerconnect.com/'],
+    ['Kentucky Career Center', 'https://kcc.ky.gov/'],
+    ['IllinoisJobLink', 'https://illinoisjoblink.illinois.gov/'],
+    ['USAJOBS', 'https://www.usajobs.gov/Search/Results?l=Evansville%2C%20Indiana']
+  ];
+  function renderJobs() {
+    var root = drawBody('job', 'Local jobs', 'Post a job');
+    var more = el('div', 'cl-more');
+    more.appendChild(el('div', 'cl-label', 'More job boards'));
+    var links = el('div', 'cl-links');
+    JOB_BOARDS.forEach(function (r) { var a = el('a', null, r[0]); a.href = r[1]; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a); });
+    more.appendChild(links);
+    more.appendChild(el('p', 'cl-note', 'Employers post here for free. Never pay a fee to apply, and be careful with offers that ask for bank details.'));
+    root.appendChild(more);
+  }
 
   /* ---------- submit news ---------- */
   var snEl = document.getElementById('sn'), SN_TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
@@ -1519,8 +1633,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   // endings, prefixes and small typos, and newer or sooner items rank higher.
   var RECENT_KEY = 'tsn.recent', W = { t: 5, v: 3, s: 2, b: 1 };
   var STOP = { the: 1, a: 1, an: 1, of: 1, in: 1, at: 1, on: 1, and: 1, to: 1, for: 1, is: 1, near: 1 };
-  var TYPES = [['news', 'Stories'], ['events', 'Events'], ['obits', 'Obituaries'], ['classifieds', 'Classifieds'], ['deals', 'Deals']];
-  var PREVIEW = { news: 5, events: 4, obits: 4, classifieds: 4, deals: 4 };
+  var TYPES = [['news', 'Stories'], ['events', 'Events'], ['obits', 'Obituaries'], ['jobs', 'Jobs'], ['classifieds', 'Classifieds'], ['deals', 'Deals']];
+  var PREVIEW = { news: 5, events: 4, obits: 4, jobs: 4, classifieds: 4, deals: 4 };
   function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']s\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
   function toks(s) { var n = norm(s); return n ? n.split(' ') : []; }
   function stem(w) {
@@ -1560,7 +1674,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var f;
     if (type === 'news' || type === 'obits') f = { t: toks(it.title), v: toks(areaOf(it.sourceId)), s: toks(it.source), b: toks(it.summary) };
     else if (type === 'events') f = { t: toks(it.title), v: toks([it.place, it.town, it.category].join(' ')), s: toks(it.source || ''), b: toks(it.desc) };
-    else f = { t: toks(it.title), v: toks([it.town, it.category].join(' ')), s: toks(it.business || ''), b: toks(it.desc) };
+    else f = { t: toks(it.title), v: toks([it.town, it.category, it.jobType, it.pay].filter(Boolean).join(' ')), s: toks(it.business || ''), b: toks(it.desc) };
     return { type: type, it: it, f: f, title: norm(it.title) };
   }
   function getDoc(type, it) {
@@ -1571,6 +1685,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var docs = [];
     state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
     boards.event.items.concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
+    boards.job.items.forEach(function (x) { docs.push(getDoc('jobs', x)); });
     boards.item.items.forEach(function (x) { docs.push(getDoc('classifieds', x)); });
     boards.deal.items.forEach(function (x) { docs.push(getDoc('deals', x)); });
     return docs;
@@ -1602,7 +1717,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     return best;
   }
   function runSearch(q) {
-    var qs = queryWords(q), docs = corpus(), groups = { news: [], events: [], obits: [], classifieds: [], deals: [] }, total = 0;
+    var qs = queryWords(q), docs = corpus(), groups = { news: [], events: [], obits: [], jobs: [], classifieds: [], deals: [] }, total = 0;
     if (!qs.length) return { words: qs, groups: groups, total: 0, mean: '' };
     docs.forEach(function (d) { var sc = scoreDoc(d, qs); if (sc > 0) { groups[d.type].push({ d: d, sc: sc }); total++; } });
     TYPES.forEach(function (t) { groups[t[0]].sort(function (a, b) { return b.sc - a.sc; }); });
@@ -1657,6 +1772,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       var c;
       if (d.type === 'news' || d.type === 'obits') c = makeCard(d.it, false);
       else if (d.type === 'events') c = eventCard(d.it, boards.event);
+      else if (d.type === 'jobs') c = card(d.it, 'job', boards.job);
       else if (d.type === 'deals') c = card(d.it, 'deal', boards.deal);
       else c = card(d.it, 'item', boards.item);
       hlCard(c, words); return c;
@@ -1664,7 +1780,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     function section(t, list, limit) {
       var sec = el('section', 'sr-sec'), n = list.length;
       var h = el('h2', 'sr-h', t[1]); h.appendChild(el('span', 'n', String(n))); sec.appendChild(h);
-      var wrap = el('div', t[0] === 'events' ? 'cl-list ev-grid' : t[0] === 'deals' ? 'cl-list deal-grid' : t[0] === 'classifieds' ? 'cl-list' : 'list');
+      var wrap = el('div', t[0] === 'events' ? 'cl-list ev-grid' : t[0] === 'deals' ? 'cl-list deal-grid' : t[0] === 'jobs' ? 'cl-list job-grid' : t[0] === 'classifieds' ? 'cl-list' : 'list');
       list.slice(0, limit).forEach(function (r) { wrap.appendChild(cardFor(r.d)); });
       sec.appendChild(wrap);
       return sec;
@@ -1807,19 +1923,20 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
   function render() {
     renderTabs();
-    var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isSn;
-    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; listEl.hidden = board; document.getElementById('more').hidden = board;
+    var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isSn;
+    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; listEl.hidden = board; document.getElementById('more').hidden = board;
     var srQ = state.q.trim();
     srEl.hidden = !(srQ && !isSn);
     if (srQ && !isSn) {
-      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = listEl.hidden = true; document.getElementById('more').hidden = true;
-      if (state.loaded) { if (!boards.item.loaded) loadBoard('item'); if (!boards.deal.loaded) loadBoard('deal'); if (!boards.event.loaded) loadBoard('event'); renderSearch(srQ); }
+      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = boards.job.el.hidden = listEl.hidden = true; document.getElementById('more').hidden = true;
+      if (state.loaded) { if (!boards.item.loaded) loadBoard('item'); if (!boards.deal.loaded) loadBoard('deal'); if (!boards.event.loaded) loadBoard('event'); if (!boards.job.loaded) loadBoard('job'); renderSearch(srQ); }
       else { srEl.textContent = ''; metaEl.textContent = ''; }
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
     if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); return; }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
+    if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }
     if (isEv) { renderEvents(); metaEl.textContent = ''; if (!boards.event.loaded) loadBoard('event'); return; }
     if (!state.loaded) return;
     if (state.error && !state.items.length) {
@@ -1885,7 +2002,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
   loadWeather();
   load(false);
-  loadDeals(); loadBoard('event');
+  loadDeals(); loadBoard('event'); loadBoard('job');
 })();
 </script>
 </body>

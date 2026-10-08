@@ -113,7 +113,23 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 
 /* money: featured posts, sponsors, newsletter, advertise */
 .is-featured { position:relative; border-color:var(--amber) !important; background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
+.is-featured { overflow:visible !important; }
+.is-featured > .deal-img, .is-featured > .ev-hero { border-radius:calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0; overflow:hidden; }
 .feat-badge { position:absolute; top:-10px; left:16px; z-index:2; display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:var(--radius-md); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.rail { display:none; }
+@media (min-width:1360px) {
+  .rail { display:grid; gap:12px; position:fixed; top:124px; width:160px; align-content:start; z-index:1; }
+  .rail-l { left:calc(50% - 480px - 24px - 160px); }
+  .rail-r { right:calc(50% - 480px - 24px - 160px); }
+}
+.rail:empty { display:none !important; }
+.rail-ad { display:grid; gap:8px; justify-items:start; padding:12px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); text-align:left; }
+.rail-ad:hover { background:var(--gray-100); }
+.rail-ad b { font-size:14px; line-height:20px; font-weight:600; overflow-wrap:anywhere; }
+.rail-ad .rail-tx { color:var(--text-muted); font-size:12px; line-height:16px; overflow-wrap:anywhere; }
+.rail-ad .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
+.rail-ad .bav { width:40px; height:40px; font-size:13px; }
+.rail-house { border-style:dashed; }
 .spon-wrap:empty { display:none; }
 .spon-ad { margin:0 0 12px; min-height:0; }
 .spon-ad ins { display:block; }
@@ -450,6 +466,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   <div class="nav-tabs"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"></div></div>
 </header>
 
+<aside id="rail-l" class="rail rail-l" aria-label="Sponsored"></aside>
+<aside id="rail-r" class="rail rail-r" aria-label="Sponsored"></aside>
 <main>
   <div class="banners" id="banners">
     <div class="bn bn-break" id="bnBreak" hidden></div>
@@ -535,13 +553,31 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         setTimeout(function () { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} }, 0);
         return w;
       },
+      // A tall ad for the side margins on wide screens (or the house ad when the margin is unsold).
+      railAd: function (ad) {
+        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.appendChild(el('span', 'spon-tag', 'Sponsor')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Reach local readers every day.')); h.appendChild(el('span', 'rail-cta', 'Advertise')); h.addEventListener('click', openAd); return h; }
+        if (!ad.name || !/^https:\/\//i.test(ad.url || '')) return null;
+        var a = el('a', 'rail-ad'); a.href = ad.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
+        a.appendChild(el('span', 'spon-tag', ad.sample ? 'Sample ad' : 'Sponsored')); a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
+        if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
+        return a;
+      },
+      rails: function () {
+        var cfg = (SPONSORS && SPONSORS.__rails) || {};
+        [['rail-l', 'left'], ['rail-r', 'right']].forEach(function (r) {
+          var box = document.getElementById(r[0]); box.textContent = '';
+          var list = (cfg[r[1]] || []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean);
+          if (!list.length) list = [UI.railAd(null)];
+          list.forEach(function (x) { box.appendChild(x); });
+        });
+      },
       badge: function (label) { return el('span', 'feat-badge', label); },
       // A sponsor line for a page section, or a "your business here" house ad when the slot is open.
       sponsor: function (slot, houseAd) {
         var sp = SPONSORS && SPONSORS[slot];
         if (sp && sp.name && /^https:\/\//i.test(sp.url || '')) {
           var a = el('a', 'spon'); a.href = sp.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
+          a.appendChild(el('span', 'spon-tag', sp.sample ? 'Sample ad' : 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
           return a;
         }
         if (SPONSORS && SPONSORS.adsense && SPONSORS.adsense.client && SPONSORS.adsense.slot && slot === 'news') return UI.adsense(SPONSORS.adsense);
@@ -1049,7 +1085,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { title: 'Seasoned firewood, you haul', price: 'Free', town: 'Mt. Vernon, IN', category: 'Home & garden', condition: '', desc: 'About a half cord, stacked behind the barn.', at: ago(3) },
     { title: 'Women’s winter coat, size M', price: '$25', town: 'Jasper, IN', category: 'Clothing', condition: 'Like new', desc: 'Warm, hooded, worn one season.', at: ago(4) },
     { title: '2014 Honda Civic, 98k miles', price: '$6,500', town: 'Carbondale, IL', category: 'Vehicles', condition: 'Good', desc: 'One owner, service records.', at: ago(5) }
-  ].map(function (x, k) { x.id = 'sample-i' + k; x.sample = true; x.contact = 'Sample listing'; return x; });
+  ].map(function (x, k) { x.id = 'sample-i' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; return x; });
   function inDays(n) { var d = new Date(Date.now() + n * 864e5); return d.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
   var SAMPLE_DEALS = [
     { business: 'Sample Diner', title: '2-for-1 burgers on Tuesdays', town: 'Evansville, IN', category: 'Food & drink', code: 'BURGER2', ends: inDays(24), desc: 'Dine in only. One coupon per table.' },
@@ -1060,7 +1096,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { business: 'Sample Hardware', title: 'Buy one, get one free leaf bags', town: 'Carbondale, IL', category: 'Shopping', code: '', ends: inDays(18), desc: 'While supplies last.' },
     { business: 'Sample Salon', title: '$15 off a cut and color', town: 'Jasper, IN', category: 'Services', code: 'FALL15', ends: inDays(21), desc: 'New clients, weekdays.' },
     { business: 'Sample Coffee Shop', title: 'Buy a latte, get a pastry free', town: 'Mt. Vernon, IN', category: 'Food & drink', code: '', ends: inDays(7), desc: 'Before 10 a.m.' }
-  ].map(function (x, k) { x.id = 'sample-d' + k; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
+  ].map(function (x, k) { x.id = 'sample-d' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
   var SAMPLE_EVENTS = [
     { title: 'Friday Night Football', date: inDays(3), time: '19:00', place: 'Sample High School Stadium', town: 'Boonville, IN', category: 'Sports', desc: 'Home opener under the lights. Concessions open at 6.' },
     { title: 'Fall Harvest Market', date: inDays(5), time: '09:00', place: 'Sample Park Pavilion', town: 'Evansville, IN', category: 'Community', desc: 'Local growers, baked goods and crafts.' },
@@ -1069,7 +1105,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { title: 'Pancake Breakfast Fundraiser', date: inDays(11), time: '08:00', place: 'Sample Fire Station', town: 'Jasper, IN', category: 'Food & drink', desc: 'All you can eat. Proceeds help buy new equipment.' },
     { title: 'Community 5K Fun Run', date: inDays(12), time: '08:30', place: 'Sample Riverside Trail', town: 'Owensboro, KY', category: 'Sports', desc: 'Walkers and strollers welcome.' },
     { title: 'Trunk-or-Treat', date: inDays(19), time: '17:30', place: 'Sample Church Lot', town: 'Madisonville, KY', category: 'Family', desc: 'Costumes, candy and games for kids.' }
-  ].map(function (x, k) { x.id = 'sample-e' + k; x.sample = true; x.contact = ''; x.at = ago(0); return x; });
+  ].map(function (x, k) { x.id = 'sample-e' + k; x.featured = k === 0; x.sample = true; x.contact = ''; x.at = ago(0); return x; });
 
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
@@ -1082,7 +1118,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     { title: 'Front office assistant', business: 'Sample Dental', town: 'Mt. Vernon, IN', category: 'Office & admin', jobType: 'Part-time', pay: '$15-17/hr', desc: 'Scheduling, phones and check-in. Mornings.' },
     { title: 'Substitute teacher aide', business: 'Sample School District', town: 'Carbondale, IL', category: 'Education', jobType: 'Part-time', pay: '$13/hr', desc: 'Help in classrooms on days teachers are out.' },
     { title: 'Delivery driver', business: 'Sample Freight', town: 'Madisonville, KY', category: 'Warehouse & driving', jobType: 'Contract', pay: '$20-25/hr', desc: 'Box truck, no CDL needed. Regional routes.' }
-  ].map(function (x, k) { x.id = 'sample-j' + k; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
+  ].map(function (x, k) { x.id = 'sample-j' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
 
   var clEl = document.getElementById('cl');
   var boards = {
@@ -1139,6 +1175,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (kind === 'event') real = real.concat(feedEvents());
     var need = Math.max(0, 8 - real.length);
     var all = real.concat(b.samples.slice(0, need));
+    var demo = b.samples.filter(function (x) { return x.featured; })[0];
+    if (demo && need === 0 && !real.some(function (x) { return x.featured; })) all.unshift(demo); // one labeled sample keeps the Featured look visible until a real one is bought
     if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
@@ -1855,9 +1893,12 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   /* ---------- sponsors, paid placement and return from checkout ---------- */
   fetch('/sponsors.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     SPONSORS = d && d.slots ? d.slots : {};
+    if (d && d.adsense) SPONSORS.adsense = d.adsense;
+    SPONSORS.__rails = d && d.rails ? d.rails : {};
+    UI.rails();
     var sp = UI.sponsor('news', false), slot = document.getElementById('sp-news'); slot.textContent = ''; if (sp) slot.appendChild(sp);
     Object.keys(boards).forEach(drawBoard);
-  }).catch(function () { SPONSORS = {}; });
+  }).catch(function () { SPONSORS = {}; UI.rails(); });
   fetch('/api/checkout', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     if (d) { PAY = { configured: !!d.configured, prices: d.prices || {} }; Object.keys(boards).forEach(drawBoard); }
   }).catch(function () {});

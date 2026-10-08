@@ -1,12 +1,58 @@
 {
-  "note": "Edit this file to sell sponsor spots. A slot with a sponsor shows a small 'Sponsored' line; a slot set to null shows 'Your business here' on boards. Slots: news, jobs, deals, events, classifieds. Fields: name, text, url (https only). Optional Google AdSense for the news feed once approved: set adsense to {\"client\": \"ca-pub-1234567890\", \"slot\": \"1234567890\"}.",
+  "note": "Edit this file to sell ad spots. 'slots' are one sponsor line at the top of a page (news, jobs, deals, events, classifieds); 'rails' are the tall ads in the left and right margins on wide screens. Each ad: name, text, url (https only), optional cta, and \"sample\": true to label it as a demo (delete sample ads when real sponsors sign). An empty slot shows 'Your business here'. Optional Google AdSense for the news feed once approved: set adsense to {\"client\": \"ca-pub-1234567890\", \"slot\": \"1234567890\"}.",
   "slots": {
-    "news": null,
-    "jobs": null,
-    "deals": null,
-    "events": null,
-    "classifieds": null,
-    "weather": null
+    "news": {
+      "name": "Sample Heating & Air",
+      "text": "Fall furnace tune-up, $79",
+      "url": "https://example.com/",
+      "sample": true
+    },
+    "jobs": {
+      "name": "Sample Staffing Co.",
+      "text": "Hiring 40 warehouse associates this month",
+      "url": "https://example.com/",
+      "sample": true
+    },
+    "deals": {
+      "name": "Sample Pizza Co.",
+      "text": "Every deal on this page can be yours for $19",
+      "url": "https://example.com/",
+      "sample": true
+    },
+    "events": {
+      "name": "Sample Riverfront Brewery",
+      "text": "Live music every Friday",
+      "url": "https://example.com/",
+      "sample": true
+    },
+    "classifieds": null
+  },
+  "rails": {
+    "left": [
+      {
+        "name": "Sample Credit Union",
+        "text": "Auto loans from 5.49% APR. Local people, local decisions.",
+        "cta": "Apply today",
+        "url": "https://example.com/",
+        "sample": true
+      },
+      {
+        "name": "Sample Dental",
+        "text": "New patients welcome. Evansville and Newburgh.",
+        "cta": "Book a visit",
+        "url": "https://example.com/",
+        "sample": true
+      }
+    ],
+    "right": [
+      {
+        "name": "Sample Roofing",
+        "text": "Free storm-damage inspections across the Tri-State.",
+        "cta": "Get a quote",
+        "url": "https://example.com/",
+        "sample": true
+      }
+    ]
   },
   "adsense": null
 }

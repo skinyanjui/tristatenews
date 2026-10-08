@@ -433,7 +433,21 @@ async function refreshAll(opts) {
     const out = await redis(SOURCES.map(s => ['GET', srcKey(s.id)]));
     SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
   }
-  const fetched = await Promise.all(targets.map(s => loadSource(s, prevStates[s.id])));
+  // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the
+  // news and obituary feeds of one paper share a host.
+  const byHost = {};
+  targets.forEach(s => { let h = ''; try { h = new URL(s.url).hostname; } catch (_) { /* ignore */ } (byHost[h] = byHost[h] || []).push(s); });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const fetched = (await Promise.all(Object.values(byHost).map(async group => {
+    const out = [];
+    for (let i = 0; i < group.length; i++) {
+      if (i) await sleep(900);
+      let r = await loadSource(group[i], prevStates[group[i].id]);
+      if (r.error === 'HTTP 429') { await sleep(1800); r = await loadSource(group[i], prevStates[group[i].id]); }
+      out.push(r);
+    }
+    return out;
+  }))).flat();
   const states = Object.assign({}, prevStates);
   const report = [];
   for (const r of fetched) {

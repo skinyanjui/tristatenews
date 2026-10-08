@@ -83,3 +83,11 @@ The footer's "Submit news" button opens a submission form (type, headline, detai
 - **Redis:** stored in the `tsn:tips` list (latest 500). Read them with `GET /api/submit` and header `x-admin-key: <LISTINGS_ADMIN_KEY>`.
 - **Email (Resend):** set `RESEND_API_KEY` and `TIPS_TO_EMAIL` (optional `TIPS_FROM_EMAIL`). Photos arrive as attachments and replies go to the submitter.
 With neither configured the form says submissions aren't open yet. Edit the "Good to know" policy lines in `public/index.html` (`renderSubmit`) to match your newsroom's rules.
+
+
+## Events, obituaries and banners
+
+- **Events** come from the Ford Center and Victory Theatre listing pages (`parser: 'venue'` in `api/news.js`), plus any iCal/RSS feeds that answer. Explore Evansville, Visit Owensboro and Visit Madisonville block automated requests, so they stay hidden unless they start working.
+- **Obituaries** are the papers' own obituary sections (BLOX `c=obituaries` feeds for the Messenger-Inquirer, Dubois County Herald, Princeton Daily Clarion, Sun-Commercial, The Messenger and Washington Times-Herald) and the Owensboro Times. Each card is a short excerpt that links to the full notice. They are kept for 21 days. The Courier & Press publishes through Legacy.com, which blocks automated requests, so Evansville is covered only by the other outlets.
+- **Weather banner**: current conditions from Open-Meteo, alerts from the National Weather Service API (`api.weather.gov`), both called from the browser and credited in the banner.
+- **Breaking banner**: shows only stories the outlet itself labels breaking (see `BREAKING_RE`), for 12 hours, with the outlet name and a link.

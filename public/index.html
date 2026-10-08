@@ -75,6 +75,25 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .icon-btn:hover { background:var(--gray-100); }
 .icon-btn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
+/* banners: breaking news + weather */
+.banners { display:grid; gap:8px; margin-bottom:12px; }
+.banners:not(:has(.bn:not([hidden]))) { display:none; }
+.bn { display:flex; align-items:center; gap:12px; min-height:44px; padding:8px 12px 8px 16px; border:1px solid var(--border); border-left-width:4px; border-radius:var(--radius-lg); background:var(--background-subtle); min-width:0; }
+.bn[hidden] { display:none; }
+.bn-break { border-left-color:var(--red); }
+.bn-wx { border-left-color:var(--blue); }
+.bn .tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.bn-break .tag { color:var(--red); }
+.bn-wx .tag { color:var(--blue); }
+.bn .tx { flex:1; min-width:0; }
+.bn .tx a { color:var(--foreground); text-decoration:none; font-weight:600; overflow-wrap:anywhere; }
+.bn .tx a:hover { text-decoration:underline; }
+.bn .tx .by { display:block; color:var(--text-muted); font-size:12px; line-height:16px; }
+.bn .tx .by a { color:inherit; font-weight:400; text-decoration:underline; }
+.bn .x { flex:none; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-md); color:var(--text-muted); font-size:18px; line-height:1; }
+.bn .x:hover { background:var(--gray-100); }
+@media (max-width:479px) { .bn { align-items:flex-start; flex-wrap:wrap; } .bn .tag { width:100%; } }
+
 /* weather alerts */
 .alerts { display:grid; gap:8px; margin-bottom:16px; }
 .alerts:empty { display:none; }
@@ -317,6 +336,10 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 </header>
 
 <main>
+  <div class="banners" id="banners">
+    <div class="bn bn-break" id="bnBreak" hidden></div>
+    <div class="bn bn-wx" id="bnWx" hidden></div>
+  </div>
   <div class="alerts" id="alerts" aria-live="polite"></div>
   <h1 class="sr-only">Tristate news</h1>
 
@@ -411,6 +434,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
     { id: 'safety', label: 'Police & courts' },
     { id: 'institution', label: 'Institutions' },
     { id: 'events', label: 'Events' },
+    { id: 'obits', label: 'Obituaries' },
     { id: 'deals', label: 'Deals' },
     { id: 'classifieds', label: 'Classifieds' },
     { id: 'saved', label: 'Liked' }
@@ -419,7 +443,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
     var k = kindOf(it.sourceId);
     if (cat === 'deals') return false;
     if (cat === 'events') return false;
-    if (cat === 'all') return k !== 'events';
+    if (cat === 'all') return k !== 'events' && k !== 'obits';
     if (cat === 'safety') return k === 'police' || k === 'courts';
     return k === cat;
   }
@@ -615,6 +639,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
       wxBtn.appendChild(el('span', 'wx-temp', Math.round(cur.temperature_2m) + '°F'));
       wxBtn.appendChild(el('span', 'wx-cond', shortName(wxLoc.name)));
 
+      renderWxBanner(cur, dly);
       wxPop.textContent = '';
       var loc = el('div', 'wx-loc');
       loc.appendChild(el('b', null, wxLoc.name));
@@ -683,6 +708,45 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
     qTimer = setTimeout(function () { state.q = qEl.value; if (state.cat === 'submit') state.cat = state.prevCat || 'all'; resetPaging(); render(); }, 150);
   });
 
+  /* ---------- banners ---------- */
+  var bnWx = document.getElementById('bnWx'), bnBreak = document.getElementById('bnBreak'), breakDismissed = '';
+  function renderWxBanner(cur, dly) {
+    bnWx.textContent = '';
+    bnWx.appendChild(el('span', 'tag', 'Weather'));
+    var tx = el('div', 'tx');
+    var line = el('b', null, shortName(wxLoc.name) + ' now: ' + Math.round(cur.temperature_2m) + '°F, ' + wxText(cur.weather_code));
+    tx.appendChild(line);
+    var bits = [];
+    if (cur.apparent_temperature != null) bits.push('Feels like ' + Math.round(cur.apparent_temperature) + '°');
+    if (cur.wind_speed_10m != null) bits.push('Wind ' + Math.round(cur.wind_speed_10m) + ' mph');
+    if (dly && dly.time && dly.time.length) {
+      bits.push('Today ' + Math.round(dly.temperature_2m_max[0]) + '° / ' + Math.round(dly.temperature_2m_min[0]) + '°');
+      var pr = dly.precipitation_probability_max[0]; if (pr != null && pr >= 20) bits.push(pr + '% chance of rain');
+    }
+    var by = el('span', 'by', bits.join(' · ') + ' · Data: ');
+    var o = el('a', null, 'Open-Meteo'); o.href = 'https://open-meteo.com/'; o.target = '_blank'; o.rel = 'noopener noreferrer'; by.appendChild(o);
+    by.appendChild(document.createTextNode(' and '));
+    var n = el('a', null, 'National Weather Service'); n.href = 'https://www.weather.gov/'; n.target = '_blank'; n.rel = 'noopener noreferrer'; by.appendChild(n);
+    tx.appendChild(by); bnWx.appendChild(tx);
+    bnWx.hidden = false;
+  }
+  function renderBreaking() {
+    var hit = state.items.filter(function (i) { var k = kindOf(i.sourceId); return k !== 'events' && k !== 'obits' && isBreaking(i); })
+      .sort(function (a, b) { return Date.parse(b.published) - Date.parse(a.published); })[0];
+    bnBreak.textContent = '';
+    if (!hit || hit.link === breakDismissed) { bnBreak.hidden = true; return; }
+    bnBreak.appendChild(el('span', 'tag', 'Breaking'));
+    var tx = el('div', 'tx');
+    var a = el('a', null, hit.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]?\s*/i, '') || hit.title);
+    a.href = safeHref(hit.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; tx.appendChild(a);
+    tx.appendChild(el('span', 'by', 'Reported by ' + hit.source + ' · ' + timeAgo(hit.published)));
+    bnBreak.appendChild(tx);
+    var x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss breaking news banner');
+    x.addEventListener('click', function () { breakDismissed = hit.link; bnBreak.hidden = true; });
+    bnBreak.appendChild(x);
+    bnBreak.hidden = false;
+  }
+
   /* ---------- weather alerts (National Weather Service) ---------- */
   var alertsEl = document.getElementById('alerts');
   function renderAlerts() {
@@ -697,7 +761,8 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
       var body = el('div', 'ab');
       if (p.headline) body.appendChild(el('p', null, p.headline));
       if (p.areaDesc) body.appendChild(el('p', null, p.areaDesc));
-      var a = el('a', null, 'More at weather.gov'); a.href = 'https://www.weather.gov/'; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'var(--blue)';
+      var by = el('p', null, 'Source: National Weather Service' + (p.senderName ? ' · ' + p.senderName : '')); body.appendChild(by);
+      var a = el('a', null, 'Full alert and forecast at weather.gov'); a.href = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'var(--blue)';
       body.appendChild(a);
       d.appendChild(body);
       alertsEl.appendChild(d);
@@ -805,13 +870,22 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
   }
   function loadDeals() { return loadBoard('deal'); }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function evCat(i) {
+    var t = (i.title || '').toLowerCase();
+    if (/\b(aces|hoosiers|basketball|football|soccer|baseball|wwe|smackdown|vs\.?|racing|derby|tournament|classic)\b/.test(t)) return 'Sports';
+    if (/\b(concert|tour|tribute|philharmonic|orchestra|symphony|band|music|jazz|live)\b|tobymac|tracy lawrence|ty myers/.test(t)) return 'Music';
+    if (/\b(ballet|nutcracker|theatre|theater|labyrinth|musical|opera|art|gallery|comedy|giggles|teachers)\b/.test(t)) return 'Arts';
+    if (/\b(family|kids|children|zoo|pumpkin|trick|halloween)\b/.test(t)) return 'Family';
+    if (/\b(food|taste|wine|beer|brew|bbq|bar-b-q|dinner|festival)\b/.test(t)) return 'Food & drink';
+    return 'Community';
+  }
   function feedEvents() {
     var today = inDays(0);
     return state.items.filter(function (i) { return kindOf(i.sourceId) === 'events' && i.published; }).map(function (i) {
       var d = new Date(i.published), z = 'America/Chicago';
       var date = d.toLocaleDateString('en-CA', { timeZone: z });
       var hm = d.toLocaleTimeString('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false }).replace(/^24/, '00');
-      return { id: 'feed-' + i.id, title: i.title, date: date, time: (hm === '00:00' || hm < '06:00') ? '' : hm, place: '', town: i.area || '', category: 'Community', desc: (i.summary || '').replace(/\s*…\s*more:.*$/, '…'), contact: '', link: i.link, feed: true, source: i.source, logo: (state.sources.filter(function (x) { return x.id === i.sourceId; })[0] || {}).logo || '' };
+      return { id: 'feed-' + i.id, title: i.title, date: date, time: (hm === '00:00' || hm < '06:00') ? '' : hm, place: i.venue || '', town: i.area || '', category: evCat(i), desc: (i.summary || '').replace(/\s*…\s*more:.*$/, '…'), contact: '', link: i.link, feed: true, source: i.source, logo: (state.sources.filter(function (x) { return x.id === i.sourceId; })[0] || {}).logo || '' };
     }).filter(function (x) { return x.date >= today; });
   }
   function shownItems(b, kind) {
@@ -1367,6 +1441,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
     return fetch('/api/news', force ? { cache: 'reload' } : undefined).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
       state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now();
       state.error = false; state.loaded = true;
+      renderBreaking();
       render();
       loadCounts();
     }).catch(function () {

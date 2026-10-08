@@ -62,6 +62,18 @@ const SOURCES = [
   { id: 'fbispr', name: 'FBI Springfield', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/springfield-news/rss.xml' },
   // Events (kind: 'events'): RSS or iCal calendars. Unverified, tourism sites often block datacenter
   // requests; each tries its RSS feed, then its iCal export. Add more with EXTRA_FEEDS.
+  // Obituaries (kind: 'obits'): the papers' own obituary sections (BLOX category feeds) and Owensboro Times.
+  // Each item links back to the full notice on the publisher's site.
+  { id: 'ob-messinq', name: 'Messenger-Inquirer', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-owtimes', name: 'Owensboro Times', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.owensborotimes.com/obituaries/feed/' },
+  { id: 'ob-dcherald', name: 'Dubois County Herald', area: 'Jasper', kind: 'obits', maxAgeDays: 21, url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-pdclarion', name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-sunc', name: 'Vincennes Sun-Commercial', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, url: 'https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-msgr', name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-wth', name: 'Washington Times-Herald', area: 'Washington, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://washtimesherald.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
+  { id: 'ev-ford', name: 'Ford Center', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://fordcenter.com/events-tickets/view-all-events' },
+  { id: 'ev-victory', name: 'Victory Theatre', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://www.victorytheatre.com/events-tickets/view-all-events' },
   { id: 'ev-evv', name: 'Explore Evansville', area: 'Evansville', kind: 'events', url: 'https://www.exploreevansville.com/events/feed/', altUrls: ['https://www.exploreevansville.com/events/?ical=1'] },
   { id: 'ev-owb', name: 'Visit Owensboro', area: 'Owensboro', kind: 'events', url: 'https://www.visitowensboro.com/events/feed/', altUrls: ['https://www.visitowensboro.com/events/?ical=1'] },
   { id: 'ev-mad', name: 'Visit Madisonville', area: 'Madisonville', kind: 'events', url: 'https://www.visitmadisonvilleky.com/events/feed/', altUrls: ['https://www.visitmadisonvilleky.com/events/?ical=1'] },
@@ -77,7 +89,7 @@ try {
   const extra = JSON.parse(process.env.EXTRA_FEEDS || '[]');
   for (const e of Array.isArray(extra) ? extra : []) {
     if (e && e.id && e.name && /^https?:\/\//.test(e.url || '') && !SOURCES.some(s => s.id === e.id)) {
-      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
+      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events', 'obits'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
     }
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
@@ -176,7 +188,7 @@ function parseFeed(xml, source) {
     const rawDesc = tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || tag(b, 'content');
     let summary = stripHtml(rawDesc);
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '\u2026';
-    if (summary.toLowerCase() === title.toLowerCase()) summary = '';
+    if (summary.toLowerCase() === title.toLowerCase() || /^continue reading\b/i.test(summary)) summary = '';
 
     let image =
       attr(b, 'media:content', 'url') ||
@@ -189,7 +201,7 @@ function parseFeed(xml, source) {
     }
     image = safeUrl(image, true);
 
-    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events' });
+    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events', isObit: source.kind === 'obits' });
   }
   return items;
 }
@@ -226,6 +238,37 @@ function parseIcal(text, source) {
   return items;
 }
 
+
+// Ford Center / Victory Theatre list pages: <figure class="allEventsItem"> with image, name, blurb, "Mon. D, YYYY | H:MM PM" and a
+// ticket link. Times are Central. `published` carries the start time (like iCal). Paged 20 at a time via ?start=.
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+function parseVenue(html, source, base) {
+  const items = [];
+  for (const b of html.match(/<figure class="allEventsItem">[\s\S]*?<\/figure>/g) || []) {
+    const name = stripHtml((/<h2 class="allEventsItemName">([\s\S]*?)<\/h2>/.exec(b) || [])[1] || '');
+    const when = /<time[^>]*>[\s\S]*?<\/i>\s*([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})(?:\s*\|\s*(\d{1,2}):(\d{2})\s*([AP]M))?/i.exec(b);
+    if (!name || !when) continue;
+    let h = when[4] ? +when[4] % 12 + (/p/i.test(when[6]) ? 12 : 0) : 0;
+    const mo = MONTHS[when[1].toLowerCase()];
+    if (!mo) continue;
+    const published = chicagoToUtc(+when[3], mo, +when[2], h, when[5] ? +when[5] : 0).toISOString();
+    const hrefs = [...b.matchAll(/<a [^>]*href="([^"]+)"/g)].map(m => m[1]);
+    const link = safeUrl(hrefs.find(u => /^https?:\/\//.test(u)) || '', true) || safeUrl(base, true);
+    const imgSrc = (/<img src="([^"#]+)/.exec(b) || [])[1] || '';
+    const image = /1920x1080/.test(imgSrc) ? '' : safeUrl(imgSrc.startsWith('/') ? new URL(imgSrc, base).href : imgSrc, true);
+    let summary = stripHtml(((/<details[\s\S]*?<p>([\s\S]*?)<\/p>/.exec(b) || [])[1] || '').replace(/<br\s*\/?>/gi, ' '));
+    summary = summary.replace(/\b(Doors Open|Show Starts):\s*[\d:]+\s*[AP]M\s*/gi, '').trim();
+    if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
+    if (!link) continue;
+    items.push({ title: name, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: source.name });
+  }
+  // an image shared by several events is the venue's placeholder, not a photo of the event
+  const uses = {};
+  items.forEach(i => { if (i.image) uses[i.image] = (uses[i.image] || 0) + 1; });
+  items.forEach(i => { if (i.image && uses[i.image] > 2) i.image = ''; });
+  return items;
+}
+
 // Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
 // sent so an unchanged feed answers 304 and costs almost nothing.
 async function tryUrl(source, url, prev) {
@@ -234,6 +277,18 @@ async function tryUrl(source, url, prev) {
     if (prev && prev.url === url) {
       if (prev.etag) headers['if-none-match'] = prev.etag;
       if (prev.lastModified) headers['if-modified-since'] = prev.lastModified;
+    }
+    if (source.parser === 'venue') {
+      const items = [];
+      for (const start of [0, 20, 40]) {
+        const r = await fetch(url + (start ? '?start=' + start : ''), { headers: { ...headers, accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+        if (!r.ok) { if (!start) return { items: [], error: 'HTTP ' + r.status, url }; break; }
+        const page = parseVenue(await r.text(), source, url);
+        if (!page.length) break;
+        items.push(...page);
+        if (page.length < 20) break;
+      }
+      return { items, error: items.length ? null : 'no items', url };
     }
     const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
     if (r.status === 304) return { items: [], notModified: true, error: null, url };
@@ -269,6 +324,7 @@ function combine(results, now) {
   const seen = new Set();
   const all = [];
   const events = [];
+  const obits = [];
   for (const r of results) {
     for (const it of r.items) {
       const ts = it.published ? Date.parse(it.published) : null;
@@ -282,6 +338,13 @@ function combine(results, now) {
         events.push(it);
         continue;
       }
+      if (it.isObit) {
+        if (ts !== null && (ts < now - (it.maxAgeDays || 21) * 864e5 || ts > now + 36e5)) continue;
+        if (seen.has('ob|' + key)) continue;
+        seen.add('ob|' + key);
+        obits.push(it);
+        continue;
+      }
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
       if (seen.has(key) || seen.has(it.link)) continue;
@@ -291,7 +354,8 @@ function combine(results, now) {
   }
   all.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
-  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 120)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
+  obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
+  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 120), obits.slice(0, 150)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
 }
 
 function logoFor(url) {
@@ -308,7 +372,7 @@ const stored = () => !!(URL_ && TOKEN);
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
-const FAST_IDS = new Set(['wfie', 'weht', 'owtimes', 'messinq', 'courier', 'gleaner', 'msgr', 'kfvs', 'wthi', 'wpsd', 'sunc', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
+const FAST_IDS = new Set(['ob-messinq', 'ob-owtimes', 'wfie', 'weht', 'owtimes', 'messinq', 'courier', 'gleaner', 'msgr', 'kfvs', 'wthi', 'wpsd', 'sunc', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
 
 async function redis(commands) {
   const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
@@ -411,3 +475,4 @@ module.exports.refreshAll = refreshAll;
 module.exports.SOURCES = SOURCES;
 module.exports.mergeState = mergeState;
 module.exports.stored = stored;
+module.exports.loadSource = loadSource;

@@ -99,9 +99,14 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .alert.sev-severe { --sev:var(--red); }
 .alert.sev-mod { --sev:var(--amber); }
 .alert.sev-minor { --sev:var(--blue); }
-.alert summary { list-style:none; display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:44px; padding:8px 16px; cursor:pointer; font-weight:500; }
-.alert summary::-webkit-details-marker { display:none; }
-.alert summary span { color:var(--foreground); opacity:.75; font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .ah { display:flex; align-items:center; gap:4px; min-height:44px; padding:4px 4px 4px 16px; }
+.alert .at { flex:1; min-width:0; display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:44px; text-align:left; font-weight:500; cursor:pointer; }
+.alert .at span { color:var(--foreground); opacity:.75; font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .al { flex:none; display:inline-flex; align-items:center; min-height:44px; padding:0 8px; font-size:13px; font-weight:600; color:inherit; text-decoration:underline; }
+.alert .ax { flex:none; width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-md); font-size:20px; line-height:1; }
+.alert .ax:hover, .alert .al:hover { background:color-mix(in srgb, var(--sev) 20%, transparent); }
+.alert .ab[hidden] { display:none; }
+@media (max-width:479px) { .alert .at span { display:none; } }
 .alert .ab { padding:0 16px 12px; color:var(--foreground); }
 .alert .ab p { margin:0 0 8px; }
 
@@ -778,26 +783,36 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   }
 
   /* ---------- weather alerts (National Weather Service) ---------- */
-  var alertsEl = document.getElementById('alerts');
+  var alertsEl = document.getElementById('alerts'), alertGone = {};
+  function alertKey(p) { return p.id || (p.event + '|' + (p.ends || p.expires || '')); }
   function renderAlerts() {
     alertsEl.textContent = '';
-    state.alerts.slice(0, 3).forEach(function (p) {
+    var vis = state.alerts.filter(function (p) { return !alertGone[alertKey(p)]; });
+    vis.slice(0, 3).forEach(function (p) {
       var sev = p.severity === 'Extreme' || p.severity === 'Severe' ? 'sev-severe' : p.severity === 'Moderate' ? 'sev-mod' : 'sev-minor';
-      var d = el('details', 'alert ' + sev);
-      var sm = el('summary'); sm.appendChild(el('b', null, p.event));
+      var d = el('div', 'alert ' + sev);
+      var hd = el('div', 'ah');
+      var tg = el('button', 'at'); tg.type = 'button'; tg.setAttribute('aria-expanded', 'false');
+      tg.appendChild(el('b', null, p.event));
       var until = p.ends || p.expires;
-      if (until && !isNaN(Date.parse(until))) sm.appendChild(el('span', null, 'Until ' + new Date(until).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
-      d.appendChild(sm);
-      var body = el('div', 'ab');
+      if (until && !isNaN(Date.parse(until))) tg.appendChild(el('span', null, 'Until ' + new Date(until).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+      hd.appendChild(tg);
+      var wx = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4);
+      var more = el('a', 'al', 'Details'); more.href = wx; more.target = '_blank'; more.rel = 'noopener noreferrer'; more.setAttribute('aria-label', p.event + ' details on weather.gov');
+      hd.appendChild(more);
+      var x = el('button', 'ax', '\u00d7'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss ' + p.event);
+      x.addEventListener('click', function () { alertGone[alertKey(p)] = 1; renderAlerts(); });
+      hd.appendChild(x);
+      d.appendChild(hd);
+      var body = el('div', 'ab'); body.hidden = true;
       if (p.headline) body.appendChild(el('p', null, p.headline));
       if (p.areaDesc) body.appendChild(el('p', null, p.areaDesc));
-      var by = el('p', null, 'Source: National Weather Service' + (p.senderName ? ' · ' + p.senderName : '')); body.appendChild(by);
-      var a = el('a', null, 'Full alert and forecast at weather.gov'); a.href = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4); a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.color = 'inherit'; a.style.textDecoration = 'underline';
-      body.appendChild(a);
+      body.appendChild(el('p', null, 'Source: National Weather Service' + (p.senderName ? ' \u00b7 ' + p.senderName : '')));
       d.appendChild(body);
+      tg.addEventListener('click', function () { body.hidden = !body.hidden; tg.setAttribute('aria-expanded', String(!body.hidden)); });
       alertsEl.appendChild(d);
     });
-    if (state.alerts.length > 3) alertsEl.appendChild(el('div', 'meta', 'and ' + (state.alerts.length - 3) + ' more active alert' + (state.alerts.length - 3 === 1 ? '' : 's') + ' for this area'));
+    if (vis.length > 3) alertsEl.appendChild(el('div', 'meta', 'and ' + (vis.length - 3) + ' more active alert' + (vis.length - 3 === 1 ? '' : 's') + ' for this area'));
   }
   function loadAlerts() {
     var url = 'https://api.weather.gov/alerts/active?point=' + wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);

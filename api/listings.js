@@ -85,7 +85,10 @@ async function handler(req, res) {
   const send = (code, obj) => res.status(code).send(JSON.stringify(obj));
   if (!URL_ || !TOKEN) return send(200, { configured: false, items: [] });
   try {
-    const body = req.method === 'POST' ? (typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {})) : {};
+    let body = {};
+    if (req.method === 'POST') {
+      try { body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}); } catch (_) { return send(400, { error: 'bad request' }); }
+    }
     const now = Date.now();
     const kind = kindOf(req.method === 'GET' || req.method === 'DELETE' ? (req.query && req.query.kind) : body.kind);
     const INDEX = indexFor(kind);
@@ -118,8 +121,9 @@ async function handler(req, res) {
 
     if (req.method === 'POST' && body.action === 'report') {
       if (!ID_RE.test(String(body.id)) || !UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
-      const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, body.uid], ['SCARD', 'tsn:ls:rep:' + body.id]]);
-      if ((Number(out[1] && out[1].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id]]);
+      const rip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || body.uid;
+      const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, rip], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
+      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id]]);
       return send(200, { ok: true });
     }
 
@@ -128,7 +132,7 @@ async function handler(req, res) {
       const v = validate(body, kind);
       if (v.error) return send(400, { error: v.error, field: v.field });
       const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
-      const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400'], ['INCR', 'tsn:ls:rlip:' + ip], ['EXPIRE', 'tsn:ls:rlip:' + ip, '86400']]);
+      const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400', 'NX'], ['INCR', 'tsn:ls:rlip:' + ip], ['EXPIRE', 'tsn:ls:rlip:' + ip, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_UID || (Number(rl[2] && rl[2].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve posted a few items today. Try again tomorrow.' });
       const id = now.toString(36) + Math.random().toString(36).slice(2, 8);
       const photo = goodImage(body.img, MAX_PHOTO), logo = kind === 'deal' ? goodImage(body.logo, MAX_LOGO) : '';
@@ -155,7 +159,8 @@ async function handler(req, res) {
     }
     return send(405, { error: 'method' });
   } catch (e) {
-    return send(200, { configured: false, items: [] });
+    // reading degrades quietly (the page just shows no community posts); a failed write must say so
+    return req.method === 'GET' ? send(200, { configured: false, items: [] }) : send(502, { error: 'Couldn’t save that right now. Try again in a moment.' });
   }
 }
 

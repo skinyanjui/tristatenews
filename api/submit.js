@@ -73,7 +73,7 @@ async function handler(req, res) {
     if (v.error) return send(400, { error: v.error, field: v.field });
     const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
     if (stored) {
-      const rl = await pipeline([['INCR', 'tsn:tip:rl:' + ip], ['EXPIRE', 'tsn:tip:rl:' + ip, '86400']]);
+      const rl = await pipeline([['INCR', 'tsn:tip:rl:' + ip], ['EXPIRE', 'tsn:tip:rl:' + ip, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve sent a few submissions today. Try again tomorrow.' });
     }
     const ref = 'TSN-' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(2, 4).toUpperCase();

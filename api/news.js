@@ -238,7 +238,7 @@ function parseIcal(text, source) {
     if (!title || !published || !link) continue;
     let summary = stripHtml(unesc(get('DESCRIPTION')));
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
-    const loc = unesc(get('LOCATION')).split(',')[0].trim().slice(0, 60);
+    const loc = (unesc(get('LOCATION')).split(',').map(x => x.trim()).find(x => x.length > 3) || '').slice(0, 60);
     items.push({ title, link, summary, image: '', published, source: source.name, sourceId: source.id, isEvent: true, venue: loc });
   }
   return items;
@@ -300,10 +300,12 @@ async function fetchTicketmaster(source, url) {
       const imgs = (e.images || []).filter(i => i.ratio === '16_9' && i.width >= 300).sort((a, b) => a.width - b.width);
       const seg = e.classifications && e.classifications[0] && e.classifications[0].segment && e.classifications[0].segment.name;
       const genre = e.classifications && e.classifications[0] && e.classifications[0].genre && e.classifications[0].genre.name;
+      const pr = e.priceRanges && e.priceRanges[0];
+      const fromPrice = pr && Number.isFinite(pr.min) && pr.min > 0 ? '$' + Math.round(pr.min) : '';
       const city = [v.city && v.city.name, v.state && v.state.stateCode].filter(Boolean).join(', ');
       let summary = stripHtml(e.info || e.pleaseNote || '');
       if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
-      items.push({ title: stripHtml(e.name), link, summary, image: safeUrl(imgs[0] && imgs[0].url, true), published, source: source.name, sourceId: source.id, isEvent: true, venue: [v.name, city].filter(Boolean).join(' · ').slice(0, 70), cat: genre === 'Family' ? 'Family' : (TM_SEGMENT[seg] || 'Community') });
+      items.push({ title: stripHtml(e.name), link, summary, image: safeUrl(imgs[0] && imgs[0].url, true), published, source: source.name, sourceId: source.id, isEvent: true, fromPrice, venue: [v.name, city].filter(Boolean).join(' · ').slice(0, 70), cat: genre === 'Family' ? 'Family' : (TM_SEGMENT[seg] || 'Community') });
     }
     if (!d.page || page + 1 >= d.page.totalPages) break;
   }

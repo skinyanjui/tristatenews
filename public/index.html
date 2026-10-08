@@ -116,12 +116,18 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .alert.sev-minor { --sev:var(--blue); }
 .alert .ah { display:flex; align-items:center; gap:4px; min-height:44px; padding:4px 4px 4px 16px; }
 .alert .at { flex:1; min-width:0; display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:44px; text-align:left; font-weight:500; cursor:pointer; }
-.alert .at span { color:var(--foreground); opacity:.75; font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .at .rt span { color:var(--foreground); opacity:.75; font-weight:400; font-size:12px; line-height:16px; text-align:right; }
+.alert .ai { flex:none; display:inline-flex; margin-right:10px; }
+.alert .ai svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.alert .at b { flex:1; min-width:0; }
+.alert .rt { flex:none; display:inline-flex; align-items:center; gap:8px; }
+.alert .bar { width:56px; height:6px; border-radius:3px; background:color-mix(in srgb, var(--sev) 25%, transparent); overflow:hidden; }
+.alert .bar i { display:block; height:100%; background:var(--sev); border-radius:3px; }
 .alert .al { flex:none; display:inline-flex; align-items:center; min-height:44px; padding:0 8px; font-size:13px; font-weight:600; color:inherit; text-decoration:underline; }
 .alert .ax { flex:none; width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-md); font-size:20px; line-height:1; }
 .alert .ax:hover, .alert .al:hover { background:color-mix(in srgb, var(--sev) 20%, transparent); }
 .alert .ab[hidden] { display:none; }
-@media (max-width:479px) { .alert .at span { display:none; } }
+@media (max-width:479px) { .alert .at .rt span { display:none; } .alert .bar { width:40px; } }
 .alert .ab { padding:0 16px 12px; color:var(--foreground); }
 .alert .ab p { margin:0 0 8px; }
 
@@ -154,6 +160,8 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 [hidden] { display:none !important; }
 .cl { display:grid; gap:12px; margin-bottom:16px; }
 .cl-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.cl-bar .ev-town { min-width:0; flex:1; max-width:320px; }
+.cl-bar .ev-town select { width:100%; font-weight:600; }
 .cl-go { min-height:36px; padding:0 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-weight:500; }
 .cl-go:disabled { opacity:.5; }
 .cl-form { display:grid; gap:14px; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
@@ -803,6 +811,18 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   /* ---------- weather alerts (National Weather Service) ---------- */
   var alertsEl = document.getElementById('alerts'), alertGone = {};
   function alertKey(p) { return p.id || (p.event + '|' + (p.ends || p.expires || '')); }
+  function alertIcon(ev) {
+    var e = String(ev || '').toLowerCase(), C = 'M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242';
+    if (/tornado/.test(e)) return [['path', { d: 'M21 4H3M18 8H6M19 12H9M16 16h-6M11 20H9' }]];
+    if (/thunder|lightning/.test(e)) return [['path', { d: 'M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973' }], ['path', { d: 'm13 12-3 5h4l-3 5' }]];
+    if (/flood|rain|hydro/.test(e)) return [['path', { d: C }], ['path', { d: 'M16 14v6M8 14v6M12 16v6' }]];
+    if (/wind|gust/.test(e)) return [['path', { d: 'M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2' }]];
+    if (/winter|snow|ice|blizzard|sleet/.test(e)) return [['path', { d: 'M2 12h20M12 2v20m8-4-4-4 4-4M4 8l4 4-4 4m8-12-4 4-4-4m0 0M8 20l4-4 4 4' }]];
+    if (/heat/.test(e)) return SUN;
+    if (/frost|freez|cold|chill/.test(e)) return [['path', { d: 'M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z' }]];
+    if (/fog|smoke|haze/.test(e)) return [['path', { d: C }], ['path', { d: 'M16 17H7M17 21H9' }]];
+    return [['path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' }], ['path', { d: 'M12 9v4M12 17h.01' }]];
+  }
   function renderAlerts() {
     alertsEl.textContent = '';
     var vis = state.alerts.filter(function (p) { return !alertGone[alertKey(p)]; });
@@ -811,9 +831,19 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       var d = el('div', 'alert ' + sev);
       var hd = el('div', 'ah');
       var tg = el('button', 'at'); tg.type = 'button'; tg.setAttribute('aria-expanded', 'false');
+      var ic = el('span', 'ai'); ic.appendChild(svg(alertIcon(p.event))); tg.appendChild(ic);
       tg.appendChild(el('b', null, p.event));
-      var until = p.ends || p.expires;
-      if (until && !isNaN(Date.parse(until))) tg.appendChild(el('span', null, 'Until ' + new Date(until).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+      var until = p.ends || p.expires, endMs = Date.parse(until), startMs = Date.parse(p.onset || p.effective || p.sent);
+      if (until && !isNaN(endMs)) {
+        var rt = el('span', 'rt');
+        if (!isNaN(startMs) && endMs > startMs) {
+          var left = Math.max(0, Math.min(1, (endMs - Date.now()) / (endMs - startMs)));
+          var bar = el('span', 'bar'); bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', Math.round(left * 100) + '% of the alert period left');
+          var fill = el('i'); fill.style.width = Math.round(left * 100) + '%'; bar.appendChild(fill); rt.appendChild(bar);
+        }
+        rt.appendChild(el('span', null, new Date(endMs).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+        tg.appendChild(rt);
+      }
       hd.appendChild(tg);
       var wx = 'https://forecast.weather.gov/MapClick.php?lat=' + wxLoc.lat.toFixed(4) + '&lon=' + wxLoc.lon.toFixed(4);
       var more = el('a', 'al', 'Details'); more.href = wx; more.target = '_blank'; more.rel = 'noopener noreferrer'; more.setAttribute('aria-label', p.event + ' details on weather.gov');
@@ -989,12 +1019,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
     if (kind === 'event' && !ignoreQ) {
       if (b.when && b.when !== 'any') all = all.filter(function (x) { return whenOk(x, b.when); });
-      if (b.town) all = all.filter(function (x) { return townOf(x) === b.town; });
     }
-    if (kind === 'job' && !ignoreQ) {
-      if (b.jt) all = all.filter(function (x) { return x.jobType === b.jt; });
-      if (b.town) all = all.filter(function (x) { return townOf(x) === b.town; });
-    }
+    if (kind === 'job' && !ignoreQ && b.jt) all = all.filter(function (x) { return x.jobType === b.jt; });
+    if (b.town && !ignoreQ) all = all.filter(function (x) { return townOf(x) === b.town; });
     var q = ignoreQ ? '' : state.q.trim().toLowerCase();
     if (q && kind !== 'item') {
       var words = q.split(/\s+/);
@@ -1436,17 +1463,6 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       row.appendChild(x);
     });
     bar.appendChild(row);
-    var counts = {};
-    b.items.concat(feedEvents()).forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
-    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
-    if (towns.length > 1) {
-      var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', 'Town'));
-      var sel = el('select'); sel.setAttribute('aria-label', 'Town');
-      var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
-      towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
-      sel.addEventListener('change', function () { b.town = sel.value; drawBoard('event'); });
-      lab.appendChild(sel); bar.appendChild(lab);
-    }
     return bar;
   }
   function jobFilters(b) {
@@ -1458,23 +1474,27 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       row.appendChild(x);
     });
     bar.appendChild(row);
-    var counts = {};
-    b.items.concat(b.items.length ? [] : b.samples).forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
-    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
-    if (towns.length > 1) {
-      var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', 'Town'));
-      var sel = el('select'); sel.setAttribute('aria-label', 'Town');
-      var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
-      towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
-      sel.addEventListener('change', function () { b.town = sel.value; drawBoard('job'); });
-      lab.appendChild(sel); bar.appendChild(lab);
-    }
     return bar;
+  }
+  // The heading of every board is its town picker.
+  function townPicker(b, kind, title) {
+    var real = b.items.slice(); if (kind === 'event') real = real.concat(feedEvents());
+    var pool = real.concat(real.length < 8 ? b.samples.slice(0, 8 - real.length) : []), counts = {};
+    pool.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
+    if (b.town && !counts[b.town]) counts[b.town] = 0;
+    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
+    if (towns.length < 2) return el('b', null, title);
+    var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', title + ' by town'));
+    var sel = el('select'); sel.setAttribute('aria-label', title + ' by town');
+    var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
+    towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
+    sel.addEventListener('change', function () { b.town = sel.value; drawBoard(kind); });
+    lab.appendChild(sel); return lab;
   }
   function drawBody(kind, title, postLabel) {
     var b = boards[kind], root = b.el;
     root.textContent = '';
-    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, title));
+    var bar = el('div', 'cl-bar'); bar.appendChild(townPicker(b, kind, title));
     if (b.configured !== false) {
       var post = el('button', 'cl-go', b.form ? 'Cancel' : postLabel); post.type = 'button';
       post.addEventListener('click', function () { b.form = !b.form; drawBoard(kind); });
@@ -1489,9 +1509,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
     if (!items.length) {
       var emp = el('div', 'cl-empty');
-      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : (kind === 'job' && (b.jt || b.town || b.filter)) ? 'No jobs match these filters.' : 'Nothing in this category yet.'));
+      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : 'Nothing in this category yet.'));
       if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { var cf = el('button', 'primary', 'Clear filters'); cf.type = 'button'; cf.addEventListener('click', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); }); emp.appendChild(cf); }
-      if (kind === 'job' && (b.jt || b.town || b.filter)) { var cj = el('button', 'primary', 'Clear filters'); cj.type = 'button'; cj.addEventListener('click', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard('job'); }); emp.appendChild(cj); }
+      if ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) { var cj = el('button', 'primary', 'Clear filters'); cj.type = 'button'; cj.addEventListener('click', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); }); emp.appendChild(cj); }
       list.appendChild(emp);
     }
     root.appendChild(list);

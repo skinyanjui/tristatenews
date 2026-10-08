@@ -164,17 +164,20 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 [hidden] { display:none !important; }
 .cl { display:grid; gap:12px; margin-bottom:16px; }
 .cl-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.cl-bar .ev-town { min-width:0; flex:1; max-width:320px; }
-.cl-bar .ev-town select { width:100%; font-weight:600; }
+.cl-bar .ev-town { min-width:0; max-width:100%; }
+.cl-bar .ev-town select { font-weight:600; }
 .cl-go { min-height:36px; padding:0 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-weight:500; }
 .cl-go:disabled { opacity:.5; }
 .cl-form { display:grid; gap:14px; border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
 .cl-f { display:grid; gap:4px; min-width:0; position:relative; }
 .cl-f > label { font-size:12px; line-height:16px; font-weight:500; color:var(--text-muted); }
+.ui-select { width:auto; max-width:100%; justify-self:start; }
+.uc { text-transform:uppercase; }
 .cl-f input, .cl-f select, .cl-f textarea { width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; min-width:0; }
 .cl-f input:focus-visible, .cl-f select:focus-visible, .cl-f textarea:focus-visible, .cl-seg button:focus-visible { outline:2px solid var(--blue); outline-offset:1px; }
 .cl-f [aria-invalid="true"] { border-color:var(--red); }
 .cl-f textarea { resize:vertical; }
+.cl-f select.ui-select { width:auto; }
 .cl-hint, .cl-count { color:var(--text-muted); font-size:12px; line-height:16px; }
 .cl-count { text-align:right; }
 .cl-fe, .cl-err { color:var(--red); font-size:12px; line-height:16px; }
@@ -455,6 +458,47 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     d.forEach(function (x) { var p = document.createElementNS(ns, x[0]); Object.keys(x[1]).forEach(function (k) { p.setAttribute(k, x[1][k]); }); n.appendChild(p); });
     return n;
   }
+  /* ---------- components: one place for the pieces every board and form reuses ---------- */
+  var UI = (function () {
+    var cv = document.createElement('canvas').getContext('2d'), pending = [];
+    // A select is exactly as wide as its longest option (plus padding and the arrow), in every browser.
+    function fit() {
+      pending = pending.filter(function (sel) {
+        if (!sel.isConnected) return true;
+        var cs = getComputedStyle(sel); cv.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        var w = 0; Array.prototype.forEach.call(sel.options, function (o) { w = Math.max(w, cv.measureText(o.text).width); });
+        var extra = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 28;
+        sel.style.width = Math.ceil(w + extra) + 'px';
+        return false;
+      });
+      if (pending.length) requestAnimationFrame(fit);
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { pending = pending.concat([].slice.call(document.querySelectorAll('select.ui-select'))); fit(); });
+    return {
+      // options: strings or {value, label}; blank adds an empty first option with that label.
+      select: function (o) {
+        var sel = el('select', 'ui-select');
+        if (o.name) sel.name = o.name;
+        if (o.id) sel.id = o.id;
+        if (o.label) sel.setAttribute('aria-label', o.label);
+        var opts = (o.blank ? [{ value: '', label: o.blank }] : []).concat((o.options || []).map(function (x) { return typeof x === 'string' ? { value: x, label: x } : x; }));
+        opts.forEach(function (x) { var op = el('option', null, x.label); op.value = x.value; if (o.value === x.value) op.selected = true; sel.appendChild(op); });
+        if (o.onChange) sel.addEventListener('change', function () { o.onChange(sel.value); });
+        pending.push(sel); requestAnimationFrame(fit);
+        return sel;
+      },
+      chip: function (label, on, onClick) {
+        var x = el('button', 'cl-chip', label); x.type = 'button'; x.setAttribute('aria-pressed', String(!!on)); x.addEventListener('click', onClick); return x;
+      },
+      // A scrolling row of single-choice chips. items: [{value, label}], active: the current value.
+      chipRow: function (items, active, onPick, aria) {
+        var row = el('div', 'cl-chips'); if (aria) { row.setAttribute('role', 'group'); row.setAttribute('aria-label', aria); }
+        items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
+        return row;
+      },
+      button: function (label, cls, onClick) { var b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', onClick); return b; }
+    };
+  })();
   var SUN = [['circle', { cx: 12, cy: 12, r: 4 }], ['path', { d: 'M12 2v2' }], ['path', { d: 'M12 20v2' }], ['path', { d: 'm4.93 4.93 1.41 1.41' }], ['path', { d: 'm17.66 17.66 1.41 1.41' }], ['path', { d: 'M2 12h2' }], ['path', { d: 'M20 12h2' }], ['path', { d: 'm6.34 17.66-1.41 1.41' }], ['path', { d: 'm19.07 4.93-1.41 1.41' }]];
   var MOON = [['path', { d: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' }]];
   /* clock: local time for the Tri-State (Central), updated on the minute */
@@ -1153,12 +1197,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   }
   var uidSeq = 0;
   function input(type, name, max, ph) { var i = el('input'); i.type = type; i.name = name; i.maxLength = max; i.id = 'f-' + name + (++uidSeq); if (ph) i.placeholder = ph; if (type === 'text') i.autocomplete = 'off'; return i; }
-  function select(name, opts, blank) {
-    var sel = el('select'); sel.name = name; sel.id = 'f-' + name + (++uidSeq);
-    if (blank) { var o0 = el('option', null, blank); o0.value = ''; sel.appendChild(o0); }
-    opts.forEach(function (x) { var o = el('option', null, x); o.value = x; sel.appendChild(o); });
-    return sel;
-  }
+  function select(name, opts, blank) { return UI.select({ name: name, id: 'f-' + name + (++uidSeq), options: opts, blank: blank }); }
   function counter(node, max) {
     var c = el('div', 'cl-count'); function up() { c.textContent = node.value.length + '/' + max; } node.addEventListener('input', up); up(); return c;
   }
@@ -1194,7 +1233,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     F.category = field('Category', els.category, { req: true });
     F.town = field('Town', els.town, { req: true });
     if (isDeal) {
-      els.code = input('text', 'code', 20, 'FALL25'); els.code.style.textTransform = 'uppercase';
+      els.code = input('text', 'code', 20, 'FALL25'); els.code.classList.add('uc');
       els.ends = input('date', 'ends', 10); els.ends.min = inDays(0);
       F.code = field('Coupon code', els.code, { hint: 'Letters, numbers and dashes' }); F.ends = field('Ends', els.ends);
     } else if (isEv) {
@@ -1465,36 +1504,17 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   }
   function chips(b, kind) {
     var present = {}; b.items.concat(b.samples, kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
-    var row = el('div', 'cl-chips');
-    ['All'].concat(b.cats.filter(function (c) { return present[c]; })).forEach(function (c) {
-      var on = (c === 'All' && !b.filter) || c === b.filter;
-      var x = el('button', 'cl-chip', c); x.type = 'button'; x.setAttribute('aria-pressed', String(on));
-      x.addEventListener('click', function () { b.filter = c === 'All' ? '' : c; drawBoard(kind); });
-      row.appendChild(x);
-    });
-    return row;
+    var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
+    return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
   }
   function eventFilters(b) {
     var bar = el('div', 'ev-filters');
-    var row = el('div', 'cl-chips'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'When');
-    [['any', 'Any date'], ['today', 'Today'], ['weekend', 'This weekend'], ['week', 'Next 7 days']].forEach(function (w) {
-      var on = (b.when || 'any') === w[0];
-      var x = el('button', 'cl-chip', w[1]); x.type = 'button'; x.setAttribute('aria-pressed', String(on));
-      x.addEventListener('click', function () { b.when = w[0]; drawBoard('event'); });
-      row.appendChild(x);
-    });
-    bar.appendChild(row);
+    bar.appendChild(UI.chipRow([{ value: 'any', label: 'Any date' }, { value: 'today', label: 'Today' }, { value: 'weekend', label: 'This weekend' }, { value: 'week', label: 'Next 7 days' }], b.when || 'any', function (v) { b.when = v; drawBoard('event'); }, 'When'));
     return bar;
   }
   function jobFilters(b) {
     var bar = el('div', 'ev-filters');
-    var row = el('div', 'cl-chips'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'Job type');
-    [''].concat(JOB_TYPES).forEach(function (t) {
-      var x = el('button', 'cl-chip', t || 'Any type'); x.type = 'button'; x.setAttribute('aria-pressed', String((b.jt || '') === t));
-      x.addEventListener('click', function () { b.jt = t; drawBoard('job'); });
-      row.appendChild(x);
-    });
-    bar.appendChild(row);
+    bar.appendChild(UI.chipRow([{ value: '', label: 'Any type' }].concat(JOB_TYPES.map(function (t) { return { value: t, label: t }; })), b.jt || '', function (v) { b.jt = v; drawBoard('job'); }, 'Job type'));
     return bar;
   }
   // The heading of every board is its town picker.
@@ -1506,11 +1526,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
     if (towns.length < 2) return el('b', null, title);
     var lab = el('label', 'ev-town'); lab.appendChild(el('span', 'sr-only', title + ' by town'));
-    var sel = el('select'); sel.setAttribute('aria-label', title + ' by town');
-    var all = el('option', null, 'All towns'); all.value = ''; sel.appendChild(all);
-    towns.forEach(function (t) { var o = el('option', null, t + ' (' + counts[t] + ')'); o.value = t; if (b.town === t) o.selected = true; sel.appendChild(o); });
-    sel.addEventListener('change', function () { b.town = sel.value; drawBoard(kind); });
-    lab.appendChild(sel); return lab;
+    lab.appendChild(UI.select({ label: title + ' by town', blank: 'All towns', value: b.town, options: towns.map(function (t) { return { value: t, label: t + ' (' + counts[t] + ')' }; }), onChange: function (v) { b.town = v; drawBoard(kind); } }));
+    return lab;
   }
   function drawBody(kind, title, postLabel) {
     var b = boards[kind], root = b.el;
@@ -1531,8 +1548,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (!items.length) {
       var emp = el('div', 'cl-empty');
       emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : 'Nothing in this category yet.'));
-      if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { var cf = el('button', 'primary', 'Clear filters'); cf.type = 'button'; cf.addEventListener('click', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); }); emp.appendChild(cf); }
-      if ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) { var cj = el('button', 'primary', 'Clear filters'); cj.type = 'button'; cj.addEventListener('click', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); }); emp.appendChild(cj); }
+      if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); })); }
+      if ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
       list.appendChild(emp);
     }
     root.appendChild(list);

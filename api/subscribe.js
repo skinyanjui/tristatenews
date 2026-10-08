@@ -5,6 +5,7 @@
 // new subscriber is also added to that Resend audience so a broadcast can be sent from Resend.
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -22,7 +23,7 @@ async function handler(req, res) {
   if (!URL_ || !TOKEN) return send(503, { error: 'Signups aren’t open yet. Please check back soon.' });
   try {
     if (req.method === 'GET') {
-      if (!ADMIN || req.headers['x-admin-key'] !== ADMIN) return send(404, { error: 'not found' });
+      if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(404, { error: 'not found' });
       const out = await pipeline([['SMEMBERS', 'tsn:nl:subs']]);
       const emails = (out[0] && out[0].result) || [];
       return send(200, { count: emails.length, emails });

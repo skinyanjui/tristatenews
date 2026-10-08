@@ -9,6 +9,7 @@
 // Set LISTINGS_ADMIN_KEY to remove any listing: DELETE with header x-admin-key.
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
 const ID_RE = /^[a-z0-9]{6,20}$/;
@@ -165,7 +166,7 @@ async function handler(req, res) {
     if (req.method === 'DELETE') {
       const id = String((req.query && req.query.id) || ''), uid = String((req.query && req.query.uid) || '');
       if (!ID_RE.test(id)) return send(400, { error: 'bad request' });
-      const admin = ADMIN && req.headers['x-admin-key'] === ADMIN;
+      const admin = ADMIN && same(req.headers['x-admin-key'], ADMIN);
       if (!admin) {
         if (!UID_RE.test(uid)) return send(400, { error: 'bad request' });
         const g = await pipeline([['GET', rec(id)]]);

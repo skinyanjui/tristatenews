@@ -7,6 +7,7 @@
 // With neither configured the endpoint answers 503 and the page says submissions aren't open yet.
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', TO = process.env.TIPS_TO_EMAIL || '';
 const FROM = process.env.TIPS_FROM_EMAIL || 'Tri-State News <onboarding@resend.dev>';
@@ -61,7 +62,7 @@ async function handler(req, res) {
   const stored = !!(URL_ && TOKEN), mail = !!(RESEND && TO);
   try {
     if (req.method === 'GET') {
-      if (!ADMIN || req.headers['x-admin-key'] !== ADMIN || !stored) return send(404, { error: 'not found' });
+      if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN) || !stored) return send(404, { error: 'not found' });
       const out = await pipeline([['LRANGE', 'tsn:tips', '0', '99']]);
       return send(200, { items: ((out[0] && out[0].result) || []).map(x => { try { return JSON.parse(x); } catch (e) { return null; } }).filter(Boolean) });
     }

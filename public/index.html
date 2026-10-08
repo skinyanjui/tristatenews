@@ -6,6 +6,22 @@
 <meta name="color-scheme" content="light dark">
 <title>Tri-State News</title>
 <meta name="description" content="Local news from across the Evansville, IN-KY metro, refreshed hourly.">
+<link rel="canonical" href="https://tristatenewss.vercel.app/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tri-State News">
+<meta property="og:title" content="Tri-State News">
+<meta property="og:description" content="Local news, events, jobs and deals for Evansville and the IN-KY-IL tri-state.">
+<meta property="og:url" content="https://tristatenewss.vercel.app/">
+<meta property="og:image" content="https://tristatenewss.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tri-State News","url":"https://tristatenewss.vercel.app/","description":"Local news aggregator for the Evansville IN-KY-IL tri-state."}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
@@ -15,7 +31,7 @@
   --background:#fff; --background-subtle:#fafafa; --foreground:#171717;
   --gray-100:#f2f2f2; --gray-200:#ebebeb; --gray-300:#e0e0e0; --gray-400:#c9c9c9;
   --gray-500:#a8a8a8; --gray-600:#8f8f8f; --gray-700:#666; --gray-800:#444; --gray-900:#2e2e2e; --gray-1000:#171717;
-  --blue:#0070f3; --blue-subtle:#e6f0fd; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
+  --blue:#0070f3; --blue-subtle:#e6f0fd; --blue-text:#0050b3; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
   --border:var(--gray-300); --text-muted:var(--gray-700);
   --radius-sm:6px; --radius-md:6px; --radius-lg:6px; --radius-xl:6px;
   --shadow-md:0 4px 12px rgba(0,0,0,.08); --shadow-lg:0 12px 32px rgba(0,0,0,.12);
@@ -27,7 +43,7 @@
   --background:#0a0a0a; --background-subtle:#111; --foreground:#ededed;
   --gray-100:#1a1a1a; --gray-200:#1f1f1f; --gray-300:#2e2e2e; --gray-400:#454545;
   --gray-500:#878787; --gray-600:#a1a1a1; --gray-700:#b4b4b4; --gray-800:#d4d4d4; --gray-900:#e3e3e3; --gray-1000:#ededed;
-  --blue:#3291ff; --blue-subtle:#10233c; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
+  --blue:#3291ff; --blue-subtle:#10233c; --blue-text:#6cb0ff; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
   --shadow-md:0 4px 12px rgba(0,0,0,.5); --shadow-lg:0 12px 32px rgba(0,0,0,.6);
 }
 *,*::before,*::after { box-sizing:border-box; }
@@ -36,6 +52,9 @@ body { margin:0; background:var(--background); color:var(--foreground); font:400
 a { color:inherit; text-decoration:none; }
 button { font:inherit; color:inherit; cursor:pointer; background:none; border:0; padding:0; }
 :focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.skip { position:absolute; left:16px; top:-48px; z-index:50; min-height:var(--ctl); padding:0 12px; display:inline-flex; align-items:center; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-weight:500; }
+.skip:focus { top:8px; }
+main:focus { outline:none; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
 /* top nav */
@@ -101,7 +120,7 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .job { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; gap:8px; align-content:start; min-width:0; background:var(--background); }
 .job-head { display:flex; align-items:center; gap:8px; min-height:28px; flex-wrap:wrap; }
 .job-co { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); min-width:0; overflow-wrap:anywhere; }
-.job-type { margin-left:auto; flex:none; display:inline-flex; align-items:center; min-height:24px; padding:0 8px; border-radius:var(--radius-md); font-size:12px; line-height:16px; font-weight:600; background:var(--blue-subtle); color:var(--blue); }
+.job-type { margin-left:auto; }
 .job-title { margin:0; font-size:16px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
 .job-pay { font-family:var(--font-mono); font-weight:500; }
 .job-apply { display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; font-size:12px; line-height:16px; color:var(--text-muted); }
@@ -134,7 +153,8 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .rail-ad .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
 .rail-ad .bav { width:40px; height:40px; font-size:13px; }
 .rail-house { border-style:dashed; }
-.spon-wrap:empty { display:none; }
+.spon-wrap { min-height:calc(var(--ctl) + 12px); } /* reserved so the sponsor bar doesn't push the stories down when it arrives */
+.spon-wrap.done:empty { display:none; }
 .spon-ad { margin:0 0 12px; min-height:0; }
 .spon-ad ins { display:block; }
 .spon { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; width:100%; min-height:44px; padding:8px 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
@@ -244,6 +264,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .pill i { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.6s var(--ease) infinite; }
 .pill-over { position:absolute; top:12px; left:12px; z-index:1; border-color:transparent; box-shadow:0 1px 4px rgba(0,0,0,.18); }
 .pill-feat { position:absolute; top:-12px; left:16px; z-index:2; background:var(--amber); border-color:transparent; color:#1a1200; }
+.pill-blue { background:var(--blue-subtle); border-color:transparent; color:var(--blue-text); }
 .pill-red { background:#c4262c; border-color:transparent; color:#fff; }
 .cl-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
 .cl-chips::-webkit-scrollbar { display:none; }
@@ -401,6 +422,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .sk-card { display:grid; grid-template-columns:96px 1fr; gap:16px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-lg); }
 .sk-line { height:16px; border-radius:var(--radius-sm); margin-bottom:8px; }
 .sk-img { width:96px; height:96px; border-radius:var(--radius-md); }
+.sk-card { height:100px; padding-block:0; align-items:center; overflow:hidden; }
+@media (min-width:640px) { .sk-card { height:128px; grid-template-columns:128px 1fr; } .sk-img { width:128px; } }
 
 /* states */
 .state { border:1px dashed var(--gray-400); border-radius:var(--radius-lg); padding:48px 24px; text-align:center; }
@@ -452,6 +475,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to stories</a>
 <header class="nav">
   <div class="nav-in">
     <div class="brandbox">
@@ -474,7 +498,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
 <aside id="rail-l" class="rail rail-l" aria-label="Sponsored"></aside>
 <aside id="rail-r" class="rail rail-r" aria-label="Sponsored"></aside>
-<main>
+<main id="main" tabindex="-1">
   <div class="banners" id="banners">
     <div class="bn bn-break" id="bnBreak" hidden></div>
   </div>
@@ -908,7 +932,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     fetch(wxUrl(wxLoc)).then(function (r) { if (!r.ok) throw new Error('wx'); return r.json(); }).then(function (w) {
       var cur = w.current, dly = w.daily;
       wxBtn.disabled = false;
-      wxBtn.setAttribute('aria-label', 'Weather in ' + wxLoc.name + '. Change location');
+      wxBtn.setAttribute('aria-label', Math.round(cur.temperature_2m) + '°F ' + shortName(wxLoc.name) + '. Weather in ' + wxLoc.name + '. Change location');
       wxBtn.textContent = '';
       wxBtn.appendChild(el('span', 'wx-temp', Math.round(cur.temperature_2m) + '°F'));
       wxBtn.appendChild(el('span', 'wx-cond', shortName(wxLoc.name)));
@@ -940,7 +964,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       }
     }).catch(function () {
       wxBtn.textContent = '';
-      wxBtn.appendChild(el('span', 'wx-cond', 'Weather unavailable'));
+      wxBtn.appendChild(el('span', 'wx-cond', 'Weather unavailable')); wxBtn.setAttribute('aria-label', 'Weather unavailable');
       wxBtn.firstChild.style.display = 'inline';
       wxBtn.disabled = true;
     });
@@ -963,13 +987,23 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       if (c.id === 'obits') n += boards.obit.items.length;
       if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && c.id !== 'obits' && n === 0) return;
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(state.cat === c.id));
+      b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id;
       b.appendChild(el('span', null, c.label));
       if (c.id !== 'classifieds') b.appendChild(el('span', 'n', String(n)));
       b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); });
       tabsEl.appendChild(b);
     });
   }
+  tabsEl.addEventListener('keydown', function (e) {
+    var keys = { ArrowRight: 1, ArrowLeft: -1, Home: 0, End: 0 };
+    if (!(e.key in keys)) return;
+    var tabs = [].slice.call(tabsEl.querySelectorAll('[role=tab]')), i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + keys[e.key] + tabs.length) % tabs.length;
+    var id = tabs[j].dataset.cat; tabs[j].click();
+    var again = tabsEl.querySelector('[data-cat="' + id + '"]'); if (again) again.focus();
+  });
   var qEl = document.getElementById('q'), qTimer = null;
   document.getElementById('home').addEventListener('click', function (ev) {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
@@ -1658,7 +1692,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var head = el('div', 'job-head');
     head.appendChild(bizAvatar(it.business || it.title, it.logo));
     head.appendChild(el('span', 'job-co', it.business || ''));
-    if (it.jobType) head.appendChild(el('span', 'job-type', it.jobType));
+    if (it.jobType) { var jt = UI.pill({ label: it.jobType, tone: 'blue' }); jt.classList.add('job-type'); head.appendChild(jt); }
     c.appendChild(head);
     c.appendChild(el('h3', 'job-title', it.title));
     var meta = el('div', 'cl-meta');
@@ -1735,6 +1769,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function drawBody(kind, title, postLabel) {
     var b = boards[kind], root = b.el;
     root.textContent = '';
+    root.appendChild(el('h2', 'sr-only', title));
     var bar = el('div', 'cl-bar'); bar.appendChild(townPicker(b, kind, title));
     if (b.configured !== false) {
       var post = el('button', 'cl-go', b.form ? 'Cancel' : postLabel); post.type = 'button';
@@ -1986,9 +2021,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (d && d.adsense) SPONSORS.adsense = d.adsense;
     SPONSORS.__rails = d && d.rails ? d.rails : {};
     UI.rails();
-    var sp = UI.sponsor('news', false), slot = document.getElementById('sp-news'); slot.textContent = ''; if (sp) slot.appendChild(sp);
+    var sp = UI.sponsor('news', false), slot = document.getElementById('sp-news'); slot.textContent = ''; if (sp) slot.appendChild(sp); slot.classList.add('done');
     Object.keys(boards).forEach(drawBoard);
-  }).catch(function () { SPONSORS = {}; UI.rails(); });
+  }).catch(function () { SPONSORS = {}; UI.rails(); document.getElementById('sp-news').classList.add('done'); });
   fetch('/api/checkout', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     if (d) { PAY = { configured: !!d.configured, prices: d.prices || {} }; Object.keys(boards).forEach(drawBoard); }
   }).catch(function () {});

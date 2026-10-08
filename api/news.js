@@ -74,6 +74,9 @@ const SOURCES = [
   // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
   { id: 'ev-ford', name: 'Ford Center', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://fordcenter.com/events-tickets/view-all-events' },
   { id: 'ev-victory', name: 'Victory Theatre', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://www.victorytheatre.com/events-tickets/view-all-events' },
+  { id: 'ev-hend', name: 'Henderson Tourist Commission', area: 'Henderson', kind: 'events', url: 'https://hendersonky.org/events/?ical=1&eventDisplay=list&posts_per_page=100' },
+  { id: 'ev-vin', name: 'Visit Vincennes', area: 'Vincennes', kind: 'events', url: 'https://www.visitvincennes.org/events/?ical=1&eventDisplay=list&posts_per_page=100' },
+  { id: 'ev-murph', name: 'Murphysboro Chamber', area: 'Murphysboro', kind: 'events', url: 'https://www.murphysboro.com/events/?ical=1&eventDisplay=list&posts_per_page=100' },
   { id: 'ev-evv', name: 'Explore Evansville', area: 'Evansville', kind: 'events', url: 'https://www.exploreevansville.com/events/feed/', altUrls: ['https://www.exploreevansville.com/events/?ical=1'] },
   { id: 'ev-owb', name: 'Visit Owensboro', area: 'Owensboro', kind: 'events', url: 'https://www.visitowensboro.com/events/feed/', altUrls: ['https://www.visitowensboro.com/events/?ical=1'] },
   { id: 'ev-mad', name: 'Visit Madisonville', area: 'Madisonville', kind: 'events', url: 'https://www.visitmadisonvilleky.com/events/feed/', altUrls: ['https://www.visitmadisonvilleky.com/events/?ical=1'] },
@@ -233,7 +236,8 @@ function parseIcal(text, source) {
     if (!title || !published || !link) continue;
     let summary = stripHtml(unesc(get('DESCRIPTION')));
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
-    items.push({ title, link, summary, image: '', published, source: source.name, sourceId: source.id, isEvent: true });
+    const loc = unesc(get('LOCATION')).split(',')[0].trim().slice(0, 60);
+    items.push({ title, link, summary, image: '', published, source: source.name, sourceId: source.id, isEvent: true, venue: loc });
   }
   return items;
 }
@@ -355,7 +359,7 @@ function combine(results, now) {
   all.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
   obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
-  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 120), obits.slice(0, 150)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
+  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 160), obits.slice(0, 150)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
 }
 
 function logoFor(url) {

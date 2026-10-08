@@ -116,6 +116,10 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .is-featured { overflow:visible !important; }
 .is-featured > .deal-img, .is-featured > .ev-hero { border-radius:calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0; overflow:hidden; }
 .feat-badge { position:absolute; top:-10px; left:16px; z-index:2; display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:var(--radius-md); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.ob { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; gap:6px; background:var(--background); min-width:0; }
+.ob h3 { margin:0; font-size:18px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
+.ob .ob-home { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.ob .ob-svc { font-weight:500; }
 .rail { display:none; }
 @media (min-width:1360px) {
   .rail { display:grid; gap:12px; position:fixed; top:124px; width:160px; align-content:start; z-index:1; }
@@ -479,6 +483,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   <section id="dl" class="cl" hidden aria-label="Deals"></section>
   <section id="ev" class="cl" hidden aria-label="Events"></section>
   <section id="jb" class="cl" hidden aria-label="Jobs"></section>
+  <section id="ob" class="cl" hidden aria-label="Community obituaries"></section>
   <section id="sn" class="cl sn" hidden aria-label="Submit news"></section>
   <section id="sr" class="sr" hidden aria-label="Search results"></section>
   <div id="sp-news" class="spon-wrap"></div>
@@ -928,7 +933,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       if (c.id === 'deals') n = shownItems(boards.deal, 'deal', true).length;
       if (c.id === 'events') n = shownItems(boards.event, 'event', true).length;
       if (c.id === 'jobs') n = shownItems(boards.job, 'job', true).length;
-      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && n === 0) return;
+      if (c.id === 'obits') n += boards.obit.items.length;
+      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && c.id !== 'obits' && n === 0) return;
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(state.cat === c.id));
       b.appendChild(el('span', null, c.label));
@@ -1125,6 +1131,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, samples: SAMPLE_ITEMS, el: clEl },
     deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, samples: SAMPLE_DEALS, el: document.getElementById('dl') },
     event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, samples: SAMPLE_EVENTS, el: document.getElementById('ev') },
+    obit: { items: [], loaded: false, configured: null, form: false, filter: '', town: '', mine: [], key: 'tsn.mineObits', cats: [], samples: [], el: document.getElementById('ob') },
     job: { items: [], loaded: false, configured: null, form: false, filter: '', jt: '', town: '', mine: [], key: 'tsn.mineJobs', cats: CATS_JOB, samples: SAMPLE_JOBS, el: document.getElementById('jb') }
   };
   Object.keys(boards).forEach(function (k) { try { boards[k].mine = JSON.parse(localStorage.getItem(boards[k].key) || '[]'); } catch (e) {} });
@@ -1193,8 +1200,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     }
     return all;
   }
-  var RENDER = { item: function () { renderClassifieds(); }, deal: function () { renderDeals(); }, event: function () { renderEvents(); }, job: function () { renderJobs(); } };
-  var TABOF = { item: 'classifieds', deal: 'deals', event: 'events', job: 'jobs' };
+  var RENDER = { item: function () { renderClassifieds(); }, deal: function () { renderDeals(); }, event: function () { renderEvents(); }, job: function () { renderJobs(); }, obit: function () { renderObits(); } };
+  var TABOF = { item: 'classifieds', deal: 'deals', event: 'events', job: 'jobs', obit: 'obits' };
   function drawBoard(kind) { if (state.cat === TABOF[kind]) RENDER[kind](); }
 
   /* images: category art for posts without a photo, initials avatars, and client-side photo resizing */
@@ -1315,7 +1322,46 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function townSelect() { var t = select('town', LOCS.map(function (l) { return l.name; }), 'Choose a town'); return t; }
 
   function fmtTime(hm) { if (!hm) return ''; var h = +hm.slice(0, 2), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function buildObitForm(b) {
+    var f = el('form', 'cl-form'); f.noValidate = true;
+    var F = {}, els = {};
+    els.title = input('text', 'title', 80, 'Full name'); F.title = field('Full name', els.title, { req: true });
+    els.business = input('text', 'business', 60, 'Funeral home'); F.business = field('Funeral home', els.business, { req: true });
+    els.town = townSelect(); F.town = field('Town', els.town, { req: true });
+    els.svc = input('date', 'svc', 10); els.svc.min = inDays(-14); F.svc = field('Service date', els.svc);
+    els.place = input('text', 'place', 60, 'Church or chapel and time'); F.place = field('Service location and time', els.place);
+    els.desc = el('textarea'); els.desc.name = 'desc'; els.desc.id = 'f-desc' + (++uidSeq); els.desc.maxLength = 600; els.desc.rows = 5; els.desc.placeholder = 'A short remembrance, survivors, visitation and memorial details';
+    F.desc = field('Tribute', els.desc); F.desc.appendChild(counter(els.desc, 600));
+    els.contact = input('text', 'contact', 80, '812-555-0142 or office@funeralhome.com'); F.contact = field('Funeral home contact', els.contact, { req: true, hint: 'Shown publicly so families and friends can reach the funeral home.' });
+    var two1 = el('div', 'cl-two'); two1.appendChild(F.title); two1.appendChild(F.business);
+    var two2 = el('div', 'cl-two'); two2.appendChild(F.town); two2.appendChild(F.svc);
+    [two1, two2, F.place, F.desc, F.contact].forEach(function (x) { f.appendChild(x); });
+    var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); f.appendChild(top);
+    var go = el('button', 'cl-go cl-wide', 'Post obituary'); go.type = 'submit'; f.appendChild(go);
+    f.appendChild(el('p', 'cl-note', 'For funeral homes and families. Posts come down after 30 days. No links. Anyone can report a post.'));
+    var order = ['title', 'business', 'town', 'svc', 'contact'];
+    function show(e) { order.forEach(function (k) { if (F[k]) F[k].err(e[k] || ''); }); var first = order.filter(function (k) { return e[k]; })[0]; if (first) { var n = F[first].querySelector('input,select'); if (n) n.focus(); } }
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); top.textContent = '';
+      var e = {}, c = els.contact.value.trim();
+      if (els.title.value.trim().length < 3) e.title = 'Add the full name.';
+      if (els.business.value.trim().length < 2) e.business = 'Add the funeral home’s name.';
+      if (!els.town.value) e.town = 'Choose a town.';
+      if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Add the funeral home’s phone number or email.';
+      show(e); if (Object.keys(e).length) return;
+      go.disabled = true; go.textContent = 'Posting…';
+      fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'obit', title: els.title.value, business: els.business.value, town: els.town.value, svc: els.svc.value, place: els.place.value, desc: els.desc.value, contact: els.contact.value, uid: uid }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (o) {
+          go.disabled = false; go.textContent = 'Post obituary';
+          if (!o.ok || !o.d.item) { var m = (o.d && o.d.error) || 'Couldn’t post that. Try again.'; if (o.d && o.d.field && F[o.d.field]) { var q = {}; q[o.d.field] = m; show(q); } else top.textContent = m; return; }
+          b.items.unshift(o.d.item); b.mine.push(o.d.item.id); saveMine(b); b.form = false; renderTabs(); drawBoard('obit');
+        }).catch(function () { go.disabled = false; go.textContent = 'Post obituary'; top.textContent = 'Couldn’t post that. Check your connection and try again.'; });
+    });
+    return f;
+  }
   function buildForm(kind, b) {
+    if (kind === 'obit') return buildObitForm(b);
     var isDeal = kind === 'deal', isEv = kind === 'event', isJob = kind === 'job';
     var noun = isDeal ? 'deal' : isEv ? 'event' : isJob ? 'job' : 'item';
     var f = el('form', 'cl-form'); f.noValidate = true;
@@ -1564,6 +1610,21 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     c.appendChild(body);
     return c;
   }
+  function obitCard(it, b) {
+    var c = el('article', 'ob');
+    c.appendChild(el('span', 'ob-home', it.business || ''));
+    c.appendChild(el('h3', null, it.title));
+    var bits = [];
+    if (it.svc) bits.push('Service ' + new Date(it.svc + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }));
+    if (it.place) bits.push(it.place);
+    if (bits.length) c.appendChild(el('div', 'ob-svc', bits.join(' · ')));
+    if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
+    c.appendChild(el('div', 'cl-meta', [it.town, 'Posted ' + new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ')));
+    var foot = el('div', 'cl-foot'), href = applyHref(it.contact);
+    if (href) { var a = el('a', 'cl-contact', 'Contact ' + it.business + ': ' + it.contact); a.href = href; foot.appendChild(a); } else foot.appendChild(el('span', 'cl-contact', it.contact));
+    actions(it, 'obit', b, foot); c.appendChild(foot);
+    return c;
+  }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
     var c = el('article', 'job');
@@ -1588,7 +1649,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     return c;
   }
   function card(it, kind, b) {
-    var c = cardBase(it, kind, b);
+    var c = kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b);
     if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge('Featured')); }
     return c;
   }
@@ -1658,9 +1719,10 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (b.form) root.appendChild(buildForm(kind, b));
     if (kind === 'event') root.appendChild(eventFilters(b));
     if (kind === 'job') root.appendChild(jobFilters(b));
-    root.appendChild(chips(b, kind));
+    if (kind !== 'obit') root.appendChild(chips(b, kind));
     var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
     items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
+    if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
     if (!items.length) {
       var emp = el('div', 'cl-empty');
       emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : 'Nothing in this category yet.'));
@@ -1685,6 +1747,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   }
   var dlEl = boards.deal.el;
   function renderDeals() { drawBody('deal', 'Local deals and coupons', 'Post a deal'); }
+  function renderObits() { drawBody('obit', 'Community obituaries', 'Post an obituary'); }
   function renderEvents() { drawBody('event', 'Upcoming events', 'Add an event'); }
   var JOB_BOARDS = [
     ['Indeed: Evansville', 'https://www.indeed.com/jobs?l=Evansville%2C+IN'],
@@ -1954,7 +2017,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function areaOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s ? s.area : ''; }
   function mkDoc(type, it) {
     var f;
-    if (type === 'news' || type === 'obits') f = { t: toks(it.title), v: toks(areaOf(it.sourceId)), s: toks(it.source), b: toks(it.summary) };
+    if (type === 'news' || type === 'obits') f = { t: toks(it.title), v: toks(areaOf(it.sourceId) || it.town), s: toks(it.source || it.business), b: toks(it.summary || it.desc) };
     else if (type === 'events') f = { t: toks(it.title), v: toks([it.place, it.town, it.category].join(' ')), s: toks(it.source || ''), b: toks(it.desc) };
     else f = { t: toks(it.title), v: toks([it.town, it.category, it.jobType, it.pay].filter(Boolean).join(' ')), s: toks(it.business || ''), b: toks(it.desc) };
     return { type: type, it: it, f: f, title: norm(it.title) };
@@ -1968,6 +2031,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
     boards.event.items.concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
     boards.job.items.forEach(function (x) { docs.push(getDoc('jobs', x)); });
+    boards.obit.items.forEach(function (x) { docs.push(getDoc('obits', x)); });
     boards.item.items.forEach(function (x) { docs.push(getDoc('classifieds', x)); });
     boards.deal.items.forEach(function (x) { docs.push(getDoc('deals', x)); });
     return docs;
@@ -2052,7 +2116,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     srEl.appendChild(bar);
     function cardFor(d) {
       var c;
-      if (d.type === 'news' || d.type === 'obits') c = makeCard(d.it, false);
+      if (d.type === 'obits' && !d.it.sourceId) c = card(d.it, 'obit', boards.obit);
+      else if (d.type === 'news' || d.type === 'obits') c = makeCard(d.it, false);
       else if (d.type === 'events') c = eventCard(d.it, boards.event);
       else if (d.type === 'jobs') c = card(d.it, 'job', boards.job);
       else if (d.type === 'deals') c = card(d.it, 'deal', boards.deal);
@@ -2207,18 +2272,19 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     renderTabs();
     var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isSn;
     nlEl.hidden = NL_WAS || !(state.cat === 'all' || state.cat === 'news') || !!state.q.trim();
-    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; listEl.hidden = board; document.getElementById('more').hidden = board;
+    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; boards.obit.el.hidden = state.cat !== 'obits'; listEl.hidden = board; document.getElementById('more').hidden = board;
     var srQ = state.q.trim();
     srEl.hidden = !(srQ && !isSn);
     if (srQ && !isSn) {
-      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = boards.job.el.hidden = listEl.hidden = true; document.getElementById('more').hidden = true;
-      if (state.loaded) { if (!boards.item.loaded) loadBoard('item'); if (!boards.deal.loaded) loadBoard('deal'); if (!boards.event.loaded) loadBoard('event'); if (!boards.job.loaded) loadBoard('job'); renderSearch(srQ); }
+      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = boards.job.el.hidden = boards.obit.el.hidden = listEl.hidden = true; document.getElementById('more').hidden = true;
+      if (state.loaded) { if (!boards.item.loaded) loadBoard('item'); if (!boards.deal.loaded) loadBoard('deal'); if (!boards.event.loaded) loadBoard('event'); if (!boards.job.loaded) loadBoard('job'); if (!boards.obit.loaded) loadBoard('obit'); renderSearch(srQ); }
       else { srEl.textContent = ''; metaEl.textContent = ''; }
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
     if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); return; }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
+    if (state.cat === 'obits') { if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
     if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }
     if (isEv) { renderEvents(); metaEl.textContent = ''; if (!boards.event.loaded) loadBoard('event'); return; }
     if (!state.loaded) return;

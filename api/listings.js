@@ -1,8 +1,8 @@
-// Community board: classifieds (kind 'item'), local deals/coupons (kind 'deal'), events (kind 'event') and jobs (kind 'job').
+// Community board: classifieds (kind 'item'), local deals/coupons (kind 'deal'), events (kind 'event') and jobs (kind 'job') and obituaries posted by funeral homes (kind 'obit').
 // Items and deals expire after 30 days (deals also on their end date); jobs after 45 days; events drop off after their date.
 // Stored in Upstash Redis (same variables as api/react.js). Without it the page shows only links.
 //   GET    /api/listings?img=<id>             -> the listing's photo (JPEG)
-//   GET    /api/listings?kind=item|deal|event|job    -> { configured, items: [...] }   newest first
+//   GET    /api/listings?kind=item|deal|event|job|obit -> { configured, items: [...] }   newest first
 //   POST   /api/listings  {title,price,town,desc,contact,uid}  -> { ok, item }
 //   POST   /api/listings  {action:'report', id, uid}           -> hides a listing after 3 reports
 //   DELETE /api/listings?id=...&uid=...                        -> the poster removes their own listing
@@ -13,8 +13,8 @@ const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
-const indexFor = kind => kind === 'deal' ? 'tsn:dl:index' : kind === 'event' ? 'tsn:ev:index' : kind === 'job' ? 'tsn:jb:index' : 'tsn:ls:index';
-const kindOf = v => v === 'deal' ? 'deal' : v === 'event' ? 'event' : v === 'job' ? 'job' : 'item';
+const indexFor = kind => kind === 'deal' ? 'tsn:dl:index' : kind === 'event' ? 'tsn:ev:index' : kind === 'job' ? 'tsn:jb:index' : kind === 'obit' ? 'tsn:ob:index' : 'tsn:ls:index';
+const kindOf = v => v === 'deal' ? 'deal' : v === 'event' ? 'event' : v === 'job' ? 'job' : v === 'obit' ? 'obit' : 'item';
 const todayChi = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
 const rec = id => 'tsn:ls:' + id;
 const imgKey = id => 'tsn:ls:img:' + id;
@@ -40,7 +40,7 @@ async function pipeline(commands) {
   return r.json();
 }
 
-const CATS = { item: ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'], deal: ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'], event: ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'], job: ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'] };
+const CATS = { item: ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'], deal: ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'], event: ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'], job: ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'], obit: ['Other'] };
 const JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
 const CONDS = ['New', 'Like new', 'Good', 'Fair'];
 const PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;
@@ -54,6 +54,15 @@ function validate(b, kind) {
   if (title.length < 3) return { error: kind === 'deal' ? 'Describe the offer.' : kind === 'event' ? 'Add an event name.' : 'Add a title (at least 3 characters).', field: 'title' };
   if (!town) return { error: 'Choose a town.', field: 'town' };
   if (hasLink(title + ' ' + desc) || /https?:\/\/|www\./i.test(contact)) return { error: 'Links aren’t allowed.', field: 'title' };
+  if (kind === 'obit') {
+    const home = clean(b.business, 60), place = clean(b.place, 60), svc = clean(b.svc, 10), tribute = clean(b.desc, 600);
+    if (title.length < 3) return { error: 'Add the full name.', field: 'title' };
+    if (home.length < 2) return { error: 'Add the funeral home’s name.', field: 'business' };
+    if (hasLink(title + ' ' + tribute + ' ' + place) || /https?:\/\/|www\./i.test(contact)) return { error: 'Links aren’t allowed.', field: 'desc' };
+    if (svc) { const t = Date.parse(svc + 'T12:00:00Z'); if (!/^\d{4}-\d{2}-\d{2}$/.test(svc) || !Number.isFinite(t) || t < Date.now() - 14 * 864e5 || t > Date.now() + 120 * 864e5) return { error: 'Pick a service date within the next few months.', field: 'svc' }; }
+    if (!PHONE_RE.test(contact) && !EMAIL_RE.test(contact)) return { error: 'Add the funeral home’s phone number or email.', field: 'contact' };
+    return { title, business: home, town, desc: tribute, contact, category: 'Other', place, svc };
+  }
   if (kind === 'job') {
     const employer = clean(b.employer || b.business, 50), pay = clean(b.pay, 40);
     if (employer.length < 2) return { error: 'Add the employer name.', field: 'employer' };
@@ -122,7 +131,7 @@ async function handler(req, res) {
       const items = [];
       got.forEach((g, i) => {
         if (!g || !g.result) return;
-        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, featured: Number(o.featuredUntil) > now, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
+        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, svc: o.svc, featured: Number(o.featuredUntil) > now, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
       });
       const today = todayChi();
       return send(200, { configured: true, items: items.filter(x => (!x.ends || x.ends >= today) && (!x.date || x.date >= today)) });
@@ -132,7 +141,7 @@ async function handler(req, res) {
       if (!ID_RE.test(String(body.id)) || !UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
       const rip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || body.uid;
       const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, rip], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
-      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id]]);
+      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id], ['ZREM', 'tsn:ob:index', body.id]]);
       return send(200, { ok: true });
     }
 
@@ -150,7 +159,7 @@ async function handler(req, res) {
       const ttl = kind === 'event' ? Math.min(400 * 86400, Math.max(86400, Math.ceil((score + 2 * 864e5 - now) / 1000))) : kind === 'job' ? JOB_DAYS * 86400 : v.ends ? Math.min(DAYS * 86400, Math.max(86400, Math.ceil((Date.parse(v.ends + 'T23:59:59Z') + 864e5 - now) / 1000))) : DAYS * 86400;
       const cmds = photo ? [['SET', imgKey(id), photo, 'EX', String(ttl)]] : [];
       await pipeline(cmds.concat([['SET', rec(id), JSON.stringify(item), 'EX', String(ttl)], ['ZADD', INDEX, String(score), id]]));
-      return send(200, { ok: true, item: { id, title: v.title, price: v.price, town: v.town, desc: v.desc, contact: v.contact, at: item.at, code: v.code, ends: v.ends, category: v.category, condition: v.condition, business: v.business, date: v.date, time: v.time, place: v.place, jobType: v.jobType, pay: v.pay, img: !!photo, logo } });
+      return send(200, { ok: true, item: { id, title: v.title, price: v.price, town: v.town, desc: v.desc, contact: v.contact, at: item.at, code: v.code, ends: v.ends, category: v.category, condition: v.condition, business: v.business, date: v.date, time: v.time, place: v.place, jobType: v.jobType, pay: v.pay, svc: v.svc, img: !!photo, logo } });
     }
 
     if (req.method === 'DELETE') {
@@ -163,7 +172,7 @@ async function handler(req, res) {
         let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
         if (!o || o.uid !== uid) return send(403, { error: 'not yours' });
       }
-      await pipeline([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id]]);
+      await pipeline([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id], ['ZREM', 'tsn:ob:index', id]]);
       return send(200, { ok: true });
     }
     return send(405, { error: 'method' });

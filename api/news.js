@@ -477,11 +477,14 @@ async function refreshAll(opts) {
   opts = opts || {};
   const now = Date.now();
   const targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
-  const persist = stored();
+  let persist = stored();
   let prevStates = {};
   if (persist) {
-    const out = await redis(SOURCES.map(s => ['GET', srcKey(s.id)]));
-    SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
+    // If the store is unreachable (bad or rotated token, outage) keep going without it rather than failing the page.
+    try {
+      const out = await redis(SOURCES.map(s => ['GET', srcKey(s.id)]));
+      SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
+    } catch (e) { persist = false; }
   }
   // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the
   // news and obituary feeds of one paper share a host.
@@ -510,12 +513,20 @@ async function refreshAll(opts) {
   if (persist) {
     const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
     cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
-    await redis(cmds);
+    try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
   return { snapshot: snap, report };
 }
 
 async function handler(req, res) {
+  try { await run(req, res); } catch (e) {
+    console.error('news failed', e && e.stack || e);
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(503).json({ error: 'news temporarily unavailable', detail: String(e && e.message || e).slice(0, 200) });
+  }
+}
+
+async function run(req, res) {
   let snap = await readSnapshot();
   if (!snap || Date.now() - Date.parse(snap.updatedAt) > SNAP_MAX_AGE) {
     // No fresh snapshot (cron not set up yet, or it stopped): refresh now. A short lock keeps a burst of

@@ -153,12 +153,11 @@ main:focus { outline:none; }
 .rail-ad .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
 .rail-ad .bav { width:40px; height:40px; font-size:13px; }
 .rail-house { border-style:dashed; }
-.spon { height:var(--ctl); min-height:0; padding-block:0; flex-wrap:nowrap; overflow:hidden; white-space:nowrap; }
 .spon-wrap { min-height:calc(var(--ctl) + 12px); } /* reserved so the sponsor bar doesn't push the stories down when it arrives */
 .spon-wrap.done:empty { display:none; }
 .spon-ad { margin:0 0 12px; min-height:0; }
 .spon-ad ins { display:block; }
-.spon { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; width:100%; min-height:44px; padding:8px 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
+.spon { display:flex; flex-wrap:nowrap; overflow:hidden; white-space:nowrap; height:var(--ctl); padding-block:0; align-items:center; gap:4px 10px; width:100%; min-height:44px; padding:8px 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
 .spon:hover { background:var(--gray-100); }
 .spon-tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
 .spon b { font-weight:600; }

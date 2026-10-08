@@ -116,7 +116,6 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 .is-featured { position:relative; border-color:var(--amber) !important; background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
 .is-featured { overflow:visible !important; }
 .is-featured > .deal-img, .is-featured > .ev-hero { border-radius:calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0; overflow:hidden; }
-.feat-badge { position:absolute; top:-10px; left:16px; z-index:2; display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:var(--radius-md); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
 .ob { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; gap:6px; background:var(--background); min-width:0; }
 .ob h3 { margin:0; font-size:18px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
 .ob .ob-home { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
@@ -205,8 +204,6 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .card.breaking h2 { font-size:22px; line-height:30px; letter-spacing:-.01em; }
 .card.breaking p { display:block; font-size:14px; }
 .card.breaking .like { background:color-mix(in srgb, var(--background) 88%, transparent); }
-.bk { position:absolute; top:12px; left:12px; z-index:1; display:inline-flex; align-items:center; gap:6px; padding:0 8px; min-height:20px; border-radius:var(--radius-md); background:#c4262c; color:#fff; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; box-shadow:0 1px 4px rgba(0,0,0,.25); }
-.bk i { width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.6s var(--ease) infinite; }
 @keyframes pulse { 50% { opacity:.3; } }
 [hidden] { display:none !important; }
 .cl { display:grid; gap:12px; margin-bottom:16px; }
@@ -241,6 +238,13 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .cl-seg button { min-height:var(--ctl); padding:0 14px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; color:var(--text-muted); }
 .cl-seg button[aria-checked="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
 .cl-wide { width:100%; min-height:var(--ctl); }
+/* pill: one size for every label chip (category, Featured, Breaking). Never taller than the weather button. */
+.pill { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font-size:12px; line-height:16px; font-weight:600; white-space:nowrap; }
+.pill svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.pill i { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.6s var(--ease) infinite; }
+.pill-over { position:absolute; top:12px; left:12px; z-index:1; border-color:transparent; box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.pill-feat { position:absolute; top:-12px; left:16px; z-index:2; background:var(--amber); border-color:transparent; color:#1a1200; }
+.pill-red { background:#c4262c; border-color:transparent; color:#fff; }
 .cl-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
 .cl-chips::-webkit-scrollbar { display:none; }
 .cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
@@ -290,8 +294,6 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev-day { font-size:24px; line-height:28px; font-weight:600; font-variant-numeric:tabular-nums; }
 .ev-plain .ev-title { font-size:18px; line-height:24px; margin:0; }
 .ev-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; color:var(--text-muted); font-size:13px; line-height:20px; }
-.ev-plain .ev-pill-in { position:static; box-shadow:none; border:1px solid var(--border); min-height:24px; padding:0 8px 0 6px; font-size:12px; line-height:16px; gap:4px; }
-.ev-pill-in svg { width:14px; height:14px; }
 .ev-plain .ev-foot { padding-top:8px; }
 .ev-acts { display:flex; align-items:center; gap:8px; margin-left:auto; }
 .ev.ev-plain .like { position:static; box-shadow:none; border:1px solid var(--border); background:var(--background); }
@@ -301,8 +303,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev-hero { position:relative; aspect-ratio:16/10; background:var(--gray-100); overflow:hidden; }
 .ev-art { aspect-ratio:16/6; }
 .ev-img { display:block; width:100%; height:100%; max-width:none; object-fit:cover; }
-.ev-pill { position:absolute; top:12px; left:12px; z-index:1; display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 12px 0 10px; border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font-size:13px; line-height:16px; font-weight:500; box-shadow:0 1px 4px rgba(0,0,0,.18); }
-.ev-pill svg, .ev-row svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.ev-row svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .ev .like { top:12px; right:12px; background:var(--background); box-shadow:0 1px 4px rgba(0,0,0,.18); }
 .ev .like:hover { background:var(--gray-100); }
 .ev-body { display:flex; flex-direction:column; gap:8px; flex:1; padding:16px; min-width:0; }
@@ -594,7 +595,15 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         b.paint = paint;
         return b;
       },
-      badge: function (label) { return el('span', 'feat-badge', label); },
+      // A label pill. o: {label, icon (svg parts), tone: 'over'|'feat'|'red', dot}
+      pill: function (o) {
+        var p = el('span', 'pill' + (o.tone ? ' pill-' + o.tone : ''));
+        if (o.icon) p.appendChild(svg(o.icon));
+        if (o.dot) p.appendChild(el('i'));
+        p.appendChild(document.createTextNode(o.label));
+        return p;
+      },
+      badge: function (label) { return UI.pill({ label: label, tone: 'feat' }); },
       // A sponsor line for a page section, or a "your business here" house ad when the slot is open.
       sponsor: function (slot, houseAd) {
         var sp = SPONSORS && SPONSORS[slot];
@@ -1541,7 +1550,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     var eim = el('img', 'ev-img'); eim.src = evSrc || artUri(it.category); eim.alt = ''; eim.loading = 'lazy'; eim.decoding = 'async'; if (it.image) eim.referrerPolicy = 'no-referrer';
     eim.addEventListener('error', function () { eim.src = artUri(it.category); });
     hero.appendChild(eim);
-    var cp = el('span', 'ev-pill'); cp.appendChild(svg(EV_ICON[it.category] || EV_ICON.Other)); cp.appendChild(document.createTextNode(it.category || 'Other'));
+    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, tone: 'over' });
     hero.appendChild(cp);
     if (it.feed && it.link) {
       var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
@@ -1597,7 +1606,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
     body.appendChild(h);
     var meta = el('div', 'ev-meta');
-    var cp = el('span', 'ev-pill ev-pill-in'); cp.appendChild(svg(EV_ICON[it.category] || EV_ICON.Other)); cp.appendChild(document.createTextNode(it.category || 'Other'));
+    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other });
     meta.appendChild(cp);
     var where = [it.place, it.town].filter(Boolean).join(' \u00B7 ');
     if (where) meta.appendChild(el('span', 'ev-where', where));
@@ -2271,7 +2280,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       after: function () { if (state.cat === 'saved') render(); else { sb.paint(); renderTabs(); } }
     });
     card.appendChild(sb);
-    if (big) { var tag = el('div', 'bk'); tag.appendChild(el('i')); tag.appendChild(document.createTextNode('Breaking')); card.appendChild(tag); }
+    if (big) { var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true }); tag.classList.add('pill-over'); card.appendChild(tag); }
     return card;
   }
 

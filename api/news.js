@@ -71,6 +71,8 @@ const SOURCES = [
   { id: 'ob-sunc', name: 'Vincennes Sun-Commercial', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, url: 'https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25' },
   { id: 'ob-msgr', name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25' },
   { id: 'ob-wth', name: 'Washington Times-Herald', area: 'Washington, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://washtimesherald.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  // Ticketmaster Discovery API (free key in TICKETMASTER_API_KEY; skipped when unset): concerts, sports and shows within 75 miles of Evansville.
+  { id: 'ev-tm', name: 'Ticketmaster', area: 'Tri-State', kind: 'events', parser: 'ticketmaster', url: 'https://app.ticketmaster.com/discovery/v2/events.json' },
   // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
   { id: 'ev-ford', name: 'Ford Center', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://fordcenter.com/events-tickets/view-all-events' },
   { id: 'ev-victory', name: 'Victory Theatre', area: 'Evansville', kind: 'events', parser: 'venue', url: 'https://www.victorytheatre.com/events-tickets/view-all-events' },
@@ -273,6 +275,41 @@ function parseVenue(html, source, base) {
   return items;
 }
 
+
+// Ticketmaster Discovery API. The key lives only in the environment and is added at request time, so it
+// is never stored with the source record or sent to the browser.
+const TM_SEGMENT = { Sports: 'Sports', Music: 'Music', 'Arts & Theatre': 'Arts' };
+async function fetchTicketmaster(source, url) {
+  const key = process.env.TICKETMASTER_API_KEY;
+  if (!key) return { items: [], error: 'no items', url };
+  const items = [];
+  const start = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  for (let page = 0; page < 2; page++) {
+    const q = '?apikey=' + encodeURIComponent(key) + '&latlong=37.9716,-87.5711&radius=75&unit=miles&size=100&sort=date,asc&page=' + page + '&startDateTime=' + start;
+    const r = await fetch(url + q, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { if (!page) return { items: [], error: 'HTTP ' + r.status, url }; break; }
+    const d = await r.json();
+    for (const e of (d._embedded && d._embedded.events) || []) {
+      const st = e.dates && e.dates.start;
+      if (!st || !e.name || (e.dates.status && /cancel|postpon/i.test(e.dates.status.code || ''))) continue;
+      let published = st.dateTime || null;
+      if (!published && st.localDate) published = chicagoToUtc(+st.localDate.slice(0, 4), +st.localDate.slice(5, 7), +st.localDate.slice(8, 10), 0, 0).toISOString();
+      const link = safeUrl(e.url, true);
+      if (!published || !link) continue;
+      const v = (e._embedded && e._embedded.venues && e._embedded.venues[0]) || {};
+      const imgs = (e.images || []).filter(i => i.ratio === '16_9' && i.width >= 300).sort((a, b) => a.width - b.width);
+      const seg = e.classifications && e.classifications[0] && e.classifications[0].segment && e.classifications[0].segment.name;
+      const genre = e.classifications && e.classifications[0] && e.classifications[0].genre && e.classifications[0].genre.name;
+      const city = [v.city && v.city.name, v.state && v.state.stateCode].filter(Boolean).join(', ');
+      let summary = stripHtml(e.info || e.pleaseNote || '');
+      if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
+      items.push({ title: stripHtml(e.name), link, summary, image: safeUrl(imgs[0] && imgs[0].url, true), published, source: source.name, sourceId: source.id, isEvent: true, venue: [v.name, city].filter(Boolean).join(' · ').slice(0, 70), cat: genre === 'Family' ? 'Family' : (TM_SEGMENT[seg] || 'Community') });
+    }
+    if (!d.page || page + 1 >= d.page.totalPages) break;
+  }
+  return { items, error: items.length ? null : 'no items', url };
+}
+
 // Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
 // sent so an unchanged feed answers 304 and costs almost nothing.
 async function tryUrl(source, url, prev) {
@@ -282,6 +319,7 @@ async function tryUrl(source, url, prev) {
       if (prev.etag) headers['if-none-match'] = prev.etag;
       if (prev.lastModified) headers['if-modified-since'] = prev.lastModified;
     }
+    if (source.parser === 'ticketmaster') return await fetchTicketmaster(source, url);
     if (source.parser === 'venue') {
       const items = [];
       for (const start of [0, 20, 40]) {

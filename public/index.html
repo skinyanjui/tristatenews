@@ -844,6 +844,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
   }
   function loadDeals() { return loadBoard('deal'); }
   function evCat(i) {
+    if (i.cat) return i.cat;
     var t = (i.title || '').toLowerCase();
     if (/\b(aces|hoosiers|basketball|football|soccer|baseball|wwe|smackdown|vs\.?|racing|derby|tournament|classic)\b/.test(t)) return 'Sports';
     if (/\b(concert|tour|tribute|philharmonic|orchestra|symphony|band|music|jazz|live)\b|tobymac|tracy lawrence|ty myers/.test(t)) return 'Music';

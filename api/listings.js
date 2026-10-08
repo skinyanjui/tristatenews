@@ -122,7 +122,7 @@ async function handler(req, res) {
       const items = [];
       got.forEach((g, i) => {
         if (!g || !g.result) return;
-        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
+        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, featured: Number(o.featuredUntil) > now, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
       });
       const today = todayChi();
       return send(200, { configured: true, items: items.filter(x => (!x.ends || x.ends >= today) && (!x.date || x.date >= today)) });

@@ -1,0 +1,11 @@
+{
+  "note": "Edit this file to sell sponsor spots. A slot with a sponsor shows a small 'Sponsored' line; a slot set to null shows 'Your business here'. Slots: news, jobs, deals, events, classifieds, weather. Fields: name, text, url (https only).",
+  "slots": {
+    "news": null,
+    "jobs": null,
+    "deals": null,
+    "events": null,
+    "classifieds": null,
+    "weather": null
+  }
+}

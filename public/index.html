@@ -111,6 +111,30 @@ button { font:inherit; color:inherit; cursor:pointer; background:none; border:0;
 @media (min-width:720px) { .job-grid { grid-template-columns:1fr 1fr; } }
 .job-links { display:flex; flex-wrap:wrap; gap:4px 16px; }
 
+/* money: featured posts, sponsors, newsletter, advertise */
+.is-featured { position:relative; border-color:var(--amber) !important; background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
+.feat-badge { position:absolute; top:-10px; left:16px; z-index:2; display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:var(--radius-md); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.spon-wrap:empty { display:none; }
+.spon { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; width:100%; min-height:44px; padding:8px 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
+.spon:hover { background:var(--gray-100); }
+.spon-tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+.spon b { font-weight:600; }
+.spon-house { color:var(--text-muted); }
+.sfoot-ghost { margin-left:auto; border-color:transparent; background:transparent; color:var(--text-muted); }
+.sfoot-ghost + .sfoot-btn { margin-left:0; }
+.nl { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-top:24px; display:grid; gap:8px; background:var(--background-subtle); }
+.nl h2 { margin:0; font-size:16px; line-height:24px; font-weight:600; }
+.nl p { margin:0; color:var(--text-muted); }
+.nl form { display:flex; flex-wrap:wrap; gap:8px; }
+.nl input[type=email] { flex:1 1 220px; min-width:0; min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; }
+.nl .cl-go { min-height:44px; }
+.notice { display:flex; align-items:center; gap:12px; margin:0 0 16px; padding:8px 12px 8px 16px; min-height:44px; border:1px solid var(--green); border-radius:var(--radius-lg); background:color-mix(in srgb, var(--green) 12%, var(--background)); }
+.notice span { flex:1; min-width:0; }
+.notice button { flex:none; width:32px; height:32px; font-size:18px; border-radius:var(--radius-md); }
+.rates { display:grid; gap:4px; margin:0; padding:0; list-style:none; }
+.rates li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); }
+.rates li b { font-family:var(--font-mono); font-weight:500; }
+
 /* weather alerts */
 .alerts { display:grid; gap:8px; margin-bottom:16px; }
 .alerts:empty { display:none; }
@@ -437,11 +461,13 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   <section id="jb" class="cl" hidden aria-label="Jobs"></section>
   <section id="sn" class="cl sn" hidden aria-label="Submit news"></section>
   <section id="sr" class="sr" hidden aria-label="Search results"></section>
+  <div id="sp-news" class="spon-wrap"></div>
   <div id="list" class="list" aria-busy="true"></div>
   <div class="more" id="more"></div>
+  <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
 </main>
 
-<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · Refreshed hourly</span><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
+<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · Refreshed hourly</span><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
 
 <script>
 (function () {
@@ -459,6 +485,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     return n;
   }
   /* ---------- components: one place for the pieces every board and form reuses ---------- */
+  var SPONSORS = null, PAY = { configured: false, prices: {} };
   var UI = (function () {
     var cv = document.createElement('canvas').getContext('2d'), pending = [];
     // A select is exactly as wide as its longest option (plus padding and the arrow), in every browser.
@@ -495,6 +522,26 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         var row = el('div', 'cl-chips'); if (aria) { row.setAttribute('role', 'group'); row.setAttribute('aria-label', aria); }
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
         return row;
+      },
+      badge: function (label) { return el('span', 'feat-badge', label); },
+      // A sponsor line for a page section, or a "your business here" house ad when the slot is open.
+      sponsor: function (slot, houseAd) {
+        var sp = SPONSORS && SPONSORS[slot];
+        if (sp && sp.name && /^https:\/\//i.test(sp.url || '')) {
+          var a = el('a', 'spon'); a.href = sp.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
+          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
+          return a;
+        }
+        if (!houseAd) return null;
+        var h = el('button', 'spon spon-house'); h.type = 'button';
+        h.appendChild(el('span', 'spon-tag', 'Sponsor')); h.appendChild(el('span', null, 'Your business here. Reach local readers.')); h.appendChild(el('b', null, 'Advertise'));
+        h.addEventListener('click', openAd);
+        return h;
+      },
+      notice: function (text) {
+        var n = el('div', 'notice'); n.setAttribute('role', 'status'); n.appendChild(el('span', null, text));
+        var x = UI.button('\u00d7', null, function () { n.remove(); }); x.setAttribute('aria-label', 'Dismiss'); n.appendChild(x);
+        var m = document.querySelector('main'); m.insertBefore(n, m.firstChild); setTimeout(function () { n.remove(); }, 12000);
       },
       button: function (label, cls, onClick) { var b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', onClick); return b; }
     };
@@ -1087,6 +1134,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     }
     if (kind === 'job' && !ignoreQ && b.jt) all = all.filter(function (x) { return x.jobType === b.jt; });
     if (b.town && !ignoreQ) all = all.filter(function (x) { return townOf(x) === b.town; });
+    all = all.filter(function (x) { return x.featured; }).concat(all.filter(function (x) { return !x.featured; }));
     var q = ignoreQ ? '' : state.q.trim().toLowerCase();
     if (q && kind !== 'item') {
       var words = q.split(/\s+/);
@@ -1325,6 +1373,17 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); renderTabs(); drawBoard(kind); } else { act.textContent = 'Reported'; } }).catch(function () { act.disabled = false; });
     });
     foot.appendChild(act);
+    var pr = PAY.prices[kind];
+    if (mine && PAY.configured && pr && !it.featured) {
+      var ft = UI.button('Feature · $' + (pr.cents / 100).toFixed(pr.cents % 100 ? 2 : 0), 'cl-link cl-feature', function () {
+        ft.disabled = true; ft.textContent = 'Opening checkout…';
+        fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: it.id, kind: kind, uid: uid }) })
+          .then(function (r) { return r.json(); }).then(function (d) { if (d && d.url) location.href = d.url; else { ft.disabled = false; ft.textContent = (d && d.error) || 'Try again'; } })
+          .catch(function () { ft.disabled = false; ft.textContent = 'Try again'; });
+      });
+      ft.setAttribute('aria-label', 'Feature this post for ' + pr.days + ' days');
+      foot.appendChild(ft);
+    }
   }
   function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
   function dealCard(it, b) {
@@ -1478,6 +1537,11 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     return c;
   }
   function card(it, kind, b) {
+    var c = cardBase(it, kind, b);
+    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge('Featured')); }
+    return c;
+  }
+  function cardBase(it, kind, b) {
     if (kind === 'job') return jobCard(it, b);
     if (kind === 'deal') return dealCard(it, b);
     if (kind === 'event') return eventCard(it, b);
@@ -1539,6 +1603,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       bar.appendChild(post);
     }
     root.appendChild(bar);
+    var spn = UI.sponsor(TABOF[kind], true); if (spn) root.appendChild(spn);
     if (b.form) root.appendChild(buildForm(kind, b));
     if (kind === 'event') root.appendChild(eventFilters(b));
     if (kind === 'job') root.appendChild(jobFilters(b));
@@ -1592,11 +1657,12 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
   /* ---------- submit news ---------- */
   var snEl = document.getElementById('sn'), SN_TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
-  var SN_DONE = '';
+  var SN_DONE = '', SN_VIEW = 'news';
   function icoCheck() { var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke-width', '2'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round'); n.setAttribute('aria-hidden', 'true'); var p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M20 6 9 17l-5-5'); n.appendChild(p); return n; }
   function openSubmit() { SN_DONE = ''; state.prevCat = state.cat === 'submit' ? (state.prevCat || 'all') : state.cat; state.cat = 'submit'; resetPaging(); render(); window.scrollTo(0, 0); }
   function closeSubmit() { state.cat = state.prevCat || 'all'; resetPaging(); render(); window.scrollTo(0, 0); }
   function renderSubmit() {
+    if (SN_VIEW === 'ad') return renderAdvertise();
     snEl.textContent = '';
     var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, 'Submit news'));
     var back = el('button', 'cl-go', 'Back to news'); back.type = 'button'; back.addEventListener('click', closeSubmit); bar.appendChild(back); snEl.appendChild(bar);
@@ -1683,7 +1749,111 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         }).catch(function () { go.disabled = false; go.textContent = 'Send submission'; top.textContent = 'Couldn’t send that. Check your connection and try again.'; });
     });
   }
-  document.getElementById('snOpen').addEventListener('click', openSubmit);
+  document.getElementById('snOpen').addEventListener('click', function () { SN_VIEW = 'news'; openSubmit(); });
+  document.getElementById('adOpen').addEventListener('click', openAd);
+
+  /* ---------- newsletter signup ---------- */
+  var nlEl = document.getElementById('nl'), NL_KEY = 'tsn.nl';
+  var NL_WAS = (function () { try { return !!localStorage.getItem(NL_KEY); } catch (e) { return false; } })();
+  function renderNewsletter() {
+    nlEl.textContent = '';
+    nlEl.appendChild(el('h2', null, 'The Tri-State in your inbox'));
+    nlEl.appendChild(el('p', null, 'Top local stories, events and jobs in one short email. Free, and you can leave anytime.'));
+    var f = el('form'); f.noValidate = true;
+    var em = el('input'); em.type = 'email'; em.name = 'email'; em.placeholder = 'name@email.com'; em.autocomplete = 'email'; em.setAttribute('aria-label', 'Email address'); em.maxLength = 80;
+    var hp = el('input'); hp.type = 'text'; hp.name = 'website'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.className = 'sn-hp'; hp.setAttribute('aria-hidden', 'true');
+    var go = el('button', 'cl-go', 'Subscribe'); go.type = 'submit';
+    var msg = el('div', 'cl-fe'); msg.setAttribute('role', 'alert');
+    f.appendChild(em); f.appendChild(hp); f.appendChild(go); nlEl.appendChild(f); nlEl.appendChild(msg);
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); msg.textContent = '';
+      if (!EMAIL_RE.test(em.value.trim())) { msg.textContent = 'Enter a valid email address.'; em.setAttribute('aria-invalid', 'true'); em.focus(); return; }
+      em.removeAttribute('aria-invalid'); go.disabled = true; go.textContent = 'Subscribing…';
+      fetch('/api/subscribe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: em.value.trim(), website: hp.value }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (o) {
+          go.disabled = false; go.textContent = 'Subscribe';
+          if (!o.ok || !o.d.ok) { msg.textContent = (o.d && o.d.error) || 'Couldn’t sign you up. Try again.'; return; }
+          try { localStorage.setItem(NL_KEY, '1'); } catch (e) {}
+          nlEl.textContent = ''; nlEl.appendChild(el('h2', null, 'You’re on the list')); var p = el('p', null, 'Thanks for subscribing.'); p.setAttribute('role', 'status'); nlEl.appendChild(p);
+        }).catch(function () { go.disabled = false; go.textContent = 'Subscribe'; msg.textContent = 'Couldn’t sign you up. Check your connection and try again.'; });
+    });
+  }
+  renderNewsletter();
+
+  /* ---------- advertise ---------- */
+  var AD_INTERESTS = ['Featured job or deal', 'Section sponsorship', 'Newsletter sponsorship', 'Something else'];
+  function openAd() { SN_VIEW = 'ad'; SN_DONE = ''; openSubmit(); }
+  function renderAdvertise() {
+    snEl.textContent = '';
+    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, 'Advertise with Tri-State News'));
+    bar.appendChild(UI.button('Back', 'cl-go', closeSubmit)); snEl.appendChild(bar);
+    if (SN_DONE) {
+      var d = el('div', 'sn-done'); d.setAttribute('role', 'status');
+      d.appendChild(el('h2', null, 'Thanks, we got it'));
+      d.appendChild(el('p', 'sn-lede', 'We’ll reply by email, usually within a business day. Your reference number:'));
+      d.appendChild(el('span', 'sn-ref', SN_DONE)); snEl.appendChild(d); return;
+    }
+    snEl.appendChild(el('p', 'sn-lede', 'Reach people across Evansville, Henderson, Owensboro and the Tri-State who come here for local news, events, jobs and deals.'));
+    var rt = el('div', 'sn-sec'); rt.appendChild(el('h2', null, 'Ways to be seen'));
+    var ul = el('ul', 'rates'), pr = PAY.prices || {};
+    [['job', 'Featured job'], ['deal', 'Featured deal'], ['event', 'Featured event']].forEach(function (k) {
+      if (!pr[k[0]]) return;
+      var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, '$' + (pr[k[0]].cents / 100).toFixed(pr[k[0]].cents % 100 ? 2 : 0))); ul.appendChild(li);
+    });
+    [['Section sponsorship', 'Your name on Jobs, Deals, Events or the news feed'], ['Newsletter sponsorship', 'One sponsor in each email']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, 'Ask')); ul.appendChild(li); });
+    rt.appendChild(ul);
+    if (PAY.configured) rt.appendChild(el('p', 'cl-note', 'To feature a post, publish it on its board, then tap “Feature” on your post.'));
+    snEl.appendChild(rt);
+    var f = el('form', 'cl-form'); f.noValidate = true;
+    var F = {}, els = {};
+    els.business = input('text', 'business', 80, 'Joe’s Diner'); F.business = field('Business', els.business, { req: true });
+    els.name = input('text', 'name', 60, 'Your name'); els.name.autocomplete = 'name'; F.name = field('Your name', els.name, { req: true });
+    els.email = input('email', 'email', 80, 'name@email.com'); els.email.autocomplete = 'email'; F.email = field('Email', els.email, { req: true });
+    els.phone = input('tel', 'phone', 20, '812-555-0142'); els.phone.autocomplete = 'tel'; F.phone = field('Phone', els.phone);
+    els.interest = UI.select({ name: 'interest', id: 'f-interest' + (++uidSeq), options: AD_INTERESTS }); F.interest = field('Interested in', els.interest, { req: true });
+    els.message = el('textarea'); els.message.name = 'message'; els.message.id = 'f-message' + (++uidSeq); els.message.rows = 4; els.message.maxLength = 1500; els.message.placeholder = 'Tell us about your business and what you’d like to promote.'; F.message = field('Message', els.message);
+    els.hp = input('text', 'website', 40); els.hp.tabIndex = -1; els.hp.autocomplete = 'off'; var hp = el('div', 'sn-hp'); hp.setAttribute('aria-hidden', 'true'); hp.appendChild(els.hp);
+    var two = el('div', 'cl-two'); two.appendChild(F.email); two.appendChild(F.phone);
+    [F.business, F.name, two, F.interest, F.message, hp].forEach(function (x) { f.appendChild(x); });
+    var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); f.appendChild(top);
+    var go = el('button', 'cl-go cl-wide', 'Send inquiry'); go.type = 'submit'; f.appendChild(go);
+    snEl.appendChild(f);
+    function show(e) { ['business', 'name', 'email', 'phone'].forEach(function (k) { F[k].err(e[k] || ''); }); var first = ['business', 'name', 'email', 'phone'].filter(function (k) { return e[k]; })[0]; if (first) F[first].querySelector('input').focus(); }
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault(); top.textContent = '';
+      var e = {};
+      if (els.business.value.trim().length < 2) e.business = 'Add your business name.';
+      if (els.name.value.trim().length < 2) e.name = 'Add your name.';
+      if (!EMAIL_RE.test(els.email.value.trim())) e.email = 'Enter a valid email address.';
+      if (els.phone.value.trim() && !PHONE_RE.test(els.phone.value.trim())) e.phone = 'Enter a phone number like 812-555-0142, or leave it blank.';
+      show(e); if (Object.keys(e).length) return;
+      go.disabled = true; go.textContent = 'Sending…';
+      fetch('/api/advertise', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ business: els.business.value, name: els.name.value, email: els.email.value, phone: els.phone.value, interest: els.interest.value, message: els.message.value, website: els.hp.value }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (o) {
+          go.disabled = false; go.textContent = 'Send inquiry';
+          if (!o.ok || !o.d.ok) { var m = (o.d && o.d.error) || 'Couldn’t send that. Try again.'; if (o.d && o.d.field && F[o.d.field]) { var q = {}; q[o.d.field] = m; show(q); } else top.textContent = m; return; }
+          SN_DONE = o.d.ref || 'Received'; renderAdvertise(); window.scrollTo(0, 0);
+        }).catch(function () { go.disabled = false; go.textContent = 'Send inquiry'; top.textContent = 'Couldn’t send that. Check your connection and try again.'; });
+    });
+  }
+
+  /* ---------- sponsors, paid placement and return from checkout ---------- */
+  fetch('/sponsors.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    SPONSORS = d && d.slots ? d.slots : {};
+    var sp = UI.sponsor('news', false), slot = document.getElementById('sp-news'); slot.textContent = ''; if (sp) slot.appendChild(sp);
+    Object.keys(boards).forEach(drawBoard);
+  }).catch(function () { SPONSORS = {}; });
+  fetch('/api/checkout', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (d) { PAY = { configured: !!d.configured, prices: d.prices || {} }; Object.keys(boards).forEach(drawBoard); }
+  }).catch(function () {});
+  (function () {
+    var m = /[?&]featured=(ok|cancel)/.exec(location.search); if (!m) return;
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    if (m[1] === 'ok') { UI.notice('Payment received. Your post will show as featured in a moment.'); [4000, 12000].forEach(function (t) { setTimeout(function () { Object.keys(boards).forEach(loadBoard); }, t); }); }
+    else UI.notice('Checkout canceled. Your post is still live, just not featured.');
+  })();
 
   /* ---------- search ---------- */
   // One index over stories, events, obituaries and any loaded classifieds or deals. Every word must match somewhere;
@@ -1982,6 +2152,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function render() {
     renderTabs();
     var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isSn;
+    nlEl.hidden = NL_WAS || !(state.cat === 'all' || state.cat === 'news') || !!state.q.trim();
     snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; listEl.hidden = board; document.getElementById('more').hidden = board;
     var srQ = state.q.trim();
     srEl.hidden = !(srQ && !isSn);

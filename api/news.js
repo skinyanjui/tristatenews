@@ -238,8 +238,10 @@ function parseIcal(text, source) {
     if (!title || !published || !link) continue;
     let summary = stripHtml(unesc(get('DESCRIPTION')));
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '…';
+    const att = /^ATTACH[^:\r\n]*:(https?:\/\/\S+)/mi.exec(b);
+    const image = att && /image\/|\.(jpe?g|png|webp|gif)(\?|$)/i.test(att[0]) ? safeUrl(att[1], true) : '';
     const loc = (unesc(get('LOCATION')).split(',').map(x => x.trim()).find(x => x.length > 3) || '').slice(0, 60);
-    items.push({ title, link, summary, image: '', published, source: source.name, sourceId: source.id, isEvent: true, venue: loc });
+    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, isEvent: true, venue: loc });
   }
   return items;
 }
@@ -398,6 +400,10 @@ function combine(results, now) {
   }
   all.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
+  // Repeat events (weekly yoga, a run of shows) share one picture: any dated copy that has an image lends it to the rest.
+  const pics = {};
+  events.forEach(e => { const k = e.sourceId + '|' + normKey(e); if (e.image && !pics[k]) pics[k] = e.image; });
+  events.forEach(e => { if (!e.image) e.image = pics[e.sourceId + '|' + normKey(e)] || ''; });
   obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
   return all.slice(0, MAX_ITEMS).concat(events.slice(0, 160), obits.slice(0, 150)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
 }

@@ -1,0 +1,8 @@
+{
+  "name": "Tri-State News",
+  "description": "Hourly local news aggregator for the Evansville, IN-KY metro covering news, events, jobs, and community announcements.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

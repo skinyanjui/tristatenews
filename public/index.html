@@ -770,8 +770,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (cat === 'deals') return false;
     if (cat === 'events' || cat === 'jobs') return false;
     if (cat === 'all') return k !== 'events' && k !== 'obits';
-    // police and court sources, plus news stories whose headline is about a crime or a case (they stay in News too)
-    if (cat === 'safety') return k === 'police' || k === 'courts' || (k === 'news' && !!it.safety);
+    // official sources only (police, sheriff, prosecutors, courts); crime stories from news outlets stay in News
+    if (cat === 'safety') return k === 'police' || k === 'courts';
     return k === cat;
   }
   function filtered() {
@@ -2307,9 +2307,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
   function makeCard(it, big) {
     var card = el('article', big ? 'card breaking' : 'card');
-    var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts' || (state.cat === 'safety' && !!it.safety);
+    var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
-    // Police & courts cards never show photos (no mugshots); the outlet's logo stands in.
+    // Police & courts cards never show photos (no mugshots); the agency's logo stands in.
     var pic = safe ? '' : it.image;
     var logo = logoMap[it.sourceId] || '';
     var a = el('a', pic || logo ? '' : 'noimg');

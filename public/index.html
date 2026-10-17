@@ -770,7 +770,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (cat === 'deals') return false;
     if (cat === 'events' || cat === 'jobs') return false;
     if (cat === 'all') return k !== 'events' && k !== 'obits';
-    if (cat === 'safety') return k === 'police' || k === 'courts';
+    // police and court sources, plus news stories whose headline is about a crime or a case (they stay in News too)
+    if (cat === 'safety') return k === 'police' || k === 'courts' || (k === 'news' && !!it.safety);
     return k === cat;
   }
   function filtered() {
@@ -2306,9 +2307,12 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
   function makeCard(it, big) {
     var card = el('article', big ? 'card breaking' : 'card');
-    var kd = kindOf(it.sourceId); card.dataset.sec = kd === 'police' || kd === 'courts' ? 'safety' : kd === 'institution' ? 'institution' : 'news';
+    var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts' || (state.cat === 'safety' && !!it.safety);
+    card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
+    // Police & courts cards never show photos (no mugshots); the outlet's logo stands in.
+    var pic = safe ? '' : it.image;
     var logo = logoMap[it.sourceId] || '';
-    var a = el('a', it.image || logo ? '' : 'noimg');
+    var a = el('a', pic || logo ? '' : 'noimg');
     a.href = safeHref(it.link);
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
@@ -2324,6 +2328,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     body.appendChild(src);
     body.appendChild(el('h2', null, it.title));
     if (it.summary) body.appendChild(el('p', null, it.summary));
+    if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));
     function placeholder() {
       if (!logo) { a.className = 'noimg'; return null; }
       var ph = el('div', 'ph'); var li = el('img'); li.src = logo; li.alt = ''; li.referrerPolicy = 'no-referrer';
@@ -2331,9 +2336,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       ph.appendChild(li); return ph;
     }
     var lead = null;
-    if (it.image) {
+    if (pic) {
       lead = el('img', 'th');
-      lead.src = it.image; lead.alt = ''; lead.loading = 'lazy'; lead.decoding = 'async'; lead.referrerPolicy = 'no-referrer';
+      lead.src = pic; lead.alt = ''; lead.loading = 'lazy'; lead.decoding = 'async'; lead.referrerPolicy = 'no-referrer';
       lead.addEventListener('error', function () { var p = placeholder(); if (p) a.replaceChild(p, lead); else lead.remove(); });
     } else { lead = placeholder(); }
     if (lead) a.appendChild(lead);

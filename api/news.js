@@ -11,40 +11,45 @@
 //               place from REGION_TERMS are kept.
 // Sources marked "unverified" were not reachable when this was built; a source that fails or
 // returns zero items is reported in `sources` with ok:false and the page hides it.
+// Google News search feed limited to one publisher's site. Used for papers that block or rate-limit
+// automated feed requests (Gannett papers answer 402/404; BLOX papers answer 429 to shared cloud IPs).
+// Links go through news.google.com and open the original article. `path` narrows to a section.
+const gnews = (site, extra) => 'https://news.google.com/rss/search?q=' + encodeURIComponent('site:' + site + ' when:3d' + (extra ? ' ' + extra : '')) + '&hl=en-US&gl=US&ceid=US:en';
+
+// everyMin: minimum minutes between fetches of a source. BLOX (TownNews) papers rate-limit by IP, and
+// daily papers only post a few times a day, so they are polled hourly; Google News fallbacks every 30 min.
 const SOURCES = [
   // Evansville / Tri-State
   { id: 'wfie', name: '14 News', area: 'Evansville', url: 'https://www.14news.com/arc/outboundfeeds/rss/?outputType=xml' },
   { id: 'weht', name: 'Eyewitness News', area: 'Evansville', url: 'https://www.tristatehomepage.com/feed/' },
   { id: 'living', name: 'Evansville Living', area: 'Evansville', url: 'https://evansvilleliving.com/feed/' },
-  { id: 'courier', name: 'Courier & Press', area: 'Evansville', url: 'https://www.courierpress.com/arcio/rss/', altUrls: ['https://rssfeeds.courierpress.com/courierpress/home', 'https://www.courierpress.com/arc/outboundfeeds/rss/?outputType=xml'] }, // unverified
-  { id: 'gleaner', name: 'Henderson Gleaner', area: 'Henderson', url: 'https://www.thegleaner.com/arcio/rss/', altUrls: ['https://rssfeeds.thegleaner.com/thegleaner/home', 'https://www.thegleaner.com/arc/outboundfeeds/rss/?outputType=xml'] }, // unverified
+  // Gannett papers publish no public RSS and block automated requests to their sites (HTTP 402), so they
+  // come through Google News. The Gleaner also carries USA TODAY Network sports, so it is geo-filtered.
+  { id: 'courier', name: 'Courier & Press', area: 'Evansville', everyMin: 30, url: gnews('courierpress.com') },
+  { id: 'gleaner', name: 'Henderson Gleaner', area: 'Henderson', geo: true, everyMin: 30, url: gnews('thegleaner.com') },
   // Owensboro
   { id: 'owtimes', name: 'Owensboro Times', area: 'Owensboro', url: 'https://www.owensborotimes.com/feed/' },
-  { id: 'messinq', name: 'Messenger-Inquirer', area: 'Owensboro', url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&l=25' },
+  { id: 'messinq', everyMin: 60, name: 'Messenger-Inquirer', area: 'Owensboro', url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&l=25', altUrls: [gnews('messenger-inquirer.com')] },
   // Madisonville
-  { id: 'msgr', name: 'The Messenger', area: 'Madisonville', url: 'https://www.the-messenger.com/search/?f=rss&t=article&l=25', altUrls: ['https://www.the-messenger.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] }, // unverified
+  // Local-news section only (verified 2026-10-17); the all-articles feed is mostly AP wire.
+  { id: 'msgr', everyMin: 60, name: 'The Messenger', area: 'Madisonville', url: 'https://www.the-messenger.com/search/?f=rss&t=article&c[]=news/local*&l=25&s=start_time&sd=desc', altUrls: [gnews('the-messenger.com'), 'https://www.the-messenger.com/search/?f=rss&t=article&l=25'] },
   // Jasper / Dubois County (between Evansville and Vincennes)
-  { id: 'dcherald', name: 'Dubois County Herald', area: 'Jasper', url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25' },
-  // Smaller-town papers (BLOX feed pattern; unverified, hidden automatically if they fail)
-  { id: 'wth', name: 'Washington Times-Herald', area: 'Washington, Ind.', url: 'https://washtimesherald.com/search/?f=rss&t=article&l=25', altUrls: ['https://washtimesherald.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] }, // unverified
+  { id: 'dcherald', everyMin: 60, name: 'Dubois County Herald', area: 'Jasper', url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25', altUrls: [gnews('duboiscountyherald.com')] },
+    { id: 'wth', everyMin: 60, name: 'Washington Times-Herald', area: 'Washington, Ind.', url: 'https://www.washtimesherald.com/search/?f=rss&t=article&l=25', altUrls: [gnews('washtimesherald.com'), 'https://washtimesherald.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] },
   // Vincennes / Wabash Valley
   { id: 'wthi', name: 'WTHI News', area: 'Vincennes', geo: true, url: 'https://www.wthitv.com/arc/outboundfeeds/rss/?outputType=xml' },
-  { id: 'sunc', name: 'Vincennes Sun-Commercial', area: 'Vincennes', url: 'https://www.suncommercial.com/search/?f=rss&t=article&l=25', altUrls: ['https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] }, // unverified
+  { id: 'sunc', everyMin: 60, name: 'Vincennes Sun-Commercial', area: 'Vincennes', url: 'https://www.suncommercial.com/search/?f=rss&t=article&l=25', altUrls: [gnews('suncommercial.com'), 'https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] },
   // Carbondale / Marion / southern Illinois
   { id: 'kfvs', name: 'KFVS12', area: 'Southern Illinois', geo: true, url: 'https://www.kfvs12.com/arc/outboundfeeds/rss/?outputType=xml' },
-  { id: 'wpsd', name: 'WPSD Local 6', area: 'Southern Illinois', geo: true, url: 'https://www.wpsdlocal6.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc' },
-  { id: 'southern', name: 'The Southern Illinoisan', area: 'Carbondale', url: 'https://thesouthern.com/search/?f=rss&t=article&l=25', altUrls: ['https://thesouthern.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] }, // unverified
+  { id: 'wpsd', everyMin: 60, name: 'WPSD Local 6', area: 'Southern Illinois', geo: true, url: 'https://www.wpsdlocal6.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc', altUrls: [gnews('wpsdlocal6.com')] },
+  { id: 'southern', everyMin: 60, name: 'The Southern Illinoisan', area: 'Carbondale', url: 'https://thesouthern.com/search/?f=rss&t=article&l=25', altUrls: [gnews('thesouthern.com'), 'https://thesouthern.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc'] },
   { id: 'degypt', name: 'Daily Egyptian', area: 'Carbondale', url: 'https://dailyegyptian.com/feed/', altUrls: ['https://dailyegyptian.com/category/news/feed/'] }, // unverified
   // Radio
   // Small towns and more radio. Feeds checked on 2026-10-06 and re-checked 2026-10-07 unless marked.
-  { id: 'pdclarion', name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', url: 'https://www.pdclarion.com/search/?f=rss&t=article&l=25' },
-  { id: 'mtcarmel', name: 'Daily Republican-Register', area: 'Mt. Carmel', url: 'https://hometownregister.com/search/?f=rss&t=article&l=25' },
-  { id: 'pikenews', name: 'Pike County News', area: 'Petersburg', url: 'https://www.pikecountynews.com/feed/' },
-  { id: 'murphy', name: 'Murphysboro American', area: 'Murphysboro', url: 'https://www.murphysboroamerican.com/feed/' },
+  { id: 'pdclarion', everyMin: 60, name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', url: 'https://www.pdclarion.com/search/?f=rss&t=article&l=25', altUrls: [gnews('pdclarion.com')] },
+  { id: 'mtcarmel', everyMin: 60, name: 'Daily Republican-Register', area: 'Mt. Carmel', url: 'https://www.hometownregister.com/search/?f=rss&t=article&l=25', altUrls: [gnews('hometownregister.com')] },
   { id: 'wsto', name: 'WSTO Radio', area: 'Owensboro', geo: true, url: 'https://wsto.com/feed/' },
   { id: 'wkdq', name: 'WKDQ Radio', area: 'Henderson', geo: true, url: 'https://wkdq.com/feed/' },
-  { id: 'weoa', name: 'WEOA Radio', area: 'Evansville', geo: true, url: 'https://weoa.com/feed/' },
-  { id: 'wjps', name: 'WJPS Radio', area: 'Evansville', geo: true, url: 'https://wjps.com/feed/' },
   { id: 'owradio', name: 'Owensboro Radio', area: 'Owensboro', url: 'https://owensbororadio.com/feed/' },
   // Statehouse reporting: kept only when a story names a place in the region
   { id: 'inchron', name: 'Indiana Capital Chronicle', area: 'Indiana', geo: true, url: 'https://indianacapitalchronicle.com/feed/' },
@@ -64,13 +69,12 @@ const SOURCES = [
   // requests; each tries its RSS feed, then its iCal export. Add more with EXTRA_FEEDS.
   // Obituaries (kind: 'obits'): the papers' own obituary sections (BLOX category feeds) and Owensboro Times.
   // Each item links back to the full notice on the publisher's site.
-  { id: 'ob-messinq', name: 'Messenger-Inquirer', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-messinq', everyMin: 60, name: 'Messenger-Inquirer', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('messenger-inquirer.com/obituaries')] },
   { id: 'ob-owtimes', name: 'Owensboro Times', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.owensborotimes.com/obituaries/feed/' },
-  { id: 'ob-dcherald', name: 'Dubois County Herald', area: 'Jasper', kind: 'obits', maxAgeDays: 21, url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25' },
-  { id: 'ob-pdclarion', name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25' },
-  { id: 'ob-sunc', name: 'Vincennes Sun-Commercial', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, url: 'https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25' },
-  { id: 'ob-msgr', name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25' },
-  { id: 'ob-wth', name: 'Washington Times-Herald', area: 'Washington, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://washtimesherald.com/search/?f=rss&t=article&c=obituaries&l=25' },
+  { id: 'ob-dcherald', everyMin: 60, name: 'Dubois County Herald', area: 'Jasper', kind: 'obits', maxAgeDays: 21, url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('duboiscountyherald.com/obituaries')] },
+  { id: 'ob-pdclarion', everyMin: 60, name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('pdclarion.com/obituaries')] },
+  { id: 'ob-sunc', everyMin: 60, name: 'Vincennes Sun-Commercial', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, url: 'https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('suncommercial.com/obituaries')] },
+  { id: 'ob-msgr', everyMin: 60, name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('the-messenger.com/obituaries')] },
   // Ticketmaster Discovery API (free key in TICKETMASTER_API_KEY; skipped when unset): concerts, sports and shows within 75 miles of Evansville.
   { id: 'ev-tm', name: 'Ticketmaster', area: 'Tri-State', kind: 'events', parser: 'ticketmaster', url: 'https://app.ticketmaster.com/discovery/v2/events.json' },
   // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
@@ -79,8 +83,6 @@ const SOURCES = [
   { id: 'ev-hend', name: 'Henderson Tourist Commission', area: 'Henderson', kind: 'events', url: 'https://hendersonky.org/events/?ical=1&eventDisplay=list&posts_per_page=100' },
   { id: 'ev-vin', name: 'Visit Vincennes', area: 'Vincennes', kind: 'events', url: 'https://www.visitvincennes.org/events/?ical=1&eventDisplay=list&posts_per_page=100' },
   { id: 'ev-murph', name: 'Murphysboro Chamber', area: 'Murphysboro', kind: 'events', url: 'https://www.murphysboro.com/events/?ical=1&eventDisplay=list&posts_per_page=100' },
-  { id: 'ev-evv', name: 'Explore Evansville', area: 'Evansville', kind: 'events', url: 'https://www.exploreevansville.com/events/feed/', altUrls: ['https://www.exploreevansville.com/events/?ical=1'] },
-  { id: 'ev-owb', name: 'Visit Owensboro', area: 'Owensboro', kind: 'events', url: 'https://www.visitowensboro.com/events/feed/', altUrls: ['https://www.visitowensboro.com/events/?ical=1'] },
   { id: 'ev-mad', name: 'Visit Madisonville', area: 'Madisonville', kind: 'events', url: 'https://www.visitmadisonvilleky.com/events/feed/', altUrls: ['https://www.visitmadisonvilleky.com/events/?ical=1'] },
   // Public radio and newsrooms from neighboring markets
   { id: 'wkms', name: 'WKMS Public Radio', area: 'Western Kentucky', geo: true, url: 'https://www.wkms.org/rss.xml' },
@@ -108,7 +110,10 @@ const REGION_TERMS = [
   // Kentucky
   'owensboro', 'daviess county', 'henderson, ky', 'henderson county, ky', 'webster county', 'sebree', 'providence, ky', 'morganfield', 'union county, ky', 'uniontown', 'sturgis', 'madisonville, ky', 'hopkins county', 'earlington', 'nortonville', 'dawson springs', 'central city', 'muhlenberg', 'greenville, ky', 'hartford, ky', 'ohio county, ky', 'mclean county', 'calhoun, ky', 'livermore', 'beaver dam', 'hancock county, ky', 'hawesville', 'lewisport', 'princeton, ky', 'caldwell county', 'marion, ky', 'crittenden county', 'western kentucky', 'wku', 'kentucky wesleyan',
   // Illinois
-  'carbondale', 'marion, ill', 'williamson county', 'herrin', 'murphysboro', 'jackson county, ill', 'harrisburg, ill', 'saline county, ill', 'carterville', 'johnston city', 'west frankfort', 'franklin county, ill', 'benton, ill', 'mount vernon, ill', 'mt. vernon, ill', 'jefferson county, ill', 'mcleansboro', 'hamilton county, ill', 'carmi', 'white county, ill', 'mount carmel', 'mt. carmel', 'wabash county, ill', 'lawrenceville, ill', 'lawrence county, ill', 'olney, ill', 'fairfield, ill', 'wayne county, ill', 'eldorado, ill', 'galatia', 'shawneetown', 'gallatin county, ill', 'metropolis, ill', 'massac', 'vienna, ill', 'johnson county, ill', 'anna, ill', 'jonesboro, ill', 'union county, ill', 'southern illinois', 'siu ', 'siu-', 'shawnee national forest', 'cairo, ill', 'pulaski county, ill', 'du quoin', 'perry county, ill', 'pinckneyville', 'chester, ill', 'randolph county, ill', 'sparta, ill', 'wabash valley', 'illinois', 'indiana', 'kentucky',
+  'carbondale', 'marion, ill', 'williamson county', 'herrin', 'murphysboro', 'jackson county, ill', 'harrisburg, ill', 'saline county, ill', 'carterville', 'johnston city', 'west frankfort', 'franklin county, ill', 'benton, ill', 'mount vernon, ill', 'mt. vernon, ill', 'jefferson county, ill', 'mcleansboro', 'hamilton county, ill', 'carmi', 'white county, ill', 'mount carmel', 'mt. carmel', 'wabash county, ill', 'lawrenceville, ill', 'lawrence county, ill', 'olney, ill', 'fairfield, ill', 'wayne county, ill', 'eldorado, ill', 'galatia', 'shawneetown', 'gallatin county, ill', 'metropolis, ill', 'massac', 'vienna, ill', 'johnson county, ill', 'anna, ill', 'jonesboro, ill', 'union county, ill', 'southern illinois', 'siu ', 'siu-', 'shawnee national forest', 'cairo, ill', 'pulaski county, ill', 'du quoin', 'perry county, ill', 'pinckneyville', 'chester, ill', 'randolph county, ill', 'sparta, ill', 'wabash valley',
+  // Tri-State shorthand and Evansville high schools (Courier & Press headlines often name only these)
+  'tri-state', 'southwestern indiana', 'southwest indiana', 'sw indiana', 'reitz', 'mater dei', 'bosse', 'evansville police', 'epd ',
+  'illinois', 'indiana', 'kentucky',
 ];
 
 function inRegion(item) {
@@ -118,10 +123,33 @@ function inRegion(item) {
   return strong.some(t => hay.includes(t));
 }
 
-// BLOX CMS outlets mix AP wire copy into the same feed under /ap/. Wire stories are national.
-function isWire(item) {
-  try { return /^\/ap\//i.test(new URL(item.link).pathname); } catch (_) { return false; }
+// A story from a local outlet that names another state ("An 81-year-old Mississippi man...") and no place
+// in our region is network or wire copy (Gray and Nexstar stations share stories across markets).
+const OTHER_STATES = 'alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|iowa|kansas|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|west virginia|wisconsin|wyoming';
+const OUT_OF_AREA_RE = new RegExp(
+  '\\b(?:' + OTHER_STATES + ')\\s+(?:man|woman|men|women|teen|teens|boy|girl|child|children|toddler|infant|couple|family|mother|father|resident|residents|deputy|deputies|officer|officers|police|sheriff|trooper|troopers|officials|authorities|lawmakers?|governor|judge|jury|school|students?)\\b' +
+  '|\\b(?:in|near|outside|from) (?:rural |northern |southern |eastern |western |central )?(?:' + OTHER_STATES + ')\\b(?! river| valley| county| state university)', 'i');
+function outOfArea(item) {
+  const hay = item.title + ' ' + item.summary;
+  return OUT_OF_AREA_RE.test(hay) && !inRegion(item);
 }
+
+// Obituaries belong in the Obituaries tab, not the news feed (papers mix them into their main feeds).
+function looksLikeObit(item) {
+  if (/\bobituar(?:y|ies)\b/i.test(item.title)) return true;
+  try { return /\/obituar/i.test(new URL(item.link).pathname); } catch (_) { return false; }
+}
+
+// BLOX CMS (and CNHI) outlets mix wire and syndicated copy into their main feeds: AP under /ap/, and
+// national, world, statewide and lifestyle wire under section paths, and sister papers' stories (the
+// Sun-Commercial republishes the Greencastle Banner Graphic under /banner_graphic/). Those are not local.
+const WIRE_PATH_RE = /^\/(?:ap|news\/(?:national|national_news|nation|nation_world|nation-world|world|world_news|state|state_news)|sports\/(?:national|nation|ap|college|pro)|lifestyles?\/(?:health|food|travel|national)|entertainment\/(?:national|ap)|indiana\/(?:news|opinion|sports)|banner_graphic)(?:\/|$)/i;
+function isWire(item) {
+  try { return WIRE_PATH_RE.test(new URL(item.link).pathname); } catch (_) { return false; }
+}
+
+// Standing page furniture some papers publish as articles every day (not stories).
+const STANDING_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside)$/i;
 
 const MAX_ITEMS = 240;
 const MAX_AGE_DAYS = 10;
@@ -179,7 +207,10 @@ function parseFeed(xml, source) {
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>|<entry[\s>][\s\S]*?<\/entry>/gi) || [];
   const items = [];
   for (const b of blocks.slice(0, PER_SOURCE_LIMIT)) {
-    const title = stripHtml(tag(b, 'title'));
+    let title = stripHtml(tag(b, 'title'));
+    const viaGoogle = /^https:\/\/news\.google\.com\//.test(source.fetchedUrl || '');
+    // Google News appends " - Publisher" to every title and its description is only a link back.
+    if (viaGoogle) { const cut = title.lastIndexOf(' - '); if (cut > 15 && title.length - cut < 64) title = title.slice(0, cut).trim(); }
     let link = tag(b, 'link').trim();
     if (!link) link = attr(b, 'link', 'href', /rel\s*=\s*["']alternate["']/i) || attr(b, 'link', 'href');
     if (!link) { const g = tag(b, 'guid').trim(); if (/^https?:\/\//i.test(g)) link = g; }
@@ -193,7 +224,7 @@ function parseFeed(xml, source) {
     const rawDesc = tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || tag(b, 'content');
     let summary = stripHtml(rawDesc);
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '\u2026';
-    if (summary.toLowerCase() === title.toLowerCase() || /^continue reading\b/i.test(summary)) summary = '';
+    if (viaGoogle || summary.toLowerCase() === title.toLowerCase() || /^continue reading\b/i.test(summary)) summary = '';
 
     let image =
       attr(b, 'media:content', 'url') ||
@@ -314,11 +345,19 @@ async function fetchTicketmaster(source, url) {
   return { items, error: items.length ? null : 'no items', url };
 }
 
+// Identifies the reader honestly, with a URL publishers can check. Google News and some BLOX/Arc sites
+// treat the old bare "TriStateNewsAggregator/1.0" string as an unknown bot.
+const USER_AGENT = 'Mozilla/5.0 (compatible; TriStateNews/1.1; +https://tristatenewss.vercel.app)';
+const isGoogleNews = url => /^https:\/\/news\.google\.com\//.test(url);
+// Google News requests from many sources go out one at a time, 600 ms apart, so one refresh never bursts.
+let googleQueue = Promise.resolve();
+const googleTurn = () => { const turn = googleQueue.then(() => new Promise(r => setTimeout(r, 600))); googleQueue = turn; return turn; };
+
 // Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
 // sent so an unchanged feed answers 304 and costs almost nothing.
 async function tryUrl(source, url, prev) {
   try {
-    const headers = { 'user-agent': 'TriStateNewsAggregator/1.0 (+RSS reader)', accept: 'application/rss+xml, application/xml, text/xml, */*' };
+    const headers = { 'user-agent': USER_AGENT, accept: 'application/rss+xml, application/xml, text/xml, */*' };
     if (prev && prev.url === url) {
       if (prev.etag) headers['if-none-match'] = prev.etag;
       if (prev.lastModified) headers['if-modified-since'] = prev.lastModified;
@@ -336,13 +375,18 @@ async function tryUrl(source, url, prev) {
       }
       return { items, error: items.length ? null : 'no items', url };
     }
+    if (isGoogleNews(url)) await googleTurn();
     const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
     if (r.status === 304) return { items: [], notModified: true, error: null, url };
     if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
     const xml = await r.text();
-    const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, source))
+    const viaGoogle = isGoogleNews(url);
+    const news = !source.kind || source.kind === 'news' || source.kind === 'police' || source.kind === 'courts' || source.kind === 'institution';
+    const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url }))
       .filter(it => !isWire(it))
-      .filter(it => !source.geo || inRegion(it));
+      // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
+      .filter(it => !(source.geo || (viaGoogle && news)) || inRegion(it))
+      .filter(it => !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim())));
     return { items, error: items.length ? null : 'no items', url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
     return { items: [], error: String(e && e.message || e).slice(0, 80), url };
@@ -351,15 +395,29 @@ async function tryUrl(source, url, prev) {
 
 // Tries the URL that worked last time first, then the main URL and any altUrls, and keeps the first
 // one that returns stories (or confirms nothing changed).
-async function loadSource(source, prev) {
-  const urls = [source.url].concat(source.altUrls || []);
-  if (prev && prev.url && urls.includes(prev.url)) urls.splice(urls.indexOf(prev.url), 1), urls.unshift(prev.url);
-  let last = { items: [], error: 'no url' };
-  for (const url of urls) {
+// A host that answered 429/403 is left alone until its cooldown ends (prev.blocked: { host: untilMs }); the
+// Google News fallback is used meanwhile. After the cooldown the publisher's own feed is tried first again.
+const hostOf = u => { try { return new URL(u).hostname; } catch (_) { return ''; } };
+async function loadSource(source, prev, now) {
+  now = now || Date.now();
+  let urls = [source.url].concat(source.altUrls || []);
+  if (prev && prev.url && urls.includes(prev.url) && !isGoogleNews(prev.url)) urls.splice(urls.indexOf(prev.url), 1), urls.unshift(prev.url);
+  const blocked = Object.assign({}, (prev && prev.blocked) || {});
+  Object.keys(blocked).forEach(h => { if (blocked[h] <= now) delete blocked[h]; });
+  const open = urls.filter(u => !blocked[hostOf(u)]);
+  let last = { items: [], error: open.length ? 'no url' : 'cooling down after rate limit' };
+  for (const url of open) {
     last = await tryUrl(source, url, prev);
+    if (/^HTTP (429|403)$/.test(last.error || '')) {
+      // back off: 30 min, doubling with each consecutive block, up to 6 hours
+      const fails = ((prev && prev.blockCount) || 0) + 1;
+      blocked[hostOf(url)] = now + Math.min(6 * 36e5, 30 * 6e4 * Math.pow(2, fails - 1));
+      last.blockCount = fails;
+      continue;
+    }
     if (last.items.length || last.notModified) break;
   }
-  return { source, ...last };
+  return { source, ...last, blocked, blockCount: last.blockCount || (Object.keys(blocked).length ? (prev && prev.blockCount) || 0 : 0) };
 }
 
 function normKey(item) {
@@ -422,7 +480,9 @@ const stored = () => !!(URL_ && TOKEN);
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
-const FAST_IDS = new Set(['ob-messinq', 'ob-owtimes', 'wfie', 'weht', 'owtimes', 'messinq', 'courier', 'gleaner', 'msgr', 'kfvs', 'wthi', 'wpsd', 'sunc', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
+// Fast tier (every 10 min): sources that post often and tolerate polling. BLOX papers (Messenger-Inquirer,
+// The Messenger, Sun-Commercial, WPSD) rate-limit by IP, so they moved to the half-hourly full run.
+const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'gleaner', 'kfvs', 'wthi', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
 
 async function redis(commands) {
   const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
@@ -442,7 +502,7 @@ async function readSnapshot() {
 // Folds a fetch result into the source's previous record. Failures keep the earlier stories.
 function mergeState(source, prev, res, now) {
   prev = prev || { items: [] };
-  const state = { items: prev.items || [], url: prev.url || '', etag: prev.etag || '', lastModified: prev.lastModified || '', lastOk: prev.lastOk || null, fails: prev.fails || 0, error: null, lastTry: new Date(now).toISOString() };
+  const state = { items: prev.items || [], url: prev.url || '', etag: prev.etag || '', lastModified: prev.lastModified || '', lastOk: prev.lastOk || null, fails: prev.fails || 0, error: null, lastTry: new Date(now).toISOString(), blocked: res.blocked || prev.blocked || {}, blockCount: res.blockCount !== undefined ? res.blockCount : (prev.blockCount || 0) };
   if (res.notModified || res.items.length || res.error === 'no items') { // 'no items': the feed works but has nothing local right now
     if (res.items.length) {
       const fresh = new Set(res.items.map(i => i.link));
@@ -476,7 +536,7 @@ function buildSnapshot(states, now) {
 async function refreshAll(opts) {
   opts = opts || {};
   const now = Date.now();
-  const targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
+  let targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
   let persist = stored();
   let prevStates = {};
   if (persist) {
@@ -486,6 +546,8 @@ async function refreshAll(opts) {
       SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
     } catch (e) { persist = false; }
   }
+  // Respect each source's minimum polling interval (everyMin): skip it if it was tried recently.
+  targets = targets.filter(s => { const p = prevStates[s.id]; return !s.everyMin || !p || !p.lastTry || now - Date.parse(p.lastTry) >= s.everyMin * 6e4 - 30e3; });
   // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the
   // news and obituary feeds of one paper share a host.
   const byHost = {};
@@ -495,9 +557,7 @@ async function refreshAll(opts) {
     const out = [];
     for (let i = 0; i < group.length; i++) {
       if (i) await sleep(900);
-      let r = await loadSource(group[i], prevStates[group[i].id]);
-      if (r.error === 'HTTP 429') { await sleep(1800); r = await loadSource(group[i], prevStates[group[i].id]); }
-      out.push(r);
+      out.push(await loadSource(group[i], prevStates[group[i].id], now));
     }
     return out;
   }))).flat();

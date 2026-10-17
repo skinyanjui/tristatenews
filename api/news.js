@@ -58,6 +58,9 @@ const SOURCES = [
   // Radio (wider-market stations: kept only when a story names a place in the region)
   { id: 'wiky', name: 'WIKY', area: 'Evansville', geo: true, url: 'https://wiky.com/feed/' },
   { id: 'wbkr', name: 'WBKR', area: 'Owensboro', geo: true, url: 'https://wbkr.com/feed/' },
+  // Eyewitness News crime section: a News source. Its main feed holds only the latest 10 stories, so this adds
+  // local crime stories the main feed has already rotated out (duplicates are merged by link and title).
+  { id: 'weht-crime', name: 'Eyewitness News', area: 'Evansville', geo: true, url: 'https://www.tristatehomepage.com/news/crime/feed/' },
   // Federal courts and prosecutors (press releases are infrequent, so they stay on the page longer)
   // S.D. Indiana covers Evansville (verified 2026-10-17: field_component=1836 is the office's own feed).
   { id: 'usaosdin', name: 'U.S. Attorney, S.D. Indiana', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0' },
@@ -69,17 +72,17 @@ const SOURCES = [
   { id: 'fbilou', name: 'FBI Louisville', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/louisville-news/rss.xml' },
   { id: 'fbiind', name: 'FBI Indianapolis', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/indianapolis-news/rss.xml' },
   { id: 'fbispr', name: 'FBI Springfield', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/springfield-news/rss.xml' },
-  // Local police and prosecutors (verified 2026-10-17). These pass through safetyView(): no images, no items
-  // about juveniles, and arrest-type items leave after 14 days. The Eyewitness News crime section repeats
-  // stories from its main feed; those keep their News card and are also listed under Police & courts.
-  { id: 'weht-crime', name: 'Eyewitness News', area: 'Evansville', kind: 'police', geo: true, url: 'https://www.tristatehomepage.com/news/crime/feed/' },
+  // Local law enforcement and prosecutors (verified 2026-10-17). Police & courts carries official sources only
+  // (kind 'police' / 'courts'); they pass through safetyView(): no images, no items about juveniles, and
+  // arrest-type items leave after 14 days.
   { id: 'vcso', name: 'Vanderburgh County Sheriff', area: 'Evansville', kind: 'police', maxAgeDays: 30, url: 'https://vanderburghsheriff.org/feed/' },
   // The site-wide /feed/ is empty; press releases are their own post type.
   { id: 'vcpo', name: 'Vanderburgh County Prosecutor', area: 'Evansville', kind: 'courts', maxAgeDays: 90, url: 'https://vanderburghprosecutor.org/press-releases/feed/' },
   // Events (kind: 'events'): RSS or iCal calendars. Unverified, tourism sites often block datacenter
   // requests; each tries its RSS feed, then its iCal export. Add more with EXTRA_FEEDS.
-  // Obituaries (kind: 'obits'): the papers' own obituary sections (BLOX category feeds) and Owensboro Times.
-  // Each item links back to the full notice on the publisher's site.
+  // Obituaries (kind: 'obits'): the papers' own obituary sections (BLOX category feeds) and Owensboro Times,
+  // plus funeral homes (funeralHome: true). Each item links back to the full notice on the publisher's site.
+  // When a paper and a funeral home list the same person, the funeral home's card is kept (see combine()).
   { id: 'ob-messinq', everyMin: 60, name: 'Messenger-Inquirer', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('messenger-inquirer.com/obituaries')] },
   { id: 'ob-owtimes', name: 'Owensboro Times', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.owensborotimes.com/obituaries/feed/' },
   { id: 'ob-dcherald', everyMin: 60, name: 'Dubois County Herald', area: 'Jasper', kind: 'obits', maxAgeDays: 21, url: 'https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('duboiscountyherald.com/obituaries')] },
@@ -88,15 +91,22 @@ const SOURCES = [
   { id: 'ob-msgr', everyMin: 60, name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('the-messenger.com/obituaries')] },
   // Funeral homes (verified 2026-10-17). Cards carry the name, a summary of at most 220 characters and a link
   // back to the funeral home's own page; no full text is copied. FrontRunner sites publish /rss.xml.
-  { id: 'ob-ziemer', everyMin: 60, name: 'Ziemer Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.ziemerfuneralhome.com/rss.xml' },
-  { id: 'ob-browning', everyMin: 60, name: 'Browning Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.browningfuneral.com/rss.xml' },
-  { id: 'ob-koehler', everyMin: 60, name: 'Koehler Funeral Home', area: 'Boonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.koehlerfuneralhome.com/rss.xml' },
-  // FuneralOne, CFS and Tukios sites have no obituary feed but list every obituary in a sitemap (each site's
-  // robots.txt allows these pages). parser 'sitemap': newest entries only, at most SITEMAP_DETAILS new pages per run.
-  { id: 'ob-bgt', everyMin: 60, name: 'Benton-Glunt & Tapp Funeral Home', area: 'Henderson', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml' },
-  { id: 'ob-becher', everyMin: 60, name: 'Becher & Kluesner Funeral Home', area: 'Jasper', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.becherkluesner.com/obituaries/sitemap.xml' },
-  { id: 'ob-colvin', everyMin: 60, name: 'Colvin Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml' },
-  { id: 'ob-glenn', everyMin: 60, name: 'Glenn Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://obits.glennfuneralhome.com/obituary-sitemap.xml' },
+  { id: 'ob-ziemer', everyMin: 60, funeralHome: true, name: 'Ziemer Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.ziemerfuneralhome.com/rss.xml' },
+  { id: 'ob-browning', everyMin: 60, funeralHome: true, name: 'Browning Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.browningfuneral.com/rss.xml' },
+  { id: 'ob-koehler', everyMin: 60, funeralHome: true, name: 'Koehler Funeral Home', area: 'Boonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.koehlerfuneralhome.com/rss.xml' },
+  { id: 'ob-haley', everyMin: 60, funeralHome: true, name: 'Haley-McGinnis Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.haleymcginnis.com/rss.xml' },
+  { id: 'ob-davis', everyMin: 60, funeralHome: true, name: 'James H. Davis Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.davisfuneralhome.com/rss.xml' },
+  { id: 'ob-nass', everyMin: 60, funeralHome: true, name: 'Nass & Son Funeral Home', area: 'Huntingburg', kind: 'obits', maxAgeDays: 21, url: 'https://www.nassandson.com/rss.xml' },
+  // FuneralOne, CFS, Tukios and Gather sites have no obituary feed but list every obituary in a sitemap (each
+  // site's robots.txt allows these pages). parser 'sitemap': newest entries only, at most SITEMAP_DETAILS new pages per run.
+  { id: 'ob-bgt', everyMin: 60, funeralHome: true, name: 'Benton-Glunt & Tapp Funeral Home', area: 'Henderson', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml' },
+  { id: 'ob-becher', everyMin: 60, funeralHome: true, name: 'Becher & Kluesner Funeral Home', area: 'Jasper', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.becherkluesner.com/obituaries/sitemap.xml' },
+  { id: 'ob-colvin', everyMin: 60, funeralHome: true, name: 'Colvin Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml' },
+  { id: 'ob-doyle', everyMin: 60, funeralHome: true, name: 'Doyle Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.doylefuneral.com/obituary-sitemap.xml' },
+  { id: 'ob-glenn', everyMin: 60, funeralHome: true, name: 'Glenn Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://obits.glennfuneralhome.com/obituary-sitemap.xml' },
+  { id: 'ob-barnett', everyMin: 60, funeralHome: true, name: 'Barnett-Strother Funeral Home', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://barnettstrother.com/app/embed/f472797a-8210-4a0c-93b5-14da112340f9/sitemap0.xml' },
+  { id: 'ob-goodwin', everyMin: 60, funeralHome: true, name: 'Goodwin-Sievers Funeral Home', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.goodwinsieversfh.com/obituary-sitemap.xml' },
+  { id: 'ob-duesterberg', everyMin: 60, funeralHome: true, name: 'Duesterberg-Fredrick Funeral Home', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.duesterbergfredrick.com/obituary-sitemap.xml' },
   // Ticketmaster Discovery API (free key in TICKETMASTER_API_KEY; skipped when unset): concerts, sports and shows within 75 miles of Evansville.
   { id: 'ev-tm', name: 'Ticketmaster', area: 'Tri-State', kind: 'events', parser: 'ticketmaster', url: 'https://app.ticketmaster.com/discovery/v2/events.json' },
   // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
@@ -177,11 +187,8 @@ function isWire(item) {
 const STANDING_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside)$/i;
 
 // ---------- Police & courts policy ----------
-// Headlines that make a regular news story a Police & courts story too (it stays in News as well).
-const CRIME_RE = /\b(?:arrest(?:s|ed)?|charged|faces? (?:new )?charges|criminal charges|new charges|indicted|indictment|sentenced|sentencing|convicted|conviction|pleads?|pleaded|guilty|verdict|murder(?:ed|s)?|homicide|manslaughter|shooting|shootings|stabb(?:ing|ed)|robbery|robbed|burglary|burglaries|carjacking|thefts?|stolen|kidnapping|assault(?:ed)?|home invasion|fentanyl|meth(?:amphetamine)?|drug (?:dealing|charges?|trafficking|bust|raid)|trafficking|police|sheriff|deput(?:y|ies)|troopers?|jail(?:ed)?|inmates?|prison|prosecutors?|jury|judge (?:rules|ruled|sentences|orders|ordered|denies|denied|grants|granted|sets)|(?:murder|jury|on) trial|in custody|suspects?|warrant|fraud|embezzl\w*)\b/i;
-// Standing lists of names (arrest logs, court dockets) are rosters, not stories: never copied.
-const ROSTER_RE = /^(?:[a-z.' ]+ county )?(?:arrest records|arrests|court news|court records|jail (?:log|bookings)|bookings?|police (?:log|blotter|reports?)|sheriff'?s? (?:log|reports?))\b/i;
-// Items that involve juveniles are dropped from police and court sources and never copied from news. Offense
+// The tab carries official sources only (kind 'police' / 'courts'); crime stories from news outlets stay in News.
+// Items that involve juveniles are dropped from police and court sources. Offense
 // names such as "child exploitation" describe an adult defendant's crime and are not matched.
 const JUVENILE_RE = /\b(?:juveniles?|teens?|teenagers?|(?:[1-9]|1[0-7])-year-olds?|boys?|girls?|students?|high school(?:ers?)?|middle school|minors? (?:arrested|charged|detained|cited|taken)|under 18)\b/i;
 // Arrested or charged, not (yet) convicted: these get the note on their card and a 14-day window.
@@ -190,24 +197,29 @@ const ARREST_RE = /\b(?:arrest(?:s|ed)?|charged|charges?|indicted|indictment|acc
 const OUTCOME_RE = /\b(?:sentenced|sentencing|(?:is|was|were|been|be) convicted|convicted (?:of|in|on)|found guilty|pleads? guilty|pleaded guilty|guilty (?:plea|verdict)|acquitted)\b/i;
 const ARREST_MAX_DAYS = 14;
 
-// Returns the item as it should appear (a copy with safety/arrest flags, police and court images removed),
-// or null to leave it out. Runs in combine(), so stories already stored in Redis follow the policy too.
+// Returns a police or court item as it should appear (a copy with the arrest flag and no image), or null to
+// leave it out; other items pass through unchanged. Runs in combine(), so stored stories follow it too.
 function safetyView(it, source) {
   const kind = source.kind || 'news';
-  const text = it.title + ' ' + (it.summary || '');
+  if (kind !== 'police' && kind !== 'courts') return it;
+  if (JUVENILE_RE.test(it.title + ' ' + (it.summary || ''))) return null;
   const arrest = ARREST_RE.test(it.title) && !OUTCOME_RE.test(it.title);
-  if (kind === 'police' || kind === 'courts') {
-    if (JUVENILE_RE.test(text)) return null;
-    const out = { ...it, image: '', safety: true, arrest };
-    if (arrest && kind === 'police') out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
-    return out;
-  }
-  if (kind !== 'news' || it.isEvent || it.isObit) return it;
-  if (!CRIME_RE.test(it.title) || ROSTER_RE.test(it.title.trim()) || JUVENILE_RE.test(text)) return it;
-  return { ...it, safety: true, arrest };
+  const out = { ...it, image: '', arrest };
+  if (arrest && kind === 'police') out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
+  return out;
+}
+
+// Obituary match key: first and last name, ignoring nicknames ("PJ"), maiden names in parentheses, middle names
+// and initials, suffixes and ages, so "Paul James \"PJ\" Carnahan" and "Paul Carnahan, 79" match.
+function obitKey(title) {
+  const words = title.toLowerCase().replace(/^obituary:?\s*/, '').replace(/["\u201c\u201d].*?["\u201c\u201d]|\(.*?\)|,.*$/g, ' ')
+    .replace(/[^a-z\s'-]/g, ' ').split(/\s+/).filter(w => w && !/^(?:jr|sr|ii|iii|iv|mrs?|dr)$/.test(w));
+  return words.length > 1 ? words[0] + ' ' + words[words.length - 1] : words.join(' ');
 }
 
 const MAX_ITEMS = 240;
+// The Obituaries tab: 21 days from about 25 papers and funeral homes, one card per person.
+const MAX_OBITS = 300;
 const MAX_AGE_DAYS = 10;
 const PER_SOURCE_LIMIT = 30;
 
@@ -586,7 +598,9 @@ function combine(results, now) {
   const all = [];
   const events = [];
   const obits = [];
-  const byLink = new Map();
+  const obitAt = new Map();
+  // Funeral homes go first, so when a paper and a funeral home list the same person the funeral home's card wins.
+  results = results.slice().sort((a, b) => (b.source && b.source.funeralHome ? 1 : 0) - (a.source && a.source.funeralHome ? 1 : 0));
   for (const r of results) {
     for (const raw of r.items) {
       const it = r.source ? safetyView(raw, r.source) : raw;
@@ -604,23 +618,21 @@ function combine(results, now) {
       }
       if (it.isObit) {
         if (ts !== null && (ts < now - (it.maxAgeDays || 21) * 864e5 || ts > now + 36e5)) continue;
-        if (seen.has('ob|' + key)) continue;
-        seen.add('ob|' + key);
+        const okey = 'ob|' + obitKey(it.title);
+        if (seen.has('ob|' + key) || seen.has(okey)) {
+          // keep the first card's link, but borrow the paper's summary when the funeral home gave none
+          const at = obitAt.get(okey);
+          if (at !== undefined && !obits[at].summary && it.summary) obits[at] = { ...obits[at], summary: it.summary };
+          continue;
+        }
+        seen.add('ob|' + key); seen.add(okey); obitAt.set(okey, obits.length);
         obits.push(it);
         continue;
       }
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
-      if (seen.has(key) || seen.has(it.link)) {
-        // A police source repeating a story already listed from the outlet's news feed: keep the News card
-        // and list it under Police & courts too.
-        const at = byLink.has(it.link) ? byLink.get(it.link) : byLink.get(key);
-        const first = at === undefined ? null : all[at];
-        if (first && it.safety && !first.safety && !JUVENILE_RE.test(first.title + ' ' + (first.summary || ''))) all[at] = { ...first, safety: true, arrest: it.arrest };
-        continue;
-      }
+      if (seen.has(key) || seen.has(it.link)) continue;
       seen.add(key); seen.add(it.link);
-      byLink.set(it.link, all.length); byLink.set(key, all.length);
       all.push(it);
     }
   }
@@ -631,7 +643,7 @@ function combine(results, now) {
   events.forEach(e => { const k = e.sourceId + '|' + normKey(e); if (e.image && !pics[k]) pics[k] = e.image; });
   events.forEach(e => { if (!e.image) e.image = pics[e.sourceId + '|' + normKey(e)] || ''; });
   obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
-  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 160), obits.slice(0, 150)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
+  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
 }
 
 function logoFor(url) {

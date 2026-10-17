@@ -20,10 +20,10 @@ In the Vercel project, add an environment variable `EXTRA_FEEDS` containing a JS
 
 ```json
 [{"id":"usi","name":"USI News","area":"Evansville","kind":"institution","url":"https://example.edu/feed"},
- {"id":"vcso","name":"Vanderburgh Sheriff","area":"Evansville","kind":"police","maxAgeDays":30,"url":"https://example.org/rss"}]
+ {"id":"wcso","name":"Warrick County Sheriff","area":"Boonville","kind":"police","maxAgeDays":30,"url":"https://example.org/rss"}]
 ```
 
-`kind` can be `institution`, `courts` or `police`. Add `"geo": true` for outlets that cover a wider region, so only stories naming a local place are kept. Redeploy after changing it.
+`kind` can be `institution`, `courts`, `police`, `events` or `obits`. Add `"geo": true` for outlets that cover a wider region, so only stories naming a local place are kept, and `"everyMin": 60` (minutes between fetches) for hosts that rate-limit. An entry whose `id` matches a built-in source is ignored. Redeploy after changing it.
 
 ## Features
 
@@ -54,6 +54,7 @@ Check it works: `curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/ref
 - **BLOX papers** (Messenger-Inquirer, The Messenger, Dubois County Herald, Washington Times-Herald, Sun-Commercial, WPSD, Princeton Daily Clarion, Daily Republican-Register) rate-limit shared cloud IPs (HTTP 429). They are polled at most hourly (`everyMin`), a host that answers 429/403 is left alone for 30 minutes (doubling up to 6 hours), and a Google News fallback fills in meanwhile. Wire and syndicated copy under `/news/national`, `/news/world`, `/sports/national`, `/lifestyles/health`, sister-paper paths and so on is dropped (`WIRE_PATH_RE`).
 - **News feed hygiene:** obituaries (an `/obituar` path or "Obituary" in the title) never appear in News; local-outlet stories that name another state ("An 81-year-old Mississippi man...") and no place in the region are dropped as network copy; standing items like TOWN CRIER and CALENDAR are skipped.
 - **Removed:** Pike County News (it is the Pike County, **Missouri** paper), Murphysboro American, WEOA and WJPS (dead hosts), Explore Evansville (no feed or iCal), Visit Owensboro (403 to automated requests), Washington Times-Herald obituaries (its feed only returns months-old notices).
+- **Police & courts** ("safety" tab): U.S. Attorney releases for S.D. Indiana (Evansville), W.D. Kentucky and S.D. Illinois, the three FBI field offices, the Eyewitness News crime section, the Vanderburgh County Sheriff and the Vanderburgh County Prosecutor (90 days; it posts rarely). News stories whose headline is about a crime or a case (`CRIME_RE`) are listed there too and stay in News. Policy (`safetyView()` in `api/news.js`): police and court cards never show photos (no mugshots), anything that mentions a juvenile (`JUVENILE_RE`: juveniles, teens, ages under 18, students) is dropped from police and court sources and never copied from news, arrest logs and court-news rosters are not copied, and arrest-type police items (arrested, charged, suspect...) leave after 14 days and carry a "Charged or arrested, not convicted" note. Not used on purpose: jail rosters and booking lists, EPD's daily crime-report PDFs (names and home addresses of victims), MyCase and CourtNet (robots.txt forbids them), raw PACER docket feeds.
 - Working feeds that often show nothing because of the regional filter: WTHI, WSTO, WIKY, Indiana Capital Chronicle, Kentucky Lantern, Capitol News Illinois, WKMS, Illinois Public Media.
 
 ## Events tab
@@ -86,7 +87,7 @@ With neither configured the form says submissions aren't open yet. Edit the "Goo
 ## Events, obituaries and banners
 
 - **Events** come from the Ford Center and Victory Theatre listing pages (`parser: 'venue'` in `api/news.js`), plus any iCal/RSS feeds that answer. Explore Evansville, Visit Owensboro and Visit Madisonville block automated requests, so they stay hidden unless they start working.
-- **Obituaries** are the papers' own obituary sections (BLOX `c=obituaries` feeds for the Messenger-Inquirer, Dubois County Herald, Princeton Daily Clarion, Sun-Commercial, The Messenger and Washington Times-Herald) and the Owensboro Times. Each card is a short excerpt that links to the full notice. They are kept for 21 days. The Courier & Press publishes through Legacy.com, which blocks automated requests, so Evansville is covered only by the other outlets.
+- **Obituaries** are the papers' own obituary sections (BLOX `c=obituaries` feeds for the Messenger-Inquirer, Dubois County Herald, Princeton Daily Clarion, Sun-Commercial, The Messenger and Washington Times-Herald) and the Owensboro Times, plus funeral homes: Ziemer, Browning and Koehler (FrontRunner `/rss.xml`), and Benton-Glunt & Tapp, Becher & Kluesner (FuneralOne), Colvin (CFS) and Glenn (Tukios) through their obituary sitemaps (`parser: 'sitemap'`: the newest entries in the window, at most 6 new obituary pages fetched per source per run, pages read before are reused). Each card is the name, a summary of at most 220 characters and a link to the full notice; no full text is copied. The same person listed by a paper and a funeral home shows once. They are kept for 21 days. The Courier & Press publishes through Legacy.com, which blocks automated requests, so Evansville is covered only by the other outlets.
 - **Weather banner**: current conditions from Open-Meteo, alerts from the National Weather Service API (`api.weather.gov`), both called from the browser and credited in the banner.
 - **Breaking banner**: shows only stories the outlet itself labels breaking (see `BREAKING_RE`), for 12 hours, with the outlet name and a link.
 

@@ -48,15 +48,13 @@ Setup (about five minutes):
 
 Check it works: `curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=all"` returns how many stories were stored, how many sources answered 304, and which sources are failing.
 
-## Feed status (checked October 7, 2026)
+## Feed status (checked October 17, 2026)
 
-Returned stories in today's run (19 of 40 sources): 14 News, Eyewitness News, Evansville Living, Owensboro Times, The Messenger (Madisonville), Daily Egyptian, Princeton Daily Clarion, KFVS12, Kentucky Lantern, WKDQ, WBKR, Owensboro Radio, WKMS, FBI Louisville, Indianapolis and Springfield, U.S. Attorney W.D. Kentucky and S.D. Illinois, and the Visit Madisonville events calendar. Messenger-Inquirer, Vincennes Sun-Commercial, Explore Evansville, Visit Owensboro and others returned stories in some runs and a rate-limit or block error in others, so they come and go.
-
-Working feeds that showed nothing because of the regional filter (statewide or national content with no local place named): WIKY, WTHI, Indiana Capital Chronicle, Capitol News Illinois, Illinois Public Media, WSTO.
-
-Blocked or failing from the test machine, kept in the list in case they work from Vercel: Courier & Press and Henderson Gleaner (HTTP 403), Daily Republican-Register (403), Pike County News, Murphysboro American, WEOA and WJPS (timeouts or errors), Washington Times-Herald, Dubois County Herald, WPSD and The Southern Illinoisan (429). A source that returns nothing is hidden automatically.
-
-Not included, no working feed found: Indiana State Police, Illinois State Police, local police and sheriff departments, county courts, city and county governments, WNIN, WSIU, USI, SIU, Vincennes University, the U.S. Attorney for S.D. Indiana.
+- **Courier & Press and Henderson Gleaner** (Gannett) have no public RSS and answer automated requests with HTTP 402, so they come through Google News site searches (`gnews()` in `api/news.js`). Links open through news.google.com. Both are geo-filtered because Gannett feeds carry USA TODAY Network sports and shopping stories.
+- **BLOX papers** (Messenger-Inquirer, The Messenger, Dubois County Herald, Washington Times-Herald, Sun-Commercial, WPSD, Princeton Daily Clarion, Daily Republican-Register) rate-limit shared cloud IPs (HTTP 429). They are polled at most hourly (`everyMin`), a host that answers 429/403 is left alone for 30 minutes (doubling up to 6 hours), and a Google News fallback fills in meanwhile. Wire and syndicated copy under `/news/national`, `/news/world`, `/sports/national`, `/lifestyles/health`, sister-paper paths and so on is dropped (`WIRE_PATH_RE`).
+- **News feed hygiene:** obituaries (an `/obituar` path or "Obituary" in the title) never appear in News; local-outlet stories that name another state ("An 81-year-old Mississippi man...") and no place in the region are dropped as network copy; standing items like TOWN CRIER and CALENDAR are skipped.
+- **Removed:** Pike County News (it is the Pike County, **Missouri** paper), Murphysboro American, WEOA and WJPS (dead hosts), Explore Evansville (no feed or iCal), Visit Owensboro (403 to automated requests), Washington Times-Herald obituaries (its feed only returns months-old notices).
+- Working feeds that often show nothing because of the regional filter: WTHI, WSTO, WIKY, Indiana Capital Chronicle, Kentucky Lantern, Capitol News Illinois, WKMS, Illinois Public Media.
 
 ## Events tab
 

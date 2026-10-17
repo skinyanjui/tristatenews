@@ -59,12 +59,23 @@ const SOURCES = [
   { id: 'wiky', name: 'WIKY', area: 'Evansville', geo: true, url: 'https://wiky.com/feed/' },
   { id: 'wbkr', name: 'WBKR', area: 'Owensboro', geo: true, url: 'https://wbkr.com/feed/' },
   // Federal courts and prosecutors (press releases are infrequent, so they stay on the page longer)
-  { id: 'usaowdky', name: 'U.S. Attorney, W.D. Kentucky', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0' },
+  // S.D. Indiana covers Evansville (verified 2026-10-17: field_component=1836 is the office's own feed).
+  { id: 'usaosdin', name: 'U.S. Attorney, S.D. Indiana', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0' },
+  // geoTerms: extra place names that are unambiguous inside this one office's district (a W.D. Kentucky
+  // release that says "Madisonville-area" or "Henderson" means the Kentucky towns).
+  { id: 'usaowdky', name: 'U.S. Attorney, W.D. Kentucky', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, geoTerms: ['madisonville', 'henderson', 'hopkins county', 'webster county', 'union county', 'mclean county', 'hancock county', 'ohio county', 'muhlenberg'], url: 'https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0' },
   { id: 'usaosdil', name: 'U.S. Attorney, S.D. Illinois', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&groupname=296&field_component=1826&search_api_language=en&require_all=0' },
   // FBI field offices covering the region (all three verified)
   { id: 'fbilou', name: 'FBI Louisville', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/louisville-news/rss.xml' },
   { id: 'fbiind', name: 'FBI Indianapolis', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/indianapolis-news/rss.xml' },
   { id: 'fbispr', name: 'FBI Springfield', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/springfield-news/rss.xml' },
+  // Local police and prosecutors (verified 2026-10-17). These pass through safetyView(): no images, no items
+  // about juveniles, and arrest-type items leave after 14 days. The Eyewitness News crime section repeats
+  // stories from its main feed; those keep their News card and are also listed under Police & courts.
+  { id: 'weht-crime', name: 'Eyewitness News', area: 'Evansville', kind: 'police', geo: true, url: 'https://www.tristatehomepage.com/news/crime/feed/' },
+  { id: 'vcso', name: 'Vanderburgh County Sheriff', area: 'Evansville', kind: 'police', maxAgeDays: 30, url: 'https://vanderburghsheriff.org/feed/' },
+  // The site-wide /feed/ is empty; press releases are their own post type.
+  { id: 'vcpo', name: 'Vanderburgh County Prosecutor', area: 'Evansville', kind: 'courts', maxAgeDays: 90, url: 'https://vanderburghprosecutor.org/press-releases/feed/' },
   // Events (kind: 'events'): RSS or iCal calendars. Unverified, tourism sites often block datacenter
   // requests; each tries its RSS feed, then its iCal export. Add more with EXTRA_FEEDS.
   // Obituaries (kind: 'obits'): the papers' own obituary sections (BLOX category feeds) and Owensboro Times.
@@ -75,6 +86,17 @@ const SOURCES = [
   { id: 'ob-pdclarion', everyMin: 60, name: 'Princeton Daily Clarion', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, url: 'https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('pdclarion.com/obituaries')] },
   { id: 'ob-sunc', everyMin: 60, name: 'Vincennes Sun-Commercial', area: 'Vincennes', kind: 'obits', maxAgeDays: 21, url: 'https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('suncommercial.com/obituaries')] },
   { id: 'ob-msgr', everyMin: 60, name: 'The Messenger', area: 'Madisonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25', altUrls: [gnews('the-messenger.com/obituaries')] },
+  // Funeral homes (verified 2026-10-17). Cards carry the name, a summary of at most 220 characters and a link
+  // back to the funeral home's own page; no full text is copied. FrontRunner sites publish /rss.xml.
+  { id: 'ob-ziemer', everyMin: 60, name: 'Ziemer Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.ziemerfuneralhome.com/rss.xml' },
+  { id: 'ob-browning', everyMin: 60, name: 'Browning Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.browningfuneral.com/rss.xml' },
+  { id: 'ob-koehler', everyMin: 60, name: 'Koehler Funeral Home', area: 'Boonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.koehlerfuneralhome.com/rss.xml' },
+  // FuneralOne, CFS and Tukios sites have no obituary feed but list every obituary in a sitemap (each site's
+  // robots.txt allows these pages). parser 'sitemap': newest entries only, at most SITEMAP_DETAILS new pages per run.
+  { id: 'ob-bgt', everyMin: 60, name: 'Benton-Glunt & Tapp Funeral Home', area: 'Henderson', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml' },
+  { id: 'ob-becher', everyMin: 60, name: 'Becher & Kluesner Funeral Home', area: 'Jasper', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.becherkluesner.com/obituaries/sitemap.xml' },
+  { id: 'ob-colvin', everyMin: 60, name: 'Colvin Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml' },
+  { id: 'ob-glenn', everyMin: 60, name: 'Glenn Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://obits.glennfuneralhome.com/obituary-sitemap.xml' },
   // Ticketmaster Discovery API (free key in TICKETMASTER_API_KEY; skipped when unset): concerts, sports and shows within 75 miles of Evansville.
   { id: 'ev-tm', name: 'Ticketmaster', area: 'Tri-State', kind: 'events', parser: 'ticketmaster', url: 'https://app.ticketmaster.com/discovery/v2/events.json' },
   // Venue listings (parser 'venue': the Ford Center and Victory Theatre event pages, which share one layout).
@@ -91,12 +113,13 @@ const SOURCES = [
 
 // Add more feeds without editing code: set EXTRA_FEEDS in the Vercel project to a JSON array like
 // [{"id":"usi","name":"USI News","area":"Evansville","kind":"institution","url":"https://example.edu/feed"}]
-// Add "geo": true for outlets that cover a wider region than ours.
+// Add "geo": true for outlets that cover a wider region than ours, and "everyMin": 60 (minutes between
+// fetches) for hosts that rate-limit, such as BLOX papers.
 try {
   const extra = JSON.parse(process.env.EXTRA_FEEDS || '[]');
   for (const e of Array.isArray(extra) ? extra : []) {
     if (e && e.id && e.name && /^https?:\/\//.test(e.url || '') && !SOURCES.some(s => s.id === e.id)) {
-      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events', 'obits'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
+      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events', 'obits'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, everyMin: Number(e.everyMin) > 0 ? Number(e.everyMin) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
     }
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
@@ -116,11 +139,13 @@ const REGION_TERMS = [
   'illinois', 'indiana', 'kentucky',
 ];
 
-function inRegion(item) {
-  const hay = (item.title + ' ' + item.summary).toLowerCase();
+// "Henderson, Kentucky" style datelines (DOJ, FBI) are folded to the short forms REGION_TERMS uses.
+const STATE_ABBR = { kentucky: 'ky', indiana: 'ind', illinois: 'ill' };
+function inRegion(item, extra) {
+  const hay = (item.title + ' ' + item.summary).toLowerCase().replace(/,\s*(kentucky|indiana|illinois)\b/g, (m, st) => ', ' + STATE_ABBR[st]);
   // bare state names are weak signals on their own; require a real place for regional stations
   const strong = REGION_TERMS.filter(t => !['illinois', 'indiana', 'kentucky'].includes(t));
-  return strong.some(t => hay.includes(t));
+  return strong.some(t => hay.includes(t)) || (extra || []).some(t => hay.includes(t));
 }
 
 // A story from a local outlet that names another state ("An 81-year-old Mississippi man...") and no place
@@ -150,6 +175,37 @@ function isWire(item) {
 
 // Standing page furniture some papers publish as articles every day (not stories).
 const STANDING_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside)$/i;
+
+// ---------- Police & courts policy ----------
+// Headlines that make a regular news story a Police & courts story too (it stays in News as well).
+const CRIME_RE = /\b(?:arrest(?:s|ed)?|charged|faces? (?:new )?charges|criminal charges|new charges|indicted|indictment|sentenced|sentencing|convicted|conviction|pleads?|pleaded|guilty|verdict|murder(?:ed|s)?|homicide|manslaughter|shooting|shootings|stabb(?:ing|ed)|robbery|robbed|burglary|burglaries|carjacking|thefts?|stolen|kidnapping|assault(?:ed)?|home invasion|fentanyl|meth(?:amphetamine)?|drug (?:dealing|charges?|trafficking|bust|raid)|trafficking|police|sheriff|deput(?:y|ies)|troopers?|jail(?:ed)?|inmates?|prison|prosecutors?|jury|judge (?:rules|ruled|sentences|orders|ordered|denies|denied|grants|granted|sets)|(?:murder|jury|on) trial|in custody|suspects?|warrant|fraud|embezzl\w*)\b/i;
+// Standing lists of names (arrest logs, court dockets) are rosters, not stories: never copied.
+const ROSTER_RE = /^(?:[a-z.' ]+ county )?(?:arrest records|arrests|court news|court records|jail (?:log|bookings)|bookings?|police (?:log|blotter|reports?)|sheriff'?s? (?:log|reports?))\b/i;
+// Items that involve juveniles are dropped from police and court sources and never copied from news. Offense
+// names such as "child exploitation" describe an adult defendant's crime and are not matched.
+const JUVENILE_RE = /\b(?:juveniles?|teens?|teenagers?|(?:[1-9]|1[0-7])-year-olds?|boys?|girls?|students?|high school(?:ers?)?|middle school|minors? (?:arrested|charged|detained|cited|taken)|under 18)\b/i;
+// Arrested or charged, not (yet) convicted: these get the note on their card and a 14-day window.
+const ARREST_RE = /\b(?:arrest(?:s|ed)?|charged|charges?|indicted|indictment|accused|suspects?|in custody|booked|jailed|warrant)\b/i;
+// ("Convicted killer back in jail on new charges" is still an arrest: only a verdict or sentence counts.)
+const OUTCOME_RE = /\b(?:sentenced|sentencing|(?:is|was|were|been|be) convicted|convicted (?:of|in|on)|found guilty|pleads? guilty|pleaded guilty|guilty (?:plea|verdict)|acquitted)\b/i;
+const ARREST_MAX_DAYS = 14;
+
+// Returns the item as it should appear (a copy with safety/arrest flags, police and court images removed),
+// or null to leave it out. Runs in combine(), so stories already stored in Redis follow the policy too.
+function safetyView(it, source) {
+  const kind = source.kind || 'news';
+  const text = it.title + ' ' + (it.summary || '');
+  const arrest = ARREST_RE.test(it.title) && !OUTCOME_RE.test(it.title);
+  if (kind === 'police' || kind === 'courts') {
+    if (JUVENILE_RE.test(text)) return null;
+    const out = { ...it, image: '', safety: true, arrest };
+    if (arrest && kind === 'police') out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
+    return out;
+  }
+  if (kind !== 'news' || it.isEvent || it.isObit) return it;
+  if (!CRIME_RE.test(it.title) || ROSTER_RE.test(it.title.trim()) || JUVENILE_RE.test(text)) return it;
+  return { ...it, safety: true, arrest };
+}
 
 const MAX_ITEMS = 240;
 const MAX_AGE_DAYS = 10;
@@ -353,6 +409,107 @@ const isGoogleNews = url => /^https:\/\/news\.google\.com\//.test(url);
 let googleQueue = Promise.resolve();
 const googleTurn = () => { const turn = googleQueue.then(() => new Promise(r => setTimeout(r, 600))); googleQueue = turn; return turn; };
 
+const hostOf = u => { try { return new URL(u).hostname; } catch (_) { return ''; } };
+// ---------- Funeral home sitemaps (parser: 'sitemap') ----------
+// FuneralOne, CFS and Tukios sites list every obituary in a sitemap with a <lastmod>. The newest entries inside the
+// source's window are read; a page already read on an earlier run is reused from the stored record, and at most
+// SITEMAP_DETAILS new pages are fetched per run, one at a time, so a refresh costs each site a handful of requests.
+// Only the name, a short summary, the photo and the date are kept; the card links to the funeral home.
+const SITEMAP_DETAILS = 6;
+const SITEMAP_SCAN = 40;
+const SUMMARY_MAX = 220;
+const OBIT_BOILERPLATE_RE = /\b(?:leave (?:your )?condolences|send flowers|share (?:memories|a memory)|sign the guestbook|view obituary|service information)\b/i;
+
+function metaContent(html, key) {
+  const re = new RegExp('<meta\\s[^>]*(?:property|name)\\s*=\\s*["\']' + key.replace(/[.:]/g, '\\$&') + '["\'][^>]*>', 'i');
+  const m = html.match(re);
+  if (!m) return '';
+  const c = m[0].match(/content\s*=\s*"([^"]*)"|content\s*=\s*'([^']*)'/i);
+  return c ? decodeEntities(c[1] !== undefined ? c[1] : c[2]).trim() : '';
+}
+
+// "Mary Layne Byrer - View Obituary & Service Information", "Obituary for Paul Carnahan | Colvin Funeral Home",
+// "Shirley Pagan Obituary Oct 13, 2026 - Glenn Funeral Home and Crematory" -> the person's name.
+function obitName(raw) {
+  let t = stripHtml(raw || '');
+  t = t.replace(/\s+[|\u2013\u2014-]\s+.*$/, '');
+  t = t.replace(/^obituary (?:for|of)\s+/i, '').replace(/\s+obituary\b.*$/i, '');
+  return t.trim();
+}
+
+function nameFromSlug(u) {
+  try {
+    const seg = new URL(u).pathname.split('/').filter(Boolean).pop() || '';
+    return decodeURIComponent(seg).replace(/[-_]\d+$/, '').split(/[-_]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  } catch (_) { return ''; }
+}
+
+function obitSummary(desc, name) {
+  let t = stripHtml(desc || '');
+  // CFS descriptions start with the page title: "Obituary for X | X, 79, passed away..."
+  if (/^obituary (?:for|of)\b/i.test(t) && t.includes(' | ')) t = t.slice(t.indexOf(' | ') + 3);
+  t = t.split(/(?<=[.!?])\s+/).filter(x => !OBIT_BOILERPLATE_RE.test(x)).join(' ').trim();
+  if (!t || t.toLowerCase() === (name || '').toLowerCase()) return '';
+  if (t.length > SUMMARY_MAX) t = t.slice(0, SUMMARY_MAX - 3).replace(/\s+\S*$/, '') + '\u2026';
+  return t;
+}
+
+function parseObitPage(html, source, entry) {
+  const name = obitName(metaContent(html, 'og:title') || tag(html, 'title')) || nameFromSlug(entry.loc);
+  if (!name) return null;
+  const pubM = html.match(/"datePublished"\s*:\s*"([^"]+)"/);
+  const deathM = html.match(/"deathDate"\s*:\s*"(\d{4}-\d{2}-\d{2})/);
+  let ts = pubM ? Date.parse(pubM[1]) : NaN;
+  if (!Number.isFinite(ts)) ts = entry.lastmod;
+  // a page republished long after the death (a memorial added later) ages by the date of death
+  // (CFS pages carry no deathDate, so "passed away ... on June 28, 2026" in the description is used instead)
+  const desc = metaContent(html, 'description');
+  const said = desc.match(/\b(?:passed away|died|entered (?:into )?rest)\b[^.]{0,80}?\b((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d{1,2},? \d{4})/i);
+  const death = deathM ? Date.parse(deathM[1] + 'T12:00:00Z') : said ? Date.parse(said[1].replace('.', '') + ' 12:00 UTC') : NaN;
+  if (Number.isFinite(death) && ts - death > 30 * 864e5) ts = death;
+  const canon = safeUrl(metaContent(html, 'og:url'), true);
+  const link = canon && hostOf(canon) === hostOf(entry.loc) ? canon : entry.loc;
+  return {
+    title: name, link, pageUrl: entry.loc, summary: obitSummary(desc, name),
+    image: safeUrl(metaContent(html, 'og:image'), true), published: new Date(ts).toISOString(),
+    source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: false, isObit: true,
+  };
+}
+
+async function fetchSitemap(source, url, prev) {
+  const now = Date.now();
+  const headers = { 'user-agent': USER_AGENT, accept: 'application/xml, text/xml, */*' };
+  const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+  if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
+  const xml = await r.text();
+  const cutoff = now - (source.maxAgeDays || 21) * 864e5;
+  const entries = (xml.match(/<url>[\s\S]*?<\/url>/gi) || [])
+    .map(b => ({ loc: safeUrl(tag(b, 'loc').trim(), true), lastmod: Date.parse(tag(b, 'lastmod').trim()) }))
+    .filter(e => e.loc && Number.isFinite(e.lastmod) && e.lastmod >= cutoff && hostOf(e.loc) === hostOf(url) && new URL(e.loc).pathname.length > 2)
+    .sort((a, b) => b.lastmod - a.lastmod)
+    .slice(0, SITEMAP_SCAN);
+  const known = new Map(((prev && prev.items) || []).map(i => [i.pageUrl || i.link, i]));
+  const items = [];
+  let fetched = 0, blockedErr = null;
+  for (const e of entries) {
+    const old = known.get(e.loc);
+    if (old) { items.push(old); continue; }
+    if (fetched >= SITEMAP_DETAILS || blockedErr) continue;
+    if (fetched) await new Promise(res => setTimeout(res, 900));
+    fetched++;
+    try {
+      const pr = await fetch(e.loc, { headers: { ...headers, accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+      if (pr.status === 429 || pr.status === 403) { blockedErr = 'HTTP ' + pr.status; continue; }
+      if (!pr.ok) continue;
+      const it = parseObitPage(await pr.text(), source, e);
+      if (it) items.push(it);
+    } catch (_) { /* one slow page should not sink the source */ }
+  }
+  // A block on the detail pages backs the whole host off (loadSource) once nothing usable came back.
+  if (!items.length && blockedErr) return { items: [], error: blockedErr, url };
+  return { items, error: items.length ? null : 'no items', url };
+}
+
 // Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
 // sent so an unchanged feed answers 304 and costs almost nothing.
 async function tryUrl(source, url, prev) {
@@ -363,6 +520,7 @@ async function tryUrl(source, url, prev) {
       if (prev.lastModified) headers['if-modified-since'] = prev.lastModified;
     }
     if (source.parser === 'ticketmaster') return await fetchTicketmaster(source, url);
+    if (source.parser === 'sitemap') return await fetchSitemap(source, url, prev);
     if (source.parser === 'venue') {
       const items = [];
       for (const start of [0, 20, 40]) {
@@ -385,7 +543,7 @@ async function tryUrl(source, url, prev) {
     const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url }))
       .filter(it => !isWire(it))
       // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
-      .filter(it => !(source.geo || (viaGoogle && news)) || inRegion(it))
+      .filter(it => !(source.geo || (viaGoogle && news)) || inRegion(it, source.geoTerms))
       .filter(it => !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim())));
     return { items, error: items.length ? null : 'no items', url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
@@ -397,7 +555,6 @@ async function tryUrl(source, url, prev) {
 // one that returns stories (or confirms nothing changed).
 // A host that answered 429/403 is left alone until its cooldown ends (prev.blocked: { host: untilMs }); the
 // Google News fallback is used meanwhile. After the cooldown the publisher's own feed is tried first again.
-const hostOf = u => { try { return new URL(u).hostname; } catch (_) { return ''; } };
 async function loadSource(source, prev, now) {
   now = now || Date.now();
   let urls = [source.url].concat(source.altUrls || []);
@@ -429,8 +586,11 @@ function combine(results, now) {
   const all = [];
   const events = [];
   const obits = [];
+  const byLink = new Map();
   for (const r of results) {
-    for (const it of r.items) {
+    for (const raw of r.items) {
+      const it = r.source ? safetyView(raw, r.source) : raw;
+      if (!it) continue;
       const ts = it.published ? Date.parse(it.published) : null;
       const key = normKey(it);
       if (it.isEvent) {
@@ -451,8 +611,16 @@ function combine(results, now) {
       }
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
-      if (seen.has(key) || seen.has(it.link)) continue;
+      if (seen.has(key) || seen.has(it.link)) {
+        // A police source repeating a story already listed from the outlet's news feed: keep the News card
+        // and list it under Police & courts too.
+        const at = byLink.has(it.link) ? byLink.get(it.link) : byLink.get(key);
+        const first = at === undefined ? null : all[at];
+        if (first && it.safety && !first.safety && !JUVENILE_RE.test(first.title + ' ' + (first.summary || ''))) all[at] = { ...first, safety: true, arrest: it.arrest };
+        continue;
+      }
       seen.add(key); seen.add(it.link);
+      byLink.set(it.link, all.length); byLink.set(key, all.length);
       all.push(it);
     }
   }
@@ -611,3 +779,4 @@ module.exports.SOURCES = SOURCES;
 module.exports.mergeState = mergeState;
 module.exports.stored = stored;
 module.exports.loadSource = loadSource;
+module.exports.safetyView = safetyView;

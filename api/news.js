@@ -186,6 +186,18 @@ function isWire(item) {
 // Standing page furniture some papers publish as articles every day (not stories).
 const STANDING_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside)$/i;
 
+// The wire, region, obituary, out-of-area and standing-page filters. tryUrl() runs them on every fetch, and
+// combine() runs them again on stored stories, so stories saved before a filter existed (or changed) drop out
+// at the next snapshot instead of lingering for their whole window.
+function passesFilters(it, source, viaGoogle) {
+  const news = !source.kind || source.kind === 'news' || source.kind === 'police' || source.kind === 'courts' || source.kind === 'institution';
+  if (viaGoogle === undefined) viaGoogle = isGoogleNews(it.link || '');
+  if (isWire(it)) return false;
+  // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
+  if ((source.geo || (viaGoogle && news)) && !inRegion(it, source.geoTerms)) return false;
+  return !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim()));
+}
+
 // ---------- Police & courts policy ----------
 // The tab carries official sources only (kind 'police' / 'courts'); crime stories from news outlets stay in News.
 // Items that involve juveniles are dropped from police and court sources. Offense
@@ -220,6 +232,8 @@ function obitKey(title) {
 const MAX_ITEMS = 240;
 // The Obituaries tab: 21 days from about 25 papers and funeral homes, one card per person.
 const MAX_OBITS = 300;
+// Police & courts: about ten official sources with 14- to 90-day windows.
+const MAX_SAFETY = 80;
 const MAX_AGE_DAYS = 10;
 const PER_SOURCE_LIMIT = 30;
 
@@ -551,12 +565,8 @@ async function tryUrl(source, url, prev) {
     if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
     const xml = await r.text();
     const viaGoogle = isGoogleNews(url);
-    const news = !source.kind || source.kind === 'news' || source.kind === 'police' || source.kind === 'courts' || source.kind === 'institution';
     const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url }))
-      .filter(it => !isWire(it))
-      // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
-      .filter(it => !(source.geo || (viaGoogle && news)) || inRegion(it, source.geoTerms))
-      .filter(it => !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim())));
+      .filter(it => passesFilters(it, source, viaGoogle));
     return { items, error: items.length ? null : 'no items', url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
     return { items: [], error: String(e && e.message || e).slice(0, 80), url };
@@ -598,12 +608,13 @@ function combine(results, now) {
   const all = [];
   const events = [];
   const obits = [];
+  const safety = [];
   const obitAt = new Map();
   // Funeral homes go first, so when a paper and a funeral home list the same person the funeral home's card wins.
   results = results.slice().sort((a, b) => (b.source && b.source.funeralHome ? 1 : 0) - (a.source && a.source.funeralHome ? 1 : 0));
   for (const r of results) {
     for (const raw of r.items) {
-      const it = r.source ? safetyView(raw, r.source) : raw;
+      const it = !r.source ? raw : passesFilters(raw, r.source) ? safetyView(raw, r.source) : null;
       if (!it) continue;
       const ts = it.published ? Date.parse(it.published) : null;
       const key = normKey(it);
@@ -633,17 +644,21 @@ function combine(results, now) {
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
       if (seen.has(key) || seen.has(it.link)) continue;
       seen.add(key); seen.add(it.link);
-      all.push(it);
+      (r.source && (r.source.kind === 'police' || r.source.kind === 'courts') ? safety : all).push(it);
     }
   }
-  all.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
+  const byDate = (a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0);
+  // Police and court releases have their own cap: they post a few times a month, so in one shared cap a
+  // busy news day pushed a sheriff's post from three weeks ago out of the snapshot while it was still in its window.
+  safety.sort(byDate);
+  const feed = all.sort(byDate).slice(0, MAX_ITEMS).concat(safety.slice(0, MAX_SAFETY)).sort(byDate);
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
   // Repeat events (weekly yoga, a run of shows) share one picture: any dated copy that has an image lends it to the rest.
   const pics = {};
   events.forEach(e => { const k = e.sourceId + '|' + normKey(e); if (e.image && !pics[k]) pics[k] = e.image; });
   events.forEach(e => { if (!e.image) e.image = pics[e.sourceId + '|' + normKey(e)] || ''; });
   obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
-  return all.slice(0, MAX_ITEMS).concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
+  return feed.concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
 }
 
 function logoFor(url) {
@@ -792,3 +807,4 @@ module.exports.mergeState = mergeState;
 module.exports.stored = stored;
 module.exports.loadSource = loadSource;
 module.exports.safetyView = safetyView;
+module.exports.passesFilters = passesFilters;

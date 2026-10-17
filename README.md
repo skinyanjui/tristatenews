@@ -9,7 +9,7 @@ Hourly local news from Evansville, Owensboro, Madisonville, Carbondale, Marion, 
 
 ## How it works
 
-- `api/news.js` fetches every feed in `SOURCES`, drops AP wire copy, keeps only regional stories from wider-market stations (`geo: true`), removes duplicates, and returns one list.
+- `api/news.js` fetches every feed in `SOURCES`, drops AP wire copy, keeps only regional stories from wider-market stations (`geo: true`), removes duplicates, and returns one list. The same filters (wire, region, obituary, out-of-area, standing pages) run again on stored stories each time the snapshot is built, so a filter change cleans stories already saved. The news feed keeps up to 240 stories; Police & courts (80), events and obituaries have their own limits, so a busy news day can't push out a sheriff's post that is still in its window.
 - The response is cached at the edge for one hour (`s-maxage=3600`), so the feeds are re-pulled about once an hour. An open page also re-checks every hour.
 - `public/index.html` is the page. Headlines open the original article in a new tab. Weather comes from Open-Meteo.
 - A source that fails or returns nothing is hidden automatically.

@@ -27,6 +27,10 @@
       "destination": "/api/listings?__route=checkout"
     },
     {
+      "source": "/api/catalog",
+      "destination": "/api/listings?__route=catalog"
+    },
+    {
       "source": "/api/subscribe",
       "destination": "/api/unsubscribe?__route=subscribe"
     },

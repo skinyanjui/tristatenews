@@ -401,6 +401,17 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .like[aria-pressed="true"] { color:var(--red); }
 .like svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.75; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .like[aria-pressed="true"] svg { fill:currentColor; }
+/* Share: bottom-right of every story and event card, 40px tap target. The heart stays top-right. */
+.share { width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:9999px; color:var(--text-muted); }
+.share:hover { background:var(--gray-100); color:var(--foreground); }
+.share:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.share svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.card > .share { position:absolute; right:6px; bottom:6px; }
+.card .bd { padding-bottom:32px; }
+.card.breaking .bd { padding-bottom:48px; }
+.card.breaking > .share { background:color-mix(in srgb, var(--background) 88%, transparent); }
+.toast { position:fixed; left:50%; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); z-index:60; transform:translateX(-50%); padding:8px 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:14px; font-weight:500; line-height:20px; box-shadow:0 2px 8px rgba(0,0,0,.2); pointer-events:none; opacity:0; transition:opacity var(--duration-fast) var(--ease); }
+.toast.on { opacity:1; }
 .ghost { min-height:var(--ctl); padding:0 12px; border-radius:var(--radius-md); color:var(--gray-700); font-weight:500; transition:background var(--duration-fast) var(--ease); }
 .ghost:hover { background:var(--gray-100); color:var(--foreground); }
 
@@ -562,6 +573,24 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     d.forEach(function (x) { var p = document.createElementNS(ns, x[0]); Object.keys(x[1]).forEach(function (k) { p.setAttribute(k, x[1][k]); }); n.appendChild(p); });
     return n;
   }
+  // A short message at the bottom of the screen (screen readers hear it too).
+  var toastEl = null, toastT = 0;
+  function toast(msg) {
+    if (!toastEl) { toastEl = el('div', 'toast'); toastEl.setAttribute('role', 'status'); toastEl.setAttribute('aria-live', 'polite'); document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 2000);
+  }
+  // The share button for a story or event, or nothing when it has no usable link.
+  function shareFor(it) { var u = it.link ? safeHref(it.link) : '#'; return u === '#' ? document.createDocumentFragment() : UI.share(it.title, u); }
+  function copyLink(url) {
+    function old() {
+      var t = el('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      t.remove(); toast(ok ? 'Link copied' : 'Couldn\u2019t copy the link');
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }, old);
+    else old();
+  }
   /* ---------- components: one place for the pieces every board and form reuses ---------- */
   var SPONSORS = null, PAY = { configured: false, prices: {} };
   var UI = (function () {
@@ -644,6 +673,21 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         paint();
         b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); o.toggle(); if (o.after) o.after(); else paint(); });
         b.paint = paint;
+        return b;
+      },
+      // Share a story's original link: the phone's share sheet when there is one, otherwise copy it and say so.
+      // Never opens the card underneath.
+      share: function (title, url) {
+        var b = el('button', 'share'); b.type = 'button';
+        b.setAttribute('aria-label', 'Share: ' + title); b.title = 'Share';
+        b.appendChild(svg([['circle', { cx: 18, cy: 5, r: 3 }], ['circle', { cx: 6, cy: 12, r: 3 }], ['circle', { cx: 18, cy: 19, r: 3 }], ['path', { d: 'M8.6 13.5l6.8 4M15.4 6.5l-6.8 4' }]]));
+        b.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          var data = { title: title, url: url };
+          if (navigator.share && (!navigator.canShare || navigator.canShare(data))) {
+            navigator.share(data).catch(function (err) { if (!err || err.name !== 'AbortError') copyLink(url); });
+          } else copyLink(url);
+        });
         return b;
       },
       // A label pill. o: {label, icon (svg parts), tone: 'over'|'feat'|'red', dot}
@@ -1644,6 +1688,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         var go = el('a', 'ev-go', ticketLink(it.link) ? 'Get tickets' : 'Details'); go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer'; go.appendChild(svg(ICON_GO));
         go.setAttribute('aria-label', (ticketLink(it.link) ? 'Get tickets for ' : 'Details for ') + it.title);
         foot.appendChild(go);
+        foot.appendChild(shareFor(it));
       }
       body.appendChild(foot);
     } else {
@@ -1691,6 +1736,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
         var go = el('a', 'ev-go', ticketLink(it.link) ? 'Get tickets' : 'Details'); go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer'; go.appendChild(svg(ICON_GO));
         go.setAttribute('aria-label', (ticketLink(it.link) ? 'Get tickets for ' : 'Details for ') + it.title);
         acts.appendChild(go);
+        acts.appendChild(shareFor(it));
       }
       foot.appendChild(acts);
     } else {
@@ -2350,6 +2396,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       after: function () { if (state.cat === 'saved') render(); else { sb.paint(); renderTabs(); } }
     });
     card.appendChild(sb);
+    card.appendChild(shareFor(it));
     if (big) { var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true }); tag.classList.add('pill-over'); card.appendChild(tag); }
     return card;
   }

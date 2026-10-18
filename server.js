@@ -61,6 +61,12 @@ function handleRedisCommand(cmd) {
     case 'EXPIRE': {
       return { result: 1 };
     }
+    case 'MGET': {
+      return { result: cmd.slice(1).map(k => (kvStore.has(k) ? kvStore.get(k) : null)) };
+    }
+    case 'PERSIST': { // no expiries in this dev store
+      return { result: 0 };
+    }
     case 'SADD': {
       if (!setStore.has(key)) setStore.set(key, new Set());
       const s = setStore.get(key);
@@ -215,7 +221,7 @@ app.all('/api/listings', (req, res, next) => {
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 
-app.all('/api/advertise', (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
+app.all(['/api/advertise', '/api/creative'], (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 

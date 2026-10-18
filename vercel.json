@@ -47,6 +47,10 @@
       "destination": "/api/inbox?__route=advertise"
     },
     {
+      "source": "/api/creative",
+      "destination": "/api/inbox?__route=creative"
+    },
+    {
       "source": "/api/counties",
       "destination": "/api/news?__route=counties"
     },

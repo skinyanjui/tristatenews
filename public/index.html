@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>Tri-State News</title>
-<meta name="description" content="Local news from across the Evansville, IN-KY metro, refreshed hourly.">
+<meta name="description" content="Local news, police and courts, events, obituaries, jobs and deals from across the Evansville, IN-KY-IL Tri-State.">
 <link rel="canonical" href="https://tristatenewss.vercel.app/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-512.png">
@@ -23,6 +23,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tri-State News","url":"https://tristatenewss.vercel.app/","description":"Local news aggregator for the Evansville IN-KY-IL tri-state."}</script>
 <script src="/breaking.js"></script>
+<script src="/routes.js"></script>
+<script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
@@ -687,8 +689,8 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 /* Reactions: heart and share are one family everywhere (news, Breaking, Police & courts, obituaries, events).
    Same 18px outline icon on the same 24-unit grid with the same stroke, one shared colour token, the same
    bare round 40px button, and the same hover / pressed / keyboard-focus look. Liked = the heart filled in the
-   darker shade of that same neutral (the site keeps red for Breaking and alerts). */
-:root { --react:var(--text-muted); --react-strong:var(--foreground); --react-on:var(--foreground); --react-hover:var(--gray-100); --react-press:var(--gray-200); }
+   site's brand teal (--brand, which has its own dark-mode value), same 2px stroke; red stays for Breaking and alerts. */
+:root { --react:var(--text-muted); --react-strong:var(--foreground); --react-on:var(--brand); --react-hover:var(--gray-100); --react-press:var(--gray-200); }
 .like, .share,
 .card .like, .card .share, .card.breaking .like, .card.breaking .acts .share,
 .ev .acts .like, .ev .acts .share, .ev.ev-plain .acts .like, .ev.ev-plain .acts .share {
@@ -699,7 +701,9 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .like:hover, .share:hover, .ev .acts .like:hover, .ev .acts .share:hover { background:var(--react-hover); color:var(--react-strong); }
 .like:active, .share:active, .ev .acts .like:active, .ev .acts .share:active { background:var(--react-press); color:var(--react-strong); }
 .like:focus-visible, .share:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
-.like[aria-pressed="true"], .card .like[aria-pressed="true"] { color:var(--react-on); }
+.like[aria-pressed="true"], .card .like[aria-pressed="true"],
+.like[aria-pressed="true"]:hover, .like[aria-pressed="true"]:active,
+.ev .acts .like[aria-pressed="true"]:hover, .ev .acts .like[aria-pressed="true"]:active { color:var(--react-on); }
 .like[aria-pressed="true"] svg { fill:currentColor; }
 /* Legal link at the end of every view (the fixed bar below keeps Advertise / Submit news). */
 .legal-foot { margin:32px 0 0; padding:12px 0 0; border-top:1px solid var(--border); color:var(--text-muted); font-size:12px; line-height:16px; }
@@ -967,6 +971,9 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   var HOUR = 60 * 60 * 1000;
   var PAGE = 24;
   var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'all', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
+  // Tab URLs (public/routes.js): a direct load of /news, /police-courts, /events ... opens that tab.
+  var RT = window.TSNRoutes || null, ROUTE_SYNCED = false;
+  (function () { var r = RT && RT.byPath(location.pathname); if (r) state.cat = r.cat; })();
   try { var sv = JSON.parse(localStorage.getItem('tsn.saved') || '[]'); if (Array.isArray(sv)) state.saved = sv.filter(function (x) { return x && x.link && x.title; }); } catch (e) {}
   function storyId(link) { // short stable id from the story link (cyrb53)
     var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -1310,7 +1317,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
       if (c.id === 'events') n = shownItems(boards.event, 'event', true).length;
       if (c.id === 'jobs') n = shownItems(boards.job, 'job', true).length;
       if (c.id === 'obits') n += boards.obit.items.length;
-      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && c.id !== 'obits' && n === 0) return;
+      if (c.id !== 'all' && c.id !== 'saved' && c.id !== 'classifieds' && c.id !== 'deals' && c.id !== 'events' && c.id !== 'jobs' && c.id !== 'obits' && n === 0 && state.cat !== c.id) return; // an empty tab still shows when its URL is open
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id; b.dataset.sec = c.id;
       b.appendChild(el('span', null, c.label));
@@ -2940,7 +2947,26 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   }
 
   var brkTimer = null;
+  // Keep the address bar, <title>, description and canonical on the current tab. A tab change pushes a history
+  // entry (back/forward then switch tabs via popstate); the first render only tidies the URL. Views without a
+  // route of their own (Submit news) leave the URL alone.
+  function syncRoute() {
+    if (!RT) return;
+    var r = RT.byCat(state.cat); if (!r) return;
+    if (RT.norm(location.pathname) !== r.path) {
+      try { history[ROUTE_SYNCED ? 'pushState' : 'replaceState']({ cat: state.cat }, '', r.path + (ROUTE_SYNCED ? '' : location.search) + location.hash); } catch (e) {}
+    }
+    ROUTE_SYNCED = true;
+    RT.apply(document, r);
+  }
+  window.addEventListener('popstate', function () {
+    var r = RT && RT.byPath(location.pathname);
+    state.cat = r ? r.cat : 'all';
+    if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
+    resetPaging(); render();
+  });
   function render() {
+    syncRoute();
     breakCards = {};
     state.brk = breakingPick();
     renderList();

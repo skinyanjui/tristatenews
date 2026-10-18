@@ -1,0 +1,149 @@
+{
+  "$comment": "Optional / historical candidate counties from the brief. Kept separate: not in the 68, not routed, not indexed (decision D11). Same record shape and sources as target-counties.json.",
+  "schemaVersion": 1,
+  "manifestVersion": "2026-10-18.1",
+  "reviewStatus": "pending_review",
+  "sourcesFrom": "target-counties.json",
+  "counties": [
+    {
+      "id": "in-crawford",
+      "state": "IN",
+      "name": "Crawford",
+      "fullName": "Crawford County",
+      "fips": "18025",
+      "stateFips": "18",
+      "countyFips": "025",
+      "ansiCode": "00451674",
+      "tier": "optional_historical",
+      "seat": {
+        "name": "English",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.289433,
+        "lon": -86.440871,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-orange",
+      "state": "IN",
+      "name": "Orange",
+      "fullName": "Orange County",
+      "fips": "18117",
+      "stateFips": "18",
+      "countyFips": "117",
+      "ansiCode": "00451681",
+      "tier": "optional_historical",
+      "seat": {
+        "name": "Paoli",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.547381,
+        "lon": -86.489257,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-breckinridge",
+      "state": "KY",
+      "name": "Breckinridge",
+      "fullName": "Breckinridge County",
+      "fips": "21027",
+      "stateFips": "21",
+      "countyFips": "027",
+      "ansiCode": "00516860",
+      "tier": "optional_historical",
+      "seat": {
+        "name": "Hardinsburg",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.777988,
+        "lon": -86.432919,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-grayson",
+      "state": "KY",
+      "name": "Grayson",
+      "fullName": "Grayson County",
+      "fips": "21085",
+      "stateFips": "21",
+      "countyFips": "085",
+      "ansiCode": "00516889",
+      "tier": "optional_historical",
+      "seat": {
+        "name": "Leitchfield",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.458577,
+        "lon": -86.344011,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    }
+  ]
+}

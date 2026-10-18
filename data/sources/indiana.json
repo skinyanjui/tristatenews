@@ -1,0 +1,302 @@
+{
+  "file": "indiana",
+  "description": "Sources listed under an Indiana area (Evansville, Jasper, Washington, Vincennes, Princeton, Boonville, Huntingburg).",
+  "sources": [
+    {
+      "seq": 1,
+      "id": "wfie",
+      "name": "14 News",
+      "area": "Evansville",
+      "url": "https://www.14news.com/arc/outboundfeeds/rss/?outputType=xml"
+    },
+    {
+      "seq": 2,
+      "id": "weht",
+      "name": "Eyewitness News",
+      "area": "Evansville",
+      "url": "https://www.tristatehomepage.com/feed/"
+    },
+    {
+      "seq": 3,
+      "id": "living",
+      "name": "Evansville Living",
+      "area": "Evansville",
+      "url": "https://evansvilleliving.com/feed/"
+    },
+    {
+      "seq": 4,
+      "id": "courier",
+      "name": "Courier & Press",
+      "area": "Evansville",
+      "everyMin": 30,
+      "url": "https://news.google.com/rss/search?q=site%3Acourierpress.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+      "note": "Gannett: no public RSS and HTTP 402 to automated requests, so it comes through Google News."
+    },
+    {
+      "seq": 9,
+      "id": "dcherald",
+      "everyMin": 60,
+      "name": "Dubois County Herald",
+      "area": "Jasper",
+      "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 10,
+      "id": "wth",
+      "everyMin": 60,
+      "name": "Washington Times-Herald",
+      "area": "Washington, Ind.",
+      "url": "https://www.washtimesherald.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Awashtimesherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+        "https://washtimesherald.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+      ]
+    },
+    {
+      "seq": 11,
+      "id": "wthi",
+      "name": "WTHI News",
+      "area": "Vincennes",
+      "geo": true,
+      "url": "https://www.wthitv.com/arc/outboundfeeds/rss/?outputType=xml"
+    },
+    {
+      "seq": 12,
+      "id": "sunc",
+      "everyMin": 60,
+      "name": "Vincennes Sun-Commercial",
+      "area": "Vincennes",
+      "url": "https://www.suncommercial.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Asuncommercial.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+        "https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+      ]
+    },
+    {
+      "seq": 17,
+      "id": "pdclarion",
+      "everyMin": 60,
+      "name": "Princeton Daily Clarion",
+      "area": "Princeton, Ind.",
+      "url": "https://www.pdclarion.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Apdclarion.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 25,
+      "id": "wiky",
+      "name": "WIKY",
+      "area": "Evansville",
+      "geo": true,
+      "url": "https://wiky.com/feed/",
+      "note": "Wider-market station: kept only when a story names a place in the region."
+    },
+    {
+      "seq": 27,
+      "id": "weht-crime",
+      "name": "Eyewitness News",
+      "area": "Evansville",
+      "geo": true,
+      "url": "https://www.tristatehomepage.com/news/crime/feed/",
+      "note": "Eyewitness News crime section (a News source). The main feed holds only the latest 10 stories; this adds local crime stories it has rotated out (duplicates merge by link and title)."
+    },
+    {
+      "seq": 34,
+      "id": "vcso",
+      "name": "Vanderburgh County Sheriff",
+      "area": "Evansville",
+      "kind": "police",
+      "maxAgeDays": 30,
+      "url": "https://vanderburghsheriff.org/feed/",
+      "note": "Verified 2026-10-17. Police & courts: official sources only, through safetyView() (no images, no juveniles, arrest items leave after 14 days)."
+    },
+    {
+      "seq": 35,
+      "id": "vcpo",
+      "name": "Vanderburgh County Prosecutor",
+      "area": "Evansville",
+      "kind": "courts",
+      "maxAgeDays": 90,
+      "url": "https://vanderburghprosecutor.org/press-releases/feed/",
+      "note": "Verified 2026-10-17. The site-wide /feed/ is empty; press releases are their own post type."
+    },
+    {
+      "seq": 38,
+      "id": "ob-dcherald",
+      "everyMin": 60,
+      "name": "Dubois County Herald",
+      "area": "Jasper",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 39,
+      "id": "ob-pdclarion",
+      "everyMin": 60,
+      "name": "Princeton Daily Clarion",
+      "area": "Princeton, Ind.",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Apdclarion.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 40,
+      "id": "ob-sunc",
+      "everyMin": 60,
+      "name": "Vincennes Sun-Commercial",
+      "area": "Vincennes",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 42,
+      "id": "ob-ziemer",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Ziemer Funeral Home",
+      "area": "Evansville",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.ziemerfuneralhome.com/rss.xml",
+      "note": "Funeral home (verified 2026-10-17). FrontRunner sites publish /rss.xml. Cards carry name, a summary of at most 220 characters and a link back."
+    },
+    {
+      "seq": 43,
+      "id": "ob-browning",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Browning Funeral Home",
+      "area": "Evansville",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.browningfuneral.com/rss.xml"
+    },
+    {
+      "seq": 44,
+      "id": "ob-koehler",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Koehler Funeral Home",
+      "area": "Boonville",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.koehlerfuneralhome.com/rss.xml"
+    },
+    {
+      "seq": 47,
+      "id": "ob-nass",
+      "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Nass & Son Funeral Home",
+      "area": "Huntingburg",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.nassandson.com/rss.xml"
+    },
+    {
+      "seq": 49,
+      "id": "ob-becher",
+      "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Becher & Kluesner Funeral Home",
+      "area": "Jasper",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.becherkluesner.com/obituaries/sitemap.xml"
+    },
+    {
+      "seq": 50,
+      "id": "ob-colvin",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Colvin Funeral Home",
+      "area": "Princeton, Ind.",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml",
+      "note": "Sitemap parser: no obituary feed, but every obituary is in a sitemap that robots.txt allows. Newest entries only, at most SITEMAP_DETAILS new pages per run."
+    },
+    {
+      "seq": 51,
+      "id": "ob-doyle",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Doyle Funeral Home",
+      "area": "Princeton, Ind.",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.doylefuneral.com/obituary-sitemap.xml"
+    },
+    {
+      "seq": 54,
+      "id": "ob-goodwin",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Goodwin-Sievers Funeral Home",
+      "area": "Vincennes",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.goodwinsieversfh.com/obituary-sitemap.xml"
+    },
+    {
+      "seq": 55,
+      "id": "ob-duesterberg",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Duesterberg-Fredrick Funeral Home",
+      "area": "Vincennes",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.duesterbergfredrick.com/obituary-sitemap.xml"
+    },
+    {
+      "seq": 57,
+      "id": "ev-ford",
+      "name": "Ford Center",
+      "area": "Evansville",
+      "kind": "events",
+      "parser": "venue",
+      "url": "https://fordcenter.com/events-tickets/view-all-events",
+      "note": "parser venue: the Ford Center and Victory Theatre event pages share one layout."
+    },
+    {
+      "seq": 58,
+      "id": "ev-victory",
+      "name": "Victory Theatre",
+      "area": "Evansville",
+      "kind": "events",
+      "parser": "venue",
+      "url": "https://www.victorytheatre.com/events-tickets/view-all-events"
+    },
+    {
+      "seq": 60,
+      "id": "ev-vin",
+      "name": "Visit Vincennes",
+      "area": "Vincennes",
+      "kind": "events",
+      "url": "https://www.visitvincennes.org/events/?ical=1&eventDisplay=list&posts_per_page=100"
+    }
+  ]
+}

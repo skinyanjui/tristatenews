@@ -1,0 +1,602 @@
+{
+ "reference": "ba8b34a (main after PR #23); identical to 3b6c403, the plan audit commit",
+ "active": [
+  {
+   "id": "wfie",
+   "name": "14 News",
+   "area": "Evansville",
+   "url": "https://www.14news.com/arc/outboundfeeds/rss/?outputType=xml"
+  },
+  {
+   "id": "weht",
+   "name": "Eyewitness News",
+   "area": "Evansville",
+   "url": "https://www.tristatehomepage.com/feed/"
+  },
+  {
+   "id": "living",
+   "name": "Evansville Living",
+   "area": "Evansville",
+   "url": "https://evansvilleliving.com/feed/"
+  },
+  {
+   "id": "courier",
+   "name": "Courier & Press",
+   "area": "Evansville",
+   "everyMin": 30,
+   "url": "https://news.google.com/rss/search?q=site%3Acourierpress.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+  },
+  {
+   "id": "gleaner",
+   "name": "Henderson Gleaner",
+   "area": "Henderson",
+   "geo": true,
+   "everyMin": 30,
+   "url": "https://news.google.com/rss/search?q=site%3Athegleaner.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+  },
+  {
+   "id": "owtimes",
+   "name": "Owensboro Times",
+   "area": "Owensboro",
+   "url": "https://www.owensborotimes.com/feed/"
+  },
+  {
+   "id": "messinq",
+   "everyMin": 60,
+   "name": "Messenger-Inquirer",
+   "area": "Owensboro",
+   "url": "https://www.messenger-inquirer.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "msgr",
+   "everyMin": 60,
+   "name": "The Messenger",
+   "area": "Madisonville",
+   "url": "https://www.the-messenger.com/search/?f=rss&t=article&c[]=news/local*&l=25&s=start_time&sd=desc",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Athe-messenger.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+    "https://www.the-messenger.com/search/?f=rss&t=article&l=25"
+   ]
+  },
+  {
+   "id": "dcherald",
+   "everyMin": 60,
+   "name": "Dubois County Herald",
+   "area": "Jasper",
+   "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "wth",
+   "everyMin": 60,
+   "name": "Washington Times-Herald",
+   "area": "Washington, Ind.",
+   "url": "https://www.washtimesherald.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Awashtimesherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+    "https://washtimesherald.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+   ]
+  },
+  {
+   "id": "wthi",
+   "name": "WTHI News",
+   "area": "Vincennes",
+   "geo": true,
+   "url": "https://www.wthitv.com/arc/outboundfeeds/rss/?outputType=xml"
+  },
+  {
+   "id": "sunc",
+   "everyMin": 60,
+   "name": "Vincennes Sun-Commercial",
+   "area": "Vincennes",
+   "url": "https://www.suncommercial.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Asuncommercial.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+    "https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+   ]
+  },
+  {
+   "id": "kfvs",
+   "name": "KFVS12",
+   "area": "Southern Illinois",
+   "geo": true,
+   "url": "https://www.kfvs12.com/arc/outboundfeeds/rss/?outputType=xml"
+  },
+  {
+   "id": "wpsd",
+   "everyMin": 60,
+   "name": "WPSD Local 6",
+   "area": "Southern Illinois",
+   "geo": true,
+   "url": "https://www.wpsdlocal6.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Awpsdlocal6.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "southern",
+   "everyMin": 60,
+   "name": "The Southern Illinoisan",
+   "area": "Carbondale",
+   "url": "https://thesouthern.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Athesouthern.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+    "https://thesouthern.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+   ]
+  },
+  {
+   "id": "degypt",
+   "name": "Daily Egyptian",
+   "area": "Carbondale",
+   "url": "https://dailyegyptian.com/feed/",
+   "altUrls": [
+    "https://dailyegyptian.com/category/news/feed/"
+   ]
+  },
+  {
+   "id": "pdclarion",
+   "everyMin": 60,
+   "name": "Princeton Daily Clarion",
+   "area": "Princeton, Ind.",
+   "url": "https://www.pdclarion.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Apdclarion.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "mtcarmel",
+   "everyMin": 60,
+   "name": "Daily Republican-Register",
+   "area": "Mt. Carmel",
+   "url": "https://www.hometownregister.com/search/?f=rss&t=article&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Ahometownregister.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "wsto",
+   "name": "WSTO Radio",
+   "area": "Owensboro",
+   "geo": true,
+   "url": "https://wsto.com/feed/"
+  },
+  {
+   "id": "wkdq",
+   "name": "WKDQ Radio",
+   "area": "Henderson",
+   "geo": true,
+   "url": "https://wkdq.com/feed/"
+  },
+  {
+   "id": "owradio",
+   "name": "Owensboro Radio",
+   "area": "Owensboro",
+   "url": "https://owensbororadio.com/feed/"
+  },
+  {
+   "id": "inchron",
+   "name": "Indiana Capital Chronicle",
+   "area": "Indiana",
+   "geo": true,
+   "url": "https://indianacapitalchronicle.com/feed/"
+  },
+  {
+   "id": "kylantern",
+   "name": "Kentucky Lantern",
+   "area": "Kentucky",
+   "geo": true,
+   "url": "https://kentuckylantern.com/feed/"
+  },
+  {
+   "id": "capnewsil",
+   "name": "Capitol News Illinois",
+   "area": "Illinois",
+   "geo": true,
+   "url": "https://capitolnewsillinois.com/feed/"
+  },
+  {
+   "id": "wiky",
+   "name": "WIKY",
+   "area": "Evansville",
+   "geo": true,
+   "url": "https://wiky.com/feed/"
+  },
+  {
+   "id": "wbkr",
+   "name": "WBKR",
+   "area": "Owensboro",
+   "geo": true,
+   "url": "https://wbkr.com/feed/"
+  },
+  {
+   "id": "weht-crime",
+   "name": "Eyewitness News",
+   "area": "Evansville",
+   "geo": true,
+   "url": "https://www.tristatehomepage.com/news/crime/feed/"
+  },
+  {
+   "id": "usaosdin",
+   "name": "U.S. Attorney, S.D. Indiana",
+   "area": "Indiana",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ind",
+   "maxAgeDays": 60,
+   "url": "https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0"
+  },
+  {
+   "id": "usaowdky",
+   "name": "U.S. Attorney, W.D. Kentucky",
+   "area": "Kentucky",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ky",
+   "maxAgeDays": 60,
+   "geoTerms": [
+    "madisonville",
+    "henderson",
+    "hopkins county",
+    "webster county",
+    "union county",
+    "mclean county",
+    "hancock county",
+    "ohio county",
+    "muhlenberg"
+   ],
+   "url": "https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0"
+  },
+  {
+   "id": "usaosdil",
+   "name": "U.S. Attorney, S.D. Illinois",
+   "area": "Illinois",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ill",
+   "maxAgeDays": 60,
+   "url": "https://www.justice.gov/news/rss?type=press_release&groupname=296&field_component=1826&search_api_language=en&require_all=0"
+  },
+  {
+   "id": "fbilou",
+   "name": "FBI Louisville",
+   "area": "Kentucky",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ky",
+   "maxAgeDays": 60,
+   "url": "https://www.fbi.gov/feeds/louisville-news/rss.xml"
+  },
+  {
+   "id": "fbiind",
+   "name": "FBI Indianapolis",
+   "area": "Indiana",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ind",
+   "maxAgeDays": 60,
+   "url": "https://www.fbi.gov/feeds/indianapolis-news/rss.xml"
+  },
+  {
+   "id": "fbispr",
+   "name": "FBI Springfield",
+   "area": "Illinois",
+   "kind": "courts",
+   "geo": true,
+   "strictGeo": "ill",
+   "maxAgeDays": 60,
+   "url": "https://www.fbi.gov/feeds/springfield-news/rss.xml"
+  },
+  {
+   "id": "vcso",
+   "name": "Vanderburgh County Sheriff",
+   "area": "Evansville",
+   "kind": "police",
+   "maxAgeDays": 30,
+   "url": "https://vanderburghsheriff.org/feed/"
+  },
+  {
+   "id": "vcpo",
+   "name": "Vanderburgh County Prosecutor",
+   "area": "Evansville",
+   "kind": "courts",
+   "maxAgeDays": 90,
+   "url": "https://vanderburghprosecutor.org/press-releases/feed/"
+  },
+  {
+   "id": "ob-messinq",
+   "everyMin": 60,
+   "name": "Messenger-Inquirer",
+   "area": "Owensboro",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "ob-owtimes",
+   "name": "Owensboro Times",
+   "area": "Owensboro",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.owensborotimes.com/obituaries/feed/"
+  },
+  {
+   "id": "ob-dcherald",
+   "everyMin": 60,
+   "name": "Dubois County Herald",
+   "area": "Jasper",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&c=obituaries&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "ob-pdclarion",
+   "everyMin": 60,
+   "name": "Princeton Daily Clarion",
+   "area": "Princeton, Ind.",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.pdclarion.com/search/?f=rss&t=article&c=obituaries&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Apdclarion.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "ob-sunc",
+   "everyMin": 60,
+   "name": "Vincennes Sun-Commercial",
+   "area": "Vincennes",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.suncommercial.com/search/?f=rss&t=article&c=obituaries&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "ob-msgr",
+   "everyMin": 60,
+   "name": "The Messenger",
+   "area": "Madisonville",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25",
+   "altUrls": [
+    "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+   ]
+  },
+  {
+   "id": "ob-ziemer",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Ziemer Funeral Home",
+   "area": "Evansville",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.ziemerfuneralhome.com/rss.xml"
+  },
+  {
+   "id": "ob-browning",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Browning Funeral Home",
+   "area": "Evansville",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.browningfuneral.com/rss.xml"
+  },
+  {
+   "id": "ob-koehler",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Koehler Funeral Home",
+   "area": "Boonville",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.koehlerfuneralhome.com/rss.xml"
+  },
+  {
+   "id": "ob-haley",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Haley-McGinnis Funeral Home",
+   "area": "Owensboro",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.haleymcginnis.com/rss.xml"
+  },
+  {
+   "id": "ob-colvin",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Colvin Funeral Home",
+   "area": "Princeton, Ind.",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml"
+  },
+  {
+   "id": "ob-doyle",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Doyle Funeral Home",
+   "area": "Princeton, Ind.",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.doylefuneral.com/obituary-sitemap.xml"
+  },
+  {
+   "id": "ob-glenn",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Glenn Funeral Home",
+   "area": "Owensboro",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://obits.glennfuneralhome.com/obituary-sitemap.xml"
+  },
+  {
+   "id": "ob-barnett",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Barnett-Strother Funeral Home",
+   "area": "Madisonville",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://barnettstrother.com/app/embed/f472797a-8210-4a0c-93b5-14da112340f9/sitemap0.xml"
+  },
+  {
+   "id": "ob-goodwin",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Goodwin-Sievers Funeral Home",
+   "area": "Vincennes",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.goodwinsieversfh.com/obituary-sitemap.xml"
+  },
+  {
+   "id": "ob-duesterberg",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Duesterberg-Fredrick Funeral Home",
+   "area": "Vincennes",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.duesterbergfredrick.com/obituary-sitemap.xml"
+  },
+  {
+   "id": "ev-tm",
+   "name": "Ticketmaster",
+   "area": "Tri-State",
+   "kind": "events",
+   "parser": "ticketmaster",
+   "url": "https://app.ticketmaster.com/discovery/v2/events.json"
+  },
+  {
+   "id": "ev-ford",
+   "name": "Ford Center",
+   "area": "Evansville",
+   "kind": "events",
+   "parser": "venue",
+   "url": "https://fordcenter.com/events-tickets/view-all-events"
+  },
+  {
+   "id": "ev-victory",
+   "name": "Victory Theatre",
+   "area": "Evansville",
+   "kind": "events",
+   "parser": "venue",
+   "url": "https://www.victorytheatre.com/events-tickets/view-all-events"
+  },
+  {
+   "id": "ev-hend",
+   "name": "Henderson Tourist Commission",
+   "area": "Henderson",
+   "kind": "events",
+   "url": "https://hendersonky.org/events/?ical=1&eventDisplay=list&posts_per_page=100"
+  },
+  {
+   "id": "ev-vin",
+   "name": "Visit Vincennes",
+   "area": "Vincennes",
+   "kind": "events",
+   "url": "https://www.visitvincennes.org/events/?ical=1&eventDisplay=list&posts_per_page=100"
+  },
+  {
+   "id": "ev-murph",
+   "name": "Murphysboro Chamber",
+   "area": "Murphysboro",
+   "kind": "events",
+   "url": "https://www.murphysboro.com/events/?ical=1&eventDisplay=list&posts_per_page=100"
+  },
+  {
+   "id": "ev-mad",
+   "name": "Visit Madisonville",
+   "area": "Madisonville",
+   "kind": "events",
+   "url": "https://www.visitmadisonvilleky.com/events/feed/",
+   "altUrls": [
+    "https://www.visitmadisonvilleky.com/events/?ical=1"
+   ]
+  },
+  {
+   "id": "wkms",
+   "name": "WKMS Public Radio",
+   "area": "Western Kentucky",
+   "geo": true,
+   "url": "https://www.wkms.org/rss.xml"
+  },
+  {
+   "id": "ipm",
+   "name": "Illinois Public Media",
+   "area": "Illinois",
+   "geo": true,
+   "url": "https://ipmnewsroom.org/feed/"
+  }
+ ],
+ "disabled": [
+  {
+   "id": "ob-davis",
+   "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "James H. Davis Funeral Home",
+   "area": "Owensboro",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.davisfuneralhome.com/rss.xml"
+  },
+  {
+   "id": "ob-nass",
+   "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Nass & Son Funeral Home",
+   "area": "Huntingburg",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "url": "https://www.nassandson.com/rss.xml"
+  },
+  {
+   "id": "ob-bgt",
+   "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Benton-Glunt & Tapp Funeral Home",
+   "area": "Henderson",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml"
+  },
+  {
+   "id": "ob-becher",
+   "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+   "everyMin": 60,
+   "funeralHome": true,
+   "name": "Becher & Kluesner Funeral Home",
+   "area": "Jasper",
+   "kind": "obits",
+   "maxAgeDays": 21,
+   "parser": "sitemap",
+   "url": "https://www.becherkluesner.com/obituaries/sitemap.xml"
+  }
+ ]
+}

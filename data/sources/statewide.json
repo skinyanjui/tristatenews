@@ -1,0 +1,134 @@
+{
+  "file": "statewide",
+  "description": "Statewide or multi-state publishers (statehouse newsrooms, U.S. Attorneys, FBI field offices, Illinois Public Media) and the region-wide Ticketmaster feed.",
+  "sources": [
+    {
+      "seq": 22,
+      "id": "inchron",
+      "name": "Indiana Capital Chronicle",
+      "area": "Indiana",
+      "geo": true,
+      "url": "https://indianacapitalchronicle.com/feed/",
+      "note": "Statehouse reporting: kept only when a story names a place in the region."
+    },
+    {
+      "seq": 23,
+      "id": "kylantern",
+      "name": "Kentucky Lantern",
+      "area": "Kentucky",
+      "geo": true,
+      "url": "https://kentuckylantern.com/feed/",
+      "note": "Statehouse reporting: kept only when a story names a place in the region."
+    },
+    {
+      "seq": 24,
+      "id": "capnewsil",
+      "name": "Capitol News Illinois",
+      "area": "Illinois",
+      "geo": true,
+      "url": "https://capitolnewsillinois.com/feed/",
+      "note": "Statehouse reporting: kept only when a story names a place in the region."
+    },
+    {
+      "seq": 28,
+      "id": "usaosdin",
+      "name": "U.S. Attorney, S.D. Indiana",
+      "area": "Indiana",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ind",
+      "maxAgeDays": 60,
+      "url": "https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0",
+      "note": "S.D. Indiana covers Evansville (verified 2026-10-17: field_component=1836 is the office's own feed)."
+    },
+    {
+      "seq": 29,
+      "id": "usaowdky",
+      "name": "U.S. Attorney, W.D. Kentucky",
+      "area": "Kentucky",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ky",
+      "maxAgeDays": 60,
+      "geoTerms": [
+        "madisonville",
+        "henderson",
+        "hopkins county",
+        "webster county",
+        "union county",
+        "mclean county",
+        "hancock county",
+        "ohio county",
+        "muhlenberg"
+      ],
+      "url": "https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0",
+      "note": "geoTerms: place names that are unambiguous inside this one district (a W.D. Kentucky release that says \"Madisonville-area\" or \"Henderson\" means the Kentucky towns)."
+    },
+    {
+      "seq": 30,
+      "id": "usaosdil",
+      "name": "U.S. Attorney, S.D. Illinois",
+      "area": "Illinois",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ill",
+      "maxAgeDays": 60,
+      "url": "https://www.justice.gov/news/rss?type=press_release&groupname=296&field_component=1826&search_api_language=en&require_all=0"
+    },
+    {
+      "seq": 31,
+      "id": "fbilou",
+      "name": "FBI Louisville",
+      "area": "Kentucky",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ky",
+      "maxAgeDays": 60,
+      "url": "https://www.fbi.gov/feeds/louisville-news/rss.xml",
+      "note": "FBI field office (verified). strictGeo: statewide publisher, so items must name a Tri-State place (api/_places.js)."
+    },
+    {
+      "seq": 32,
+      "id": "fbiind",
+      "name": "FBI Indianapolis",
+      "area": "Indiana",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ind",
+      "maxAgeDays": 60,
+      "url": "https://www.fbi.gov/feeds/indianapolis-news/rss.xml",
+      "note": "FBI field office (verified). strictGeo: statewide publisher, so items must name a Tri-State place (api/_places.js)."
+    },
+    {
+      "seq": 33,
+      "id": "fbispr",
+      "name": "FBI Springfield",
+      "area": "Illinois",
+      "kind": "courts",
+      "geo": true,
+      "strictGeo": "ill",
+      "maxAgeDays": 60,
+      "url": "https://www.fbi.gov/feeds/springfield-news/rss.xml",
+      "note": "FBI field office (verified). strictGeo: statewide publisher, so items must name a Tri-State place (api/_places.js)."
+    },
+    {
+      "seq": 56,
+      "id": "ev-tm",
+      "name": "Ticketmaster",
+      "area": "Tri-State",
+      "kind": "events",
+      "parser": "ticketmaster",
+      "url": "https://app.ticketmaster.com/discovery/v2/events.json",
+      "note": "Ticketmaster Discovery API (key in TICKETMASTER_API_KEY; skipped when unset): events within 75 miles of Evansville."
+    },
+    {
+      "seq": 64,
+      "id": "ipm",
+      "name": "Illinois Public Media",
+      "area": "Illinois",
+      "geo": true,
+      "url": "https://ipmnewsroom.org/feed/",
+      "note": "Newsroom from a neighboring market: geo-filtered."
+    }
+  ]
+}

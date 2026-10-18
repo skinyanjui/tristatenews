@@ -1,6 +1,12 @@
 {
-  "note": "Real, signed advertisers only. 'slots' are one sponsor line at the top of a board (jobs, deals, events, classifieds); News/All, Police & courts and Obituaries have no ads. 'rails' are the side ads on wide screens, shown only on the Events, Jobs, Deals and Classifieds tabs. Each ad: name, text, url (https only), optional cta. Every ad is labeled 'Sponsored' and links with rel=\"sponsored\". An empty slot or rail shows the site's own 'Advertise with us' unit, which opens the advertising inquiry form.",
+  "note": "Real, signed advertisers only. 'slots' are one sponsor line at the top of a board (jobs, deals, events, classifieds). 'cards' are the one in-listing ad card on each of those boards (after the 6th post, or at the end of a shorter board): an ad, or a list of ads that rotate by date, the same for every reader. 'rails' are the side ads on wide screens, shown only on the Events, Jobs, Deals and Classifieds tabs. News/All, News, Police & courts, Obituaries and Breaking have no ads. Each ad: name, text, url (https only), optional cta. Every ad is labeled 'Sponsored' and links with rel=\"sponsored\". Our own ads are never targeted: no cookies, no reader data. An empty slot, card or rail shows the site's own 'Advertise with us' unit, which opens the advertising inquiry form.",
   "slots": {
+    "jobs": null,
+    "deals": null,
+    "events": null,
+    "classifieds": null
+  },
+  "cards": {
     "jobs": null,
     "deals": null,
     "events": null,

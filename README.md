@@ -14,6 +14,23 @@ Hourly local news from Evansville, Owensboro, Madisonville, Carbondale, Marion, 
 - `public/index.html` is the page. Headlines open the original article in a new tab. Weather comes from Open-Meteo.
 - A source that fails or returns nothing is hidden automatically.
 
+## API paths and Vercel functions
+Vercel's Hobby plan allows 12 functions per deployment, and every `api/*.js` file without a leading `_` is one function. Several public paths therefore share a function: `vercel.json` rewrites the path to its host with `?__route=<name>`, and `api/_dispatch.js` hands the untouched request to that route's handler. URLs, methods, auth and answers are the same as when each had its own file.
+
+| Public path | Function | Handler |
+|---|---|---|
+| `/api/news` | `api/news.js` | `api/news.js` |
+| `/api/refresh` | `api/news.js` | `api/_refresh.js` |
+| `/api/listings` | `api/listings.js` | `api/listings.js` |
+| `/api/checkout` | `api/listings.js` | `api/_checkout.js` |
+| `/api/unsubscribe` | `api/unsubscribe.js` | `api/unsubscribe.js` |
+| `/api/subscribe` | `api/unsubscribe.js` | `api/_subscribe.js` |
+| `/api/submit` | `api/inbox.js` | `api/_submit.js` |
+| `/api/advertise` | `api/inbox.js` | `api/_advertise.js` |
+| `/api/alerts`, `/api/react`, `/api/newsletter`, `/api/stripe-webhook` | own file | own file |
+
+To add a path without a new function, put its handler in an `_`-prefixed file, add it to a host's `host({...})` table and add the rewrite; `test/api-routes.test.js` checks the map and the function count (at most 9).
+
 ## Add feeds without editing code
 
 In the Vercel project, add an environment variable `EXTRA_FEEDS` containing a JSON array:
@@ -106,7 +123,7 @@ The Jobs tab is a community board like Classifieds and Deals: employers post ope
 
 ## Making money
 
-- **Featured posts (Stripe).** Posters see a "Feature" button on their own job, deal, event or listing (job $29/30 days, deal $19/14, event $15/7, item $5/7; change `PRICES` in `api/checkout.js`). Featured posts sort first with an amber "Featured" badge. Set `STRIPE_SECRET_KEY`, and in Stripe add a webhook endpoint `https://<site>/api/stripe-webhook` for `checkout.session.completed` and set `STRIPE_WEBHOOK_SECRET` to its signing secret. Optional `SITE_URL` sets where Stripe returns people. Without the secret key the button is hidden. Pricing is created inline at checkout, so no Stripe products are needed.
+- **Featured posts (Stripe).** Posters see a "Feature" button on their own job, deal, event or listing (job $29/30 days, deal $19/14, event $15/7, item $5/7; change `PRICES` in `api/_checkout.js`). Featured posts sort first with an amber "Featured" badge. Set `STRIPE_SECRET_KEY`, and in Stripe add a webhook endpoint `https://<site>/api/stripe-webhook` for `checkout.session.completed` and set `STRIPE_WEBHOOK_SECRET` to its signing secret. Optional `SITE_URL` sets where Stripe returns people. Without the secret key the button is hidden. Pricing is created inline at checkout, so no Stripe products are needed.
 - **Sponsors.** Edit `public/sponsors.json`: each slot (`jobs`, `deals`, `events`, `classifieds`; the News/All feed has no sponsor line) takes `{ "name", "text", "url" }` (https only). An open slot on a board shows a "Your business here, Advertise" line that opens the Advertise page.
 - **Advertise page.** The footer "Advertise" button opens a rate card and inquiry form (`POST /api/advertise`), stored in Redis and emailed through Resend like news tips (`RESEND_API_KEY`, `TIPS_TO_EMAIL`). Read inquiries with `GET /api/advertise` and header `x-admin-key`.
 - **Newsletter.** The signup box under the news feed posts to `/api/subscribe` and keeps emails in Redis (read with `GET /api/subscribe` and `x-admin-key`). Set `RESEND_AUDIENCE_ID` (with `RESEND_API_KEY`) to also add subscribers to a Resend audience for sending broadcasts. Readers unsubscribe themselves at `/unsubscribe.html` (linked in the footer), which posts to `/api/unsubscribe`: it removes the address from the set (and marks it unsubscribed in the Resend audience when configured), is rate-limited to 5 a day per connection, and gives the same answer whether or not the address was subscribed. For links in newsletter emails use `require('./api/unsubscribe.js').link(email)`, which adds an HMAC token keyed by `NEWSLETTER_SECRET` (falls back to `CRON_SECRET`); with a token the page unsubscribes on open, and the endpoint also accepts RFC 8058 one-click POSTs (`List-Unsubscribe=One-Click`, token required).

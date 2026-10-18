@@ -1,5 +1,5 @@
 // Tri-State (Evansville, IN-KY MSA) news aggregator.
-// A scheduled job (api/refresh.js) fetches every configured feed, normalizes, dedupes, and stores
+// A scheduled job (/api/refresh, handler in api/_refresh.js, served by this function) fetches every configured feed, normalizes, dedupes, and stores
 // the result in Redis; this endpoint just serves that stored snapshot, so pages load instantly and a
 // source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
 // is more than 3 hours old, the first visitor triggers a refresh instead.
@@ -805,7 +805,9 @@ async function run(req, res) {
   res.status(200).send(JSON.stringify(snap));
 }
 
-module.exports = handler;
+// /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
+// with its own CRON_SECRET check, lives in api/_refresh.js. Every other request is the news handler above.
+module.exports = require('./_dispatch.js').host({ refresh: () => require('./_refresh.js') }, handler);
 module.exports.parseFeed = parseFeed;
 module.exports.combine = combine;
 module.exports.inRegion = inRegion;

@@ -1,7 +1,7 @@
 // Newsletter unsubscribe (the /unsubscribe.html page, and one-click links in newsletter emails).
 //   POST /api/unsubscribe {email, token?, website}            -> { ok, message }
 //   POST /api/unsubscribe?email=..&token=..  body "List-Unsubscribe=One-Click"   (RFC 8058 one-click from mail apps)
-// Removes the address from the Redis set tsn:nl:subs (written by api/subscribe.js) and, when RESEND_API_KEY and
+// Removes the address from the Redis set tsn:nl:subs (written by /api/subscribe, api/_subscribe.js) and, when RESEND_API_KEY and
 // RESEND_AUDIENCE_ID are set, marks it unsubscribed in that Resend audience. The answer is the same whether or not
 // the address was on the list, so the endpoint can't be used to check who subscribes.
 // Tokens: link(email) builds https://<site>/unsubscribe.html?email=..&token=.. with an HMAC of the address keyed by
@@ -62,7 +62,9 @@ async function handler(req, res) {
     return send(502, { error: 'Couldn’t do that just now. Try again in a moment, or email us.' });
   }
 }
-module.exports = handler;
+// /api/subscribe (signup, and the admin subscriber list) is served by this function too: vercel.json rewrites it to
+// /api/unsubscribe?__route=subscribe and its handler lives in api/_subscribe.js. Every other request is unsubscribe.
+module.exports = require('./_dispatch.js').host({ subscribe: () => require('./_subscribe.js') }, handler);
 module.exports.tokenFor = tokenFor;
 module.exports.validToken = validToken;
 module.exports.link = link;

@@ -10,7 +10,7 @@
 // The GitHub workflow .github/workflows/newsletter.yml only calls ?send=1 when the repo variable NEWSLETTER_ENABLED
 // is 'true' as well.
 //
-// List: the Redis set tsn:nl:subs (api/subscribe.js). Each recipient gets their own email with their own
+// List: the Redis set tsn:nl:subs (/api/subscribe, api/_subscribe.js). Each recipient gets their own email with their own
 // unsubscribe link (require('./unsubscribe.js').link) in the footer and in List-Unsubscribe / List-Unsubscribe-Post
 // (RFC 8058 one-click, handled by api/unsubscribe.js).
 // One issue per ISO week (Chicago time): recipients are recorded in tsn:nl:issue:<week>:sent as each batch of up to

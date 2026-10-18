@@ -225,7 +225,7 @@ app.all(['/api/advertise', '/api/creative'], (req, res, next) => { // served by 
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 
-app.all(['/api/checkout', '/api/catalog', '/api/orders'], (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
+app.all(['/api/checkout', '/api/catalog', '/api/orders', '/api/flowers'], (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 

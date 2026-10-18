@@ -4,6 +4,9 @@
 // Prices and durations come only from api/_catalog.js (anything else in the request body, such as a price, amount,
 // days or price version, is ignored), and the post's board is checked on the server, so a job can't be bought at the
 // classified price. Each new order records the catalog's price version in Stripe metadata and in tsn:order:<session>.
+// The Featured period follows public/featured.js (the same rule the button shows): posts tied to a date (events, deals
+// with an end date) are featured until the end of that day at most, and checkout refuses when less than a day would
+// remain. Sessions expire after an hour, so the period named on Stripe's page is the one the webhook applies.
 // Needs STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET for api/stripe-webhook.js). Without them the page hides the button.
 // SITE_URL sets where Stripe sends people back to (defaults to the request's host).
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -14,7 +17,9 @@ const CATALOG = require('./_catalog.js');
 const PRICES = Object.fromEntries(Object.keys(CATALOG.FEATURED).map(k => { const p = CATALOG.featuredPrice(k); return [k, { cents: p.cents, days: p.days, label: p.label }]; }));
 // The sorted-set index each board kind's posts are listed in (same as indexFor() in api/listings.js).
 const INDEX = { item: 'tsn:ls:index', deal: 'tsn:dl:index', event: 'tsn:ev:index', job: 'tsn:jb:index' };
-const ORDER_TTL = 90 * 86400;
+const ORDER_TTL = 30 * 86400; // an unpaid order; the webhook rewrites it without a TTL once a payment arrives
+const SESSION_MINUTES = 60;
+const F = require('../public/featured.js');
 const isConfigured = () => !!(KEY && URL_ && TOKEN);
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
@@ -43,6 +48,10 @@ async function handler(req, res) {
     if (!o) return send(404, { error: 'That post has expired.' });
     if (o.uid !== b.uid) return send(403, { error: 'not yours' });
     if (g[1] == null || g[1].result == null) return send(400, { error: 'bad request' }); // the post is not on that board
+    const now = Date.now();
+    const w = F.window({ kind: price.kind, date: o.date, ends: o.ends, featuredUntil: o.featuredUntil }, price.days, now);
+    if (!w.ok) return send(409, { error: 'This post is too close to its date to feature.' });
+    const period = w.capped ? 'until ' + F.dayLabel(w.until) : price.days + ' days';
     const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').replace(/[^a-z0-9.:-]/gi, '');
     const site = (process.env.SITE_URL || (host ? 'https://' + host : '')).replace(/\/$/, '');
     if (!site) return send(500, { error: 'Couldn’t start checkout.' });
@@ -51,7 +60,7 @@ async function handler(req, res) {
       'line_items[0][quantity]': '1',
       'line_items[0][price_data][currency]': 'usd',
       'line_items[0][price_data][unit_amount]': String(price.cents),
-      'line_items[0][price_data][product_data][name]': price.label + ' · ' + price.days + ' days',
+      'line_items[0][price_data][product_data][name]': price.label + ' · ' + period,
       'line_items[0][price_data][product_data][description]': String(o.title || '').slice(0, 120),
       client_reference_id: b.id,
       'metadata[id]': b.id,
@@ -59,6 +68,8 @@ async function handler(req, res) {
       'metadata[days]': String(price.days),
       'metadata[cents]': String(price.cents),
       'metadata[price_version]': price.priceVersion,
+      'metadata[until]': String(w.until),
+      expires_at: String(Math.floor(now / 1000) + SESSION_MINUTES * 60),
       success_url: site + '/?featured=ok',
       cancel_url: site + '/?featured=cancel'
     });
@@ -68,7 +79,7 @@ async function handler(req, res) {
     // The order record: what was sold, at which price version. Stripe's session metadata carries the same fields,
     // so a failed write here doesn't block the payment.
     if (typeof d.id === 'string' && /^cs_[A-Za-z0-9_]{1,200}$/.test(d.id)) {
-      const order = { session: d.id, listing: b.id, kind: price.kind, cents: price.cents, days: price.days, priceVersion: price.priceVersion, at: new Date().toISOString(), status: 'created' };
+      const order = { session: d.id, listing: b.id, kind: price.kind, cents: price.cents, currency: CATALOG.CURRENCY, days: price.days, priceVersion: price.priceVersion, quotedUntil: w.until, capped: w.capped, at: new Date(now).toISOString(), status: 'created' };
       try { await pipeline([['SET', 'tsn:order:' + d.id, JSON.stringify(order), 'EX', String(ORDER_TTL)]]); } catch (_) { /* metadata still records it */ }
     }
     return send(200, { url: d.url });

@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-18",
+  "reviewStatus": "editorial_review",
+  "description": "Editorial review input for scripts/build-geo.js. Census data decides which places exist, their counties and their namesakes; this file only records the judgments the data cannot make. A name listed here that is not a local place or county name fails the build.",
+  "alwaysAmbiguous": [
+    {
+      "name": "washington",
+      "reason": "Plan §3.10: Washington, Ind. (Daviess County seat) shares its name with a state, D.C. and 17 places and 31 counties elsewhere; never matched without a state or county."
+    },
+    {
+      "name": "marion",
+      "reason": "Plan §3.10: Marion, Ill. (Williamson County seat) and Marion, Ky. (Crittenden County seat) are both in the area, and Marion is a common surname and a county or place name in many states."
+    },
+    {
+      "name": "mount vernon",
+      "reason": "Plan §3.10: Mount Vernon, Ind. (Posey County seat) and Mount Vernon, Ill. (Jefferson County seat) are both in the area, 14 other places share the name, and it is George Washington's estate."
+    }
+  ],
+  "commonWords": [
+    {
+      "name": "advance",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "anna",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "arthur",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "ava",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "baker",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "bonnie",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "browns",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "buckner",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "bush",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "calhoun",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "cayce",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "chandler",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "christopher",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "clay",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "commerce",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "cutler",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "cypress",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "delta",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "dexter",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "dix",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "dixon",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "dudley",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "energy",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "equality",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "ewing",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "farley",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "fisk",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "fulton",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "golden gate",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "grandview",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "griffin",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "hanson",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "hardin",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "harrison",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "hatfield",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "hazel",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "hickory",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "highland",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "holland",
+      "reason": "common word: country or region name; a bare mention is usually not the place"
+    },
+    {
+      "name": "hunter",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "hurst",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "ina",
+      "reason": "common word: given name; a bare mention is usually not the place"
+    },
+    {
+      "name": "ireland",
+      "reason": "common word: country or region name; a bare mention is usually not the place"
+    },
+    {
+      "name": "island",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "johnson",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "junction",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "kelso",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "lambert",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "ledbetter",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "lithium",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "lowes",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "mackey",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "matthews",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "mcclure",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "mill creek",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "montgomery",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "morley",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "mounds",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "muddy",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "murray",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "noble",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "olive branch",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "orient",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "panther",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "perkins",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "poole",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "providence",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "pulaski",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "reo",
+      "reason": "common word: name used for other things in the news (band, ship, brand); a bare mention is usually not the place"
+    },
+    {
+      "name": "santa claus",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "simpson",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "sims",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "stanley",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "sumner",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "troy",
+      "reason": "common word: name used for other things in the news (band, ship, brand); a bare mention is usually not the place"
+    },
+    {
+      "name": "unity",
+      "reason": "common word: english word or phrase; a bare mention is usually not the place"
+    },
+    {
+      "name": "whiting",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "wingo",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    },
+    {
+      "name": "wyatt",
+      "reason": "common word: surname; a bare mention is usually not the place"
+    }
+  ],
+  "distinctive": [
+    {
+      "name": "centertown",
+      "reason": "Centertown, Ky. (Ohio County): in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means"
+    },
+    {
+      "name": "darmstadt",
+      "reason": "Darmstadt, Ind. (Vanderburgh County): in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means (the German city is not a U.S. namesake but is the main other use)"
+    },
+    {
+      "name": "evansville",
+      "reason": "Evansville, Ind.: the region's hub city; in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means"
+    },
+    {
+      "name": "lynnville",
+      "reason": "Lynnville, Ind. (Warrick County): in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means"
+    },
+    {
+      "name": "new harmony",
+      "reason": "New Harmony, Ind. (Posey County): in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means"
+    },
+    {
+      "name": "nortonville",
+      "reason": "Nortonville, Ky. (Hopkins County): in the hand-reviewed \"anywhere\" list of api/_places.js, which the FBI/U.S. Attorney filter has used in production; the local place is the one the region's news means"
+    },
+    {
+      "name": "paducah",
+      "reason": "Paducah, Ky.: hub of the Paducah-Murray region; its one U.S. namesake is a small Texas town that the region's news does not mean"
+    }
+  ]
+}

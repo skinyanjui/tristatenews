@@ -33,15 +33,20 @@ test('Packages A–D: $249, $599, $1,199, $2,499 per 30 days; D is request-propo
   for (const id of ['E', '', '__proto__', 'constructor']) assert.deepStrictEqual(C.packageEligibility(id), { ok: false, reason: 'unknown_package' }, id);
 });
 
-test('Newsletter $199 single / $699 for 4 sends: not purchasable until 1,500 verified subscribers and every other gate', () => {
+test('Newsletter $199 single / $699 for 4 sends, dedicated email by proposal: not purchasable until every gate is met', () => {
   assert.deepStrictEqual([C.NEWSLETTER.single.cents, C.NEWSLETTER.single.sends, C.NEWSLETTER.four.cents, C.NEWSLETTER.four.sends], [19900, 1, 69900, 4]);
-  for (const v of Object.values(C.NEWSLETTER)) assert.strictEqual(v.status, 'not_available');
+  assert.deepStrictEqual([C.NEWSLETTER.single.status, C.NEWSLETTER.four.status, C.NEWSLETTER.dedicated.status], ['not_available', 'not_available', 'request_proposal']);
+  assert.ok(!('cents' in C.NEWSLETTER.dedicated), 'a dedicated email has no list price');
   assert.strictEqual(C.NEWSLETTER_MIN_VERIFIED, 1500);
-  assert.deepStrictEqual(C.newsletterEligibility({ verifiedSubscribers: 0 }).unmet, ['verified_subscribers', 'sponsor_slot_built', 'approved']);
-  assert.deepStrictEqual(C.newsletterEligibility().unmet, ['verified_subscribers', 'sponsor_slot_built', 'approved']);
-  assert.deepStrictEqual(C.newsletterEligibility({ verifiedSubscribers: 1499, sponsorSlotBuilt: true, approved: true }).unmet, ['verified_subscribers']);
-  assert.deepStrictEqual(C.newsletterEligibility({ verifiedSubscribers: '1500', sponsorSlotBuilt: 'yes', approved: true }).unmet, ['sponsor_slot_built']);
-  assert.strictEqual(C.newsletterEligibility({ verifiedSubscribers: 1500, sponsorSlotBuilt: true, approved: true }).ok, true);
+  const ALL = ['verified_subscribers', 'measured_deliverability', 'defined_inventory', 'approved'];
+  const yes = { verifiedSubscribers: 1500, deliverabilityMeasured: true, inventoryDefined: true, approved: true };
+  assert.deepStrictEqual(C.newsletterEligibility({ verifiedSubscribers: 0 }).unmet, ALL);
+  assert.deepStrictEqual(C.newsletterEligibility().unmet, ALL);
+  assert.deepStrictEqual(C.newsletterEligibility(Object.assign({}, yes, { verifiedSubscribers: 1499 })).unmet, ['verified_subscribers']);
+  assert.deepStrictEqual(C.newsletterEligibility(Object.assign({}, yes, { deliverabilityMeasured: 'yes' })).unmet, ['measured_deliverability']);
+  assert.deepStrictEqual(C.newsletterEligibility(Object.assign({}, yes, { inventoryDefined: false })).unmet, ['defined_inventory']);
+  assert.deepStrictEqual(C.newsletterEligibility(Object.assign({}, yes, { approved: undefined })).unmet, ['approved']);
+  assert.strictEqual(C.newsletterEligibility(Object.assign({}, yes, { verifiedSubscribers: '1500' })).ok, true);
 });
 
 test('Sponsored feature $499 and creative $99 (waived on packages of $599 or more): not purchasable yet', () => {
@@ -66,7 +71,7 @@ test('publicCatalog: availability flags', () => {
     assert.deepStrictEqual([on.featured[k].cents, on.featured[k].days], [C.FEATURED[k].cents, C.FEATURED[k].days]);
   }
   for (const cat of [on, off]) for (const g of ['packages', 'newsletter', 'addons']) for (const [k, v] of Object.entries(cat[g])) assert.strictEqual(v.purchasable, false, g + '.' + k);
-  assert.deepStrictEqual(on.newsletterGate, { minVerifiedSubscribers: 1500, gates: ['verified_subscribers', 'sponsor_slot_built', 'approved'] });
+  assert.deepStrictEqual(on.newsletterGate, { minVerifiedSubscribers: 1500, gates: ['verified_subscribers', 'measured_deliverability', 'defined_inventory', 'approved'] });
 });
 
 test('legacy table is exactly the prices checkout charged before the catalog', () => {
@@ -141,7 +146,7 @@ test('POST /api/checkout charges the catalog price and ignores every price the c
     assert.strictEqual(f.get('success_url'), 'https://site.test/?featured=ok');
     const order = JSON.parse(w.kv.get('tsn:order:cs_test_1'));
     assert.deepStrictEqual([order.listing, order.kind, order.cents, order.days, order.priceVersion, order.status], ['abcdef12', 'job', 9900, 30, C.PRICE_VERSION, 'created']);
-    assert.strictEqual(w.ttl.get('tsn:order:cs_test_1'), 90 * 86400);
+    assert.strictEqual(w.ttl.get('tsn:order:cs_test_1'), 30 * 86400, 'unpaid orders expire; the webhook makes paid ones permanent');
   });
 });
 
@@ -180,8 +185,9 @@ test('POST /api/checkout without Stripe configured: unchanged answer, no Stripe 
   });
 });
 
-// The webhook is unchanged by this PR: a purchase made at the old prices (no price_version in its metadata) gets the
-// days it paid for, and an existing Featured period is extended, never shortened or re-priced.
+// A purchase made at the old prices (no price_version in its metadata) gets the days it paid for, and an existing
+// Featured period is extended, never shortened or re-priced. (Ads PR 2 adds the order record and the post extension;
+// test/webhook.test.js covers the rest of the webhook.)
 function signed(event, secret) {
   const raw = JSON.stringify(event), t = Math.floor(Date.now() / 1000);
   const sig = crypto.createHmac('sha256', secret).update(t + '.' + raw).digest('hex');
@@ -193,15 +199,17 @@ test('legacy purchases keep what was agreed: old-price sessions apply their own 
     const until = Date.now() + 10 * 864e5;
     listing(w, 'legacy01', 'job', { featuredUntil: until, title: 'Paid at $29' });
     const before = JSON.parse(w.kv.get('tsn:ls:legacy01'));
-    const ev = { id: 'evt_legacy_1', type: 'checkout.session.completed', data: { object: { payment_status: 'paid', amount_total: 2900, metadata: { id: 'legacy01', kind: 'job', days: '30' } } } };
+    const ev = { id: 'evt_legacy_1', type: 'checkout.session.completed', data: { object: { id: 'cs_test_legacy', payment_status: 'paid', amount_total: 2900, currency: 'usd', metadata: { id: 'legacy01', kind: 'job', days: '30' } } } };
     const res = mockRes(); await mod('stripe-webhook')(signed(ev, ENV.STRIPE_WEBHOOK_SECRET), res);
     assert.strictEqual(res.code, 200);
     const after = JSON.parse(w.kv.get('tsn:ls:legacy01'));
     assert.ok(Math.abs(after.featuredUntil - (until + 30 * 864e5)) < 5000, 'extended by the 30 days bought, from the existing end');
-    assert.deepStrictEqual(Object.assign({}, after, { featuredUntil: 0 }), Object.assign({}, before, { featuredUntil: 0 }), 'nothing else on the post changes');
+    assert.deepStrictEqual(Object.assign({}, after, { featuredUntil: 0, featuredOrders: 0 }), Object.assign({}, before, { featuredUntil: 0, featuredOrders: 0 }), 'nothing else on the post changes');
+    assert.deepStrictEqual(Object.keys(after.featuredOrders), ['cs_test_legacy']);
     assert.ok(w.log.some(c => c[0] === 'SET' && c[1] === 'tsn:ls:legacy01' && c.includes('KEEPTTL')));
     // a post already Featured under the old prices is still featured; nothing re-prices it
     assert.ok(after.featuredUntil > Date.now());
-    assert.ok(!w.log.some(c => String(c[1]).startsWith('tsn:order:')), 'no order record is invented for a legacy session');
+    const order = JSON.parse(w.kv.get('tsn:order:cs_test_legacy'));
+    assert.deepStrictEqual([order.legacy, order.priceVersion, order.cents, order.days, order.status, order.paidCents], [true, 'legacy', 2900, 30, 'fulfilled', 2900]);
   });
 });

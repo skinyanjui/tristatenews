@@ -169,6 +169,8 @@ main:focus { outline:none; }
 .ad-card:hover { background:var(--gray-100); }
 .ad-card b { font-size:16px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
 .ad-card .ad-tx { color:var(--text-muted); font-size:14px; line-height:20px; overflow-wrap:anywhere; }
+.ad-card .ad-img, .rail-ad .ad-img { display:block; width:100%; height:auto; max-height:180px; object-fit:cover; border-radius:var(--radius-md); background:var(--gray-100); }
+.spon .ad-img { flex:none; width:24px; height:24px; object-fit:cover; border-radius:var(--radius-sm, 4px); }
 .ad-card .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
 .spon { display:flex; flex-wrap:nowrap; overflow:hidden; white-space:nowrap; height:var(--ctl); align-items:center; gap:4px 10px; width:100%; min-height:0; padding:0 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
 .spon:hover { background:var(--gray-100); }
@@ -824,14 +826,24 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
         return row;
       },
-      // A tall ad for the side margins on wide screens. A real ad (sponsors.json) is labeled "Sponsored" and its link
+      // An approved ad's link: rel="sponsored", a new tab for web links (not for tel:), "Sponsored" first, and its
+      // still image (served by /api/creative, lazy-loaded, the headline as alt text) when it has one.
+      adLink: function (cls, ad) {
+        var a = el('a', cls); a.href = ad.url; a.rel = 'sponsored noopener noreferrer';
+        if (/^https:/i.test(ad.url)) a.target = '_blank';
+        a.setAttribute('aria-label', 'Sponsored: ' + ad.name);
+        a.appendChild(el('span', 'spon-tag', 'Sponsored'));
+        if (ad.img) { var im = el('img', 'ad-img'); im.src = ad.img; im.alt = ad.name; im.loading = 'lazy'; im.decoding = 'async'; if (ad.w && ad.h) { im.width = ad.w; im.height = ad.h; } a.appendChild(im); }
+        return a;
+      },
+      // A tall ad for the side margins on wide screens. A real ad (an approved creative) is labeled "Sponsored" and its link
       // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
       // business, price or number, and opens the advertising inquiry form.
       railAd: function (ad) {
         if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News'); h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return h; }
-        if (!ad.name || !/^https:\/\//i.test(ad.url || '')) return null;
-        var a = el('a', 'rail-ad'); a.href = ad.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-        a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
+        if (!window.TSNAds || !TSNAds.validAd(ad)) return null;
+        var a = UI.adLink('rail-ad', ad);
+        if (!ad.img) a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
         if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
         return a;
       },
@@ -889,10 +901,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // A sponsor line for a board: a real sponsor (labeled "Sponsored", rel="sponsored"), or, when the slot is open,
       // our own house unit ("Advertise with us", no business, price or number), which opens the inquiry form.
       sponsor: function (slot, houseAd) {
-        var sp = SPONSORS && SPONSORS[slot];
-        if (sp && sp.name && /^https:\/\//i.test(sp.url || '')) {
-          var a = el('a', 'spon'); a.href = sp.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
+        var sp = window.TSNAds && SPONSORS ? TSNAds.pick(SPONSORS[slot], Date.now()) : null;
+        if (sp) {
+          var a = UI.adLink('spon', sp);
+          a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
           return a;
         }
         if (!houseAd) return null;
@@ -908,9 +920,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now()) : null;
         if (!f) return null;
         if (f.type === 'direct') {
-          var ad = f.ad, a = el('a', 'ad-card'); a.href = ad.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-          a.setAttribute('aria-label', 'Sponsored: ' + ad.name);
-          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, ad.name));
+          var ad = f.ad, a = UI.adLink('ad-card', ad);
+          a.appendChild(el('b', null, ad.name));
           if (ad.text) a.appendChild(el('span', 'ad-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
           return a;
         }
@@ -2562,7 +2573,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
 
   /* ---------- sponsors, paid placement and return from checkout ---------- */
-  fetch('/sponsors.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+  // Only creatives an admin approved (api/_creative.js) fill sponsor lines, cards and side ads; the same list for
+  // every reader. Nothing else is ever shown as an ad.
+  fetch('/api/creative?live=1').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     SPONSORS = d && d.slots ? d.slots : {};
     SPONSORS.__rails = d && d.rails ? d.rails : {};
     SPONSORS.__cards = d && d.cards ? d.cards : {};

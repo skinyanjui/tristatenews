@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Send your ad · Tri-State News</title>
+<style>
+:root { --bg:#fff; --fg:#111; --muted:#666; --border:#e2e2e2; --card:#fafafa; color-scheme:light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0a0a0a; --fg:#ededed; --muted:#a1a1a1; --border:#2e2e2e; --card:#111; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/24px system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:640px; margin:0 auto; padding:24px 16px 64px; display:grid; gap:16px; }
+h1 { margin:0; font-size:24px; line-height:32px; }
+p { margin:0; color:var(--muted); }
+form { display:grid; gap:16px; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+label { display:grid; gap:4px; font-weight:500; }
+.hint { color:var(--muted); font-size:14px; line-height:20px; font-weight:400; }
+input, select, textarea { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
+textarea { min-height:88px; resize:vertical; }
+button { min-height:44px; padding:0 16px; border:0; border-radius:6px; background:var(--fg); color:var(--bg); font:inherit; font-weight:500; cursor:pointer; justify-self:start; }
+button:disabled { opacity:.6; cursor:default; }
+#pv { max-width:100%; max-height:220px; border:1px solid var(--border); border-radius:6px; }
+.err { color:#e5484d; }
+[hidden] { display:none !important; }
+a { color:inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Send your ad</h1>
+  <p>Upload the image and words for your ad. A person at Tri-State News reviews every ad before it runs, and nothing appears on the site until it’s approved. Read the <a href="/legal.html#advertising-creative">creative standards</a> first.</p>
+  <form id="f" novalidate>
+    <div id="who">
+      <label>Your reference
+        <span class="hint">The AD-… reference from your advertising inquiry, or the order number from your receipt.</span>
+        <input id="ref" name="ref" autocomplete="off" maxlength="220" required>
+      </label>
+      <label style="margin-top:16px">Email used on your inquiry
+        <span class="hint">Needed with an AD-… reference.</span>
+        <input id="email" name="email" type="email" autocomplete="email" maxlength="200">
+      </label>
+    </div>
+    <p id="tokmsg" hidden>You’re using an upload link from Tri-State News.</p>
+    <label>Image
+      <span class="hint">A still JPEG, PNG or WebP, at least 300×150 pixels and at most 300 KB. No animation.</span>
+      <input id="img" type="file" accept="image/jpeg,image/png,image/webp" required>
+    </label>
+    <img id="pv" alt="Your image" hidden>
+    <label>Headline
+      <span class="hint">Up to 60 characters. This is also the image’s description for screen readers.</span>
+      <input id="headline" maxlength="60" required>
+    </label>
+    <label>Short text (optional)
+      <span class="hint">Up to 140 characters. No web addresses here; use the destination below.</span>
+      <textarea id="text" maxlength="140"></textarea>
+    </label>
+    <label>Button
+      <select id="cta">
+        <option>Visit website</option><option>Shop now</option><option>Learn more</option><option>Call now</option><option>Get directions</option>
+      </select>
+    </label>
+    <label>Destination
+      <span class="hint" id="desthint">Your web page, starting with https://. No link shorteners or redirects.</span>
+      <input id="dest" maxlength="400" required inputmode="url">
+    </label>
+    <p class="err" id="err" role="alert" hidden></p>
+    <button id="go" type="submit">Send for review</button>
+  </form>
+  <p id="done" role="status" hidden></p>
+</main>
+<script>
+(function () {
+  var MAX = 300 * 1024, image = '';
+  function $(id) { return document.getElementById(id); }
+  var token = new URLSearchParams(location.search).get('token') || '';
+  if (token) { $('who').hidden = true; $('tokmsg').hidden = false; }
+  var HINTS = { 'Call now': 'A U.S. phone number, like 812-555-0142.', 'Get directions': 'A Google Maps, Apple Maps, Bing Maps or OpenStreetMap link (https://).' };
+  $('cta').addEventListener('change', function () {
+    var v = $('cta').value; $('desthint').textContent = HINTS[v] || 'Your web page, starting with https://. No link shorteners or redirects.';
+    $('dest').setAttribute('inputmode', v === 'Call now' ? 'tel' : 'url');
+  });
+  function fail(t) { $('err').textContent = t; $('err').hidden = false; }
+  $('img').addEventListener('change', function () {
+    image = ''; $('pv').hidden = true; $('err').hidden = true;
+    var f = $('img').files[0]; if (!f) return;
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) return fail('Upload a JPEG, PNG or WebP image.');
+    if (f.size > MAX) return fail('The image must be 300 KB or smaller.');
+    var r = new FileReader();
+    r.onload = function () { image = String(r.result); $('pv').src = image; $('pv').hidden = false; };
+    r.readAsDataURL(f);
+  });
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); $('err').hidden = true;
+    if (!image) return fail('Add an image.');
+    var body = { headline: $('headline').value, text: $('text').value, cta: $('cta').value, dest: $('dest').value, image: image };
+    if (token) body.token = token; else { body.ref = $('ref').value.trim(); body.email = $('email').value.trim(); }
+    $('go').disabled = true; $('go').textContent = 'Sending…';
+    fetch('/api/creative', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; });
+    }).then(function (x) {
+      $('go').disabled = false; $('go').textContent = 'Send for review';
+      if (!x.ok) return fail(x.d.error || 'Couldn’t send that. Try again.');
+      $('f').hidden = true; $('done').hidden = false;
+      $('done').textContent = 'Thanks. Your ad (' + x.d.id + ') is waiting for review. It won’t appear on the site until we approve it.';
+    }).catch(function () { $('go').disabled = false; $('go').textContent = 'Send for review'; fail('Couldn’t send that. Check your connection and try again.'); });
+  });
+})();
+</script>
+</body>
+</html>

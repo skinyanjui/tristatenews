@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--robots-->
+<title>Advertise · Tri-State News</title>
+<meta name="description" content="Rates and packages for advertising on Tri-State News: Featured posts and sponsored spots on the Jobs, Deals, Events and Classifieds boards. Ads are never targeted.">
+<link rel="canonical" href="https://tristatenewss.vercel.app/advertise">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root { --bg:#fff; --fg:#111; --muted:#5f5f5f; --border:#e2e2e2; --card:#fafafa; --accent:#0b6e7f; color-scheme:light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0a0a0a; --fg:#ededed; --muted:#a1a1a1; --border:#2e2e2e; --card:#111; --accent:#5cc4d4; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/24px system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:760px; margin:0 auto; padding:24px 16px 64px; display:grid; gap:32px; }
+header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+header a { color:inherit; font-weight:600; text-decoration:none; }
+h1 { margin:0 0 8px; font-size:28px; line-height:36px; }
+h2 { margin:0 0 12px; font-size:20px; line-height:28px; }
+h3 { margin:0; font-size:16px; line-height:24px; }
+p { margin:0; }
+.lede { color:var(--muted); font-size:18px; line-height:28px; }
+.m { color:var(--muted); font-size:14px; line-height:20px; }
+ul.plain { margin:0; padding-left:20px; display:grid; gap:6px; }
+.grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); }
+.card { display:grid; gap:6px; align-content:start; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+.price { font-size:20px; line-height:28px; font-weight:600; }
+.tag { justify-self:start; padding:2px 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; line-height:18px; color:var(--muted); }
+.card button { justify-self:start; margin-top:4px; }
+form { display:grid; gap:16px; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+label { display:grid; gap:4px; font-weight:500; }
+input, select, textarea { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
+textarea { min-height:100px; resize:vertical; }
+button { min-height:44px; padding:0 16px; border:0; border-radius:6px; background:var(--fg); color:var(--bg); font:inherit; font-weight:500; cursor:pointer; }
+button.ghost { background:transparent; color:var(--fg); border:1px solid var(--border); min-height:36px; font-size:14px; }
+button:disabled { opacity:.6; cursor:default; }
+.two { display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+.hp { position:absolute; left:-10000px; width:1px; height:1px; overflow:hidden; }
+.err { color:#d93036; }
+.done { padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); display:grid; gap:8px; }
+.ref { font:600 20px/28px ui-monospace, SFMono-Regular, Menlo, monospace; }
+a { color:var(--accent); }
+footer { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; gap:16px; font-size:14px; }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header><a href="/">Tri-State News</a><a href="#contact" class="m">Contact us</a></header>
+
+  <section>
+    <h1>Advertise with Tri-State News</h1>
+    <p class="lede">Put your business in front of people who come to Tri-State News for local jobs, deals, events and classifieds.</p>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">How our ads work</h2>
+    <ul class="plain">
+      <li>Ads appear only on the Jobs, Deals, Events and Classifieds boards. There are never ads on News, Police &amp; courts or Obituaries.</li>
+      <li>Ads aren’t targeted. Everyone who opens a board sees the same ads, taking turns by the day. We don’t use cookies or anything about the reader to pick an ad.</li>
+      <li>Every ad is labeled “Sponsored,” and a Featured post is labeled “Featured · Paid.”</li>
+      <li>An ad is one still image with a short headline and text, or words alone. No pop-ups, video, sound or ads that follow you down the page.</li>
+      <li>A person reviews every ad before it runs.</li>
+      <li>Ads never change what news we show or how we report it.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="rates">
+    <h2 id="rates">Rates</h2>
+    <p class="m" id="rates-status" role="status">Loading current rates…</p>
+    <div id="rate-card" hidden>
+      <h3>Featured posts</h3>
+      <p class="m">Keep your post at the top of its board, with a “Featured · Paid” badge.</p>
+      <div class="grid" id="featured" style="margin:12px 0 24px"></div>
+      <h3>Packages</h3>
+      <p class="m">Monthly spots in the Sponsored card inside a board’s list, the sponsor line at the top of a board, and side ads on wide screens. We confirm exactly what’s included, in writing, before you pay.</p>
+      <div class="grid" id="packages" style="margin:12px 0 24px"></div>
+      <h3>Coming soon</h3>
+      <p class="m">Not available to buy yet.</p>
+      <div class="grid" id="soon" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ad-how">
+    <h2 id="ad-how">Sending your ad</h2>
+    <p>Once we’ve agreed on a spot, send your image and words with the upload form. You’ll need the reference number you get when you send the form below. The <a href="/creative.html">upload page</a> explains the image size, word limits and which links are allowed, and our <a href="/legal.html#advertising">Advertising Policy</a> covers what we accept.</p>
+  </section>
+
+  <section aria-labelledby="contact">
+    <h2 id="contact">Ask us</h2>
+    <form id="f" novalidate>
+      <label>Business <input id="business" name="business" maxlength="80" autocomplete="organization" required></label>
+      <label>Your name <input id="name" name="name" maxlength="60" autocomplete="name" required></label>
+      <div class="two">
+        <label>Email <input id="email" name="email" type="email" maxlength="80" autocomplete="email" required></label>
+        <label>Phone (optional) <input id="phone" name="phone" type="tel" maxlength="20" autocomplete="tel" placeholder="812-555-0142"></label>
+      </div>
+      <label>Interested in
+        <select id="interest" name="interest">
+          <option>Featured job or deal</option>
+          <option>Section sponsorship</option>
+          <option>Newsletter sponsorship</option>
+          <option>Something else</option>
+        </select>
+      </label>
+      <label>Message <textarea id="message" name="message" maxlength="1500" placeholder="Tell us about your business and what you’d like to promote."></textarea></label>
+      <div class="hp" aria-hidden="true"><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <p class="err" id="err" role="alert" hidden></p>
+      <p class="m">By sending this you agree to our <a href="/legal.html#terms">Terms</a>. We use your details only to reply (<a href="/legal.html#privacy">Privacy Policy</a>).</p>
+      <button id="go" type="submit">Send inquiry</button>
+    </form>
+    <div class="done" id="done" role="status" hidden>
+      <h3>Thanks, we got it</h3>
+      <p>We’ll reply by email, usually within a business day. Your reference number:</p>
+      <span class="ref" id="ref"></span>
+      <p class="m">Keep it: you’ll use it with the email you entered to <a href="/creative.html">send your ad</a>.</p>
+    </div>
+  </section>
+
+  <footer><a href="/">Home</a><a href="/legal.html#advertising">Advertising Policy</a><a href="/legal.html#privacy">Privacy</a><a href="/legal.html#terms">Terms</a></footer>
+</main>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
+  // What each package holds, in plain words. Prices and status come only from /api/catalog (api/_catalog.js).
+  var PACKAGE_COPY = {
+    A: 'A turn in the Sponsored card on one board.',
+    B: 'A turn in the Sponsored card on two boards, plus a turn in one board’s sponsor line and a side ad on wide screens.',
+    C: 'The Sponsored card and the sponsor line on one board, all to yourself, plus a side ad on wide screens.',
+    D: 'Several boards at once. Tell us what you have in mind and we’ll send a proposal.'
+  };
+  var FEATURED_ORDER = ['item', 'event', 'deal', 'job'];
+  var SOON = [['newsletter', 'single', 'Newsletter sponsorship', 'A labeled sponsor message in our email newsletter.'], ['newsletter', 'four', 'Newsletter sponsorship, 4 sends', ''], ['newsletter', 'dedicated', 'Dedicated newsletter email', ''],
+    ['addons', 'sponsoredFeature', 'Sponsored feature', 'A labeled sponsored article, kept apart from the news.'], ['addons', 'creative', 'Ad design', 'We make your ad for you.']];
+  function ask(interest, note) {
+    $('interest').value = interest;
+    if (note && !$('message').value.trim()) $('message').value = note;
+    $('contact').scrollIntoView({ behavior: 'smooth' }); $('business').focus({ preventScroll: true });
+  }
+  function card(title, price, per, tag, text, button) {
+    var c = el('div', 'card'); c.appendChild(el('h3', null, title));
+    if (price) { var p = el('div', 'price', price); if (per) p.appendChild(el('span', 'm', ' ' + per)); c.appendChild(p); }
+    c.appendChild(el('span', 'tag', tag));
+    if (text) c.appendChild(el('p', 'm', text));
+    if (button) { var b = el('button', 'ghost', button[0]); b.type = 'button'; b.addEventListener('click', button[1]); c.appendChild(b); }
+    return c;
+  }
+  fetch('/api/catalog').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (cat) {
+    var f = cat.featured || {}, pk = cat.packages || {};
+    FEATURED_ORDER.forEach(function (k) {
+      var x = f[k]; if (!x) return;
+      $('featured').appendChild(card(x.label, money(x.cents), 'for ' + x.days + ' days', x.purchasable ? 'Buy from your post' : 'Opening soon',
+        x.purchasable ? 'Post on the board, then tap “Feature” on your post.' : 'Post for free now; paid Featured spots open soon.', null));
+    });
+    ['A', 'B', 'C', 'D'].forEach(function (k) {
+      var x = pk[k]; if (!x) return;
+      if (x.status === 'request_proposal') $('packages').appendChild(card(x.label, 'By proposal', '', 'By proposal', PACKAGE_COPY[k], ['Request a proposal', function () { ask('Section sponsorship', 'I’d like a proposal for ' + x.label + '.'); }]));
+      else $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', x.purchasable ? 'Available' : 'Ask us', PACKAGE_COPY[k], ['Ask about ' + x.label, function () { ask('Section sponsorship', 'I’m interested in ' + x.label + '.'); }]));
+    });
+    SOON.forEach(function (s) {
+      var x = cat[s[0]] && cat[s[0]][s[1]]; if (!x || x.purchasable) return;
+      $('soon').appendChild(card(s[2], '', '', 'Coming soon', s[3], null));
+    });
+    $('rates-status').hidden = true; $('rate-card').hidden = false;
+  }).catch(function () { $('rates-status').textContent = 'Rates couldn’t load right now. Send us a note below and we’ll reply with current rates.'; });
+
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;
+  function fail(t, id) { $('err').textContent = t; $('err').hidden = false; if (id && $(id)) $(id).focus(); }
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); $('err').hidden = true;
+    var v = { business: $('business').value.trim(), name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), interest: $('interest').value, message: $('message').value, website: $('website').value };
+    if (v.business.length < 2) return fail('Add your business name.', 'business');
+    if (v.name.length < 2) return fail('Add your name.', 'name');
+    if (!EMAIL_RE.test(v.email)) return fail('Enter a valid email address.', 'email');
+    if (v.phone && !PHONE_RE.test(v.phone)) return fail('Enter a phone number like 812-555-0142, or leave it blank.', 'phone');
+    $('go').disabled = true; $('go').textContent = 'Sending…';
+    fetch('/api/advertise', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(v) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (o) {
+        $('go').disabled = false; $('go').textContent = 'Send inquiry';
+        if (!o.ok || !o.d.ok) return fail((o.d && o.d.error) || 'Couldn’t send that. Try again.', o.d && o.d.field);
+        $('f').hidden = true; $('ref').textContent = o.d.ref || 'Received'; $('done').hidden = false; $('done').scrollIntoView();
+      }).catch(function () { $('go').disabled = false; $('go').textContent = 'Send inquiry'; fail('Couldn’t send that. Check your connection and try again.'); });
+  });
+})();
+</script>
+</body>
+</html>

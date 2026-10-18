@@ -2483,6 +2483,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   document.getElementById('snOpen').addEventListener('click', function () { SN_VIEW = 'news'; openSubmit(); });
   document.getElementById('adOpen').addEventListener('click', openAd);
+  // /advertise sends here (#advertise) while the advertising page is switched off (ADS_PAGE): open the Advertise form.
+  if (location.hash === '#advertise') setTimeout(function () { openAd(); try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {} }, 0);
 
   /* ---------- newsletter signup ---------- */
   var nlEl = document.getElementById('nl'), NL_KEY = 'tsn.nl';
@@ -2533,8 +2535,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       if (!pr[k[0]]) return;
       var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, money(pr[k[0]].cents))); ul.appendChild(li);
     });
-    [['Section sponsorship', 'Your name on Jobs, Deals or Events'], ['Newsletter sponsorship', 'One sponsor in each email']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, 'Ask')); ul.appendChild(li); });
+    [['Section sponsorship', 'Your name on Jobs, Deals or Events', 'Ask'], ['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, k[2])); ul.appendChild(li); });
     rt.appendChild(ul);
+    // A link to the full rates page, only when it's switched on (/advertise answers 200; off, it redirects back here).
+    var full = el('p', 'cl-note'); full.hidden = true; rt.appendChild(full);
+    fetch('/advertise', { method: 'HEAD', redirect: 'manual', cache: 'no-store' }).then(function (r) {
+      if (r.status !== 200) return;
+      var a = el('a', null, 'See all rates and packages'); a.href = '/advertise'; full.appendChild(a); full.hidden = false;
+    }).catch(function () {});
     if (PAY.configured) rt.appendChild(el('p', 'cl-note', 'To feature a post, publish it on its board, then tap “Feature” on your post.'));
     snEl.appendChild(rt);
     var f = el('form', 'cl-form'); f.noValidate = true;

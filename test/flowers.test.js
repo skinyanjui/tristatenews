@@ -1,6 +1,7 @@
 // Ads PR 4.3: the obituary "Send flowers" link. A quiet text link, never an ad unit: the funeral home's own florist
 // page when one is checked and listed in data/funeral-homes.json, else the affiliate link (labeled "paid link",
-// rel="sponsored noopener") when an affiliate ID is set, else no link. GET /api/flowers is served by listings.js.
+// rel="sponsored noopener") when an affiliate ID is set, else the unpaid fallbackUrl from data/flowers.json (no label,
+// rel="noopener nofollow"), else (fallbackUrl emptied) no link. GET /api/flowers is served by listings.js.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -33,21 +34,27 @@ test('funeral-home names match loosely; papers never match a funeral home', () =
   assert.strictEqual(F.key(''), '');
   const cfg = { homes: { [F.key('Ziemer Funeral Home')]: 'https://example.org/flowers' }, affiliate: null };
   assert.strictEqual(F.linkFor({ source: 'Messenger-Inquirer' }, cfg), null);
-  assert.deepStrictEqual(F.linkFor({ source: 'Ziemer Funeral Home' }, cfg), { href: 'https://example.org/flowers', paid: false });
-  assert.deepStrictEqual(F.linkFor({ business: 'ziemer funeral home', source: 'x' }, cfg), { href: 'https://example.org/flowers', paid: false }, 'a posted notice names its funeral home in "business"');
+  assert.deepStrictEqual(F.linkFor({ source: 'Ziemer Funeral Home' }, cfg), { href: 'https://example.org/flowers', paid: false, rel: 'noopener' });
+  assert.deepStrictEqual(F.linkFor({ business: 'ziemer funeral home', source: 'x' }, cfg), { href: 'https://example.org/flowers', paid: false, rel: 'noopener' }, 'a posted notice names its funeral home in "business"');
 });
 
-test('order: florist page, then the affiliate link (paid), then nothing; only https', () => {
-  const aff = 'https://www.floristone.com/index.cfm?AffiliateID=123&source_id=aff';
-  const cfg = { homes: { ziemer: 'https://example.org/flowers', browning: 'http://example.org/x', koehler: 'javascript:alert(1)' }, affiliate: aff };
-  assert.deepStrictEqual(F.linkFor({ source: 'Ziemer Funeral Home' }, cfg), { href: 'https://example.org/flowers', paid: false });
-  assert.deepStrictEqual(F.linkFor({ source: 'Browning Funeral Home' }, cfg), { href: aff, paid: true }, 'a non-https florist page is ignored');
-  assert.deepStrictEqual(F.linkFor({ source: 'Koehler Funeral Home' }, cfg), { href: aff, paid: true });
-  assert.deepStrictEqual(F.linkFor({ source: 'Dubois County Herald' }, cfg), { href: aff, paid: true });
-  assert.strictEqual(F.linkFor({ source: 'Dubois County Herald' }, { homes: {}, affiliate: null }), null, 'no florist page and no affiliate ID: hidden');
-  assert.strictEqual(F.linkFor({ source: 'x' }, { homes: {}, affiliate: 'http://example.org' }), null);
+test('order: florist page, then the affiliate link (paid), then the unpaid fallback, then nothing; only https', () => {
+  const aff = 'https://www.floristone.com/index.cfm?AffiliateID=123&source_id=aff', fb = 'https://www.floristone.com/funeral-flowers/';
+  const cfg = { homes: { ziemer: 'https://example.org/flowers', browning: 'http://example.org/x', koehler: 'javascript:alert(1)' }, affiliate: aff, fallbackUrl: fb };
+  assert.deepStrictEqual(F.linkFor({ source: 'Ziemer Funeral Home' }, cfg), { href: 'https://example.org/flowers', paid: false, rel: 'noopener' });
+  assert.deepStrictEqual(F.linkFor({ source: 'Browning Funeral Home' }, cfg), { href: aff, paid: true, rel: 'sponsored noopener' }, 'a non-https florist page is ignored');
+  assert.deepStrictEqual(F.linkFor({ source: 'Koehler Funeral Home' }, cfg), { href: aff, paid: true, rel: 'sponsored noopener' });
+  assert.deepStrictEqual(F.linkFor({ source: 'Dubois County Herald' }, cfg), { href: aff, paid: true, rel: 'sponsored noopener' }, 'the affiliate link wins over the fallback');
+  const noId = { homes: { ziemer: 'https://example.org/flowers' }, affiliate: null, fallbackUrl: fb };
+  assert.deepStrictEqual(F.linkFor({ source: 'Dubois County Herald' }, noId), { href: fb, paid: false, rel: 'noopener nofollow' }, 'no ID, no florist page: the unpaid fallback');
+  assert.deepStrictEqual(F.linkFor({ source: 'Ziemer Funeral Home' }, noId), { href: 'https://example.org/flowers', paid: false, rel: 'noopener' }, 'the florist page still wins');
+  assert.strictEqual(F.linkFor({ source: 'Dubois County Herald' }, { homes: {}, affiliate: null, fallbackUrl: null }), null, 'fallback emptied: hidden');
+  assert.strictEqual(F.linkFor({ source: 'Dubois County Herald' }, { homes: {}, affiliate: null }), null);
+  assert.strictEqual(F.linkFor({ source: 'x' }, { homes: {}, affiliate: 'http://example.org', fallbackUrl: 'http://example.org/f' }), null);
   assert.strictEqual(F.linkFor({ source: 'x' }, null), null, 'before /api/flowers answers: hidden');
   assert.strictEqual(F.REL_PAID, 'sponsored noopener');
+  assert.strictEqual(F.REL_FALLBACK, 'noopener nofollow');
+  assert.strictEqual(F.REL_HOME, 'noopener');
   assert.strictEqual(F.LABEL_PAID, 'paid link');
 });
 
@@ -55,6 +62,10 @@ test('shipped data: no invented URLs, no affiliate ID yet, every funeral-home so
   assert.strictEqual(CONFIG.affiliateId, '', 'empty until Sam joins the program');
   assert.ok(CONFIG.affiliateUrl.startsWith('https://www.floristone.com/') && CONFIG.affiliateUrl.includes('AffiliateID={id}'));
   assert.ok(/TODO/.test(CONFIG.note), 'the URL shape is documented as to be confirmed');
+  assert.strictEqual(CONFIG.fallbackUrl, 'https://www.floristone.com/funeral-flowers/', 'the public page checked with curl (200) on Oct 18, 2026');
+  assert.ok(!/affiliate|source_id|[?&]/i.test(CONFIG.fallbackUrl), 'no affiliate code in the fallback');
+  assert.strictEqual(S.fallbackUrl({ fallbackUrl: '' }), null, 'emptied: hidden');
+  assert.strictEqual(S.fallbackUrl({ fallbackUrl: 'http://example.org/' }), null, 'https only');
   for (const h of HOMES.homes) {
     assert.deepStrictEqual(Object.keys(h).sort(), ['florist', 'name'], h.name);
     assert.strictEqual(h.florist, '', h.name + ': empty until someone checks the funeral home’s own florist page');
@@ -77,17 +88,18 @@ test('the affiliate ID: the server env var wins over the config file; a malforme
   assert.strictEqual(S.affiliateUrl({ FLORIST_ONE_AFFILIATE_ID: '7' }, { affiliateUrl: 'https://example.org/no-placeholder' }), null);
 });
 
-test('GET /api/flowers through listings.js: hidden by default, the affiliate link once the ID is set, GET/HEAD only', async () => {
+test('GET /api/flowers through listings.js: the unpaid fallback by default, the affiliate link once the ID is set, GET/HEAD only', async () => {
   const host = require('../api/listings.js');
   await withEnv(null, async () => {
     const r = await call(host, 'GET', { __route: 'flowers' });
     assert.strictEqual(r.status, 200);
-    assert.deepStrictEqual(JSON.parse(r.body), { homes: {}, affiliate: null });
+    assert.deepStrictEqual(JSON.parse(r.body), { homes: {}, affiliate: null, fallbackUrl: 'https://www.floristone.com/funeral-flowers/' });
     assert.match(r.headers['cache-control'], /public/);
   });
   await withEnv('2026012345', async () => {
     const r = await call(host, 'GET', { __route: 'flowers' });
     assert.strictEqual(JSON.parse(r.body).affiliate, 'https://www.floristone.com/index.cfm?AffiliateID=2026012345&source_id=aff');
+    assert.strictEqual(JSON.parse(r.body).fallbackUrl, 'https://www.floristone.com/funeral-flowers/');
   });
   const p = await call(host, 'POST', { __route: 'flowers' });
   assert.strictEqual(p.status, 405);
@@ -101,6 +113,8 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   assert.ok(html.includes('<script src="/flowers.js"></script>'));
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
   assert.ok(fn.includes("el('a', null, 'Send flowers')") && fn.includes('TSNFlowers.REL_PAID') && fn.includes('TSNFlowers.LABEL_PAID') && fn.includes("a.target = '_blank'"));
+  assert.ok(fn.includes("a.rel = f.paid ? TSNFlowers.REL_PAID : f.rel;") && fn.includes("if (f.paid) p.appendChild(el('span', 'ob-paid', TSNFlowers.LABEL_PAID));"), '"paid link" only when paid');
+  assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');
   assert.ok(!/<img|ad-card|spon|Sponsored|Advertise/.test(fn), 'not an ad unit');
   assert.ok(html.includes("var fl = kd === 'obits' ? flowersLink(it, 'span') : null; if (fl) foot.appendChild(fl);"), 'feed cards: only obituaries, in the footer, not inside the card link');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
@@ -113,8 +127,8 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
 
 test('legal and README describe the link as it works', () => {
   const legal = read('public/legal.html').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
-  for (const s of ['An obituary may show a “Send flowers” link', 'It is a small text link only, not an ad', 'that link is not paid', 'labeled “paid link,” and we may earn a commission',
-    'If neither applies, the obituary shows no link', 'carries nothing about you or the person who died', 'The link carries only our affiliate code', 'isn’t an affiliate link'])
+  for (const s of ['An obituary may show a “Send flowers” link', 'It is a small text link only, not an ad', 'a small “Send flowers” text link to a florist', 'When the link is marked “paid link,” it’s an affiliate link: we may earn a commission',
+    'A “Send flowers” link without that label earns us nothing', 'carries nothing about you or the person who died', 'The link carries only our affiliate code', 'isn’t an affiliate link and carries no code at all'])
     assert.ok(legal.includes(s), s);
   assert.ok(!/\(planned\)|planned “Send flowers”|We plan to add a “Send flowers”/.test(legal));
   const readme = read('README.md');

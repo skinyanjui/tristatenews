@@ -698,6 +698,15 @@ async function redis(commands) {
   return r.json();
 }
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
+// MGET through the same /pipeline call. Anything but an array of the right length is treated like an unreachable
+// store (the caller's catch), so a bad answer can never be mistaken for "no previous state" and overwrite it.
+async function mget(keys) {
+  if (!keys.length) return [];
+  const out = await redis([['MGET'].concat(keys)]);
+  const v = out && out[0] && out[0].result;
+  if (!Array.isArray(v) || v.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
+  return v;
+}
 
 async function readSnapshot() {
   if (!stored()) return null;
@@ -744,11 +753,14 @@ async function refreshAll(opts) {
   let targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
   let persist = stored();
   let prevStates = {};
+  const store = { requests: 0, commands: 0 }; // billed Upstash commands this run, reported by /api/refresh
   if (persist) {
     // If the store is unreachable (bad or rotated token, outage) keep going without it rather than failing the page.
     try {
-      const out = await redis(SOURCES.map(s => ['GET', srcKey(s.id)]));
-      SOURCES.forEach((s, i) => { prevStates[s.id] = parse(out[i] && out[i].result); });
+      // One MGET (one billed command) instead of one GET per source. Same values: a missing key is null either way.
+      store.requests++; store.commands++;
+      const vals = await mget(SOURCES.map(s => srcKey(s.id)));
+      SOURCES.forEach((s, i) => { prevStates[s.id] = parse(vals[i]); });
     } catch (e) { persist = false; }
   }
   // Respect each source's minimum polling interval (everyMin): skip it if it was tried recently.
@@ -778,9 +790,10 @@ async function refreshAll(opts) {
   if (persist) {
     const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
     cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
+    store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
-  return { snapshot: snap, report };
+  return { snapshot: snap, report, store };
 }
 
 async function handler(req, res) {

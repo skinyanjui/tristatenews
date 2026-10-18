@@ -22,6 +22,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tri-State News","url":"https://tristatenewss.vercel.app/","description":"Local news aggregator for the Evansville IN-KY-IL tri-state."}</script>
+<script src="/breaking.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
@@ -581,6 +582,12 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   .card.breaking .bd p:not(.cl-note) { font-size:13px; line-height:18px; }
   .card.breaking .cf { margin:0 6px 0 14px; padding:0; min-height:44px; }
 }
+/* Breaking slot (official alerts): tier label + "until" line; a card with no picture carries the Breaking pill inline. */
+.card.breaking .bk-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin:0; font-size:13px; line-height:18px; color:var(--text-muted); }
+.card.breaking .bk-meta b { color:#c4262c; font-weight:600; }
+.card.breaking .bk-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.card.breaking a.noimg .bk-head .pill { position:static; box-shadow:none; }
+.bn .tx .by b { color:var(--red); font-weight:600; }
 /* Reactions: heart and share are one family everywhere (news, Breaking, Police & courts, obituaries, events).
    Same 18px outline icon on the same 24-unit grid with the same stroke, one shared colour token, the same
    bare round 40px button, and the same hover / pressed / keyboard-focus look. Liked = the heart filled in the
@@ -644,7 +651,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
 </main>
 
-<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · Refreshed hourly</span><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
+<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · News refreshed about every 15 min, alerts every 5</span><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
 
 <script>
 (function () {
@@ -847,7 +854,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 
   var HOUR = 60 * 60 * 1000;
   var PAGE = 24;
-  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'all', limit: PAGE, saved: [], alerts: [], counts: {}, shared: false };
+  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'all', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
   try { var sv = JSON.parse(localStorage.getItem('tsn.saved') || '[]'); if (Array.isArray(sv)) state.saved = sv.filter(function (x) { return x && x.link && x.title; }); } catch (e) {}
   function storyId(link) { // short stable id from the story link (cyrb53)
     var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -921,14 +928,37 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     return base;
   }
   function resetPaging() { state.limit = PAGE; }
-  // A story counts as breaking only when the outlet itself labels it so, and only for 12 hours.
+  // A story counts as breaking only when the outlet itself labels it so, and only for 3 hours.
   var BREAKING_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\b|\bbreaking( news)?\s*[:|\u2013\u2014-]|[\[(]breaking[\])]/i;
   function isBreaking(it) {
-    if (it.breaking === true) return true;
+    if (it.breaking !== true && !BREAKING_RE.test(it.title)) return false;
     var t = Date.parse(it.published);
-    if (!BREAKING_RE.test(it.title) || isNaN(t) || Date.now() - t > 12 * 3600 * 1000) return false;
-    return true;
+    return !isNaN(t) && Date.now() - t <= 3 * 3600 * 1000;
   }
+  // One Breaking slot (public/breaking.js): official alerts from /api/alerts, NWS alerts for the chosen weather
+  // location, official Police & courts items that match an alert tier, and outlet-labeled breaking stories (tier 7).
+  // Highest tier wins, newest inside a tier; only that one item is shown.
+  var BK = window.TSNBreaking || null;
+  function breakingPick() {
+    var now = Date.now(), c = [];
+    if (BK) {
+      state.official.forEach(function (a) { if (a && a.key) c.push(a); });
+      state.alerts.forEach(function (p) { var a = BK.fromNws(p); if (a) c.push(a); });
+    }
+    state.items.forEach(function (it) {
+      var k = kindOf(it.sourceId); if (k === 'events' || k === 'obits') return;
+      var t = Date.parse(it.published); if (isNaN(t)) return;
+      var hit = BK && (k === 'police' || k === 'courts') ? BK.classifyOfficial(it) : null; // keyword tiers: official sources only
+      if (hit) c.push({ key: 'it:' + (it.id || it.link), kind: 'story', official: true, tier: hit.tier, label: hit.label, start: t, end: null, item: it });
+      else if (isBreaking(it)) c.push({ key: 'it:' + (it.id || it.link), kind: 'story', tier: 7, label: '', start: t, end: null, item: it });
+    });
+    if (BK) return BK.pick(c, now);
+    var s = c.filter(function (x) { return now - x.start <= 3 * 3600 * 1000; }).sort(function (a, b) { return b.start - a.start; });
+    return { top: s[0] || null, more: Math.max(0, s.length - 1) };
+  }
+  function brkUntil(b) { return BK && b && b.end != null ? BK.untilText(b.end) : ''; }
+  // An official alert drawn with the same card as a story (no picture; links to the official page).
+  function alertItem(b) { return { id: b.key, title: b.title, summary: b.summary || '', link: b.link, source: b.source, sourceId: b.sourceId || 'alert', published: b.start ? new Date(b.start).toISOString() : '', image: '' }; }
 
   function el(tagName, cls, text) {
     var n = document.createElement(tagName);
@@ -1195,15 +1225,18 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function storyKeys(it) { var k = []; if (it.link) k.push('u:' + storyKey(it.link)); if (it.id) k.push('i:' + it.id); return k; }
   function shownAsCard(it) { return storyKeys(it).some(function (k) { return breakCards[k]; }); }
   function renderBreaking() {
-    var hit = state.items.filter(function (i) { var k = kindOf(i.sourceId); return k !== 'events' && k !== 'obits' && isBreaking(i); })
-      .sort(function (a, b) { return Date.parse(b.published) - Date.parse(a.published); })[0];
+    var b = state.brk && state.brk.top, hit = b ? (b.item || alertItem(b)) : null;
     bnBreak.textContent = '';
     if (!hit || hit.link === breakDismissed || shownAsCard(hit)) { bnBreak.hidden = true; return; }
     bnBreak.appendChild(el('span', 'tag', 'Breaking'));
     var tx = el('div', 'tx');
     var a = el('a', null, hit.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]?\s*/i, '') || hit.title);
     a.href = safeHref(hit.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; tx.appendChild(a);
-    tx.appendChild(el('span', 'by', 'Reported by ' + hit.source + ' · ' + timeAgo(hit.published)));
+    var by = el('span', 'by');
+    if (b.label) { by.appendChild(el('b', null, b.label)); by.appendChild(document.createTextNode(' · ')); }
+    var u = brkUntil(b);
+    by.appendChild(document.createTextNode((u ? u + ' · ' : '') + (b.kind === 'alert' ? 'From ' : 'Reported by ') + hit.source + (u ? '' : ' · ' + timeAgo(hit.published))));
+    tx.appendChild(by);
     bnBreak.appendChild(tx);
     var x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss breaking news banner');
     x.addEventListener('click', function () { breakDismissed = hit.link; bnBreak.hidden = true; });
@@ -1228,7 +1261,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   }
   function renderAlerts() {
     alertsEl.textContent = '';
-    var vis = state.alerts.filter(function (p) { return !alertGone[alertKey(p)]; });
+    var vis = state.alerts.filter(function (p) { return !alertGone[alertKey(p)] && !(BK && BK.fromNws(p)); }); // Breaking-tier warnings live in the one Breaking slot
     vis.slice(0, 3).forEach(function (p) {
       var sev = p.severity === 'Extreme' || p.severity === 'Severe' ? 'sev-severe' : p.severity === 'Moderate' ? 'sev-mod' : 'sev-minor';
       var d = el('div', 'alert ' + sev);
@@ -1272,8 +1305,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       state.alerts = (g.features || []).map(function (f) { return f.properties || {}; }).filter(function (p) { if (!p.event || seen[p.event]) return false; seen[p.event] = 1; return true; });
       var rank = { Extreme: 0, Severe: 1, Moderate: 2, Minor: 3 };
       state.alerts.sort(function (a, b) { return (rank[a.severity] == null ? 4 : rank[a.severity]) - (rank[b.severity] == null ? 4 : rank[b.severity]); });
-      renderAlerts();
-    }).catch(function () { state.alerts = []; renderAlerts(); });
+      render(); // re-ranks the Breaking slot and redraws the strip
+    }).catch(function () { state.alerts = []; render(); });
   }
 
   /* ---------- list ---------- */
@@ -2461,7 +2494,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     if (day(t + 864e5) === day(Date.now())) return 'Yesterday';
     return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: z });
   }
-  function makeCard(it, big) {
+  function makeCard(it, big, bk) {
     var card = el('article', big ? 'card breaking' : 'card');
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
@@ -2474,6 +2507,13 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     // The red "Breaking" badge already says it, so the lead card drops an outlet's "BREAKING:" prefix (as the top banner does).
     var hTitle = big ? (it.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]\s*/i, '') || it.title) : it.title;
     body.appendChild(el('h2', null, hTitle));
+    if (bk && (bk.label || bk.end != null)) {
+      var bm = el('div', 'bk-meta');
+      if (bk.label) bm.appendChild(el('b', null, bk.label));
+      var bu = brkUntil(bk); if (bu) bm.appendChild(el('span', null, bu));
+      if (state.brk.more) bm.appendChild(el('span', null, '+' + state.brk.more + ' more active'));
+      body.appendChild(bm);
+    }
     if (it.summary) body.appendChild(el('p', null, it.summary));
     if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));
     // source + short time: one small line with the outlet's icon
@@ -2507,14 +2547,25 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     lk.appendChild(el('span', null, host)); foot.appendChild(lk);
     foot.appendChild(actRow(sb, it));
     card.appendChild(foot);
-    if (big) { var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true }); tag.classList.add('pill-over'); card.appendChild(tag); }
+    if (big) {
+      var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true });
+      // over the picture as before; with no picture it sits inline above the source line so it never covers text
+      if (a.classList.contains('noimg') || !pic) { var hd = el('div', 'bk-head'); hd.appendChild(tag); body.insertBefore(hd, body.firstChild); }
+      else { tag.classList.add('pill-over'); card.appendChild(tag); }
+    }
     return card;
   }
 
+  var brkTimer = null;
   function render() {
     breakCards = {};
+    state.brk = breakingPick();
     renderList();
     renderBreaking(); // after the list, so it knows which stories became Breaking cards
+    if (alertsEl) renderAlerts();
+    clearTimeout(brkTimer);
+    var bt = state.brk.top, be = bt && (BK ? BK.endOf(bt) : bt.start + 3 * 3600 * 1000);
+    if (be) brkTimer = setTimeout(render, Math.min(Math.max(be - Date.now() + 1000, 1000), 6 * 3600 * 1000));
   }
   function renderList() {
     renderTabs();
@@ -2541,8 +2592,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
       return stateBox('Couldn’t reach the news feeds', 'Check your connection and try again.', 'Try again', function () { load(true); });
     }
     var all = filtered();
-    var brk = (!state.q.trim() && (state.cat === 'all' || state.cat === 'news')) ? all.filter(isBreaking).slice(0, 2) : [];
-    var rest = brk.length ? all.filter(function (i) { return brk.indexOf(i) < 0; }) : all;
+    var top = state.brk.top;
+    var brk = (top && !state.q.trim() && (state.cat === 'all' || state.cat === 'news')) ? [top] : []; // at most ONE Breaking item
+    var rest = brk.length && top.item ? all.filter(function (i) { return i !== top.item; }) : all;
     var shown = rest.slice(0, state.limit);
     var moreEl = document.getElementById('more'); moreEl.textContent = '';
     var seenSrc = {}; all.forEach(function (i) { seenSrc[i.sourceId] = 1; });
@@ -2557,7 +2609,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
     listEl.textContent = '';
     listEl.setAttribute('aria-busy', 'false');
     mapLogos();
-    brk.forEach(function (it) { storyKeys(it).forEach(function (k) { breakCards[k] = 1; }); listEl.appendChild(makeCard(it, true)); });
+    brk.forEach(function (b) { var it = b.item || alertItem(b); storyKeys(it).forEach(function (k) { breakCards[k] = 1; }); listEl.appendChild(makeCard(it, true, b)); });
     shown.forEach(function (it) { listEl.appendChild(makeCard(it, false)); });
     if (rest.length > shown.length) {
       var mb = el('button', null, 'Show more (' + (rest.length - shown.length) + ' left)'); mb.type = 'button';
@@ -2596,8 +2648,19 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   // keep "x min ago" honest
   setInterval(function () { if (state.items.length && !document.hidden) render(); }, 5 * 60 * 1000);
 
+  // Official alerts for the Breaking slot. A failed call keeps the last list (each alert still expires on its own
+  // end time), so an outage at /api/alerts or the NWS just falls back to the regular Breaking behavior.
+  function loadOfficial() {
+    return fetch('/api/alerts').then(function (r) { if (!r.ok) throw new Error('alerts'); return r.json(); })
+      .then(function (d) { state.official = Array.isArray(d.alerts) ? d.alerts : []; render(); })
+      .catch(function () { /* keep what we had */ });
+  }
+  setInterval(function () { if (!document.hidden) loadOfficial(); }, 2 * 60 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) loadOfficial(); });
+
   loadWeather();
   load(false);
+  loadOfficial();
   loadDeals(); loadBoard('event'); loadBoard('job');
 })();
 </script>

@@ -550,6 +550,99 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev-foot .acts + .ev-go { margin-left:0; }
 .ev-plain .ev-acts { flex-wrap:nowrap; }
 .ev.ev-plain .ev-title { padding-right:0; }
+/* ===== Events tab, Bandsintown-style layout: location header, date chips, featured/popular row, date-grouped rows.
+   Uses the site's tokens, card radius, buttons, chips, pills and the shared heart/share family. ===== */
+body:has(#ev:not([hidden])) #sp-news { display:none !important; } /* Events shows its own sponsor bar, not the News one too (side-margin ads stay) */
+.evx { gap:16px; min-width:0; }
+.evx-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; min-width:0; }
+.evx-ht { display:grid; gap:2px; min-width:0; }
+.evx-kick { display:flex; align-items:center; gap:4px; color:var(--text-muted); font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.evx-kick svg { width:14px; height:14px; fill:none; stroke:var(--c-events); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.evx-near { position:relative; display:inline-flex; align-items:center; gap:4px; justify-self:start; max-width:100%; min-height:var(--ctl); margin:0 0 0 -6px; padding:0 6px; border-radius:var(--radius-md); font-size:24px; line-height:30px; font-weight:600; letter-spacing:-.02em; min-width:0; }
+.evx-near span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.evx-near svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; color:var(--text-muted); }
+.evx-near select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; }
+label.evx-near:hover { background:var(--gray-100); }
+label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px; }
+.evx-sub { color:var(--text-muted); font-size:13px; line-height:18px; }
+.evx-head .cl-go { flex:none; margin-top:-1px; }
+.evx-filters { display:grid; gap:8px; min-width:0; }
+.evx-filters .cl-chips { position:relative; min-width:0; }
+.evx-pick { position:relative; display:inline-flex; align-items:center; gap:6px; }
+.evx-pick svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.evx-pick input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; border:0; padding:0; }
+.evx .spon { margin:0; }
+.evx-sec { display:grid; gap:10px; min-width:0; }
+.evx-sh { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; }
+.evx-sh h3 { margin:0; font-size:18px; line-height:24px; font-weight:600; letter-spacing:-.01em; }
+.evx-arrows { display:none; gap:4px; }
+.evx-arrows button { width:var(--ctl); height:var(--ctl); display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:9999px; background:var(--background); color:var(--foreground); }
+.evx-arrows button:hover { background:var(--gray-100); }
+.evx-arrows svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+@media (min-width:640px) { .evx-arrows { display:flex; } }
+.evx-rail { display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-padding-inline:16px; margin:0 -16px; padding:4px 16px 8px; scrollbar-width:none; }
+.evx-rail::-webkit-scrollbar { display:none; }
+@media (min-width:640px) { .evx-rail { margin:0; padding:4px 0 8px; scroll-padding-inline:0; } }
+/* carousel card */
+.evc { position:relative; flex:none; width:min(232px, 68vw); scroll-snap-align:start; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--gray-200); border-radius:16px; background:var(--background); box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04); }
+.evc.evr-feat { border-color:var(--amber); background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
+.evc-pic { position:relative; aspect-ratio:4/3; background:var(--gray-100); overflow:hidden; }
+.evc-pic img { display:block; width:100%; height:100%; object-fit:cover; }
+.evc-body { display:flex; flex-direction:column; gap:4px; padding:10px 12px 4px; flex:1; min-width:0; }
+.evc-body h4 { margin:0; font-size:15px; line-height:20px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.evc-body h4 a:hover { color:var(--blue); }
+.evc-when { font-size:13px; line-height:18px; font-weight:600; }
+.evc-where { color:var(--text-muted); font-size:13px; line-height:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.evc-foot { display:flex; align-items:center; justify-content:space-between; gap:4px; margin-top:auto; padding:6px 0 4px; min-height:44px; }
+.evc-foot .ev-go { margin-left:0; padding:0 12px; font-size:13px; }
+/* date badge: month over day, on the picture's corner (or filling the picture slot when there is no photo) */
+.evx-badge { position:absolute; top:8px; left:8px; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:44px; padding:4px 6px 5px; border-radius:var(--radius-md); background:var(--background); color:var(--foreground); box-shadow:0 1px 4px rgba(0,0,0,.18); line-height:1; }
+.evx-mo { font-size:11px; line-height:14px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--c-events); }
+.evx-dd { font-size:20px; line-height:22px; font-weight:600; font-variant-numeric:tabular-nums; }
+.evx-tile { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:color-mix(in srgb, var(--c-events) 9%, var(--background)); border-right:1px solid color-mix(in srgb, var(--c-events) 20%, var(--background)); }
+.evx-tile .evx-mo { font-size:12px; line-height:16px; }
+.evx-tile .evx-dd { font-size:30px; line-height:34px; }
+.evx-tile .evx-wd { font-size:12px; line-height:16px; font-weight:500; color:var(--text-muted); }
+.evc .evx-tile { border-right:0; }
+.evx-paid { display:inline-flex; align-items:center; align-self:flex-start; height:20px; padding:0 6px; border-radius:var(--radius-sm); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:600; white-space:nowrap; }
+.evx-paid.is-sample { background:var(--gray-200); color:var(--text-muted); }
+/* date groups and rows */
+.evx-day { display:grid; gap:10px; min-width:0; }
+.evx-day h3 { position:sticky; top:calc(env(safe-area-inset-top, 0px) + 80px); z-index:2; margin:0 -4px; padding:6px 4px; display:flex; align-items:baseline; gap:8px; background:color-mix(in srgb, var(--background) 94%, transparent); font-size:15px; line-height:20px; font-weight:600; }
+.evx-day h3 small { font:500 12px/16px var(--font-mono); color:var(--text-muted); }
+.evx-day h3 .evx-rel { color:var(--c-events); }
+.evr { position:relative; display:flex; min-height:148px; overflow:hidden; border:1px solid var(--gray-200); border-radius:16px; background:var(--background); box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04); }
+.evr:hover { border-color:var(--gray-300); box-shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.07); }
+.evr.evr-feat { border-color:var(--amber); background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
+.evr-pic { position:relative; flex:none; width:clamp(104px, 32%, 132px); background:var(--gray-100); overflow:hidden; }
+.evr-pic img { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; object-position:center 30%; }
+.evr-body { display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; padding:10px 4px 0 12px; }
+.evr-top { display:flex; align-items:center; gap:6px; min-height:20px; min-width:0; padding-right:8px; }
+.evr-cat { font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--c); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.evr h4 { margin:0; padding-right:8px; font-size:16px; line-height:21px; font-weight:600; letter-spacing:-.005em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.evr h4 a:hover { color:var(--blue); }
+.evr-when { font-size:13px; line-height:18px; font-weight:600; padding-right:8px; }
+.evr-where { color:var(--text-muted); font-size:13px; line-height:18px; padding-right:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.evr-foot { display:flex; align-items:center; gap:8px; margin-top:auto; padding:4px 0; min-height:48px; }
+.evr-foot .ev-go { margin-left:0; padding:0 14px; }
+.evr-foot .evr-from { color:var(--text-muted); font-size:12px; line-height:16px; white-space:nowrap; }
+.evr-foot .evr-from b { color:var(--foreground); font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+.evr-foot .acts, .evc-foot .acts { margin-left:auto; margin-right:0; }
+.evr-foot .cl-contact { font-size:13px; }
+.evr-foot .cl-link { margin-left:auto; }
+@media (min-width:640px) {
+  .evr { min-height:152px; }
+  .evr-pic { width:200px; }
+  .evr-body { padding:12px 8px 0 16px; }
+  .evr h4 { font-size:17px; line-height:23px; }
+}
+.evx-more { justify-self:center; }
+.evx-more button { min-height:var(--ctl); padding:0 16px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; background:var(--background); }
+.evx-more button:hover { background:var(--gray-100); }
+.evx-empty { display:grid; justify-items:center; gap:4px; padding:32px 20px; }
+.evx-empty .evx-btns { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.evx-empty .ghost { border:1px solid var(--border); }
+.evx-sk { display:grid; gap:10px; }
 /* phones: the same ad-card layout as desktop, in a narrower column. The picture fills the card's left edge
    top to bottom; source, headline, description and the link/heart/share row sit to its right. */
 @media (max-width:639px) {
@@ -1442,6 +1535,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   function whenOk(x, when) {
     if (!when || when === 'any') return true;
     if (when === 'today') return x.date === inDays(0);
+    if (when === 'tomorrow') return x.date === inDays(1);
+    if (when.indexOf('d:') === 0) return x.date === when.slice(2);
     if (when === 'week') return x.date >= inDays(0) && x.date <= inDays(6);
     if (when === 'weekend') { var r = weekendRange(); return x.date >= r[0] && x.date <= r[1]; }
     return true;
@@ -2019,7 +2114,251 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   var dlEl = boards.deal.el;
   function renderDeals() { drawBody('deal', 'Local deals and coupons', 'Post a deal'); }
   function renderObits() { drawBody('obit', 'Community obituaries', 'Post an obituary'); }
-  function renderEvents() { drawBody('event', 'Upcoming events', 'Add an event'); }
+  /* ---------- Events tab (Bandsintown-style): "Events near" header, date chips, Featured/Popular row, rows grouped by date ---------- */
+  var EVX_PAGE = 30;
+  var ICON_L = [['path', { d: 'M15 18l-6-6 6-6' }]], ICON_R = [['path', { d: 'M9 18l6-6-6-6' }]];
+  function evxDate(date, o) { return new Date(date + 'T12:00:00').toLocaleDateString('en-US', o); }
+  function evxDayLabel(date) {
+    var o = { weekday: 'short', month: 'short', day: 'numeric' }; if (date.slice(0, 4) !== inDays(0).slice(0, 4)) o.year = 'numeric';
+    return evxDate(date, o);
+  }
+  function evxRel(date) { return date === inDays(0) ? 'Today' : date === inDays(1) ? 'Tomorrow' : ''; }
+  function evxTime(it) { return it.time ? fmtTime(it.time) + ' CT' : ''; }
+  function evxWhere(it) {
+    var place = it.place || '', town = townOf(it), bits = [place];
+    if (town && place.toLowerCase().indexOf(town.toLowerCase()) < 0) bits.push(town);
+    return bits.filter(Boolean).join(' \u00B7 ');
+  }
+  function evxBadge(it) {
+    var t = el('div', 'evx-badge');
+    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'short' })));
+    t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
+    return t;
+  }
+  function evxTile(it) {
+    var t = el('div', 'evx-tile'); t.setAttribute('aria-hidden', 'true');
+    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'short' })));
+    t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
+    t.appendChild(el('span', 'evx-wd', evxDate(it.date, { weekday: 'short' })));
+    return t;
+  }
+  // The picture slot: the event photo with a month/day badge on its corner, or a big date tile when there is no photo.
+  function evxPic(it, cls) {
+    var pic = el('div', cls), src = photoSrc(it) || it.image || '';
+    if (!src) { pic.appendChild(evxTile(it)); return pic; }
+    var im = el('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (it.image) im.referrerPolicy = 'no-referrer';
+    var badge = evxBadge(it);
+    im.addEventListener('error', function () { im.remove(); badge.remove(); pic.appendChild(evxTile(it)); });
+    pic.appendChild(im); pic.appendChild(badge);
+    return pic;
+  }
+  function evxPaid(it) { return el('span', 'evx-paid' + (it.sample ? ' is-sample' : ''), it.sample ? 'Featured \u00B7 Sample' : 'Featured \u00B7 Paid'); }
+  function evxTitle(it, tag) {
+    var h = el(tag);
+    if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
+    return h;
+  }
+  // Tickets (ticket sellers) or Details (venue / calendar page): always the event's own source link.
+  function evxGo(it) {
+    var t = ticketLink(it.link), go = el('a', 'ev-go', t ? 'Tickets' : 'Details'); go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
+    go.setAttribute('aria-label', (t ? 'Tickets for ' : 'Details for ') + it.title + (it.source ? ' on ' + it.source : ''));
+    return go;
+  }
+  function evxReact(it) {
+    var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
+    var sb = UI.heart({
+      get: function () { return { on: isSaved(it.link), n: likeCount(news), label: it.title }; },
+      toggle: function () { toggleSaved(news); },
+      after: function () { sb.paint(); renderTabs(); }
+    });
+    return actRow(sb, it);
+  }
+  function evxFoot(it, b, cls) {
+    var foot = el('div', cls);
+    if (it.feed && it.link) {
+      foot.appendChild(evxGo(it));
+      if (it.fromPrice && cls === 'evr-foot') { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); foot.appendChild(fp); }
+      foot.appendChild(evxReact(it));
+    } else {
+      if (it.contact) foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+      actions(it, 'event', b, foot);
+    }
+    return foot;
+  }
+  // One event in the date-grouped list: picture flush left (the news cards' option B look), details and actions on the right.
+  function evxRow(it, b) {
+    var c = el('article', 'evr' + (it.featured ? ' evr-feat' : ''));
+    c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
+    c.appendChild(evxPic(it, 'evr-pic'));
+    var body = el('div', 'evr-body');
+    var top = el('div', 'evr-top');
+    if (it.featured) top.appendChild(evxPaid(it));
+    top.appendChild(el('span', 'evr-cat', it.category || 'Other'));
+    body.appendChild(top);
+    body.appendChild(evxTitle(it, 'h4'));
+    var when = [evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' }), evxTime(it)].filter(Boolean).join(' \u00B7 ');
+    body.appendChild(el('div', 'evr-when', when));
+    var where = evxWhere(it), via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
+    var wl = [where, via].filter(Boolean).join(' \u00B7 ');
+    if (wl) body.appendChild(el('div', 'evr-where', wl));
+    body.appendChild(evxFoot(it, b, 'evr-foot'));
+    c.appendChild(body);
+    return c;
+  }
+  // A card in the horizontal Featured / Popular row.
+  function evxCard(it, b) {
+    var c = el('article', 'evc' + (it.featured ? ' evr-feat' : ''));
+    c.appendChild(evxPic(it, 'evc-pic'));
+    var body = el('div', 'evc-body');
+    if (it.featured) body.appendChild(evxPaid(it));
+    body.appendChild(evxTitle(it, 'h4'));
+    body.appendChild(el('div', 'evc-when', [evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' }), evxTime(it)].filter(Boolean).join(' \u00B7 ')));
+    var where = evxWhere(it); if (where) body.appendChild(el('div', 'evc-where', where));
+    body.appendChild(evxFoot(it, b, 'evc-foot'));
+    c.appendChild(body);
+    return c;
+  }
+  // Featured posts first (paid, any date), then this week's most-hearted events; ties go to ticketed shows, then to ones with a photo.
+  function evxPopular(all) {
+    var feat = all.filter(function (x) { return x.featured; });
+    var big = /ticketmaster|ford center|victory theatre/i;
+    var wk = all.filter(function (x) { return !x.featured && x.feed && x.link && x.image && x.date <= inDays(6); }).map(function (x, i) {
+      return { x: x, i: i, s: likeCount({ link: x.link }) * 10 + (big.test(x.source || '') || ticketLink(x.link) ? 2 : 0) };
+    }).sort(function (p, q) { return q.s - p.s || p.i - q.i; }).map(function (p) { return p.x; });
+    var seen = {}, out = [];
+    feat.concat(wk).forEach(function (x) { var k = (x.title + '|' + x.date).toLowerCase(); if (!seen[k] && out.length < 10) { seen[k] = 1; out.push(x); } });
+    return out;
+  }
+  var EVX_WHEN = [['any', 'All dates'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['weekend', 'This weekend'], ['week', 'This week']];
+  function evxWhenText(w) {
+    if (w && w.indexOf('d:') === 0) return 'on ' + evxDayLabel(w.slice(2));
+    return { today: 'today', tomorrow: 'tomorrow', weekend: 'this weekend', week: 'in the next 7 days' }[w] || '';
+  }
+  function evxSet(b, k, v) { b[k] = v; b.lim = EVX_PAGE; drawBoard('event'); }
+  function evxDateChips(b) {
+    var row = el('div', 'cl-chips'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', 'When');
+    var cur = b.when || 'any';
+    EVX_WHEN.forEach(function (w) { var c = UI.chip(w[1], cur === w[0], function () { evxSet(b, 'when', w[0]); }); if (w[0] === 'week') c.title = 'Next 7 days'; row.appendChild(c); });
+    var picked = cur.indexOf('d:') === 0;
+    var pk = el('button', 'cl-chip evx-pick'); pk.type = 'button'; pk.setAttribute('aria-pressed', String(picked));
+    pk.appendChild(svg(ICON_CAL)); pk.appendChild(document.createTextNode(picked ? evxDayLabel(cur.slice(2)) : 'Pick a date'));
+    var inp = el('input'); inp.type = 'date'; inp.min = inDays(0); inp.max = inDays(400); inp.tabIndex = -1; inp.setAttribute('aria-hidden', 'true');
+    if (picked) inp.value = cur.slice(2);
+    inp.addEventListener('change', function () { if (inp.value) evxSet(b, 'when', 'd:' + inp.value); });
+    pk.setAttribute('aria-label', picked ? 'Date: ' + evxDayLabel(cur.slice(2)) + '. Pick another date' : 'Pick a date');
+    pk.addEventListener('click', function () {
+      try { if (inp.showPicker) { inp.showPicker(); return; } } catch (e) {}
+      var d = window.prompt('Show events on (YYYY-MM-DD)', picked ? cur.slice(2) : inDays(0));
+      if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) evxSet(b, 'when', 'd:' + d);
+    });
+    pk.appendChild(inp);
+    row.appendChild(pk);
+    requestAnimationFrame(function () { var on = row.querySelector('[aria-pressed="true"]'); if (on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - 16; }); // keep the chosen chip in view
+    return row;
+  }
+  function evxHeader(b) {
+    var head = el('div', 'evx-head'), ht = el('div', 'evx-ht');
+    var real = b.items.concat(feedEvents()), counts = {};
+    real.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
+    if (b.town && !counts[b.town]) counts[b.town] = 0;
+    var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
+    var kick = el('span', 'evx-kick'); kick.appendChild(svg(ICON_PIN)); kick.appendChild(document.createTextNode('Events near')); ht.appendChild(kick);
+    var place = b.town || 'the Tri-State';
+    if (towns.length > 1) { // the town name is the picker: a native select laid over the big label
+      var lab = el('label', 'evx-near'), cur = el('span', null, place);
+      lab.appendChild(cur); lab.appendChild(svg([['path', { d: 'M6 9l6 6 6-6' }]]));
+      var sel = el('select'); sel.setAttribute('aria-label', 'Events near: choose a town');
+      [{ value: '', label: 'the Tri-State (all towns)' }].concat(towns.map(function (t) { return { value: t, label: t + ' (' + counts[t] + ')' }; })).forEach(function (o) { var op = el('option', null, o.label); op.value = o.value; if ((b.town || '') === o.value) op.selected = true; sel.appendChild(op); });
+      sel.addEventListener('change', function () { evxSet(b, 'town', sel.value); });
+      lab.appendChild(sel); ht.appendChild(lab);
+    } else ht.appendChild(el('span', 'evx-near', place));
+    var n = real.filter(function (x) { return !b.town || townOf(x) === b.town; }).length;
+    ht.appendChild(el('span', 'evx-sub', (n ? n + ' upcoming event' + (n === 1 ? '' : 's') + ' \u00B7 ' : '') + 'Times in Central'));
+    head.appendChild(ht);
+    if (b.configured !== false) {
+      var post = el('button', 'cl-go', b.form ? 'Cancel' : 'Add an event'); post.type = 'button';
+      post.addEventListener('click', function () { b.form = !b.form; drawBoard('event'); });
+      head.appendChild(post);
+    }
+    return head;
+  }
+  function evxEmpty(b, all) {
+    var box = el('div', 'state evx-empty'), when = b.when && b.when !== 'any', btns = el('div', 'evx-btns');
+    var filt = when || b.town || b.filter;
+    if (!filt) {
+      box.appendChild(el('h2', null, 'No upcoming events yet'));
+      box.appendChild(el('p', null, 'Venue calendars and Ticketmaster refresh through the day. Hosting something? Post it free.'));
+      if (b.configured !== false) btns.appendChild(UI.button('Add an event', 'primary', function () { b.form = true; drawBoard('event'); }));
+    } else {
+      var what = [b.filter ? b.filter.toLowerCase() : '', 'events'].filter(Boolean).join(' ');
+      box.appendChild(el('h2', null, 'No ' + what + ' ' + (evxWhenText(b.when) || 'match these filters') + (b.town ? ' near ' + b.town : '')));
+      // the next date that has something (same town and category) after the chosen day or window, else the soonest one
+      var pool = all.filter(function (x) { return (!b.town || townOf(x) === b.town) && (!b.filter || x.category === b.filter) && x.date >= inDays(0); })
+        .sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+      var w = b.when || 'any', from = w.indexOf('d:') === 0 ? w.slice(2) : w === 'weekend' ? weekendRange()[1] : w === 'week' ? inDays(6) : w === 'tomorrow' ? inDays(1) : inDays(0);
+      var after = pool.filter(function (x) { return x.date > from; })[0], nextUp = after || pool[0];
+      box.appendChild(el('p', null, after ? 'The next date with events is ' + evxDayLabel(after.date) + '.' : nextUp ? 'Nothing listed after that yet. The soonest is ' + evxDayLabel(nextUp.date) + '.' : 'Try another date or town.'));
+      if (nextUp && when) btns.appendChild(UI.button('Go to ' + evxDayLabel(nextUp.date), 'primary', function () { evxSet(b, 'when', 'd:' + nextUp.date); }));
+      if (when) btns.appendChild(UI.button('All dates', 'ghost', function () { evxSet(b, 'when', 'any'); }));
+      if (b.town || b.filter) btns.appendChild(UI.button('Clear filters', when ? 'ghost' : 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; evxSet(b, 'lim', EVX_PAGE); }));
+    }
+    if (btns.firstChild) box.appendChild(btns);
+    return box;
+  }
+  function renderEvents() {
+    var b = boards.event, root = b.el;
+    root.textContent = ''; root.classList.add('evx');
+    root.appendChild(el('h2', 'sr-only', 'Upcoming events'));
+    root.appendChild(evxHeader(b));
+    var fl = el('div', 'evx-filters'); fl.appendChild(evxDateChips(b));
+    var cats = chips(b, 'event'); cats.setAttribute('role', 'group'); cats.setAttribute('aria-label', 'Category');
+    Array.prototype.forEach.call(cats.children, function (c) { c.addEventListener('click', function () { b.lim = EVX_PAGE; }, true); });
+    fl.appendChild(cats); root.appendChild(fl);
+    var spn = UI.sponsor('events', true); if (spn) root.appendChild(spn); // the only sponsor placement on Events
+    if (b.form) root.appendChild(buildForm('event', b));
+    if (!state.loaded && !b.items.length) { // feeds still loading: placeholder rows instead of sample posts
+      var sk = el('div', 'evx-sk'); for (var s = 0; s < 3; s++) { var k = el('div', 'sk-card'); k.appendChild(el('div', 'sk sk-img')); var ln = el('div'); ln.appendChild(el('div', 'sk sk-line')); ln.appendChild(el('div', 'sk sk-line')); k.appendChild(ln); sk.appendChild(k); }
+      root.appendChild(sk); return root;
+    }
+    var items = shownItems(b, 'event');
+    var plain = !(b.when && b.when !== 'any') && !b.town && !b.filter;
+    if (plain && items.length) {
+      var pop = evxPopular(items);
+      if (pop.length) {
+        var sec = el('section', 'evx-sec evx-pop'), sh = el('div', 'evx-sh'), hasF = pop.some(function (x) { return x.featured; });
+        sec.setAttribute('aria-label', hasF ? 'Featured and popular this week' : 'Popular this week');
+        sh.appendChild(el('h3', null, hasF ? 'Featured & popular this week' : 'Popular this week'));
+        var rail = el('div', 'evx-rail'), ar = el('div', 'evx-arrows');
+        [[ICON_L, -1, 'Scroll back'], [ICON_R, 1, 'Scroll forward']].forEach(function (a) { var bt = el('button'); bt.type = 'button'; bt.setAttribute('aria-label', a[2]); bt.appendChild(svg(a[0])); bt.addEventListener('click', function () { rail.scrollBy({ left: a[1] * rail.clientWidth * 0.8, behavior: 'smooth' }); }); ar.appendChild(bt); });
+        sh.appendChild(ar); sec.appendChild(sh);
+        pop.forEach(function (it) { rail.appendChild(evxCard(it, b)); });
+        sec.appendChild(rail); root.appendChild(sec);
+      }
+    }
+    if (!items.length) { root.appendChild(evxEmpty(b, b.items.concat(feedEvents()))); return root; }
+    var rows = items.slice().sort(function (x, y) { var p = x.date + (x.time || '99'), q = y.date + (y.time || '99'); return p < q ? -1 : p > q ? 1 : (y.featured ? 1 : 0) - (x.featured ? 1 : 0); });
+    var lim = b.lim || EVX_PAGE, shown = rows.slice(0, lim), groups = [], byDay = {};
+    shown.forEach(function (it) { if (!byDay[it.date]) { byDay[it.date] = []; groups.push(it.date); } byDay[it.date].push(it); });
+    var dayCount = {}; rows.forEach(function (it) { dayCount[it.date] = (dayCount[it.date] || 0) + 1; });
+    var list = el('div', 'evx-sec');
+    groups.forEach(function (d) {
+      var g = el('section', 'evx-day'), h = el('h3'), rel = evxRel(d);
+      if (rel) h.appendChild(el('span', 'evx-rel', rel));
+      h.appendChild(document.createTextNode(evxDayLabel(d)));
+      h.appendChild(el('small', null, String(dayCount[d])));
+      g.setAttribute('aria-label', (rel ? rel + ', ' : '') + evxDayLabel(d));
+      g.appendChild(h);
+      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b)); });
+      list.appendChild(g);
+    });
+    root.appendChild(list);
+    if (rows.length > shown.length) {
+      var mw = el('div', 'evx-more'); mw.appendChild(UI.button('Show more events (' + (rows.length - shown.length) + ' left)', null, function () { b.lim = lim + EVX_PAGE; drawBoard('event'); }));
+      root.appendChild(mw);
+    }
+    if (items.some(function (x) { return x.sample; })) root.appendChild(el('p', 'cl-note', 'Sample posts show how this page looks. They go away as real ones come in.'));
+    return root;
+  }
   var JOB_BOARDS = [
     ['Indeed: Evansville', 'https://www.indeed.com/jobs?l=Evansville%2C+IN'],
     ['Indeed: Owensboro', 'https://www.indeed.com/jobs?l=Owensboro%2C+KY'],

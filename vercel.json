@@ -31,6 +31,10 @@
       "destination": "/api/listings?__route=catalog"
     },
     {
+      "source": "/api/orders",
+      "destination": "/api/listings?__route=orders"
+    },
+    {
       "source": "/api/subscribe",
       "destination": "/api/unsubscribe?__route=subscribe"
     },

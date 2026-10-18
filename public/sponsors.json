@@ -1,51 +1,13 @@
 {
-  "note": "Edit this file to sell ad spots. 'slots' are one sponsor line at the top of a board (jobs, deals, events, classifieds); the News/All feed has no sponsor line. 'rails' are the tall ads in the left and right margins on wide screens. Each ad: name, text, url (https only), optional cta, and \"sample\": true to label it as a demo (delete sample ads when real sponsors sign). An empty slot shows 'Your business here'.",
+  "note": "Real, signed advertisers only. 'slots' are one sponsor line at the top of a board (jobs, deals, events, classifieds); News/All, Police & courts and Obituaries have no ads. 'rails' are the side ads on wide screens, shown only on the Events, Jobs, Deals and Classifieds tabs. Each ad: name, text, url (https only), optional cta. Every ad is labeled 'Sponsored' and links with rel=\"sponsored\". An empty slot or rail shows the site's own 'Advertise with us' unit, which opens the advertising inquiry form.",
   "slots": {
-    "jobs": {
-      "name": "Sample Staffing Co.",
-      "text": "Hiring 40 warehouse associates this month",
-      "url": "https://example.com/",
-      "sample": true
-    },
-    "deals": {
-      "name": "Sample Pizza Co.",
-      "text": "Every deal on this page can be yours for $19",
-      "url": "https://example.com/",
-      "sample": true
-    },
-    "events": {
-      "name": "Sample Riverfront Brewery",
-      "text": "Live music every Friday",
-      "url": "https://example.com/",
-      "sample": true
-    },
+    "jobs": null,
+    "deals": null,
+    "events": null,
     "classifieds": null
   },
   "rails": {
-    "left": [
-      {
-        "name": "Sample Credit Union",
-        "text": "Auto loans from 5.49% APR. Local people, local decisions.",
-        "cta": "Apply today",
-        "url": "https://example.com/",
-        "sample": true
-      },
-      {
-        "name": "Sample Dental",
-        "text": "New patients welcome. Evansville and Newburgh.",
-        "cta": "Book a visit",
-        "url": "https://example.com/",
-        "sample": true
-      }
-    ],
-    "right": [
-      {
-        "name": "Sample Roofing",
-        "text": "Free storm-damage inspections across the Tri-State.",
-        "cta": "Get a quote",
-        "url": "https://example.com/",
-        "sample": true
-      }
-    ]
+    "left": [],
+    "right": []
   }
 }

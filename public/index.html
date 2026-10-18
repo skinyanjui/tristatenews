@@ -833,7 +833,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
       // Optional Google AdSense unit, used only when sponsors.json has an "adsense" entry and the news slot is open.
       adsense: function (cfg) {
         if (!/^ca-pub-\d+$/.test(cfg.client) || !/^\d+$/.test(cfg.slot)) return null;
-        var w = el('div', 'spon-ad'); w.setAttribute('aria-label', 'Advertisement');
+        var w = el('div', 'spon-ad'); w.setAttribute('aria-label', 'Advertisement'); w.appendChild(el('span', 'spon-tag', 'Advertisement')); // visible label, as the Advertising Policy promises
         var ins = el('ins', 'adsbygoogle'); ins.setAttribute('data-ad-client', cfg.client); ins.setAttribute('data-ad-slot', cfg.slot); ins.setAttribute('data-ad-format', 'auto'); ins.setAttribute('data-full-width-responsive', 'true');
         w.appendChild(ins);
         if (!document.getElementById('adsense-js')) { var sc = document.createElement('script'); sc.id = 'adsense-js'; sc.async = true; sc.crossOrigin = 'anonymous'; sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + cfg.client; document.head.appendChild(sc); }
@@ -2034,7 +2034,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   }
   function card(it, kind, b) {
     var c = kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b);
-    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge('Featured')); }
+    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge(it.sample ? 'Featured \u00B7 Sample' : 'Featured \u00B7 Paid')); } // paid placement is disclosed (FTC); the demo says so
     return c;
   }
   function cardBase(it, kind, b) {

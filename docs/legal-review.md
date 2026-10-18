@@ -124,3 +124,10 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 11. **Advertiser notice of decisions:** the policy says decisions have a recorded reason but doesn't promise to notify the advertiser; nothing emails them automatically today. Decide whether to promise a notice and a turnaround.
 12. **Rights in creatives (lawyer):** the policy makes the advertiser responsible for rights to images, logos and words. Consider an advertiser agreement or an upload checkbox granting Tri-State News a license to display the creative, with an indemnity.
 13. **Takedown standard:** "we can take an approved ad down at any time" — confirm how that interacts with any paid package (refund or make-good when an ad is withdrawn mid-run).
+
+## Ads PR 4.2: placeholder sample ads (Advertising Policy §1 and §5)
+- **§1:** a new bullet: some unsold spots show placeholder sample ads labeled "Sample ad"; the businesses are made up and not real advertisers; each links only to our advertising page; a real approved ad always comes first; samples follow the same placement rules (only the four boards).
+- **§5:** placeholder sample ads are labeled "Sample ad."
+
+### Needs review (ads PR 4.2)
+14. **Made-up businesses (lawyer):** sample ads show invented business names. They were checked against a web search, but a name could still match a real business somewhere in the footprint. The "Sample ad" label and the link to our own page reduce confusion; confirm the wording is enough, and drop any name that turns out to be real.

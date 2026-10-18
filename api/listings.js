@@ -3,7 +3,7 @@
 // Stored in Upstash Redis (same variables as api/react.js). Without it the page shows only links.
 //   GET    /api/listings?img=<id>             -> the listing's photo (JPEG)
 //   GET    /api/listings?kind=item|deal|event|job|obit -> { configured, items: [...] }   newest first
-//   POST   /api/listings  {title,price,town,desc,contact,uid}  -> { ok, item }
+//   POST   /api/listings  {title,price,town,desc,contact,uid,adult:true}  -> { ok, item }   (adult: the poster confirmed 18+)
 //   POST   /api/listings  {action:'report', id, uid}           -> hides a listing after 3 reports
 //   DELETE /api/listings?id=...&uid=...                        -> the poster removes their own listing
 // Set LISTINGS_ADMIN_KEY to remove any listing: DELETE with header x-admin-key.
@@ -154,6 +154,7 @@ async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
+      if (body.adult !== true) return send(400, { error: 'Please confirm you’re 18 or older.', field: 'adult' }); // Terms: posters must be 18+
       const v = validate(body, kind);
       if (v.error) return send(400, { error: v.error, field: v.field });
       const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';

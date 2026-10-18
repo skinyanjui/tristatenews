@@ -61,12 +61,14 @@ test('one card per board view: after the 6th post, at the end of a shorter board
   assert.ok(!/adCard|UI\.sponsor|rail/.test(brk.slice(0, brk.indexOf('\n  function ', 10))), 'no ad in Breaking');
 });
 
-test('no intrusive formats: in the flow (not sticky or fixed), no images, video, iframes or autoplay', () => {
+test('no intrusive formats: in the flow (not sticky or fixed), no video, iframes or autoplay; a still image only through adLink', () => {
   const css = html.split('\n').filter(l => /^\.ad-card/.test(l)).join('\n');
   assert.ok(css.length > 0);
   assert.ok(!/position\s*:\s*(sticky|fixed|absolute)|animation|transition/.test(css), css);
   const start = html.indexOf('      adCard: function (kind) {'), end = html.indexOf('      notice: function (text) {');
   assert.ok(!/'img'|'video'|'iframe'|autoplay|setTimeout|setInterval|window\.open|alert\(/.test(html.slice(start, end)));
+  const ls = html.indexOf('      adLink: function (cls, ad) {'), le = html.indexOf('      // A tall ad for the side margins');
+  assert.ok(/im\.loading = 'lazy'/.test(html.slice(ls, le)) && !/'video'|'iframe'|autoplay/.test(html.slice(ls, le)), 'the one image path is a lazy still image');
   assert.ok(!/autoplay/i.test(html), 'no autoplay anywhere on the page');
 });
 
@@ -93,8 +95,9 @@ function pageCard(cards) {
     return n;
   };
   const start = html.indexOf('      adCard: function (kind) {'), end = html.indexOf('      notice: function (text) {');
+  const ls = html.indexOf('      adLink: function (cls, ad) {'), le = html.indexOf('      // A tall ad for the side margins');
   let opened = 0;
-  const UI = new Function('el', 'openAd', 'SPONSORS', 'window', 'TSNAds', 'return {' + html.slice(start, end).replace(/,\s*$/, '') + '};')(
+  const UI = new Function('el', 'openAd', 'SPONSORS', 'window', 'TSNAds', 'var UI = {' + html.slice(ls, le) + html.slice(start, end).replace(/,\s*$/, '') + '}; return UI;')(
     (t, c, x) => node(t, c, x), () => { opened++; }, { __cards: cards }, { TSNAds: A }, A);
   return { UI, opened: () => opened };
 }
@@ -110,7 +113,7 @@ test('the card: house unit "Advertise with us" (no business, price or number) op
   }
   assert.strictEqual(p.opened(), 4);
   assert.strictEqual(p.UI.adCard('obit'), null);
-  const d = pageCard({ jobs: ad(1, { cta: 'Apply' }) }).UI.adCard('job');
+  const d = pageCard({ jobs: ad(1, { cta: 'Shop now' }) }).UI.adCard('job');
   assert.deepStrictEqual([d.tag, d.href, d.rel, d.target, tagOf(d), d.attrs['aria-label']], ['a', 'https://ad1.test/', 'sponsored noopener noreferrer', '_blank', 'Sponsored', 'Sponsored: Advertiser 1']);
-  assert.ok(d.textContent.includes('Apply'));
+  assert.ok(d.textContent.includes('Shop now'));
 });

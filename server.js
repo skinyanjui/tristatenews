@@ -219,7 +219,7 @@ app.all('/api/advertise', (req, res, next) => { // served by api/inbox.js (see v
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 
-app.all('/api/checkout', (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
+app.all(['/api/checkout', '/api/catalog'], (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 

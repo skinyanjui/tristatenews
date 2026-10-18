@@ -104,6 +104,10 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
           <option>Something else</option>
         </select>
       </label>
+      <div class="two">
+        <label>Package (optional) <select id="package" name="package"><option value="">Not sure yet</option></select></label>
+        <label>Budget per 30 days (optional) <select id="budget" name="budget"><option value="">Rather not say</option></select></label>
+      </div>
       <label>Message <textarea id="message" name="message" maxlength="1500" placeholder="Tell us about your business and what you’d like to promote."></textarea></label>
       <div class="hp" aria-hidden="true"><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
       <p class="err" id="err" role="alert" hidden></p>
@@ -135,8 +139,10 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
   var FEATURED_ORDER = ['item', 'event', 'deal', 'job'];
   var SOON = [['newsletter', 'single', 'Newsletter sponsorship', 'A labeled sponsor message in our email newsletter.'], ['newsletter', 'four', 'Newsletter sponsorship, 4 sends', ''], ['newsletter', 'dedicated', 'Dedicated newsletter email', ''],
     ['addons', 'sponsoredFeature', 'Sponsored feature', 'A labeled sponsored article, kept apart from the news.'], ['addons', 'creative', 'Ad design', 'We make your ad for you.']];
-  function ask(interest, note) {
+  function opt(sel, value, label) { var o = el('option', null, label); o.value = value; $(sel).appendChild(o); }
+  function ask(interest, note, pkg) {
     $('interest').value = interest;
+    if (pkg) $('package').value = pkg;
     if (note && !$('message').value.trim()) $('message').value = note;
     $('contact').scrollIntoView({ behavior: 'smooth' }); $('business').focus({ preventScroll: true });
   }
@@ -157,9 +163,12 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
     });
     ['A', 'B', 'C', 'D'].forEach(function (k) {
       var x = pk[k]; if (!x) return;
-      if (x.status === 'request_proposal') $('packages').appendChild(card(x.label, 'By proposal', '', 'By proposal', PACKAGE_COPY[k], ['Request a proposal', function () { ask('Section sponsorship', 'I’d like a proposal for ' + x.label + '.'); }]));
-      else $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', x.purchasable ? 'Available' : 'Ask us', PACKAGE_COPY[k], ['Ask about ' + x.label, function () { ask('Section sponsorship', 'I’m interested in ' + x.label + '.'); }]));
+      opt('package', k, x.label);
+      if (x.status === 'request_proposal') $('packages').appendChild(card(x.label, 'By proposal', '', 'By proposal', PACKAGE_COPY[k], ['Request a proposal', function () { ask('Section sponsorship', 'I’d like a proposal for ' + x.label + '.', k); }]));
+      else $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', x.purchasable ? 'Available' : 'Ask us', PACKAGE_COPY[k], ['Ask about ' + x.label, function () { ask('Section sponsorship', 'I’m interested in ' + x.label + '.', k); }]));
     });
+    // budget bands come from the catalog too (cut at the package prices)
+    (cat.budgets || []).forEach(function (b) { if (b && b.key && b.label) opt('budget', b.key, b.label); });
     SOON.forEach(function (s) {
       var x = cat[s[0]] && cat[s[0]][s[1]]; if (!x || x.purchasable) return;
       $('soon').appendChild(card(s[2], '', '', 'Coming soon', s[3], null));
@@ -171,7 +180,7 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
   function fail(t, id) { $('err').textContent = t; $('err').hidden = false; if (id && $(id)) $(id).focus(); }
   $('f').addEventListener('submit', function (e) {
     e.preventDefault(); $('err').hidden = true;
-    var v = { business: $('business').value.trim(), name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), interest: $('interest').value, message: $('message').value, website: $('website').value };
+    var v = { business: $('business').value.trim(), name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), interest: $('interest').value, package: $('package').value, budget: $('budget').value, message: $('message').value, website: $('website').value };
     if (v.business.length < 2) return fail('Add your business name.', 'business');
     if (v.name.length < 2) return fail('Add your name.', 'name');
     if (!EMAIL_RE.test(v.email)) return fail('Enter a valid email address.', 'email');

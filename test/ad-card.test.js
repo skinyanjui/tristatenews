@@ -36,7 +36,7 @@ test('rotation is by the Chicago date only: the same ad for every reader that da
   assert.strictEqual(A.fill('event', { events: list }, Date.parse('2026-10-18T05:01:00Z')).ad.name, A.fill('event', { events: list }, Date.parse('2026-10-19T04:59:00Z')).ad.name, 'one Chicago day, one ad');
   assert.strictEqual(A.dayNumber(Date.parse('2026-10-19T04:59:00Z')), A.dayNumber(Date.parse('2026-10-18T05:00:00Z')));
   assert.strictEqual(A.dayNumber(Date.parse('2026-10-19T05:00:00Z')), A.dayNumber(Date.parse('2026-10-18T05:00:00Z')) + 1);
-  assert.strictEqual(A.fill.length, 3, 'fill(kind, cards, now): nothing about the reader goes in');
+  assert.strictEqual(A.fill.length, 4, 'fill(kind, cards, now, samples): site settings and the date; nothing about the reader goes in');
 });
 
 test('never targeted: no cookies, storage, reader signals or randomness in the card code', () => {
@@ -75,7 +75,9 @@ test('no intrusive formats: in the flow (not sticky or fixed), no video, iframes
 test('sponsors.json: one card key per board, no key for a no-ad section; the page reads it', () => {
   assert.deepStrictEqual(Object.keys(sponsors.cards).sort(), ['classifieds', 'deals', 'events', 'jobs']);
   for (const [k, v] of Object.entries(sponsors.cards)) for (const x of (Array.isArray(v) ? v : v ? [v] : [])) assert.ok(A.validAd(x) || (x && typeof x.network === 'string'), k);
-  assert.ok(!/sample|example\.com/i.test(raw));
+  const { samples, ...rest } = sponsors;
+  assert.ok(!/sample|example\.com/i.test(JSON.stringify(rest).replace(/'samples'[^.]*\./, '')), 'outside the samples switch, nothing is a sample');
+  assert.ok(!/example\.com/i.test(raw));
   assert.ok(html.includes('SPONSORS.__cards = d && d.cards ? d.cards : {};'));
   const head = html.slice(0, html.indexOf('</head>'));
   assert.ok(head.includes('<script src="/adslots.js"></script>'));

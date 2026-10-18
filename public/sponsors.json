@@ -1,5 +1,5 @@
 {
-  "note": "The ad layout, for reference only: the page does not read ads from this file. Ads come only from creatives an advertiser submitted and an admin approved in admin.html (api/_creative.js, served at /api/creative?live=1). 'slots' are the sponsor line at the top of a board (jobs, deals, events, classifieds); 'cards' the one in-listing ad card on each of those boards (after the 6th post, or at the end of a shorter board); 'rails' the side ads on wide screens, shown only on the Events, Jobs, Deals and Classifieds tabs. News/All, News, Police & courts, Obituaries and Breaking have no ads. Every ad is labeled 'Sponsored' and links with rel=\"sponsored\". Our own ads are never targeted: no cookies, no reader data. An empty slot, card or right rail shows the site's own 'Advertise with us' unit, which opens the advertising inquiry form. Keep every value here null or empty.",
+  "note": "The ad layout, for reference only: the page does not read ads from this file. Ads come only from creatives an advertiser submitted and an admin approved in admin.html (api/_creative.js, served at /api/creative?live=1). 'slots' are the sponsor line at the top of a board (jobs, deals, events, classifieds); 'cards' the one in-listing ad card on each of those boards (after the 6th post, or at the end of a shorter board); 'rails' the side ads on wide screens, shown only on the Events, Jobs, Deals and Classifieds tabs. News/All, News, Police & courts, Obituaries and Breaking have no ads. Every ad is labeled 'Sponsored' and links with rel=\"sponsored\". Our own ads are never targeted: no cookies, no reader data. An empty slot, card or right rail shows the site's own 'Advertise with us' unit, which opens the advertising inquiry form. Keep every value in slots, cards and rails null or empty. 'samples' is the one switch for placeholder sample ads: with \"on\": true, a spot that has no approved ad shows one of these made-up businesses instead of the plain 'Advertise with us' unit, labeled 'Sample ad' and linking only to /advertise. They are not real advertisers. Set \"on\": false to turn them all off.",
   "slots": {
     "jobs": null,
     "deals": null,
@@ -15,5 +15,42 @@
   "rails": {
     "left": [],
     "right": []
+  },
+  "samples": {
+    "on": true,
+    "ads": [
+      {
+        "name": "Ninebark Bakehouse",
+        "text": "Bread, pies and coffee, baked each morning."
+      },
+      {
+        "name": "Marrow Creek Orchard",
+        "text": "Pick your own apples on fall weekends."
+      },
+      {
+        "name": "Quillfeather Books",
+        "text": "New and used books, and a reading corner for kids."
+      },
+      {
+        "name": "Tinmouth Bicycle Works",
+        "text": "Tune-ups, repairs and kids’ bikes."
+      },
+      {
+        "name": "Wrenfield Tax & Bookkeeping",
+        "text": "Bookkeeping and tax returns for small businesses."
+      },
+      {
+        "name": "Hollis & Vance Plumbing",
+        "text": "Leaks, water heaters and drain cleaning."
+      },
+      {
+        "name": "Larkspur Yard & Garden",
+        "text": "Mulch, plants and garden tools."
+      },
+      {
+        "name": "Old Gravel Road Antiques",
+        "text": "Furniture, glassware and local finds."
+      }
+    ]
   }
 }

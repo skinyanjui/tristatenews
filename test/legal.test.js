@@ -59,8 +59,8 @@ test('Advertising Policy: ad spots, house units, no targeting, ad-free sections,
   assert.deepStrictEqual(toc, heads);
 });
 
-test('no sample text; placeholders only Sam or a lawyer can fill are still there', () => {
-  assert.ok(!/sample/i.test(legal));
+test('no sample text except the labeled placeholder sample ads; placeholders only Sam or a lawyer can fill are still there', () => {
+  assert.ok(!/sample/i.test(legal.replace(/placeholder sample ads?|“Sample ad\.?”|samples follow/gi, '')));
   for (const ph of ['[LEGAL ENTITY NAME]', '[MAILING ADDRESS]', '[DMCA AGENT NAME]', '[DMCA AGENT EMAIL]', '[COUNTY]']) assert.ok(legal.includes(ph), ph);
 });
 

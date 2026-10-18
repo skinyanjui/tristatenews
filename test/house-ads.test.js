@@ -1,4 +1,5 @@
-// Ads PR 3: no fictional advertisers or sample posts anywhere on the site. Open ad spots show the site's own
+// Ads PR 3: no fictional advertisers or sample posts anywhere on the site, except the placeholder sample ads (ads PR
+// 4.2, test/sample-ads.test.js), which are labeled "Sample ad" and live only in sponsors.json "samples". Open ad spots show the site's own
 // "Advertise with us" unit; real ads are labeled "Sponsored" and linked rel="sponsored"; News/All, News,
 // Police & courts and Obituaries carry no ads at all.
 const test = require('node:test');
@@ -10,13 +11,16 @@ const A = require('../public/adslots.js');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const html = read('public/index.html'), legal = read('public/legal.html'), raw = read('public/sponsors.json');
 const sponsors = JSON.parse(raw);
+// Everything but the labeled sample-ad switch and its code, which test/sample-ads.test.js checks on its own.
+const rawNoSamples = JSON.stringify(Object.assign({}, sponsors, { samples: undefined, note: sponsors.note.replace(/ 'samples' is the one switch[\s\S]*$/, '') }));
+const htmlNoSamples = html.replace(/\/\/ [^\n]*/g, '').replace(/Sample ad|sampleAd|UI\.sample|TSNAds\.sample|__samples|sj\.samples|ad-sample|A sample, not a real business|f\.type === 'sample'|      sample: function \(offset\)/g, '');
 
 // Words and claims that only ever came from made-up demo content. If any comes back, this fails.
 const FICTION = [/\bsample\b/i, /example\.(com|org|net)/i, /5\.49\s*%/, /\bAPR\b/, /lorem ipsum/i, /\bdemo (ad|post|listing)s?\b/i, /\bplaceholder (ad|business|sponsor)s?\b/i,
   /Staffing Co\.|Pizza Co\.|Riverfront Brewery|Credit Union|Roofing|Dental|Auto Care|Boutique|Coffee Shop|Heating & Air|Care Center|School District|Freight|Distribution|Hardware|Cinema|Salon|Diner/];
 
 test('sponsors.json: no sample or made-up advertiser, only real-ad fields, no slot on a no-ad section', () => {
-  for (const re of FICTION) assert.ok(!re.test(raw), 'sponsors.json matches ' + re);
+  for (const re of FICTION) assert.ok(!re.test(rawNoSamples), 'sponsors.json matches ' + re);
   assert.deepStrictEqual(Object.keys(sponsors.slots).sort(), ['classifieds', 'deals', 'events', 'jobs']);
   assert.deepStrictEqual(Object.keys(sponsors.rails).sort(), ['left', 'right']);
   const ads = Object.values(sponsors.slots).filter(Boolean).concat(sponsors.rails.left, sponsors.rails.right);
@@ -27,14 +31,15 @@ test('sponsors.json: no sample or made-up advertiser, only real-ad fields, no sl
 });
 
 test('index.html: no sample posts, sample businesses, sample labels or made-up offers', () => {
-  for (const re of FICTION) assert.ok(!re.test(html), 'index.html matches ' + re);
-  assert.ok(!/SAMPLE_|\.samples\b|it\.sample|sp\.sample|ad\.sample/.test(html));
+  for (const re of FICTION) assert.ok(!re.test(htmlNoSamples), 'index.html matches ' + re);
+  assert.ok(!/SAMPLE_|\.samples\b|it\.sample|sp\.sample|ad\.sample/.test(htmlNoSamples));
   assert.ok(!html.includes('Featured \\u00B7 Sample') && !html.includes('Featured · Sample'));
   assert.ok(!/Hiring 40|for \$19|\$6 tickets|\$20 off/.test(html), 'no invented claims');
 });
 
-test('legal.html no longer describes sample ads or sample Featured posts, and describes the house unit', () => {
-  assert.ok(!/sample/i.test(legal));
+test('legal.html: no sample Featured posts; the only samples it describes are the labeled placeholder sample ads; it describes the house unit', () => {
+  assert.deepStrictEqual([...legal.matchAll(/[^.>]*\bsamples?\b[^.<]*/gi)].length, 4, 'one bullet and one label sentence about placeholder sample ads');
+  assert.ok(!/sample (featured|post|business|advertiser)/i.test(legal) && !/Featured · Sample/.test(legal));
   assert.ok(/“Advertise with us,?”/.test(legal));
   assert.ok(legal.includes('“Featured · Paid”'));
 });

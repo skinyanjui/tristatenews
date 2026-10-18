@@ -265,7 +265,8 @@ test('routing: /api/creative is a rewrite to inbox.js (no new function), local s
 test('the page fills ads only from approved creatives; images are still, lazy and described; tel links stay in the tab', () => {
   const html = read('public/index.html'), sponsors = JSON.parse(read('public/sponsors.json'));
   assert.ok(html.includes("fetch('/api/creative?live=1')"));
-  assert.ok(!html.includes("fetch('/sponsors.json'"), 'ads typed into sponsors.json are never shown');
+  assert.ok(html.includes("SPONSORS.__samples = sj && sj.samples ? sj.samples : null;"), 'from sponsors.json the page takes only the sample switch');
+  assert.deepStrictEqual([...html.matchAll(/\bsj\.([a-z_]+)/g)].map(m => m[1]), ['samples', 'samples'], 'ads typed into sponsors.json are never shown');
   const vals = [].concat(Object.values(sponsors.slots), Object.values(sponsors.cards), sponsors.rails.left, sponsors.rails.right);
   assert.ok(vals.every(v => v === null), 'sponsors.json holds no ads');
   for (const bad of [{ name: 'X', url: 'https://x.test/', img: 'https://evil.test/a.png' }, { name: 'X', url: 'https://x.test/', img: '/api/creative?img=../a' }, { name: 'X', url: 'https://x.test/', cta: 'Apply' },

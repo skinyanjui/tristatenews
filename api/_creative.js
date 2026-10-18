@@ -177,7 +177,9 @@ async function access(b, now) {
     const g = await pipeline([['LRANGE', 'tsn:ads', '0', '299']]);
     const email = String(b.email).trim().toLowerCase(), want = ref.toUpperCase();
     const hit = ((g[0] && g[0].result) || []).map(parse).some(x => x && x.ref === want && String(x.email || '').toLowerCase() === email);
-    return hit ? { ref: want, refType: 'inquiry' } : null;
+    if (!hit) return null;
+    const lead = parse(((await pipeline([['GET', 'tsn:lead:' + want]]))[0] || {}).result); // api/_leads.js
+    return lead && lead.status === 'spam' ? null : { ref: want, refType: 'inquiry' }; // an inquiry marked spam can't upload
   }
   return null;
 }

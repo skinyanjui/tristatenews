@@ -134,7 +134,11 @@ test('inquiry form: posts to /api/advertise and shows the AD- reference; the pac
   nodes.f.listeners.submit({ preventDefault() {} });
   for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
   assert.strictEqual(posts.length, 1);
-  assert.deepStrictEqual(Object.keys(posts[0]).sort(), ['business', 'email', 'interest', 'message', 'name', 'phone', 'website']);
+  assert.deepStrictEqual(Object.keys(posts[0]).sort(), ['budget', 'business', 'email', 'interest', 'message', 'name', 'package', 'phone', 'website']);
+  assert.strictEqual(posts[0].package, 'B', 'the package button picks the package too');
+  // ads PR 4.2: package and budget choices come from the catalog
+  assert.deepStrictEqual(nodes.package.children.map(o => [o.value, o.textContent]), ['A', 'B', 'C', 'D'].map(k => [k, C.PACKAGES[k].label]));
+  assert.deepStrictEqual(nodes.budget.children.map(o => [o.value, o.textContent]), C.budgetBands().map(b => [b.key, b.label]));
   assert.deepStrictEqual([nodes.f.hidden, nodes.done.hidden, nodes.ref.textContent], [true, false, 'AD-TEST01AB']);
   const bad = await render(false);
   Object.assign(bad.nodes.business, { value: 'Shop' }); Object.assign(bad.nodes.name, { value: 'Pat' }); Object.assign(bad.nodes.email, { value: 'nope' });

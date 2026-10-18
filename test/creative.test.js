@@ -299,3 +299,13 @@ test('creative.html and admin.html: the upload form and the review screen', () =
   assert.ok(admin.includes('URL.createObjectURL(b)'), 'pending images load with the key, never by public URL');
   assert.ok(admin.includes('Creative review log'));
 });
+
+test('ads PR 4.2: an inquiry marked spam in the lead inbox can no longer be used to upload', () => withStore(ENV, async ({ s, call }) => {
+  seedInquiry(s);
+  s.kv.set('tsn:lead:' + INQ.ref, JSON.stringify({ ref: INQ.ref, status: 'spam', notes: [], history: [] }));
+  const r = await call('POST', { body: good() });
+  assert.strictEqual(r.status, 403);
+  assert.ok(![...s.kv.keys()].some(k => k.startsWith('tsn:cr:') && !k.startsWith('tsn:cr:rl:')), 'nothing written');
+  s.kv.set('tsn:lead:' + INQ.ref, JSON.stringify({ ref: INQ.ref, status: 'lost', notes: [], history: [] }));
+  assert.strictEqual((await call('POST', { body: good() })).status, 200, 'any other status still can');
+}));

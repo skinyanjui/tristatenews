@@ -54,6 +54,21 @@ const HISTORY = {
   legacy: { featured: { job: { cents: 2900, days: 30 }, deal: { cents: 1900, days: 14 }, event: { cents: 1500, days: 7 }, item: { cents: 500, days: 7 } } },
 };
 
+// Budget bands for the advertising inquiry form (per 30 days), cut at the package prices so no amount is typed in
+// twice. The form sends the key; api/_advertise.js accepts only these keys.
+const dollars = c => '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 });
+function budgetBands() {
+  const [a, b, c, d] = ['A', 'B', 'C', 'D'].map(k => PACKAGES[k].cents);
+  return [
+    { key: 'under_a', label: 'Under ' + dollars(a) },
+    { key: 'a_b', label: dollars(a) + ' to ' + dollars(b) },
+    { key: 'b_c', label: dollars(b) + ' to ' + dollars(c) },
+    { key: 'c_d', label: dollars(c) + ' to ' + dollars(d) },
+    { key: 'd_up', label: dollars(d) + ' or more' },
+    { key: 'unsure', label: 'Not sure yet' },
+  ];
+}
+
 const purchasable = status => status === 'available';
 const withFlags = o => Object.assign({}, o, { purchasable: purchasable(o.status) });
 const freeze = o => { Object.values(o).forEach(v => { if (v && typeof v === 'object') freeze(v); }); return Object.freeze(o); };
@@ -111,6 +126,7 @@ function publicCatalog(checkoutConfigured) {
     newsletter: map(NEWSLETTER, v => withFlags(v)),
     newsletterGate: { minVerifiedSubscribers: NEWSLETTER_MIN_VERIFIED, gates: NEWSLETTER_GATES.slice() },
     addons: map(ADDONS, v => withFlags(v)),
+    budgets: budgetBands(),
   };
 }
 
@@ -125,5 +141,5 @@ module.exports = handler;
 Object.assign(module.exports, {
   PRICE_VERSION, CURRENCY, FEATURED: freeze(FEATURED), PACKAGES: freeze(PACKAGES), NEWSLETTER: freeze(NEWSLETTER), ADDONS: freeze(ADDONS),
   HISTORY: freeze(HISTORY), NEWSLETTER_MIN_VERIFIED, CREATIVE_WAIVER_MIN_CENTS,
-  featuredPrice, featuredPriceAt, packageEligibility, creativeCents, newsletterEligibility, publicCatalog,
+  featuredPrice, featuredPriceAt, packageEligibility, creativeCents, newsletterEligibility, publicCatalog, budgetBands,
 });

@@ -149,3 +149,11 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 
 ### Needs review (ads PR 4.3.1)
 18. **An unpaid link to one commercial florist:** a plain link to one service on every obituary, before any agreement with it. Confirm Sam is comfortable sending readers there unpaid, and that the policy wording ("an online flower-delivery service", unnamed) is enough until the service is named (item 15).
+
+## Ads PR 4.2: advertiser lead statuses (Privacy §2 table, Advertising Policy §7)
+- **Privacy, advertising inquiries row:** adds the optional package and budget, and our own status (new, contacted, proposal sent, won, lost or spam), notes and change record; purpose "to answer you and keep track of where we are with your inquiry"; retention: status, notes and change record 400 days after the last change, change log the latest 1,000 changes.
+- **Advertising §7:** an inquiry marked as spam doesn't count as an upload reference.
+
+### Needs review (ads PR 4.2)
+19. **Notes about people:** admin notes are free text about a business contact. Keep them factual; confirm the 400-day retention, and whether won leads should move to a longer business record instead (they then become customers; see item 9 on order records).
+20. **Spam marking:** marking an inquiry spam blocks its upload reference but doesn't delete it; it ages out of the 300-inquiry list like any other. Confirm that's enough or whether spam should be deleted sooner.

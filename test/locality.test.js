@@ -154,5 +154,6 @@ test('inCore30 uses the 30-county core and is not wired into any route', () => {
   assert.equal(inCore30({ title: 'Jackson, Mo., man' }, null), false, 'Missouri is never core');
   assert.equal(inCore30({ title: 'Sentenced', summary: 'of Owensboro' }, 'ky'), true);
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'api', 'news.js'), 'utf8');
-  assert.ok(!/inCore30|locate\(|_geo/.test(src), 'news.js still uses inTriState only');
+  assert.ok(!/inCore30|locate\(|_geo\.js/.test(src), 'news.js still uses inTriState only');
+  assert.ok(!/inCore30|locate\(|_places/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'api', '_geoapi.js'), 'utf8')), 'the geography API does not filter news');
 });

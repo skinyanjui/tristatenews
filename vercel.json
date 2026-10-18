@@ -39,6 +39,14 @@
       "destination": "/api/inbox?__route=advertise"
     },
     {
+      "source": "/api/counties",
+      "destination": "/api/news?__route=counties"
+    },
+    {
+      "source": "/api/regions",
+      "destination": "/api/news?__route=regions"
+    },
+    {
       "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)",
       "destination": "/index.html"
     }

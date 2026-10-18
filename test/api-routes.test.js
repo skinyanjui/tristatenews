@@ -36,9 +36,15 @@ test('vercel.json: every old /api path is a function or a rewrite to the host th
     }
   }
   for (const f of Object.keys(vercel.functions || {})) assert.ok(fs.existsSync(path.join(root, f)) && !path.basename(f).startsWith('_'), f);
-  // no rewrite captures any other /api path, the Stripe webhook or a static page
+  // no rewrite captures any other /api path, the Stripe webhook or a static page. PR 2.3 adds two new read-only
+  // paths hosted by news.js (test/geo-api.test.js covers them).
+  const ADDED = { counties: 'news', regions: 'news' };
+  for (const [p, h] of Object.entries(ADDED)) {
+    assert.deepEqual(vercel.rewrites.filter(r => r.source === '/api/' + p).map(r => r.destination), ['/api/' + h + '?__route=' + p], p);
+    assert.ok(!fns.includes(p), p + ' is not a function of its own');
+  }
   const apiRw = vercel.rewrites.filter(r => r.source.startsWith('/api/'));
-  assert.deepEqual(apiRw.map(r => r.source).sort(), Object.keys(MOVED).map(p => '/api/' + p).sort());
+  assert.deepEqual(apiRw.map(r => r.source).sort(), Object.keys(MOVED).concat(Object.keys(ADDED)).map(p => '/api/' + p).sort());
 });
 
 test('maxDuration still covers the routes it covered before', () => {

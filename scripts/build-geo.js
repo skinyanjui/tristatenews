@@ -165,6 +165,25 @@ function build() {
   const groups = manifest.groups.map(g => ({ id: g.id, name: g.name, kind: g.kind, ...(g.parent ? { parent: g.parent } : {}) }));
   const memberOf = id => manifest.members.filter(m => m.countyId === id).map(m => m.groupId);
   const countyRows = manifest.counties.map(c => ({ id: c.id, state: c.state, name: c.name, fips: c.fips, tier: c.tier, seat: c.seat.name, lat: c.centroid.lat, lon: c.centroid.lon, groups: memberOf(c.id) }));
+  // Registry detail for the read-only /api/counties and /api/regions (api/_geoapi.js).
+  const registryGroups = manifest.groups.map(g => ({
+    id: g.id, name: g.name, kind: g.kind, parent: g.parent || null, overlapping: !!g.overlapping,
+    ...(g.membershipStatus ? { membershipStatus: g.membershipStatus } : {}), description: g.description,
+    ...(g.hubCountyIds ? { hubCountyIds: g.hubCountyIds } : {}),
+    members: manifest.members.filter(m => m.groupId === g.id).map(m => ({ countyId: m.countyId, type: m.membershipType })),
+  }));
+  const registryCounties = manifest.counties.map(c => ({
+    id: c.id, state: c.state, name: c.name, fullName: c.fullName, fips: c.fips, tier: c.tier,
+    seat: { name: c.seat.name, source: c.seat.source }, internalPoint: { lat: c.centroid.lat, lon: c.centroid.lon, kind: c.centroid.kind, source: c.centroid.source },
+    memberships: manifest.members.filter(m => m.countyId === c.id).map(m => ({ groupId: m.groupId, type: m.membershipType })),
+  }));
+  const usedSources = new Set(['census-gazetteer-2025', 'census-county-adjacency-2025', 'editorial-regions-2026-10']
+    .concat(manifest.counties.flatMap(c => [c.seat.source, c.centroid.source])));
+  const registrySources = Object.fromEntries([...usedSources].sort().map(id => {
+    const x = manifest.sources[id];
+    if (!x) throw new Error('unknown source ' + id);
+    return [id, Object.fromEntries(['publisher', 'title', 'url', 'vintage', 'retrieved'].filter(k => x[k]).map(k => [k, x[k]]))];
+  }));
   const lines = (arr) => '[\n' + arr.map(x => '  ' + JSON.stringify(x)).join(',\n') + '\n]';
 
   const communitiesJson = JSON.stringify({
@@ -194,6 +213,11 @@ function build() {
     '  states: ' + JSON.stringify(Object.fromEntries(states.map(s => [s.postal, s.name]))) + ',\n' +
     '  groups: ' + lines(groups).replace(/\n/g, '\n  ') + ',\n' +
     '  counties: ' + lines(countyRows).replace(/\n/g, '\n  ') + ',\n' +
+    '  registry: {\n' +
+    '    groups: ' + lines(registryGroups).replace(/\n/g, '\n    ') + ',\n' +
+    '    counties: ' + lines(registryCounties).replace(/\n/g, '\n    ') + ',\n' +
+    '    sources: ' + JSON.stringify(registrySources, null, 2).replace(/\n/g, '\n    ') + ',\n' +
+    '  },\n' +
     '  aliases: ' + lines(aliases.map(a => ({ alias: a.alias, forms: a.forms, refs: a.refs.map(r => ({ type: r.type, id: r.id, state: r.state, countyIds: r.countyIds })), ambiguous: a.ambiguous, requiresState: a.requiresState, reasons: a.reasons }))).replace(/\n/g, '\n  ') + ',\n' +
     '};\n';
   const regionIds = new Set(groups.filter(g => /^editorial_(sub)?region$/.test(g.kind)).map(g => g.id));

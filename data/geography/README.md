@@ -1,8 +1,9 @@
 # Geography manifest
 
 Reviewed, version-controlled county data for the 68-county expansion (plan PR 2.1), and the locality and alias
-tables generated from it (PR 2.2). This folder is not served (the site only serves `public/`). No route uses the
-new lookups yet; the `/api/counties` and `/api/regions` endpoints come in PR 2.3.
+tables generated from it (PR 2.2). This folder is not served (the site only serves `public/`). The read-only
+`/api/counties` and `/api/regions` (PR 2.3) answer from the generated `api/_geo.js`; no route uses the locality
+lookups yet.
 
 | File | What it holds |
 | --- | --- |
@@ -107,3 +108,20 @@ their internal point from the Census Geocoder; for those `countyIdsComplete` is 
 - `requiresState` when the name is ambiguous or has namesakes elsewhere (Henderson, Carbondale). These resolve with
   a qualifier, or bare in a feed from the candidate's state. A `distinctive` entry in `alias-review.json` can lift
   `requiresState` (Evansville, Paducah) but can never lift `ambiguous`; the build fails if one tries.
+
+## Read-only API
+
+`/api/counties` and `/api/regions` are served by `api/news.js` (vercel.json rewrites them to
+`/api/news?__route=counties|regions`; the handlers are in `api/_geoapi.js`), so the function count stays at 8. They
+answer GET and HEAD only (405 otherwise), read nothing but `api/_geo.js`, never touch Redis or the network, and are
+cacheable: `Cache-Control: public, max-age=300, s-maxage=86400, stale-while-revalidate=604800` plus a strong ETag
+(`If-None-Match` gets 304). They are not behind a flag: they change nothing a reader sees and no page calls them yet.
+
+| Request | Answer |
+| --- | --- |
+| `GET /api/counties` | All 68 counties: id, state, name, fullName, FIPS, tier, `historicTriState`, seat (with source id), Census internal point, `regions {primary, secondary[], subregion}`; plus `tiers` and `sources` |
+| `?state=IL\|IN\|KY\|MO`, `?tier=tri_state_core\|extended`, `?region=<id>`, `?id=<id>[,<id>]` | Filters, combinable. A region filter includes secondary members and accepts subregions (`southern-illinois:east`). Unknown values: 400 with `allowed`; unknown ids: 404 |
+| `GET /api/regions` | The 7 regions and 2 Southern Illinois subregions: name, kind, parent, hub, states, `counties {primary[], secondary[]}`, subregions |
+| `GET /api/regions?id=<id>` | One region or subregion (404 if unknown) |
+
+Missouri counties are `extended`, `historicTriState: false`, and nothing in their entries says Tri-State.

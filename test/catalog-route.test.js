@@ -67,7 +67,8 @@ test('the page reads prices from /api/catalog and shows price and duration befor
   const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
   assert.ok(html.includes("fetch('/api/catalog')"));
   assert.ok(!/fetch\('\/api\/checkout', \{ cache/.test(html), 'prices no longer come from GET /api/checkout');
-  assert.ok(html.includes("'Feature for ' + pr.days + ' days · ' + money(pr.cents)"));
+  assert.ok(html.includes("var period = fw.capped ? 'until ' + TSNFeatured.dayLabel(fw.until) : 'for ' + pr.days + ' days';"));
+  assert.ok(html.includes("UI.button('Feature ' + period + ' · ' + money(pr.cents)"));
   assert.ok(html.includes("['item', 'Featured classified']"));
   for (const old of ['$29/30', '2900', '1500, days']) assert.ok(!html.includes(old), old);
   // the money() formatter, extracted and run

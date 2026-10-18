@@ -24,6 +24,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tri-State News","url":"https://tristatenewss.vercel.app/","description":"Local news aggregator for the Evansville IN-KY-IL tri-state."}</script>
 <script src="/breaking.js"></script>
 <script src="/routes.js"></script>
+<script src="/featured.js"></script>
 <script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1845,14 +1846,18 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     });
     foot.appendChild(act);
     var pr = PAY.prices[kind];
-    if (mine && PAY.configured && pr && !it.featured) {
-      var ft = UI.button('Feature for ' + pr.days + ' days · ' + money(pr.cents), 'cl-link cl-feature', function () {
+    // The period the server will sell (public/featured.js, shared with checkout): "for N days", or "until <day>" for an
+    // event or a deal with an end date; no button when less than a day would remain.
+    var fw = pr && window.TSNFeatured ? TSNFeatured.window({ kind: kind, date: it.date, ends: it.ends }, pr.days, Date.now()) : null;
+    if (mine && PAY.configured && pr && !it.featured && fw && fw.ok) {
+      var period = fw.capped ? 'until ' + TSNFeatured.dayLabel(fw.until) : 'for ' + pr.days + ' days';
+      var ft = UI.button('Feature ' + period + ' · ' + money(pr.cents), 'cl-link cl-feature', function () {
         ft.disabled = true; ft.textContent = 'Opening checkout…';
         fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: it.id, kind: kind, uid: uid }) })
           .then(function (r) { return r.json(); }).then(function (d) { if (d && d.url) location.href = d.url; else { ft.disabled = false; ft.textContent = (d && d.error) || 'Try again'; } })
           .catch(function () { ft.disabled = false; ft.textContent = 'Try again'; });
       });
-      ft.setAttribute('aria-label', 'Feature this post for ' + pr.days + ' days, ' + money(pr.cents));
+      ft.setAttribute('aria-label', 'Feature this post ' + period + ', ' + money(pr.cents));
       foot.appendChild(ft);
     }
   }

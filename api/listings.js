@@ -10,6 +10,7 @@
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const { same } = require('./_safe.js');
+const { removalCmds } = require('./_orders.js'); // a post removed while Featured leaves an order record (never silent)
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
 const ID_RE = /^[a-z0-9]{6,20}$/;
@@ -148,7 +149,11 @@ async function handler(req, res) {
       if (!ID_RE.test(String(body.id)) || !UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
       const rip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || body.uid;
       const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, rip], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
-      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) await pipeline([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id], ['ZREM', 'tsn:ob:index', body.id]]);
+      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) {
+        const g = await pipeline([['GET', rec(body.id)]]);
+        let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
+        await pipeline(removalCmds(body.id, o, 'reports', now).concat([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id], ['ZREM', 'tsn:ob:index', body.id]]));
+      }
       return send(200, { ok: true });
     }
 
@@ -174,13 +179,11 @@ async function handler(req, res) {
       const id = String((req.query && req.query.id) || ''), uid = String((req.query && req.query.uid) || '');
       if (!ID_RE.test(id)) return send(400, { error: 'bad request' });
       const admin = ADMIN && same(req.headers['x-admin-key'], ADMIN);
-      if (!admin) {
-        if (!UID_RE.test(uid)) return send(400, { error: 'bad request' });
-        const g = await pipeline([['GET', rec(id)]]);
-        let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
-        if (!o || o.uid !== uid) return send(403, { error: 'not yours' });
-      }
-      await pipeline([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id], ['ZREM', 'tsn:ob:index', id]]);
+      if (!admin && !UID_RE.test(uid)) return send(400, { error: 'bad request' });
+      const g = await pipeline([['GET', rec(id)]]);
+      let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
+      if (!admin && (!o || o.uid !== uid)) return send(403, { error: 'not yours' });
+      await pipeline(removalCmds(id, o, admin ? 'admin' : 'poster', now).concat([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id], ['ZREM', 'tsn:ob:index', id]]));
       return send(200, { ok: true });
     }
     return send(405, { error: 'method' });
@@ -190,10 +193,11 @@ async function handler(req, res) {
   }
 }
 
-// /api/checkout (Featured payments for these posts) and /api/catalog (the read-only price list, api/_catalog.js) are
-// served by this function too: vercel.json rewrites them to /api/listings?__route=checkout and ?__route=catalog.
-// Every other request is the listings handler.
-module.exports = require('./_dispatch.js').host({ checkout: () => require('./_checkout.js'), catalog: () => require('./_catalog.js') }, handler);
+// /api/checkout (Featured payments for these posts), /api/catalog (the read-only price list, api/_catalog.js) and
+// /api/orders (the admin's read-only order list, api/_orders.js) are served by this function too: vercel.json rewrites
+// them to /api/listings?__route=checkout, ?__route=catalog and ?__route=orders. Every other request is the listings
+// handler.
+module.exports = require('./_dispatch.js').host({ checkout: () => require('./_checkout.js'), catalog: () => require('./_catalog.js'), orders: () => require('./_orders.js') }, handler);
 module.exports.validate = validate;
 module.exports.goodImage = goodImage;
 module.exports.indexTtl = indexTtl;

@@ -30,14 +30,16 @@ const PACKAGES = {
   D: { label: 'Package D', cents: 249900, days: 30, status: 'request_proposal' },
 };
 
-// Newsletter sponsorship stays off sale until the list has NEWSLETTER_MIN_VERIFIED verified (confirmed) subscribers
-// and every other gate in NEWSLETTER_GATES is met. The list has 0 verified subscribers today (there is no
-// confirmation step yet), so these are priced but not purchasable.
+// Newsletter sponsorship stays off sale until every gate in NEWSLETTER_GATES is met: NEWSLETTER_MIN_VERIFIED verified
+// (confirmed) subscribers, measured deliverability, defined inventory (which issues carry how many sponsor slots),
+// and Sam's approval. The list has 0 verified subscribers today (there is no confirmation step yet), so these are
+// priced but not purchasable. A dedicated email is quoted per advertiser (no list price).
 const NEWSLETTER_MIN_VERIFIED = 1500;
-const NEWSLETTER_GATES = ['verified_subscribers', 'sponsor_slot_built', 'approved'];
+const NEWSLETTER_GATES = ['verified_subscribers', 'measured_deliverability', 'defined_inventory', 'approved'];
 const NEWSLETTER = {
   single: { label: 'Newsletter sponsorship, 1 send', cents: 19900, sends: 1, status: 'not_available' },
   four: { label: 'Newsletter sponsorship, 4 sends', cents: 69900, sends: 4, status: 'not_available' },
+  dedicated: { label: 'Dedicated newsletter email', sends: 1, status: 'request_proposal' },
 };
 
 // Creative ($99) is waived with a package of CREATIVE_WAIVER_MIN_CENTS ($599) or more.
@@ -63,6 +65,14 @@ function featuredPrice(kind) {
   return { kind, label: p.label, cents: p.cents, days: p.days, priceVersion: PRICE_VERSION };
 }
 
+// The Featured price recorded for a price version (the current one, or one kept in HISTORY), or null. The webhook
+// checks a payment against this, so an order keeps the price it was sold at after the table changes.
+function featuredPriceAt(version, kind) {
+  const table = version === PRICE_VERSION ? FEATURED : (Object.prototype.hasOwnProperty.call(HISTORY, version) ? HISTORY[version].featured : null);
+  if (!table || !Object.prototype.hasOwnProperty.call(table, kind)) return null;
+  return { kind, cents: table[kind].cents, days: table[kind].days, priceVersion: version };
+}
+
 // Can this package be bought online? (D never; A–C not until self-serve package checkout ships.)
 function packageEligibility(id) {
   const p = Object.prototype.hasOwnProperty.call(PACKAGES, id) ? PACKAGES[id] : null;
@@ -78,12 +88,14 @@ function creativeCents(packageId) {
   return p && p.cents >= CREATIVE_WAIVER_MIN_CENTS ? 0 : ADDONS.creative.cents;
 }
 
-// Newsletter gates. facts: { verifiedSubscribers, sponsorSlotBuilt, approved }. Missing facts count as not met.
+// Newsletter gates. facts: { verifiedSubscribers, deliverabilityMeasured, inventoryDefined, approved }. Missing facts
+// count as not met.
 function newsletterEligibility(facts) {
   facts = facts || {};
   const unmet = [];
   if (!(Number(facts.verifiedSubscribers) >= NEWSLETTER_MIN_VERIFIED)) unmet.push('verified_subscribers');
-  if (facts.sponsorSlotBuilt !== true) unmet.push('sponsor_slot_built');
+  if (facts.deliverabilityMeasured !== true) unmet.push('measured_deliverability');
+  if (facts.inventoryDefined !== true) unmet.push('defined_inventory');
   if (facts.approved !== true) unmet.push('approved');
   return { ok: unmet.length === 0, unmet, minVerified: NEWSLETTER_MIN_VERIFIED };
 }
@@ -113,5 +125,5 @@ module.exports = handler;
 Object.assign(module.exports, {
   PRICE_VERSION, CURRENCY, FEATURED: freeze(FEATURED), PACKAGES: freeze(PACKAGES), NEWSLETTER: freeze(NEWSLETTER), ADDONS: freeze(ADDONS),
   HISTORY: freeze(HISTORY), NEWSLETTER_MIN_VERIFIED, CREATIVE_WAIVER_MIN_CENTS,
-  featuredPrice, packageEligibility, creativeCents, newsletterEligibility, publicCatalog,
+  featuredPrice, featuredPriceAt, packageEligibility, creativeCents, newsletterEligibility, publicCatalog,
 });

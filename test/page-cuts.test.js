@@ -16,11 +16,13 @@ test('the page script still parses', () => {
   scripts.forEach(src => assert.doesNotThrow(() => new Function(src)));
 });
 
-test('no sponsor line on News/All and no sample news sponsor', () => {
+test('no sponsor line on News/All; Events keeps its sponsor line and side ads (house units while unsold)', () => {
   assert.ok(!/sp-news/.test(html));
   assert.ok(!/UI\.sponsor\('news'/.test(html));
   assert.ok(!('news' in sponsors.slots));
-  assert.ok(sponsors.slots.events && sponsors.rails.left.length, 'Events sponsor bar and side rails stay');
+  assert.ok('events' in sponsors.slots && Array.isArray(sponsors.rails.left) && Array.isArray(sponsors.rails.right));
+  assert.ok(html.includes("UI.sponsor('events', true)"), 'Events sponsor line, with a house unit when open');
+  assert.ok(/var AD_TABS = \['events', 'jobs', 'deals', 'classifieds'\]/.test(html), 'side ads on Events');
 });
 
 test('news cards have no web-address line; tabs have no counts', () => {

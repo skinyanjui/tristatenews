@@ -361,7 +361,6 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .cl-prev { display:flex; align-items:center; gap:12px; }
 .cl-prev img { width:96px; height:72px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--border); }
 .cl-foot .bav { width:20px; height:20px; font-size:9px; }
-.cl-dim { color:var(--text-muted); font-weight:400; }
 .cl-list { display:grid; gap:12px; }
 .cl-item { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; display:grid; }
 .cl-top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
@@ -537,8 +536,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev.ev-plain .ev-title { padding-right:0; }
 /* ===== Events tab, Bandsintown-style layout: location header, date chips, featured/popular row, date-grouped rows.
    Uses the site's tokens, card radius, buttons, chips, pills and the shared heart/share family. ===== */
-/* Advertising policy: no sponsor bar and no side ads on Police & courts or Obituaries (News/All has no sponsor bar at all) */
-body:has(#tabs [data-cat="safety"][aria-selected="true"]) .rail, body:has(#tabs [data-cat="obits"][aria-selected="true"]) .rail { display:none !important; }
+/* Advertising policy: side ads only on the Events, Jobs, Deals and Classifieds tabs (never on News/All, News,
+   Police & courts or Obituaries). render() sets body[data-ads] on those tabs; without it the margins stay empty. */
+body:not([data-ads]) .rail { display:none !important; }
 .evx { gap:16px; min-width:0; }
 .evx-head { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; }
 .evx-ht { display:flex; min-width:0; }
@@ -585,7 +585,6 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evx-tile .evx-wd { font-size:12px; line-height:16px; font-weight:500; color:var(--text-muted); }
 .evc .evx-tile { border-right:0; }
 .evx-paid { display:inline-flex; align-items:center; align-self:flex-start; height:20px; padding:0 6px; border-radius:var(--radius-sm); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:600; white-space:nowrap; }
-.evx-paid.is-sample { background:var(--gray-200); color:var(--text-muted); }
 /* date groups and rows */
 .evx-day { display:grid; gap:10px; min-width:0; }
 .evx-day h3 { position:sticky; top:calc(env(safe-area-inset-top, 0px) + 80px); z-index:2; margin:0 -4px; padding:6px 4px; display:flex; align-items:baseline; gap:8px; background:color-mix(in srgb, var(--background) 94%, transparent); font-size:15px; line-height:20px; font-weight:600; }
@@ -719,8 +718,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   <div class="nav-tabs"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"></div></div>
 </header>
 
-<aside id="rail-l" class="rail rail-l" aria-label="Sponsored"></aside>
-<aside id="rail-r" class="rail rail-r" aria-label="Sponsored"></aside>
+<aside id="rail-l" class="rail rail-l" aria-label="Advertising"></aside>
+<aside id="rail-r" class="rail rail-r" aria-label="Advertising"></aside>
 <main id="main" tabindex="-1">
   <div class="banners" id="banners">
     <div class="bn bn-break" id="bnBreak" hidden></div>
@@ -818,12 +817,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
         return row;
       },
-      // A tall ad for the side margins on wide screens (or the house ad when the margin is unsold).
+      // A tall ad for the side margins on wide screens. A real ad (sponsors.json) is labeled "Sponsored" and its link
+      // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
+      // business, price or number, and opens the advertising inquiry form.
       railAd: function (ad) {
-        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.appendChild(el('span', 'spon-tag', 'Sponsor')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Reach local readers every day.')); h.appendChild(el('span', 'rail-cta', 'Advertise')); h.addEventListener('click', openAd); return h; }
+        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News'); h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return h; }
         if (!ad.name || !/^https:\/\//i.test(ad.url || '')) return null;
         var a = el('a', 'rail-ad'); a.href = ad.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-        a.appendChild(el('span', 'spon-tag', ad.sample ? 'Sample ad' : 'Sponsored')); a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
+        a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
         if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
         return a;
       },
@@ -832,7 +833,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         [['rail-l', 'left'], ['rail-r', 'right']].forEach(function (r) {
           var box = document.getElementById(r[0]); box.textContent = '';
           var list = (cfg[r[1]] || []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean);
-          if (!list.length) list = [UI.railAd(null)];
+          if (!list.length && r[1] === 'right') list = [UI.railAd(null)]; // one house unit, right margin only (unobtrusive); an unsold left margin stays empty
           list.forEach(function (x) { box.appendChild(x); });
         });
       },
@@ -878,17 +879,18 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         return p;
       },
       badge: function (label) { return UI.pill({ label: label, tone: 'feat' }); },
-      // A sponsor line for a page section, or a "your business here" house ad when the slot is open.
+      // A sponsor line for a board: a real sponsor (labeled "Sponsored", rel="sponsored"), or, when the slot is open,
+      // our own house unit ("Advertise with us", no business, price or number), which opens the inquiry form.
       sponsor: function (slot, houseAd) {
         var sp = SPONSORS && SPONSORS[slot];
         if (sp && sp.name && /^https:\/\//i.test(sp.url || '')) {
           var a = el('a', 'spon'); a.href = sp.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
-          a.appendChild(el('span', 'spon-tag', sp.sample ? 'Sample ad' : 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
+          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
           return a;
         }
         if (!houseAd) return null;
-        var h = el('button', 'spon spon-house'); h.type = 'button';
-        h.appendChild(el('span', 'spon-tag', 'Sponsor')); h.appendChild(el('span', null, 'Your business here. Reach local readers.')); h.appendChild(el('b', null, 'Advertise'));
+        var h = el('button', 'spon spon-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
+        h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with Tri-State News.')); h.appendChild(el('b', null, 'Learn more'));
         h.addEventListener('click', openAd);
         return h;
       },
@@ -1448,58 +1450,16 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   var CATS_EVENT = ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'];
   var CONDS = ['New', 'Like new', 'Good', 'Fair'];
   var PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/, EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  function ago(d) { return new Date(Date.now() - d * 864e5).toISOString(); }
-  var SAMPLE_ITEMS = [
-    { title: 'Weber charcoal grill with cover', price: '$80', town: 'Newburgh, IN', category: 'Home & garden', condition: 'Good', desc: 'Used two summers. Cover and chimney starter included.', at: ago(0) },
-    { title: 'Oak dresser, 5 drawers', price: '$120', town: 'Evansville, IN', category: 'Furniture', condition: 'Good', desc: 'Solid wood, dovetail drawers. Some wear on the top.', at: ago(1) },
-    { title: 'Cordless drill and bit set', price: '$60', town: 'Henderson, KY', category: 'Tools', condition: 'Like new', desc: 'Two batteries and charger, hard case.', at: ago(1) },
-    { title: '20-inch kids bike', price: '$35', town: 'Boonville, IN', category: 'Toys & kids', condition: 'Good', desc: 'Blue, new tires. Outgrown.', at: ago(2) },
-    { title: '55-inch smart TV', price: '$150', town: 'Owensboro, KY', category: 'Electronics', condition: 'Like new', desc: 'Remote and wall mount included.', at: ago(3) },
-    { title: 'Seasoned firewood, you haul', price: 'Free', town: 'Mt. Vernon, IN', category: 'Home & garden', condition: '', desc: 'About a half cord, stacked behind the barn.', at: ago(3) },
-    { title: 'Women’s winter coat, size M', price: '$25', town: 'Jasper, IN', category: 'Clothing', condition: 'Like new', desc: 'Warm, hooded, worn one season.', at: ago(4) },
-    { title: '2014 Honda Civic, 98k miles', price: '$6,500', town: 'Carbondale, IL', category: 'Vehicles', condition: 'Good', desc: 'One owner, service records.', at: ago(5) }
-  ].map(function (x, k) { x.id = 'sample-i' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; return x; });
   function inDays(n) { var d = new Date(Date.now() + n * 864e5); return d.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
-  var SAMPLE_DEALS = [
-    { business: 'Sample Diner', title: '2-for-1 burgers on Tuesdays', town: 'Evansville, IN', category: 'Food & drink', code: 'BURGER2', ends: inDays(24), desc: 'Dine in only. One coupon per table.' },
-    { business: 'Sample Pizza Co.', title: 'Free garlic knots with any large pizza', town: 'Newburgh, IN', category: 'Food & drink', code: 'KNOTS', ends: inDays(14), desc: 'Carryout or delivery.' },
-    { business: 'Sample Auto Care', title: '$20 off any oil change', town: 'Henderson, KY', category: 'Auto', code: '', ends: inDays(30), desc: 'Synthetic blend or better. Appointments suggested.' },
-    { business: 'Sample Boutique', title: '25% off fall styles', town: 'Owensboro, KY', category: 'Shopping', code: 'FALL25', ends: inDays(10), desc: 'In store only. Excludes clearance.' },
-    { business: 'Sample Cinema', title: '$6 tickets every Tuesday', town: 'Madisonville, KY', category: 'Entertainment', code: '', ends: '', desc: 'All showtimes.' },
-    { business: 'Sample Hardware', title: 'Buy one, get one free leaf bags', town: 'Carbondale, IL', category: 'Shopping', code: '', ends: inDays(18), desc: 'While supplies last.' },
-    { business: 'Sample Salon', title: '$15 off a cut and color', town: 'Jasper, IN', category: 'Services', code: 'FALL15', ends: inDays(21), desc: 'New clients, weekdays.' },
-    { business: 'Sample Coffee Shop', title: 'Buy a latte, get a pastry free', town: 'Mt. Vernon, IN', category: 'Food & drink', code: '', ends: inDays(7), desc: 'Before 10 a.m.' }
-  ].map(function (x, k) { x.id = 'sample-d' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
-  var SAMPLE_EVENTS = [
-    { title: 'Friday Night Football', date: inDays(3), time: '19:00', place: 'Sample High School Stadium', town: 'Boonville, IN', category: 'Sports', desc: 'Home opener under the lights. Concessions open at 6.' },
-    { title: 'Fall Harvest Market', date: inDays(5), time: '09:00', place: 'Sample Park Pavilion', town: 'Evansville, IN', category: 'Community', desc: 'Local growers, baked goods and crafts.' },
-    { title: 'Live Music on the Riverfront', date: inDays(8), time: '18:30', place: 'Sample Amphitheater', town: 'Henderson, KY', category: 'Music', desc: 'Local bands, food trucks and lawn seating.' },
-    { title: 'Art Walk', date: inDays(10), time: '17:00', place: 'Downtown', town: 'Carbondale, IL', category: 'Arts', desc: 'Galleries and shops stay open late.' },
-    { title: 'Pancake Breakfast Fundraiser', date: inDays(11), time: '08:00', place: 'Sample Fire Station', town: 'Jasper, IN', category: 'Food & drink', desc: 'All you can eat. Proceeds help buy new equipment.' },
-    { title: 'Community 5K Fun Run', date: inDays(12), time: '08:30', place: 'Sample Riverside Trail', town: 'Owensboro, KY', category: 'Sports', desc: 'Walkers and strollers welcome.' },
-    { title: 'Trunk-or-Treat', date: inDays(19), time: '17:30', place: 'Sample Church Lot', town: 'Madisonville, KY', category: 'Family', desc: 'Costumes, candy and games for kids.' }
-  ].map(function (x, k) { x.id = 'sample-e' + k; x.featured = k === 0; x.sample = true; x.contact = ''; x.at = ago(0); return x; });
-
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
-  var SAMPLE_JOBS = [
-    { title: 'Line cook', business: 'Sample Diner', town: 'Evansville, IN', category: 'Retail & food service', jobType: 'Full-time', pay: '$16-19/hr', desc: 'Breakfast and lunch shifts. Experience helps, we will train the right person.' },
-    { title: 'Certified nursing assistant', business: 'Sample Care Center', town: 'Henderson, KY', category: 'Healthcare', jobType: 'Full-time', pay: '$18-22/hr', desc: 'Day and night shifts, sign-on bonus, paid training.' },
-    { title: 'HVAC service technician', business: 'Sample Heating & Air', town: 'Newburgh, IN', category: 'Trades & construction', jobType: 'Full-time', pay: '$55,000-75,000/yr', desc: 'Residential service calls. Truck and tools provided.' },
-    { title: 'Warehouse associate', business: 'Sample Distribution', town: 'Owensboro, KY', category: 'Warehouse & driving', jobType: 'Full-time', pay: '$17/hr', desc: 'Forklift a plus. Weekly pay, overtime available.' },
-    { title: 'Seasonal retail associate', business: 'Sample Hardware', town: 'Jasper, IN', category: 'Retail & food service', jobType: 'Seasonal', pay: '$14/hr', desc: 'October through January. Flexible hours.' },
-    { title: 'Front office assistant', business: 'Sample Dental', town: 'Mt. Vernon, IN', category: 'Office & admin', jobType: 'Part-time', pay: '$15-17/hr', desc: 'Scheduling, phones and check-in. Mornings.' },
-    { title: 'Substitute teacher aide', business: 'Sample School District', town: 'Carbondale, IL', category: 'Education', jobType: 'Part-time', pay: '$13/hr', desc: 'Help in classrooms on days teachers are out.' },
-    { title: 'Delivery driver', business: 'Sample Freight', town: 'Madisonville, KY', category: 'Warehouse & driving', jobType: 'Contract', pay: '$20-25/hr', desc: 'Box truck, no CDL needed. Regional routes.' }
-  ].map(function (x, k) { x.id = 'sample-j' + k; x.featured = k === 0; x.sample = true; x.contact = 'Sample listing'; x.at = ago(k); return x; });
-
   var clEl = document.getElementById('cl');
   var boards = {
-    item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, samples: SAMPLE_ITEMS, el: clEl },
-    deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, samples: SAMPLE_DEALS, el: document.getElementById('dl') },
-    event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, samples: SAMPLE_EVENTS, el: document.getElementById('ev') },
-    obit: { items: [], loaded: false, configured: null, form: false, filter: '', town: '', mine: [], key: 'tsn.mineObits', cats: [], samples: [], el: document.getElementById('ob') },
-    job: { items: [], loaded: false, configured: null, form: false, filter: '', jt: '', town: '', mine: [], key: 'tsn.mineJobs', cats: CATS_JOB, samples: SAMPLE_JOBS, el: document.getElementById('jb') }
+    item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, el: clEl },
+    deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, el: document.getElementById('dl') },
+    event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, el: document.getElementById('ev') },
+    obit: { items: [], loaded: false, configured: null, form: false, filter: '', town: '', mine: [], key: 'tsn.mineObits', cats: [], el: document.getElementById('ob') },
+    job: { items: [], loaded: false, configured: null, form: false, filter: '', jt: '', town: '', mine: [], key: 'tsn.mineJobs', cats: CATS_JOB, el: document.getElementById('jb') }
   };
   Object.keys(boards).forEach(function (k) { try { boards[k].mine = JSON.parse(localStorage.getItem(boards[k].key) || '[]'); } catch (e) {} });
   function saveMine(b) { try { localStorage.setItem(b.key, JSON.stringify(b.mine.slice(-50))); } catch (e) {} }
@@ -1549,10 +1509,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function shownItems(b, kind, ignoreQ) {
     var real = b.items.slice();
     if (kind === 'event') real = real.concat(feedEvents());
-    var need = Math.max(0, 8 - real.length);
-    var all = real.concat(b.samples.slice(0, need));
-    var demo = b.samples.filter(function (x) { return x.featured; })[0];
-    if (demo && need === 0 && !real.some(function (x) { return x.featured; })) all.unshift(demo); // one labeled sample keeps the Featured look visible until a real one is bought
+    var all = real;
     if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
@@ -1611,7 +1568,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   function photoSrc(it) { return it.imgData || (it.img ? '/api/listings?img=' + encodeURIComponent(it.id) : ''); }
   function hueOf(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; }
-  function initials(name) { var w = String(name || '?').replace(/^sample\s+/i, '').split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w.length > 1 ? w[1].charAt(0) : '')).toUpperCase(); }
+  function initials(name) { var w = String(name || '?').split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w.length > 1 ? w[1].charAt(0) : '')).toUpperCase(); }
   function bizAvatar(name, logo) {
     if (logo) { var im = el('img', 'bav'); im.src = logo; im.alt = ''; im.width = 28; im.height = 28; im.loading = 'lazy'; return im; }
     var a = el('span', 'bav bav-i', initials(name)); a.style.setProperty('--h', String(hueOf(name || '?'))); a.setAttribute('aria-hidden', 'true'); return a;
@@ -1743,8 +1700,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     els.desc = el('textarea'); els.desc.name = 'desc'; els.desc.id = 'f-desc' + (++uidSeq); els.desc.maxLength = 300; els.desc.rows = 3;
     els.desc.placeholder = isJob ? 'Duties, schedule, requirements' : isDeal ? 'Details, limits, hours' : isEv ? 'What to expect, cost, parking' : 'Size, age, pickup details';
     els.contact = input('text', 'contact', 80, isJob ? '812-555-0142 or hiring@company.com' : isDeal ? 'Address or phone' : isEv ? 'Phone or email' : '812-555-0142 or name@email.com');
-    if (isDeal) { els.business = input('text', 'business', 50, 'Joe’s Diner'); F.business = field('Business', els.business, { req: true }); }
-    if (isJob) { els.employer = input('text', 'employer', 50, 'Joe’s Diner'); F.employer = field('Employer', els.employer, { req: true }); }
+    if (isDeal) { els.business = input('text', 'business', 50, 'Your business name'); F.business = field('Business', els.business, { req: true }); }
+    if (isJob) { els.employer = input('text', 'employer', 50, 'Employer name'); F.employer = field('Employer', els.employer, { req: true }); }
     F.title = field(isJob ? 'Job title' : isDeal ? 'Offer' : isEv ? 'Event name' : 'Title', els.title, { req: true });
     F.category = field('Category', els.category, { req: true });
     F.town = field('Town', els.town, { req: true });
@@ -1835,7 +1792,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
   function actions(it, kind, b, foot) {
-    if (it.sample || it.feed) return;
+    if (it.feed) return;
     var mine = b.mine.indexOf(it.id) >= 0;
     var act = el('button', 'cl-link', mine ? 'Remove' : 'Report'); act.type = 'button';
     act.addEventListener('click', function () {
@@ -1864,7 +1821,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
   function dealCard(it, b) {
     var c = el('article', 'deal');
-    var src = photoSrc(it) || (it.sample ? artUri(it.category) : '');
+    var src = photoSrc(it);
     if (src) { var im = el('img', 'deal-img'); im.src = src; im.alt = ''; im.loading = 'lazy'; c.appendChild(im); }
     var body = el('div', 'deal-body');
     var head = el('div', 'deal-head');
@@ -1877,7 +1834,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     var meta = [it.town]; if (it.ends) meta.push('Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
     body.appendChild(el('div', 'cl-meta', meta.filter(Boolean).join(' · ')));
     if (it.code) { var cd = el('div', 'deal-code'); cd.appendChild(el('span', null, 'Use code')); cd.appendChild(el('code', null, it.code)); body.appendChild(cd); }
-    var foot = el('div', 'cl-foot'); foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact)); actions(it, 'deal', b, foot); body.appendChild(foot);
+    var foot = el('div', 'cl-foot'); foot.appendChild(el('span', 'cl-contact', it.contact)); actions(it, 'deal', b, foot); body.appendChild(foot);
     c.appendChild(body);
     return c;
   }
@@ -2021,16 +1978,16 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     meta.appendChild(catPill(it)); meta.appendChild(line);
     c.appendChild(meta);
     if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
-    var foot = el('div', 'job-foot'), ap = el('div', 'job-apply'), href = it.sample ? '' : applyHref(it.contact);
+    var foot = el('div', 'job-foot'), ap = el('div', 'job-apply'), href = applyHref(it.contact);
     if (href) { var a = el('a', null, 'Apply: ' + it.contact); a.href = href; a.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); ap.appendChild(a); }
-    else ap.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+    else ap.appendChild(el('span', 'cl-contact', it.contact));
     foot.appendChild(ap); actions(it, 'job', b, foot);
     c.appendChild(foot);
     return c;
   }
   function card(it, kind, b) {
     var c = kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b);
-    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge(it.sample ? 'Featured \u00B7 Sample' : 'Featured \u00B7 Paid')); } // paid placement is disclosed (FTC); the demo says so
+    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge('Featured \u00B7 Paid')); } // paid placement is disclosed (FTC)
     return c;
   }
   function cardBase(it, kind, b) {
@@ -2052,14 +2009,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     main.appendChild(meta);
     if (it.desc) main.appendChild(el('p', 'cl-desc', it.desc));
     var foot = el('div', 'cl-foot');
-    foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+    foot.appendChild(el('span', 'cl-contact', it.contact));
     actions(it, 'item', b, foot);
     main.appendChild(foot);
     c.appendChild(main);
     return c;
   }
   function chips(b, kind) {
-    var present = {}; b.items.concat(b.samples, kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
+    var present = {}; b.items.concat(kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
     var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
     return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
   }
@@ -2076,7 +2033,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   // The heading of every board is its town picker.
   function townPicker(b, kind, title) {
     var real = b.items.slice(); if (kind === 'event') real = real.concat(feedEvents());
-    var pool = real.concat(real.length < 8 ? b.samples.slice(0, 8 - real.length) : []), counts = {};
+    var pool = real, counts = {};
     pool.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
     if (b.town && !counts[b.town]) counts[b.town] = 0;
     var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
@@ -2100,19 +2057,18 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (b.form) root.appendChild(buildForm(kind, b));
     if (kind === 'event') root.appendChild(eventFilters(b));
     if (kind === 'job') root.appendChild(jobFilters(b));
-    if (kind !== 'obit') root.appendChild(chips(b, kind));
+    if (kind !== 'obit') { var cr = chips(b, kind); if (cr.children.length > 1) root.appendChild(cr); } // no lone "All" chip on an empty board
     var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
     items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
     if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
     if (!items.length) {
       var emp = el('div', 'cl-empty');
-      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : 'Nothing in this category yet.'));
+      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : b.items.length ? 'Nothing in this category yet.' : 'Nothing posted yet. Be the first.'));
       if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); })); }
       if ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
       list.appendChild(emp);
     }
     root.appendChild(list);
-    if (items.some(function (x) { return x.sample; })) root.appendChild(el('p', 'cl-note', 'Sample posts show how this page looks. They go away as real ones come in.'));
     return root;
   }
   function renderClassifieds() {
@@ -2167,7 +2123,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     pic.appendChild(im); pic.appendChild(badge);
     return pic;
   }
-  function evxPaid(it) { return el('span', 'evx-paid' + (it.sample ? ' is-sample' : ''), it.sample ? 'Featured \u00B7 Sample' : 'Featured \u00B7 Paid'); }
+  function evxPaid() { return el('span', 'evx-paid', 'Featured \u00B7 Paid'); }
   function evxTitle(it, tag) {
     var h = el(tag);
     if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
@@ -2196,7 +2152,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       if (it.fromPrice && price) { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); foot.appendChild(fp); }
       foot.appendChild(evxReact(it));
     } else {
-      if (it.contact) foot.appendChild(el('span', it.sample ? 'cl-contact cl-dim' : 'cl-contact', it.contact));
+      if (it.contact) foot.appendChild(el('span', 'cl-contact', it.contact));
       actions(it, 'event', b, foot);
     }
     return foot;
@@ -2205,7 +2161,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   // 1 Featured label + category, 2 title (2 lines), 3 date · time CT, 4 venue · town · via source (1 line), 5 actions.
   function evxBody(it, b, cls, rel, price) {
     var body = el('div', 'evt ' + cls), top = el('div', 'evt-top');
-    if (it.featured) top.appendChild(evxPaid(it));
+    if (it.featured) top.appendChild(evxPaid());
     if (it.category) top.appendChild(el('span', 'evr-cat', it.category));
     body.appendChild(top);
     var h = evxTitle(it, 'h4'); h.className = 'evt-title'; body.appendChild(h);
@@ -2330,7 +2286,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     fl.appendChild(cats); root.appendChild(fl);
     var spn = UI.sponsor('events', true); if (spn) root.appendChild(spn); // the only sponsor placement on Events
     if (b.form) root.appendChild(buildForm('event', b));
-    if (!state.loaded && !b.items.length) { // feeds still loading: placeholder rows instead of sample posts
+    if (!state.loaded && !b.items.length) { // feeds still loading: placeholder rows
       var sk = el('div', 'evx-sk'); for (var s = 0; s < 3; s++) { var k = el('div', 'sk-card'); k.appendChild(el('div', 'sk sk-img')); var ln = el('div'); ln.appendChild(el('div', 'sk sk-line')); ln.appendChild(el('div', 'sk sk-line')); k.appendChild(ln); sk.appendChild(k); }
       root.appendChild(sk); return root;
     }
@@ -2370,7 +2326,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       var mw = el('div', 'evx-more'); mw.appendChild(UI.button('Show more events (' + (rows.length - shown.length) + ' left)', null, function () { b.lim = lim + EVX_PAGE; drawBoard('event'); }));
       root.appendChild(mw);
     }
-    if (items.some(function (x) { return x.sample; })) root.appendChild(el('p', 'cl-note', 'Sample posts show how this page looks. They go away as real ones come in.'));
     return root;
   }
   var JOB_BOARDS = [
@@ -2546,7 +2501,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     snEl.appendChild(rt);
     var f = el('form', 'cl-form'); f.noValidate = true;
     var F = {}, els = {};
-    els.business = input('text', 'business', 80, 'Joe’s Diner'); F.business = field('Business', els.business, { req: true });
+    els.business = input('text', 'business', 80, 'Your business name'); F.business = field('Business', els.business, { req: true });
     els.name = input('text', 'name', 60, 'Your name'); els.name.autocomplete = 'name'; F.name = field('Your name', els.name, { req: true });
     els.email = input('email', 'email', 80, 'name@email.com'); els.email.autocomplete = 'email'; F.email = field('Email', els.email, { req: true });
     els.phone = input('tel', 'phone', 20, '812-555-0142'); els.phone.autocomplete = 'tel'; F.phone = field('Phone', els.phone);
@@ -2929,8 +2884,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
     resetPaging(); render();
   });
+  var AD_TABS = ['events', 'jobs', 'deals', 'classifieds']; // the only tabs with side ads (Advertising policy)
   function render() {
     syncRoute();
+    document.body.toggleAttribute('data-ads', AD_TABS.indexOf(state.cat) >= 0 && !state.q.trim());
     breakCards = {};
     state.brk = breakingPick();
     renderList();

@@ -108,3 +108,19 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 8. **The obituary exception:** the "Send flowers" link is described as a link, not an ad. Confirm that this is how Sam wants it framed, and that the funeral-home florist link needs no agreement with the funeral home.
 9. **Record retention:** confirm how long order records must be kept for tax purposes, then set a retention period instead of "no automatic expiry".
 10. **Refund-on-request wording:** §7 says payments for missing or past-date posts are flagged and refunded. Refunds are issued by hand in the Stripe dashboard (`/admin.html` lists them). Confirm a turnaround time if one should be promised.
+
+## Ads PR C: advertiser creatives (Advertising Policy §7, Privacy)
+- **Advertising §1:** "text only" becomes "words alone, or one still image with a short headline and text"; still no animation, autoplay, sound, pop-ups or sticky ads.
+- **Advertising §5:** an ad links to an https page, a map or directions page, or a phone number; rel="sponsored"; web links open in a new tab.
+- **Advertising §7 Ad images, words and review (new; later sections renumbered 8–11, cross-references updated):**
+  - Upload needs an inquiry reference with its email, an order number, or a signed 14-day link. No anonymous uploads.
+  - Image: still JPEG/PNG/WebP, 300×150 minimum, 4,000 px maximum side, 300 KB maximum, no animation; legible; no imitation of news, site labels, fake buttons or system messages.
+  - Words: headline ≤ 60 characters (also the alt text), text ≤ 140, no web addresses in the words.
+  - Button from the fixed list; destination https page, U.S. phone number, or Google/Apple/Bing Maps or OpenStreetMap link; final address only, no shorteners or redirects; no password prompts or downloads; landing page matches the ad.
+  - Review: a person reviews every ad, nothing runs until approved, every approve/reject has a recorded reason, approved ads run only in the chosen spots, can be taken down at any time with a recorded reason; rejected/withdrawn images deleted, decision record kept.
+- **Privacy:** a new row for ad uploads (what is stored, the reference, review decisions; inquiry email checked, not stored again; network address only for the daily upload limit) with retention (pending 60 days, approved while it runs, rejected/withdrawn record 1 year without the image, review log latest 1,000, daily counter 1 day). Upstash's description now includes ad uploads.
+
+### Needs review (PR C)
+11. **Advertiser notice of decisions:** the policy says decisions have a recorded reason but doesn't promise to notify the advertiser; nothing emails them automatically today. Decide whether to promise a notice and a turnaround.
+12. **Rights in creatives (lawyer):** the policy makes the advertiser responsible for rights to images, logos and words. Consider an advertiser agreement or an upload checkbox granting Tri-State News a license to display the creative, with an indemnity.
+13. **Takedown standard:** "we can take an approved ad down at any time" — confirm how that interacts with any paid package (refund or make-good when an ad is withdrawn mid-run).

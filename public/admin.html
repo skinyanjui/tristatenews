@@ -25,6 +25,11 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
 .item .m, section > .m { color:var(--muted); font-size:12px; line-height:16px; }
 .err { color:#e5484d; }
 [hidden] { display:none !important; }
+.cr { display:grid; gap:8px; }
+.cr img { max-width:100%; max-height:220px; border:1px solid var(--border); border-radius:6px; background:var(--bg); justify-self:start; }
+.cr fieldset { display:flex; flex-wrap:wrap; gap:4px 12px; margin:0; padding:8px; border:1px solid var(--border); border-radius:6px; }
+.cr label { display:inline-flex; gap:4px; align-items:center; font-size:12px; }
+.cr .acts { display:flex; flex-wrap:wrap; gap:8px; }
 </style>
 </head>
 <body>
@@ -35,6 +40,10 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
   <div id="out" hidden>
     <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV</button></div><div id="nl"></div></section>
     <section><h2 id="adh">Advertising inquiries</h2><div id="ad"></div></section>
+    <section><h2 id="crh">Creatives waiting for review</h2><p class="m">Nothing an advertiser uploads is shown until you approve it here. Check the image, words and destination against the Advertising Policy (truthful, legible, still image, the link goes where it says). Approve or reject with a reason; both are written to the audit log. Approving picks where it runs. Withdrawing an approved creative takes it off the site.</p><div id="crp"></div></section>
+    <section><h2 id="cah">Approved creatives</h2><div id="cra"></div></section>
+    <section><h2>Creative upload link</h2><p class="m">For an advertiser who has no inquiry reference or paid order: make a signed link tied to a reference (an inquiry or invoice number). It works for 14 days.</p><form id="tk"><input id="tkr" placeholder="Reference, e.g. AD-ABC123" aria-label="Reference" autocomplete="off"><button type="submit">Make link</button></form><p class="m" id="tko" role="status"></p></section>
+    <section><h2 id="cuh">Creative review log</h2><div id="cru"></div></section>
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
     <section><h2 id="orh">Orders</h2><div id="ors"></div></section>
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
@@ -53,9 +62,65 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
     parent.appendChild(d);
   }
   function empty(parent, t) { var p = document.createElement('p'); p.textContent = t; parent.appendChild(p); }
+  function mk(tag, attrs, text) { var n = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); }); if (text != null) n.textContent = text; return n; }
+  function post(path, body) { return fetch(path, { method: 'POST', headers: { 'x-admin-key': key, 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'Error ' + r.status); return d; }); }); }
+  // Creatives (api/_creative.js). Images load with the admin key into a blob URL: a pending image is never public.
+  var crUrls = [];
+  function crImage(c, box) {
+    fetch('/api/creative?img=' + encodeURIComponent(c.id), { headers: { 'x-admin-key': key }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+      var u = URL.createObjectURL(b); crUrls.push(u); box.insertBefore(mk('img', { src: u, alt: 'Creative image: ' + c.headline }), box.children[1] || null);
+    }).catch(function () { box.insertBefore(mk('p', { class: 'm' }, 'Image unavailable.'), box.children[1] || null); });
+  }
+  function crCard(c, placements, mode) {
+    var d = mk('div', { class: 'item cr' });
+    d.appendChild(mk('b', null, c.headline));
+    crImage(c, d);
+    d.appendChild(mk('div', null, c.text || '(no text)'));
+    d.appendChild(mk('div', { class: 'm' }, 'Button: ' + c.cta + ' → ' + c.dest + ' (' + c.destType + ')'));
+    d.appendChild(mk('div', { class: 'm' }, 'Ref ' + c.ref + ' (' + c.refType + ') · ' + c.image.type.toUpperCase() + ' ' + c.image.w + '×' + c.image.h + ' · ' + Math.round(c.image.bytes / 1024) + ' KB · ' + new Date(c.at).toLocaleString() + ' · ' + c.id + (c.placements && c.placements.length ? ' · runs: ' + c.placements.join(', ') : '')));
+    var fs = null;
+    if (mode === 'pending') {
+      fs = mk('fieldset'); fs.appendChild(mk('legend', { class: 'm' }, 'Where it runs (approve)'));
+      placements.forEach(function (p) { var l = mk('label'), cb = mk('input', { type: 'checkbox', value: p }); l.appendChild(cb); l.appendChild(document.createTextNode(p)); fs.appendChild(l); });
+      d.appendChild(fs);
+    }
+    var reason = mk('input', { placeholder: 'Reason (required, kept in the log)', 'aria-label': 'Reason for ' + c.headline, maxlength: '300' });
+    d.appendChild(reason);
+    var acts = mk('div', { class: 'acts' }), msg = mk('p', { class: 'm', role: 'status' });
+    function act(action) {
+      var body = { action: action, id: c.id, reason: reason.value.trim() };
+      if (action === 'approve') body.placements = [].slice.call(fs.querySelectorAll('input:checked')).map(function (x) { return x.value; });
+      if (body.reason.length < 3) { msg.textContent = 'Give a reason first.'; return; }
+      if (action === 'approve' && !body.placements.length) { msg.textContent = 'Pick where it runs.'; return; }
+      post('/api/creative', body).then(function () { msg.textContent = 'Done.'; loadCreatives(); }).catch(function (e) { msg.textContent = e.message; });
+    }
+    (mode === 'pending' ? [['Approve', 'approve', ''], ['Reject', 'reject', 'ghost']] : [['Withdraw', 'withdraw', 'ghost']]).forEach(function (b) { var x = mk('button', { type: 'button', class: b[2] }, b[0]); x.addEventListener('click', function () { act(b[1]); }); acts.appendChild(x); });
+    d.appendChild(acts); d.appendChild(msg);
+    return d;
+  }
+  function loadCreatives() {
+    return get('/api/creative').then(function (c) {
+      crUrls.forEach(function (u) { URL.revokeObjectURL(u); }); crUrls = [];
+      var live = c.items.filter(function (x) { return x.status === 'approved'; });
+      $('crh').textContent = 'Creatives waiting for review (' + c.pending.length + ')'; $('crp').textContent = '';
+      if (c.pending.length) c.pending.forEach(function (x) { $('crp').appendChild(crCard(x, c.placements, 'pending')); }); else empty($('crp'), 'Nothing waiting.');
+      $('cah').textContent = 'Approved creatives (' + live.length + ')'; $('cra').textContent = '';
+      if (live.length) live.forEach(function (x) { $('cra').appendChild(crCard(x, c.placements, 'approved')); }); else empty($('cra'), 'None running.');
+      $('cuh').textContent = 'Creative review log (' + c.audit.length + ')'; $('cru').textContent = '';
+      if (c.audit.length) c.audit.forEach(function (a) { line($('cru'), a.action + ' · ' + a.id + ' (' + a.from + ' → ' + a.to + ')', new Date(a.at).toLocaleString() + ' · ref ' + a.ref + (a.placements && a.placements.length ? ' · ' + a.placements.join(', ') : ''), a.reason); }); else empty($('cru'), 'No reviews yet.');
+      return true;
+    }).catch(function () { $('crp').textContent = ''; empty($('crp'), 'Not available.'); return null; });
+  }
+  $('tk').addEventListener('submit', function (e) {
+    e.preventDefault();
+    post('/api/creative', { action: 'token', ref: $('tkr').value.trim() }).then(function (d) {
+      $('tko').textContent = d.token ? location.origin + '/creative.html?token=' + encodeURIComponent(d.token) + ' (works ' + d.days + ' days)' : 'Not available.';
+    }).catch(function (er) { $('tko').textContent = er.message; });
+  });
   $('key').addEventListener('submit', function (e) {
     e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
     Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; })]).then(function (r) {
+      loadCreatives();
       if (!r[0] && !r[1] && !r[2] && !r[3]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
       emails = r[0] ? r[0].emails.slice().sort() : [];

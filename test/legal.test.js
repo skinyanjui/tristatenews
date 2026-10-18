@@ -48,7 +48,7 @@ test('Advertising Policy: ad spots, house units, no targeting, ad-free sections,
   const t = text(ads);
   for (const s of ['Sponsor lines', 'Sponsored cards', 'after the sixth post', 'at most one per board', 'Side ads', '“Advertise with us,”', 'Featured · Paid',
     'only on the Events, Jobs, Deals and Classifieds boards', 'no ads on News, All, Police & courts, Institutions, Obituaries, breaking-news alerts or search results',
-    'Our own ads are never targeted', 'Every reader of a board sees the same ad', 'rel="sponsored"', 'https', 'don’t use autoplaying video or sound, pop-ups',
+    'Our own ads are never targeted', 'Every reader of a board sees the same ad', 'rel="sponsored"', 'https', 'don’t use animation, autoplaying video or sound, pop-ups',
     'We don’t use any third-party ad network today', 'consent notice', 'labeled “paid link”', 'we may earn a commission', 'never affects which obituaries appear or what they say',
     'Where the funeral home has its own florist page, the link goes there', 'no ad, script, cookie or tracking pixel', 'We don’t use affiliate links today', 'Last updated October 18, 2026'])
     assert.ok(t.includes(s), s);
@@ -89,4 +89,15 @@ test('Privacy: order records are described as stored, and the payment code never
     assert.ok(!/customer_details|customer_email|receipt_email|billing_details|\.card\b|payment_method_details/.test(read(f)), f + ' stores no card or contact data');
   const ck = read('api/_checkout.js');
   assert.ok(ck.includes("'line_items[0][price_data][product_data][description]': String(o.title || '').slice(0, 120)"), 'the post title goes to Stripe, as the policy says');
+});
+
+test('Advertising Policy §7 and Privacy: creative standards, the review process and the upload data are described', () => {
+  const t = legal.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
+  for (const s of ['7. Ad images, words and review', 'Nobody can upload an ad anonymously', 'one still JPEG, PNG or WebP image, at least 300×150 pixels', '300 KB or smaller', 'No animation, video or sound',
+    'up to 60 characters', 'up to 140 characters', '“Visit website,” “Shop now,” “Learn more,” “Call now” or “Get directions.”', 'not a link shortener or a redirect',
+    'A person at Tri-State News reviews every ad before it runs', 'nothing uploaded appears on the site until it’s approved', 'recorded reason', 'Rejected and withdrawn images are deleted',
+    'Ad uploads (advertisers)', 'Waiting for review: 60 days', 'one still image with a short headline and text', 'signups and ad uploads'])
+    assert.ok(t.includes(s), s);
+  assert.ok(!/text only/i.test(t), 'no longer says ads are text only');
+  assert.ok(fs.readFileSync(path.join(__dirname, '..', 'docs/legal-review.md'), 'utf8').includes('Ads PR C: advertiser creatives'));
 });

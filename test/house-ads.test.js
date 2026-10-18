@@ -6,6 +6,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
+const A = require('../public/adslots.js');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const html = read('public/index.html'), legal = read('public/legal.html'), raw = read('public/sponsors.json');
 const sponsors = JSON.parse(raw);
@@ -50,13 +51,13 @@ function pageUI(cfg) {
     return n;
   };
   const boxes = { 'rail-l': node('aside'), 'rail-r': node('aside') };
-  const start = html.indexOf('      railAd: function (ad) {'), mid = html.indexOf('      // The one heart used everywhere.');
+  const start = html.indexOf('      adLink: function (cls, ad) {'), mid = html.indexOf('      // The one heart used everywhere.');
   const s2 = html.indexOf('      sponsor: function (slot, houseAd) {'), e2 = html.indexOf('      notice: function (text) {');
   assert.ok(start > 0 && mid > start && s2 > mid && e2 > s2, 'found the sponsor code');
   const src = 'var UI = {' + html.slice(start, mid).replace(/,\s*$/, '') + ',' + html.slice(s2, e2).replace(/,\s*$/, '') + '}; return UI;';
   let opened = 0;
-  const UI = new Function('el', 'bizAvatar', 'openAd', 'SPONSORS', 'document', src)(
-    (t, c, x) => node(t, c, x), name => node('span', 'bav', name), () => { opened++; }, cfg, { getElementById: id => boxes[id] });
+  const UI = new Function('el', 'bizAvatar', 'openAd', 'SPONSORS', 'document', 'window', 'TSNAds', src)(
+    (t, c, x) => node(t, c, x), name => node('span', 'bav', name), () => { opened++; }, cfg, { getElementById: id => boxes[id] }, { TSNAds: A }, A);
   return { UI, boxes, opened: () => opened };
 }
 const tagOf = n => n.children.find(c => c.className === 'spon-tag').textContent;

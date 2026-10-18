@@ -159,6 +159,7 @@ document.documentElement.className+=' js';
 <tr><td>Posts on the community boards: what you type (title, description, price, town, dates, business or funeral-home name) and the contact details and photo or logo you add</td><td>When you post</td><td>To publish your post. <b>The contact details in a post are public.</b></td><td>Deleted automatically when the post expires: classifieds and obituaries after 30 days, deals on their end date or after 30 days, jobs after 45 days, events two days after the event date (an event can be posted up to about a year ahead). Deleted sooner if you remove it or three readers report it</td></tr>
 <tr><td>News tips, photos and corrections: headline, details, town, date, your name, email, optional phone, up to two photos</td><td>When you use “Submit news”</td><td>To review and follow up on your tip. Your email and phone are never published, and if you ask, neither is your name</td><td>Our database keeps the latest 500 submissions and deletes older ones. Copies emailed to our inbox are kept only as long as we need them for reporting</td></tr>
 <tr><td>Advertising inquiries: business, name, email, optional phone, what you’re interested in, message</td><td>When you use “Advertise”</td><td>To answer you</td><td>Our database keeps the latest 300 inquiries; copies emailed to our inbox are kept while we do business with you</td></tr>
+<tr><td>Ad uploads (advertisers): the image, headline, text, button and destination; the inquiry reference or order number it was sent with; our review decisions and reasons. The email on an inquiry is checked against it but not stored again. Your network address is used only to limit uploads per day.</td><td>When an advertiser sends an ad</td><td>To review and run the ad</td><td>Waiting for review: 60 days. Approved: while it runs. Rejected or withdrawn: the image is deleted and the record kept 1 year. The review log keeps the latest 1,000 decisions. The daily upload count expires after a day.</td></tr>
 <tr><td>Newsletter email address</td><td>When you sign up</td><td>To send the newsletter</td><td>Until you unsubscribe. The <a href="/unsubscribe.html">Unsubscribe page</a> removes you immediately; emailed requests are handled within 10 business days</td></tr>
 <tr><td>Payments for Featured posts</td><td>When you pay</td><td>Stripe collects your payment details on its own checkout page under its privacy policy. We never receive your card number or other card details</td><td>As Stripe and tax law require</td></tr>
 <tr><td>Order records: the Stripe checkout and payment IDs, the post ID and board, the price, period and price version sold, the amount and currency paid, and any refund or dispute (amount, status and the reason Stripe gives). We don’t store your name, email or card details from Stripe. When a post that is still Featured is removed, we also keep its ID, title and Featured end date</td><td>When you start a checkout, pay, are refunded or dispute a charge</td><td>To deliver what you bought, handle refunds and disputes, and keep business and tax records</td><td>An unpaid checkout is deleted after 30 days. Records of payments, refunds, disputes and removals have no automatic expiry; we keep them as long as we need them for our business and tax records. Stripe event IDs are kept 30 days to avoid processing one twice</td></tr>
@@ -184,7 +185,7 @@ document.documentElement.className+=' js';
 <li><b>Story images and logos:</b> story images load from the publishers’ own servers, and most source logos from Google’s favicon service (google.com and gstatic.com). They load without telling those servers which page you were on.</li>
 <li><b>Linked sites:</b> when you open a story, ticket page or listing link, you’re on that site and its policies apply.</li>
 </ul>
-<p>We also use these service providers to run features: Upstash (database for hearts, posts, tips and signups), Resend (delivering tips and inquiries to our inbox and sending the newsletter) and Stripe (payments). They process data on our behalf.</p>
+<p>We also use these service providers to run features: Upstash (database for hearts, posts, tips, signups and ad uploads), Resend (delivering tips and inquiries to our inbox and sending the newsletter) and Stripe (payments). They process data on our behalf.</p>
 
 <h3 id="privacy-share">5. How we share information</h3>
 <p>We don’t sell your personal information, and we don’t share it for targeted advertising. We share it only:</p>
@@ -318,7 +319,7 @@ document.documentElement.className+=' js';
 <h2 id="advertising-title">Advertising Policy</h2>
 <p class="lg-meta">Effective October 17, 2026 · Last updated October 18, 2026</p>
 
-<div class="lg-sum"><p><b>The short version.</b> Ads and paid placements on Tri-State News are always labeled, never disguised as news, never targeted at you, and kept off news, Police &amp; courts and obituaries. Advertisers have no say in which stories we show.</p></div><details class="lg-toc"><summary>In this section</summary><ul><li><a href="#advertising-types">1. Kinds of paid placement</a></li><li><a href="#advertising-where">2. Where ads appear</a></li><li><a href="#advertising-targeting">3. No targeting</a></li><li><a href="#advertising-independence">4. Separation from news</a></li><li><a href="#advertising-links">5. Labels and links</a></li><li><a href="#advertising-standards">6. What we accept</a></li><li><a href="#advertising-affiliate">7. Affiliate links</a></li><li><a href="#advertising-networks">8. Ad networks</a></li><li><a href="#advertising-endorse">9. No endorsement</a></li><li><a href="#advertising-buy">10. Advertising with us</a></li></ul></details>
+<div class="lg-sum"><p><b>The short version.</b> Ads and paid placements on Tri-State News are always labeled, never disguised as news, never targeted at you, and kept off news, Police &amp; courts and obituaries. Advertisers have no say in which stories we show.</p></div><details class="lg-toc"><summary>In this section</summary><ul><li><a href="#advertising-types">1. Kinds of paid placement</a></li><li><a href="#advertising-where">2. Where ads appear</a></li><li><a href="#advertising-targeting">3. No targeting</a></li><li><a href="#advertising-independence">4. Separation from news</a></li><li><a href="#advertising-links">5. Labels and links</a></li><li><a href="#advertising-standards">6. What we accept</a></li><li><a href="#advertising-creative">7. Ad images, words and review</a></li><li><a href="#advertising-affiliate">8. Affiliate links</a></li><li><a href="#advertising-networks">9. Ad networks</a></li><li><a href="#advertising-endorse">10. No endorsement</a></li><li><a href="#advertising-buy">11. Advertising with us</a></li></ul></details>
 
 
 <h3 id="advertising-types">1. Kinds of paid placement</h3>
@@ -331,17 +332,17 @@ document.documentElement.className+=' js';
 <li><b>Advertising packages:</b> available by inquiry. Their contents are still being finalized, so ask us for current details.</li>
 <li><b>Newsletter sponsorship:</b> not offered yet. We’ll offer it only once the newsletter has enough confirmed subscribers, we’ve measured that it reaches inboxes reliably, and we’ve set how many sponsor spots each issue carries. When it’s offered, each sponsor message will be labeled “Sponsored.”</li>
 </ul>
-<p>Our ads are text only. We don’t use autoplaying video or sound, pop-ups, or ads that stick to the screen or cover what you’re reading.</p>
+<p>An ad is words alone, or one still image with a short headline and text. We don’t use animation, autoplaying video or sound, pop-ups, or ads that stick to the screen or cover what you’re reading.</p>
 
 <h3 id="advertising-where">2. Where ads appear</h3>
 <ul>
 <li>Sponsor lines, sponsored cards and side ads appear only on the Events, Jobs, Deals and Classifieds boards. Side ads show only on wide screens.</li>
 <li>There are no ads on News, All, Police &amp; courts, Institutions, Obituaries, breaking-news alerts or search results, and we don’t place ads next to stories about crimes, deaths or other tragedies.</li>
-<li>The one exception on Obituaries is the planned “Send flowers” link described in <a href="#advertising-affiliate">section 7</a>. It is a link only, not an ad.</li>
+<li>The one exception on Obituaries is the planned “Send flowers” link described in <a href="#advertising-affiliate">section 8</a>. It is a link only, not an ad.</li>
 </ul>
 
 <h3 id="advertising-targeting">3. No targeting</h3>
-<p>Our own ads are never targeted. Every reader of a board sees the same ad; when a board has more than one sponsor, they take turns by the date. We don’t use your location, the stories you read, cookies or any other information about you to choose an ad, and we don’t record who sees or clicks an ad. If we ever add an ad network (see <a href="#advertising-networks">section 8</a>), its ads may be personalized only under that network’s own rules and our updated policies.</p>
+<p>Our own ads are never targeted. Every reader of a board sees the same ad; when a board has more than one sponsor, they take turns by the date. We don’t use your location, the stories you read, cookies or any other information about you to choose an ad, and we don’t record who sees or clicks an ad. If we ever add an ad network (see <a href="#advertising-networks">section 9</a>), its ads may be personalized only under that network’s own rules and our updated policies.</p>
 
 <h3 id="advertising-independence">4. Separation from news</h3>
 <ul>
@@ -350,22 +351,34 @@ document.documentElement.className+=' js';
 </ul>
 
 <h3 id="advertising-links">5. Labels and links</h3>
-<p>Every ad and paid placement is labeled (“Sponsored” or “Featured · Paid”), as the FTC requires, and our own notices are labeled “Advertise with us.” Ad links use secure (https) web addresses, are marked <code>rel="sponsored"</code> for search engines and open in a new tab. Clicking one takes you to the advertiser’s site, which has its own terms and privacy practices.</p>
+<p>Every ad and paid placement is labeled (“Sponsored” or “Featured · Paid”), as the FTC requires, and our own notices are labeled “Advertise with us.” An ad’s link goes to a secure (https) web page, a map or directions page, or a phone number to call, and is marked <code>rel="sponsored"</code> for search engines; web links open in a new tab. Clicking one takes you to the advertiser’s site (or the map service), which has its own terms and privacy practices.</p>
 
 <h3 id="advertising-standards">6. What we accept</h3>
 <p>We accept ads from local businesses, organizations and events that are lawful, truthful and not misleading, and that follow the FTC’s advertising rules. We don’t accept ads for adult content, illegal products, weapons, vaping or tobacco, payday or predatory loans, gambling where it’s illegal, “miracle” health claims, or political ads that don’t identify who paid for them. We can decline or remove any ad. Advertisers are responsible for their ad’s content and any claims in it.</p>
 
-<h3 id="advertising-affiliate">7. Affiliate links</h3>
+<h3 id="advertising-creative">7. Ad images, words and review</h3>
+<p class="lg-meta">Last updated October 18, 2026</p>
+<p>Advertisers send their ad through the upload link we give them: it needs the reference from their advertising inquiry (with the email used on it), their order number, or a signed link from us that works for 14 days. Nobody can upload an ad anonymously.</p>
+<ul>
+<li><b>Image:</b> one still JPEG, PNG or WebP image, at least 300×150 pixels, no more than 4,000 pixels on a side, and 300 KB or smaller. No animation, video or sound. It must be legible and not imitate a news story, a Tri-State News label, a button that does something other than open the ad, or a system message.</li>
+<li><b>Words:</b> a headline of up to 60 characters (also used as the image’s description for screen readers) and optional text of up to 140 characters. No web addresses in the words.</li>
+<li><b>Button:</b> one of “Visit website,” “Shop now,” “Learn more,” “Call now” or “Get directions.”</li>
+<li><b>Destination:</b> a secure (https) web page, a U.S. phone number for “Call now,” or a Google Maps, Apple Maps, Bing Maps or OpenStreetMap link for “Get directions.” It must be the final address, not a link shortener or a redirect to another site, and must not ask for a password or install anything. The landing page must match the ad.</li>
+<li><b>Content:</b> everything in <a href="#advertising-standards">section 6</a> applies. Claims must be truthful and supportable, and the advertiser must have the rights to every image, logo and word in the ad.</li>
+</ul>
+<p><b>Review.</b> A person at Tri-State News reviews every ad before it runs; nothing uploaded appears on the site until it’s approved. We approve or reject each ad with a recorded reason. An approved ad shows only in the spots we chose for it (sponsor line, sponsored card or side ad). We can take an approved ad down at any time, for example if its page changes or it breaks these rules, and we record why. Rejected and withdrawn images are deleted; we keep a short record of the decision.</p>
+
+<h3 id="advertising-affiliate">8. Affiliate links</h3>
 <p>Some links on the site may be affiliate links: if you buy something after following one, we may earn a commission, at no extra cost to you. Each affiliate link is labeled “paid link” and marked <code>rel="sponsored"</code>. We don’t use affiliate links today.</p>
 <p><b>“Send flowers” on obituaries (planned).</b> Each obituary may get a “Send flowers” link. Where the funeral home has its own florist page, the link goes there. Otherwise it’s an affiliate link to a flower-delivery service, labeled “paid link,” and we may earn a commission on an order. It is a link only: no ad, script, cookie or tracking pixel is added to the obituary. A commission never affects which obituaries appear or what they say. We’ll name the service here once we’ve joined its program.</p>
 
-<h3 id="advertising-networks">8. Ad networks</h3>
+<h3 id="advertising-networks">9. Ad networks</h3>
 <p>We don’t use any third-party ad network today. If we ever show ads from a network such as Google AdSense, we’ll update this policy and our <a href="#privacy">Privacy Policy</a>, and show a consent notice where the law requires one, before any network ad appears. Network ads will be labeled “Advertisement” and kept out of the sections listed in <a href="#advertising-where">section 2</a>.</p>
 
-<h3 id="advertising-endorse">9. No endorsement</h3>
+<h3 id="advertising-endorse">10. No endorsement</h3>
 <p>An ad isn’t a recommendation from Tri-State News. If we ever write about an advertiser, we’ll disclose the relationship.</p>
 
-<h3 id="advertising-buy">10. Advertising with us</h3>
+<h3 id="advertising-buy">11. Advertising with us</h3>
 <p>See the rate card under “Advertise” in the footer at the end of any page, or email <span data-ph="email">unclesamjunkremoval@gmail.com</span>. Featured-post prices are in our <a href="#terms-paid">Terms of Use</a>.</p>
 
 </section>

@@ -14,6 +14,12 @@ const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
+// Each index expires a margin after the longest any of its listings can live, and that clock restarts on every
+// post, so an index never outlives its newest listing by more than INDEX_MARGIN_DAYS (each listing record has its
+// own TTL; expired ids are still pruned from the index on every read and write).
+const EVENT_MAX_DAYS = 400, INDEX_MARGIN_DAYS = 7;
+const indexTtl = kind => (kind === 'event' ? EVENT_MAX_DAYS + 2 : kind === 'job' ? JOB_DAYS : DAYS) * 86400 + INDEX_MARGIN_DAYS * 86400;
+const cutoffFor = (kind, now) => kind === 'event' ? now - 2 * 864e5 : now - (kind === 'job' ? JOB_DAYS : DAYS) * 864e5;
 const indexFor = kind => kind === 'deal' ? 'tsn:dl:index' : kind === 'event' ? 'tsn:ev:index' : kind === 'job' ? 'tsn:jb:index' : kind === 'obit' ? 'tsn:ob:index' : 'tsn:ls:index';
 const kindOf = v => v === 'deal' ? 'deal' : v === 'event' ? 'event' : v === 'job' ? 'job' : v === 'obit' ? 'obit' : 'item';
 const todayChi = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
@@ -124,7 +130,7 @@ async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      const cutoff = kind === 'event' ? now - 2 * 864e5 : now - (kind === 'job' ? JOB_DAYS : DAYS) * 864e5;
+      const cutoff = cutoffFor(kind, now);
       const idx = await pipeline([['ZREMRANGEBYSCORE', INDEX, '-inf', String(cutoff)], [kind === 'event' ? 'ZRANGE' : 'ZREVRANGE', INDEX, '0', String(MAX_SHOWN - 1)]]);
       const ids = (idx[1] && idx[1].result || []).filter(x => ID_RE.test(x));
       if (!ids.length) return send(200, { configured: true, items: [] });
@@ -157,9 +163,9 @@ async function handler(req, res) {
       const photo = goodImage(body.img, MAX_PHOTO), logo = kind === 'deal' || kind === 'job' ? goodImage(body.logo, MAX_LOGO) : '';
       const item = { ...v, at: new Date(now).toISOString(), uid: body.uid, img: !!photo, logo };
       const score = kind === 'event' ? Date.parse(v.date + 'T12:00:00Z') : now;
-      const ttl = kind === 'event' ? Math.min(400 * 86400, Math.max(86400, Math.ceil((score + 2 * 864e5 - now) / 1000))) : kind === 'job' ? JOB_DAYS * 86400 : v.ends ? Math.min(DAYS * 86400, Math.max(86400, Math.ceil((Date.parse(v.ends + 'T23:59:59Z') + 864e5 - now) / 1000))) : DAYS * 86400;
+      const ttl = kind === 'event' ? Math.min(EVENT_MAX_DAYS * 86400, Math.max(86400, Math.ceil((score + 2 * 864e5 - now) / 1000))) : kind === 'job' ? JOB_DAYS * 86400 : v.ends ? Math.min(DAYS * 86400, Math.max(86400, Math.ceil((Date.parse(v.ends + 'T23:59:59Z') + 864e5 - now) / 1000))) : DAYS * 86400;
       const cmds = photo ? [['SET', imgKey(id), photo, 'EX', String(ttl)]] : [];
-      await pipeline(cmds.concat([['SET', rec(id), JSON.stringify(item), 'EX', String(ttl)], ['ZADD', INDEX, String(score), id]]));
+      await pipeline(cmds.concat([['SET', rec(id), JSON.stringify(item), 'EX', String(ttl)], ['ZADD', INDEX, String(score), id], ['ZREMRANGEBYSCORE', INDEX, '-inf', String(cutoffFor(kind, now))], ['EXPIRE', INDEX, String(indexTtl(kind))]]));
       return send(200, { ok: true, item: { id, title: v.title, price: v.price, town: v.town, desc: v.desc, contact: v.contact, at: item.at, code: v.code, ends: v.ends, category: v.category, condition: v.condition, business: v.business, date: v.date, time: v.time, place: v.place, jobType: v.jobType, pay: v.pay, svc: v.svc, img: !!photo, logo } });
     }
 
@@ -186,3 +192,5 @@ async function handler(req, res) {
 module.exports = handler;
 module.exports.validate = validate;
 module.exports.goodImage = goodImage;
+module.exports.indexTtl = indexTtl;
+module.exports.indexFor = indexFor;

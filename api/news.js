@@ -95,12 +95,12 @@ const SOURCES = [
   { id: 'ob-browning', everyMin: 60, funeralHome: true, name: 'Browning Funeral Home', area: 'Evansville', kind: 'obits', maxAgeDays: 21, url: 'https://www.browningfuneral.com/rss.xml' },
   { id: 'ob-koehler', everyMin: 60, funeralHome: true, name: 'Koehler Funeral Home', area: 'Boonville', kind: 'obits', maxAgeDays: 21, url: 'https://www.koehlerfuneralhome.com/rss.xml' },
   { id: 'ob-haley', everyMin: 60, funeralHome: true, name: 'Haley-McGinnis Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.haleymcginnis.com/rss.xml' },
-  { id: 'ob-davis', everyMin: 60, funeralHome: true, name: 'James H. Davis Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.davisfuneralhome.com/rss.xml' },
-  { id: 'ob-nass', everyMin: 60, funeralHome: true, name: 'Nass & Son Funeral Home', area: 'Huntingburg', kind: 'obits', maxAgeDays: 21, url: 'https://www.nassandson.com/rss.xml' },
+  { id: 'ob-davis', disabled: '2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.', everyMin: 60, funeralHome: true, name: 'James H. Davis Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, url: 'https://www.davisfuneralhome.com/rss.xml' },
+  { id: 'ob-nass', disabled: '2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.', everyMin: 60, funeralHome: true, name: 'Nass & Son Funeral Home', area: 'Huntingburg', kind: 'obits', maxAgeDays: 21, url: 'https://www.nassandson.com/rss.xml' },
   // FuneralOne, CFS, Tukios and Gather sites have no obituary feed but list every obituary in a sitemap (each
   // site's robots.txt allows these pages). parser 'sitemap': newest entries only, at most SITEMAP_DETAILS new pages per run.
-  { id: 'ob-bgt', everyMin: 60, funeralHome: true, name: 'Benton-Glunt & Tapp Funeral Home', area: 'Henderson', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml' },
-  { id: 'ob-becher', everyMin: 60, funeralHome: true, name: 'Becher & Kluesner Funeral Home', area: 'Jasper', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.becherkluesner.com/obituaries/sitemap.xml' },
+  { id: 'ob-bgt', disabled: '2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.', everyMin: 60, funeralHome: true, name: 'Benton-Glunt & Tapp Funeral Home', area: 'Henderson', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml' },
+  { id: 'ob-becher', disabled: '2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.', everyMin: 60, funeralHome: true, name: 'Becher & Kluesner Funeral Home', area: 'Jasper', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.becherkluesner.com/obituaries/sitemap.xml' },
   { id: 'ob-colvin', everyMin: 60, funeralHome: true, name: 'Colvin Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.colvinfuneralhome.com/cov/obituary_sitemap.xml' },
   { id: 'ob-doyle', everyMin: 60, funeralHome: true, name: 'Doyle Funeral Home', area: 'Princeton, Ind.', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://www.doylefuneral.com/obituary-sitemap.xml' },
   { id: 'ob-glenn', everyMin: 60, funeralHome: true, name: 'Glenn Funeral Home', area: 'Owensboro', kind: 'obits', maxAgeDays: 21, parser: 'sitemap', url: 'https://obits.glennfuneralhome.com/obituary-sitemap.xml' },
@@ -120,6 +120,10 @@ const SOURCES = [
   { id: 'wkms', name: 'WKMS Public Radio', area: 'Western Kentucky', geo: true, url: 'https://www.wkms.org/rss.xml' },
   { id: 'ipm', name: 'Illinois Public Media', area: 'Illinois', geo: true, url: 'https://ipmnewsroom.org/feed/' },
 ];
+
+// A source with a `disabled` reason stays listed above (easy to re-enable) but is never fetched or shown.
+const DISABLED_SOURCES = SOURCES.filter(s => s.disabled);
+for (let i = SOURCES.length - 1; i >= 0; i--) if (SOURCES[i].disabled) SOURCES.splice(i, 1);
 
 // Add more feeds without editing code: set EXTRA_FEEDS in the Vercel project to a JSON array like
 // [{"id":"usi","name":"USI News","area":"Evansville","kind":"institution","url":"https://example.edu/feed"}]
@@ -803,6 +807,7 @@ module.exports.isWire = isWire;
 module.exports.parseIcal = parseIcal;
 module.exports.refreshAll = refreshAll;
 module.exports.SOURCES = SOURCES;
+module.exports.DISABLED_SOURCES = DISABLED_SOURCES;
 module.exports.mergeState = mergeState;
 module.exports.stored = stored;
 module.exports.loadSource = loadSource;

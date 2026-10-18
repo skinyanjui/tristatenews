@@ -131,3 +131,13 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 
 ### Needs review (ads PR 4.2)
 14. **Made-up businesses (lawyer):** sample ads show invented business names. They were checked against a web search, but a name could still match a real business somewhere in the footprint. The "Sample ad" label and the link to our own page reduce confusion; confirm the wording is enough, and drop any name that turns out to be real.
+
+## Ads PR 4.3: the obituary "Send flowers" link (Obituaries §4, Advertising Policy §2 and §8, Privacy §3)
+- **Obituaries §4 and Advertising §2:** "planned" removed; the link is described as a small text link only, not an ad.
+- **Advertising §8:** the only affiliate link we may use is "Send flowers", and only after we join a flower-delivery affiliate program (none appear until then). A link to a funeral home's own florist page is used only where we've confirmed the page, and isn't paid. Otherwise the affiliate link is labeled "paid link" (rel="sponsored noopener") and may earn a commission at no extra cost. With neither, no link. No ad, image, script, cookie or pixel; the link carries nothing about the reader or the person who died. The service is still not named.
+- **Privacy §3:** "Affiliate links" now covers the Send flowers link: the partner's site may set its own cookies; the link carries only our affiliate code; we don't record who clicks; a funeral-home florist link isn't an affiliate link.
+
+### Needs review (ads PR 4.3)
+15. **Naming the partner:** the code is built for Florist One, but the policy still doesn't name it. Florist One's affiliate agreement (§3(f)) says affiliates may not use its name on their websites except as its own materials include it or it approves in writing. Once Sam joins, check whether naming it in the Advertising and Privacy policies is allowed or needs its written OK, then name it.
+16. **Florist One terms (Sam):** the agreement also forbids changing the links it provides and appearing to be a local florist. Replace the placeholder link shape in `data/flowers.json` with the exact link from the affiliate area, and keep the wording "Send flowers" (no local-florist claim).
+17. **Funeral-home florist pages:** none are listed yet. Before adding one, confirm the page is the funeral home's own (or one it names) and that linking needs no agreement (item 8).

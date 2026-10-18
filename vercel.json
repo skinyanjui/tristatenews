@@ -34,6 +34,10 @@
       "destination": "/api/listings?__route=catalog"
     },
     {
+      "source": "/api/flowers",
+      "destination": "/api/listings?__route=flowers"
+    },
+    {
       "source": "/api/orders",
       "destination": "/api/listings?__route=orders"
     },

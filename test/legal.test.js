@@ -50,7 +50,7 @@ test('Advertising Policy: ad spots, house units, no targeting, ad-free sections,
     'only on the Events, Jobs, Deals and Classifieds boards', 'no ads on News, All, Police & courts, Institutions, Obituaries, breaking-news alerts or search results',
     'Our own ads are never targeted', 'Every reader of a board sees the same ad', 'rel="sponsored"', 'https', 'don’t use animation, autoplaying video or sound, pop-ups',
     'We don’t use any third-party ad network today', 'consent notice', 'labeled “paid link”', 'we may earn a commission', 'never affects which obituaries appear or what they say',
-    'Where the funeral home has its own florist page, the link goes there', 'no ad, script, cookie or tracking pixel', 'We don’t use affiliate links today', 'Last updated October 18, 2026'])
+    'the funeral home has its own florist page, the link goes there', 'no ad, image, script, cookie or tracking pixel', 'until then no affiliate links appear', 'If neither applies, the obituary shows no link', 'Last updated October 18, 2026'])
     assert.ok(t.includes(s), s);
   assert.ok(!/florist one|1-800-flowers|ftd\b|teleflora|bloomnation/i.test(legal), 'no affiliate partner named until Sam joins a program');
   // the table of contents lists every heading

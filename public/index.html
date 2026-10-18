@@ -26,6 +26,7 @@
 <script src="/routes.js"></script>
 <script src="/featured.js"></script>
 <script src="/adslots.js"></script>
+<script src="/flowers.js"></script>
 <script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -150,6 +151,12 @@ main:focus { outline:none; }
 .ob h3 { margin:0; font-size:18px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
 .ob .ob-home { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
 .ob .ob-svc { font-weight:500; }
+/* "Send flowers" on obituaries (public/flowers.js): a quiet text link, never an ad unit */
+.ob-flw { display:flex; align-items:baseline; gap:6px; font-size:13px; line-height:18px; color:var(--text-muted); }
+.ob-flw a, .card .ob-flw a { display:inline; padding:0; min-height:0; color:inherit; text-decoration:underline; text-underline-offset:2px; }
+.ob-flw a:hover { color:var(--text); }
+.ob-flw .ob-paid { font-size:12px; }
+.card .cf .ob-flw { margin-right:auto; white-space:nowrap; }
 .rail { display:none; }
 @media (min-width:1360px) {
   .rail { display:grid; gap:12px; position:fixed; top:124px; width:160px; align-content:start; z-index:1; }
@@ -2007,6 +2014,27 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     c.appendChild(body);
     return c;
   }
+  // "Send flowers" (public/flowers.js; Advertising Policy section 8): a quiet text link under an obituary, never an
+  // ad. GET /api/flowers says where it goes: the funeral home's own florist page when we know it, otherwise the
+  // affiliate link labeled "paid link" (rel="sponsored noopener"). With neither there is no link at all.
+  var FLOWERS = null, flowersAsked = false;
+  function loadFlowers() {
+    if (flowersAsked) return;
+    flowersAsked = true;
+    fetch('/api/flowers').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      FLOWERS = d && typeof d === 'object' ? d : null;
+      if (FLOWERS && (FLOWERS.affiliate || Object.keys(FLOWERS.homes || {}).length) && state.cat === 'obits') render();
+    }).catch(function () {});
+  }
+  function flowersLink(it, tag) {
+    var f = window.TSNFlowers ? TSNFlowers.linkFor(it, FLOWERS) : null;
+    if (!f) return null;
+    var p = el(tag || 'div', 'ob-flw'), a = el('a', null, 'Send flowers');
+    a.href = f.href; a.target = '_blank'; a.rel = f.paid ? TSNFlowers.REL_PAID : 'noopener';
+    p.appendChild(a);
+    if (f.paid) p.appendChild(el('span', 'ob-paid', TSNFlowers.LABEL_PAID));
+    return p;
+  }
   function obitCard(it, b) {
     var c = el('article', 'ob');
     c.appendChild(el('span', 'ob-home', it.business || ''));
@@ -2017,6 +2045,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (bits.length) c.appendChild(el('div', 'ob-svc', bits.join(' · ')));
     if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
     c.appendChild(el('div', 'cl-meta', [it.town, 'Posted ' + new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ')));
+    var fl = flowersLink(it); if (fl) c.appendChild(fl);
     var foot = el('div', 'cl-foot'), href = applyHref(it.contact);
     if (href) { var a = el('a', 'cl-contact', 'Contact ' + it.business + ': ' + it.contact); a.href = href; foot.appendChild(a); } else foot.appendChild(el('span', 'cl-contact', it.contact));
     actions(it, 'obit', b, foot); c.appendChild(foot);
@@ -2932,6 +2961,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     a.appendChild(body);
     card.appendChild(a);
     var foot = el('div', 'cf');
+    var fl = kd === 'obits' ? flowersLink(it, 'span') : null; if (fl) foot.appendChild(fl); // outside the card's link
     foot.appendChild(actRow(sb, it));
     card.appendChild(foot);
     if (big) {
@@ -2991,7 +3021,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
     if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); return; }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
-    if (state.cat === 'obits') { if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
+    if (state.cat === 'obits') { loadFlowers(); if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
     if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }
     if (isEv) { renderEvents(); metaEl.textContent = ''; if (!boards.event.loaded) loadBoard('event'); return; }
     if (!state.loaded) return;

@@ -1,0 +1,61 @@
+{
+  "note": "Funeral homes whose obituaries we show (data/sources funeralHome entries), with each one’s own florist page for the obituary “Send flowers” link. florist stays empty until someone has checked the page on the funeral home’s own site and confirmed it is theirs: never guess or invent a URL. An https URL here wins over the affiliate link (data/flowers.json). Names are matched loosely (case, punctuation, “Funeral Home”, “&”/“and”).",
+  "homes": [
+    {
+      "name": "Ziemer Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Browning Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Koehler Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Nass & Son Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Becher & Kluesner Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Colvin Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Doyle Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Goodwin-Sievers Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Duesterberg-Fredrick Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Haley-McGinnis Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "James H. Davis Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Benton-Glunt & Tapp Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Glenn Funeral Home",
+      "florist": ""
+    },
+    {
+      "name": "Barnett-Strother Funeral Home",
+      "florist": ""
+    }
+  ]
+}

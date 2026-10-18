@@ -1,0 +1,68 @@
+GEOID|NAME|INTPTLAT|INTPTLONG|COUNTY_GEOID|COUNTY_NAME|BENCHMARK|VINTAGE
+1710373|Cahokia Heights city|38.572053|-90.155317|17163|St. Clair County|Public_AR_Current|Current_Current
+1800946|Alford CDP|38.493188|-87.246199|18125|Pike County|Public_AR_Current|Current_Current
+1802296|Arthur CDP|38.346716|-87.244333|18125|Pike County|Public_AR_Current|Current_Current
+1805050|Bethel Village CDP|39.151436|-85.925236|18005|Bartholomew County|Public_AR_Current|Current_Current
+1805644|Blairsville CDP|38.079461|-87.763101|18129|Posey County|Public_AR_Current|Current_Current
+1806832|Bowling Green CDP|39.38016|-87.011493|18021|Clay County|Public_AR_Current|Current_Current
+1807426|Bretzville CDP|38.296467|-86.866278|18037|Dubois County|Public_AR_Current|Current_Current
+1808848|Buckskin CDP|38.225499|-87.414776|18051|Gibson County|Public_AR_Current|Current_Current
+1810144|Canton CDP|38.625918|-86.034966|18175|Washington County|Public_AR_Current|Current_Current
+1810774|Cass CDP|39.087607|-87.277283|18153|Sullivan County|Public_AR_Current|Current_Current
+1811134|Celestine CDP|38.386497|-86.773151|18037|Dubois County|Public_AR_Current|Current_Current
+1813978|Coal City CDP|39.228267|-87.044257|18119|Owen County|Public_AR_Current|Current_Current
+1815202|Cortland CDP|38.973747|-85.962878|18071|Jackson County|Public_AR_Current|Current_Current
+1815238|Cory CDP|39.381256|-87.203888|18021|Clay County|Public_AR_Current|Current_Current
+1817794|Depauw CDP|38.332711|-86.2216|18061|Harrison County|Public_AR_Current|Current_Current
+1819936|East Oolitic CDP|38.899675|-86.512212|18093|Lawrence County|Public_AR_Current|Current_Current
+1820134|Eckerty CDP|38.322045|-86.612352|18025|Crawford County|Public_AR_Current|Current_Current
+1822180|Fairbanks CDP|39.218205|-87.522917|18153|Sullivan County|Public_AR_Current|Current_Current
+1823836|Folsomville CDP|38.130019|-87.16188|18173|Warrick County|Public_AR_Current|Current_Current
+1828116|Glezen CDP|38.417314|-87.309967|18125|Pike County|Public_AR_Current|Current_Current
+1828728|Grandview Lake CDP|39.151634|-86.03957|18005|Bartholomew County|Public_AR_Current|Current_Current
+1828908|Grantsburg CDP|38.291314|-86.470519|18025|Crawford County|Public_AR_Current|Current_Current
+1829106|Graysville CDP|39.118006|-87.555694|18153|Sullivan County|Public_AR_Current|Current_Current
+1832098|Harrison Lake CDP|39.184514|-86.026232|18005|Bartholomew County|Public_AR_Current|Current_Current
+1832422|Hashtown CDP|39.023928|-86.923187|18055|Greene County|Public_AR_Current|Current_Current
+1832638|Haysville CDP|38.490103|-86.905855|18037|Dubois County|Public_AR_Current|Current_Current
+1832944|Helmsburg CDP|39.267793|-86.296334|18013|Brown County|Public_AR_Current|Current_Current
+1832980|Heltonville CDP|38.930162|-86.373715|18093|Lawrence County|Public_AR_Current|Current_Current
+1835392|Huron CDP|38.72102|-86.67087|18093|Lawrence County|Public_AR_Current|Current_Current
+1836468|Ireland CDP|38.414399|-86.998844|18037|Dubois County|Public_AR_Current|Current_Current
+1838664|Johnson CDP|38.274042|-87.748101|18051|Gibson County|Public_AR_Current|Current_Current
+1839042|Judah CDP|38.959599|-86.54239|18093|Lawrence County|Public_AR_Current|Current_Current
+1841706|Lakewood CDP|39.396513|-87.302043|18167|Vigo County|Public_AR_Current|Current_Current
+1842516|Lawrenceport CDP|38.747134|-86.390128|18093|Lawrence County|Public_AR_Current|Current_Current
+1842876|Leopold CDP|38.103669|-86.582829|18123|Perry County|Public_AR_Current|Current_Current
+1843020|Lewis CDP|39.260111|-87.255305|18167|Vigo County|Public_AR_Current|Current_Current
+1846764|Mariah Hill CDP|38.165468|-86.926903|18147|Spencer County|Public_AR_Current|Current_Current
+1847430|Martinsburg CDP|38.442762|-86.024918|18175|Washington County|Public_AR_Current|Current_Current
+1848906|Middlebury CDP|39.264887|-87.119306|18021|Clay County|Public_AR_Current|Current_Current
+1849086|Midland CDP|39.118047|-87.189998|18055|Greene County|Public_AR_Current|Current_Current
+1852200|Needmore CDP|38.926703|-86.526266|18093|Lawrence County|Public_AR_Current|Current_Current
+1853118|New Lebanon CDP|39.040898|-87.471302|18153|Sullivan County|Public_AR_Current|Current_Current
+1853676|Newtonville CDP|37.998892|-86.939725|18147|Spencer County|Public_AR_Current|Current_Current
+1853982|Nineveh CDP|39.361204|-86.092678|18081|Johnson County|Public_AR_Current|Current_Current
+1858374|Patricksburg CDP|39.312051|-86.954264|18119|Owen County|Public_AR_Current|Current_Current
+1858500|Paxton CDP|39.021673|-87.388489|18153|Sullivan County|Public_AR_Current|Current_Current
+1860696|Pleasant View Village CDP|39.336165|-85.976147|18005|Bartholomew County|Public_AR_Current|Current_Current
+1860732|Pleasantville CDP|38.964379|-87.247513|18153|Sullivan County|Public_AR_Current|Current_Current
+1861686|Prairie Creek CDP|39.273193|-87.498114|18167|Vigo County|Public_AR_Current|Current_Current
+1861758|Prairieton CDP|39.372287|-87.471998|18167|Vigo County|Public_AR_Current|Current_Current
+1862154|Prospect CDP|38.586749|-86.616422|18117|Orange County|Public_AR_Current|Current_Current
+1862892|Ramsey CDP|38.321668|-86.155688|18061|Harrison County|Public_AR_Current|Current_Current
+1863810|Reo CDP|37.909166|-87.113353|18147|Spencer County|Public_AR_Current|Current_Current
+1866744|St. Anthony CDP|38.318687|-86.823061|18037|Dubois County|Public_AR_Current|Current_Current
+1867284|St. Wendel CDP|38.105043|-87.699952|18129|Posey County|Public_AR_Current|Current_Current
+1867518|Saline City CDP|39.366557|-87.132277|18021|Clay County|Public_AR_Current|Current_Current
+1868256|Schnellville CDP|38.345227|-86.756251|18037|Dubois County|Public_AR_Current|Current_Current
+1870506|Solsberry CDP|39.082599|-86.763545|18055|Greene County|Public_AR_Current|Current_Current
+1872584|Stanford CDP|39.092056|-86.664573|18105|Monroe County|Public_AR_Current|Current_Current
+1872980|Stendal CDP|38.267157|-87.146264|18125|Pike County|Public_AR_Current|Current_Current
+1873160|Stewartsville CDP|38.181073|-87.836699|18129|Posey County|Public_AR_Current|Current_Current
+1874978|Taswell CDP|38.335564|-86.559743|18025|Crawford County|Public_AR_Current|Current_Current
+1876742|Tunnelton CDP|38.773154|-86.341153|18093|Lawrence County|Public_AR_Current|Current_Current
+1878758|Velpen CDP|38.355288|-87.105504|18125|Pike County|Public_AR_Current|Current_Current
+1879028|Vicksburg CDP|39.08845|-87.197999|18055|Greene County|Public_AR_Current|Current_Current
+1879442|Wadesville CDP|38.103842|-87.790231|18129|Posey County|Public_AR_Current|Current_Current
+1879604|Walesboro CDP|39.142497|-85.911877|18005|Bartholomew County|Public_AR_Current|Current_Current

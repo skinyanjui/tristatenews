@@ -480,6 +480,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .sfoot-btn:focus-visible { outline:2px solid var(--blue); outline-offset:1px; }
 .sfoot-in b { color:var(--foreground); font-weight:600; flex:none; }
 .sfoot-in span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sfoot-btn.sfoot-legal { display:inline-flex; align-items:center; padding:0 10px; text-decoration:none; } /* Legal in the sticky bar: same look as Advertise, a little tighter */
+@media (max-width:429px) { .sfoot-in span { display:none; } }
+@media (max-width:359px) { .sfoot-in > b { display:none; } } /* very narrow phones: keep the three buttons on one row */ /* phones: the tagline would be cut to a few letters next to Legal / Advertise / Submit news */
 
 @media (min-width:640px) {
   .nav-in, .nav-tabs, main, .sfoot-in { padding-left:24px; padding-right:24px; }
@@ -703,6 +706,12 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .legal-link { display:inline-flex; align-items:center; min-height:40px; padding:0 8px; margin-left:-8px; border-radius:var(--radius-md); color:var(--foreground); font-size:13px; font-weight:500; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--gray-400); }
 .legal-link:hover { background:var(--gray-100); text-decoration:underline; text-underline-offset:2px; }
 .legal-foot p { margin:0; max-width:68ch; }
+.legal-links { display:flex; flex-wrap:wrap; gap:0 8px; margin-left:-8px; }
+.legal-links .legal-link { margin-left:0; }
+.cl-adult { display:grid; gap:4px; }
+.cl-adult .cl-check { display:flex; align-items:flex-start; flex:initial; min-height:0; padding:4px 0; font-weight:400; font-size:14px; line-height:20px; }
+.cl-adult .cl-check input { flex:none; margin-top:-2px; }
+.cl-adult .cl-check a { text-decoration:underline; text-underline-offset:2px; }
 .cl-note a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
 </style>
 </head>
@@ -749,12 +758,12 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   <div class="more" id="more"></div>
   <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
   <div class="legal-foot">
-    <a class="legal-link" href="/legal.html">Legal</a>
+    <div class="legal-links"><a class="legal-link" href="/legal.html">Legal</a><a class="legal-link" href="/unsubscribe.html">Unsubscribe</a></div>
     <p>© 2026 Tri-State News. Headlines and excerpts link to their publishers, who own them. An arrest or charge is an accusation, not a conviction.</p>
   </div>
 </main>
 
-<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · News refreshed about every 15 min, alerts every 5</span><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
+<footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · News refreshed about every 15 min, alerts every 5</span><a class="sfoot-btn sfoot-ghost sfoot-legal" href="/legal.html">Legal</a><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
 
 <script>
 (function () {
@@ -1064,6 +1073,19 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   function alertItem(b) { return { id: b.key, title: b.title, summary: b.summary || '', link: b.link, source: b.source, sourceId: b.sourceId || 'alert', published: b.start ? new Date(b.start).toISOString() : '', image: '' }; }
 
   // "By posting, you agree to our Terms of Use and Privacy Policy." with real links.
+  // Required "18 or older" checkbox for community posts, folded into the Terms/Privacy line. F.adult in the forms.
+  function ageConsent() {
+    var w = el('div', 'cl-adult'), i = el('input'); i.type = 'checkbox'; i.id = 'f-adult' + (++uidSeq); i.name = 'adult'; i.required = true;
+    var l = el('label', 'cl-check'); l.setAttribute('for', i.id); l.appendChild(i);
+    var tx = el('span'); tx.appendChild(document.createTextNode('I’m 18 or older, and I agree to the '));
+    var t = el('a', null, 'Terms of Use'); t.href = '/legal.html#terms'; t.target = '_blank'; tx.appendChild(t);
+    tx.appendChild(document.createTextNode(' and ')); var v = el('a', null, 'Privacy Policy'); v.href = '/legal.html#privacy'; v.target = '_blank'; tx.appendChild(v);
+    tx.appendChild(document.createTextNode('.')); l.appendChild(tx);
+    var fe = el('div', 'cl-fe'); fe.setAttribute('role', 'alert'); fe.id = i.id + '-err'; i.setAttribute('aria-describedby', fe.id);
+    w.appendChild(l); w.appendChild(fe); w.input = i;
+    w.err = function (m) { fe.textContent = m || ''; if (m) i.setAttribute('aria-invalid', 'true'); else i.removeAttribute('aria-invalid'); };
+    return w;
+  }
   function legalNote(lead) {
     var p = el('p', 'cl-note'); p.appendChild(document.createTextNode(lead + ', you agree to our '));
     var t = el('a', null, 'Terms of Use'); t.href = '/legal.html#terms'; t.target = '_blank'; p.appendChild(t);
@@ -1717,11 +1739,11 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     var two1 = el('div', 'cl-two'); two1.appendChild(F.title); two1.appendChild(F.business);
     var two2 = el('div', 'cl-two'); two2.appendChild(F.town); two2.appendChild(F.svc);
     [two1, two2, F.place, F.desc, F.contact].forEach(function (x) { f.appendChild(x); });
+    F.adult = ageConsent(); f.appendChild(F.adult);
     var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); f.appendChild(top);
     var go = el('button', 'cl-go cl-wide', 'Post obituary'); go.type = 'submit'; f.appendChild(go);
     f.appendChild(el('p', 'cl-note', 'For funeral homes and families. Posts come down after 30 days. No links. Anyone can report a post.'));
-    f.appendChild(legalNote('By posting'));
-    var order = ['title', 'business', 'town', 'svc', 'contact'];
+    var order = ['title', 'business', 'town', 'svc', 'contact', 'adult'];
     function show(e) { order.forEach(function (k) { if (F[k]) F[k].err(e[k] || ''); }); var first = order.filter(function (k) { return e[k]; })[0]; if (first) { var n = F[first].querySelector('input,select'); if (n) n.focus(); } }
     f.addEventListener('submit', function (ev) {
       ev.preventDefault(); top.textContent = '';
@@ -1730,9 +1752,10 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
       if (els.business.value.trim().length < 2) e.business = 'Add the funeral home’s name.';
       if (!els.town.value) e.town = 'Choose a town.';
       if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Add the funeral home’s phone number or email.';
+      if (!F.adult.input.checked) e.adult = 'Please confirm you’re 18 or older.';
       show(e); if (Object.keys(e).length) return;
       go.disabled = true; go.textContent = 'Posting…';
-      fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'obit', title: els.title.value, business: els.business.value, town: els.town.value, svc: els.svc.value, place: els.place.value, desc: els.desc.value, contact: els.contact.value, uid: uid }) })
+      fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ adult: F.adult.input.checked, kind: 'obit', title: els.title.value, business: els.business.value, town: els.town.value, svc: els.svc.value, place: els.place.value, desc: els.desc.value, contact: els.contact.value, uid: uid }) })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (o) {
           go.disabled = false; go.textContent = 'Post obituary';
@@ -1795,10 +1818,10 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     var top = el('div', 'cl-err'); top.setAttribute('role', 'alert');
     var label = 'Post ' + noun;
     var go = el('button', 'cl-go cl-wide', label); go.type = 'submit';
+    F.adult = ageConsent(); f.appendChild(F.adult);
     f.appendChild(top); f.appendChild(go);
     f.appendChild(el('p', 'cl-note', 'No links. ' + (isJob ? 'Jobs come down after 45 days. Post only real openings.' : isDeal ? 'Deals come down on their end date or after 30 days.' : isEv ? 'Events come down after they happen.' : 'Listings expire after 30 days.') + ' Anyone can report a post.'));
-    f.appendChild(legalNote('By posting'));
-    var order = isJob ? ['employer', 'title', 'category', 'town', 'jobType', 'pay', 'contact'] : isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact'] : ['title', 'category', 'town', 'price', 'contact'];
+    var order = isJob ? ['employer', 'title', 'category', 'town', 'jobType', 'pay', 'contact', 'adult'] : isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact', 'adult'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact', 'adult'] : ['title', 'category', 'town', 'price', 'contact', 'adult'];
     function clientCheck() {
       var e = {};
       if (isDeal && els.business.value.trim().length < 2) e.business = 'Add the business name.';
@@ -1814,6 +1837,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
       else if (isEv) { if (c && c.length < 5) e.contact = 'Add a phone number or email, or leave it blank.'; if (!els.date.value) e.date = 'Pick a date.'; else if (els.date.value < inDays(0)) e.date = 'Pick today or a later date.'; }
       else { if (!PHONE_RE.test(c) && !EMAIL_RE.test(c)) e.contact = 'Enter a phone number like 812-555-0142 or an email address.';
         if (!els.free.checked && els.price.value.trim() && !/^\d[\d,]*(\.\d{2})?$/.test(els.price.value.trim().replace(/^\$/, ''))) e.price = 'Enter an amount like 50 or 1,200.'; }
+      if (!F.adult.input.checked) e.adult = 'Please confirm you’re 18 or older.';
       return e;
     }
     function show(e) {
@@ -1825,7 +1849,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
       ev.preventDefault(); top.textContent = '';
       var e = clientCheck(); show(e); if (Object.keys(e).length) return;
       go.disabled = true; go.textContent = 'Posting…';
-      var body = { img: els.photo.value || undefined, logo: els.logo ? (els.logo.value || undefined) : undefined, kind: kind, title: els.title.value, category: els.category.value, town: els.town.value, desc: els.desc.value, contact: els.contact.value, uid: uid };
+      var body = { adult: F.adult.input.checked, img: els.photo.value || undefined, logo: els.logo ? (els.logo.value || undefined) : undefined, kind: kind, title: els.title.value, category: els.category.value, town: els.town.value, desc: els.desc.value, contact: els.contact.value, uid: uid };
       if (isJob) { body.employer = els.employer.value; body.jobType = els.jobType.value; body.pay = els.pay.value; }
       else if (isDeal) { body.business = els.business.value; body.code = els.code.value; body.ends = els.ends.value; }
       else if (isEv) { body.date = els.date.value; body.time = els.time.value; body.place = els.place.value; }
@@ -2437,7 +2461,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 
     function check(id, text) { var i = el('input'); i.type = 'checkbox'; i.id = 'f-' + id + (++uidSeq); var l = el('label', 'cl-check'); l.setAttribute('for', i.id); l.appendChild(i); l.appendChild(document.createTextNode(text)); l.input = i; return l; }
     els.anon = check('anon', 'Don’t publish my name if you use this');
-    els.consent = check('consent', 'I’m the source of this information or have permission to share it, and I understand submitting doesn’t guarantee it will be published.');
+    els.consent = check('consent', 'I’m 18 or older. I’m the source of this information or have permission to share it, and I understand submitting doesn’t guarantee it will be published.');
     F.consent = el('div', 'sn-sec'); F.consent.appendChild(els.consent); var ce = el('div', 'cl-fe'); ce.setAttribute('role', 'alert'); F.consent.appendChild(ce); F.consent.err = function (m) { ce.textContent = m || ''; };
 
     function sec(title) { var s = el('div', 'sn-sec'); s.appendChild(el('h2', null, title)); return s; }

@@ -1,0 +1,55 @@
+{
+  "publisher": "U.S. Census Bureau",
+  "retrieved": "2026-10-18",
+  "geocoder": {
+    "url": "https://geocoding.geo.census.gov/geocoder/geographies/coordinates",
+    "benchmark": "Public_AR_Current",
+    "vintage": "Current_Current",
+    "layer": "Counties",
+    "queried": "2026-10-18"
+  },
+  "files": [
+    {
+      "file": "2025_Gaz_place_national.txt",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip",
+      "vintage": "2025",
+      "sha256": "15f4977a010cc42308f4d5ddc5e19f26ef63fc035f20745333a14b78aa08d3fa"
+    },
+    {
+      "file": "2025_Gaz_counties_national.txt",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip",
+      "vintage": "2025",
+      "sha256": "1914f0d83243362de83b8ddd298c213b1768d63d62d19464743289abd8bb35b1"
+    },
+    {
+      "file": "2025_Gaz_state_national.txt",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_state_national.zip",
+      "vintage": "2025",
+      "sha256": "0cbac15032fcbe2f0d3d1acee3066bbb30c00eadf2eed7b841f97ff368a79adf"
+    },
+    {
+      "file": "st17_il_place_by_county2020.txt",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st17_il_place_by_county2020.txt",
+      "vintage": "2020",
+      "sha256": "c9cac98b6a847206b03765c5f88d37c31db4a570b5a4a6ca1e6c5ad35f0d2b24"
+    },
+    {
+      "file": "st18_in_place_by_county2020.txt",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st18_in_place_by_county2020.txt",
+      "vintage": "2020",
+      "sha256": "bbb53bae662d20e2b72ed2e68ff8a2b2a897f44a6535e435f4f0048f9eb47de8"
+    },
+    {
+      "file": "st21_ky_place_by_county2020.txt",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st21_ky_place_by_county2020.txt",
+      "vintage": "2020",
+      "sha256": "3b23e8bff3d3489c36d7b6097f3dc5e54e717c32aafc6737abfa60c3ce8256a8"
+    },
+    {
+      "file": "st29_mo_place_by_county2020.txt",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st29_mo_place_by_county2020.txt",
+      "vintage": "2020",
+      "sha256": "e1c2625d071325fb63c121b39d6ecbb9027931e76201d34cdac4e88960df0371"
+    }
+  ]
+}

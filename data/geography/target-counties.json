@@ -1,7 +1,7 @@
 {
   "$comment": "Reviewed, version-controlled list of the 68 target counties. Never generated from Wikipedia. FIPS, names, ANSI codes and centroids come from the committed Census extracts in census/; seats from the official state sources listed. Re-verify with: node --test test/geography.test.js",
   "schemaVersion": 1,
-  "manifestVersion": "2026-10-18.2",
+  "manifestVersion": "2026-10-18.3",
   "reviewStatus": "pending_review",
   "invariants": {
     "core": 30,
@@ -2646,6 +2646,30 @@
       "hubCountyIds": [
         "mo-cape-girardeau"
       ]
+    },
+    {
+      "id": "region:southern-illinois:east",
+      "name": "Southern Illinois: east (Wabash and Ohio valleys)",
+      "kind": "editorial_subregion",
+      "parent": "region:southern-illinois",
+      "overlapping": false,
+      "membershipStatus": "editorial_judgment",
+      "hubCountyIds": [
+        "il-white"
+      ],
+      "description": "Editorial subregion of Southern Illinois / Little Egypt: the Wabash and Ohio river counties, which look toward Evansville, Mount Carmel, Carmi and Harrisburg. Each Illinois county is in exactly one subregion. Not an official boundary."
+    },
+    {
+      "id": "region:southern-illinois:west",
+      "name": "Southern Illinois: west (Carbondale, Marion, Mount Vernon and Cairo)",
+      "kind": "editorial_subregion",
+      "parent": "region:southern-illinois",
+      "overlapping": false,
+      "membershipStatus": "editorial_judgment",
+      "hubCountyIds": [
+        "il-williamson"
+      ],
+      "description": "Editorial subregion of Southern Illinois / Little Egypt: the Carbondale, Marion and Mount Vernon area down to Cairo and Metropolis. Each Illinois county is in exactly one subregion. Not an official boundary."
     }
   ],
   "members": [
@@ -4333,6 +4357,270 @@
         "census-county-adjacency-2025",
         "census-gazetteer-2025",
         "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-clay",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Louisville; internal point 48 mi from White County IL (hub); borders Richland IL, Wayne IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-richland",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Olney; internal point 43 mi from White County IL (hub); borders Clay IL, Edwards IL, Lawrence IL, Wabash IL, Wayne IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-lawrence",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Lawrenceville; internal point 50 mi from White County IL (hub); borders Richland IL, Wabash IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-wayne",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Fairfield; internal point 28 mi from White County IL (hub); borders Clay IL, Edwards IL, Hamilton IL, Richland IL, White IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-edwards",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Albion; internal point 24 mi from White County IL (hub); borders Richland IL, Wabash IL, Wayne IL, White IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-wabash",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mount Carmel; internal point 31 mi from White County IL (hub); borders Edwards IL, Lawrence IL, Richland IL, White IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-hamilton",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat McLeansboro; internal point 20 mi from White County IL (hub); borders Gallatin IL, Saline IL, Wayne IL, White IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-white",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Carmi; subregion hub; borders Edwards IL, Gallatin IL, Hamilton IL, Wabash IL, Wayne IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-saline",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Harrisburg; internal point 31 mi from White County IL (hub); borders Gallatin IL, Hamilton IL, Hardin IL, Pope IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-gallatin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Shawneetown; internal point 22 mi from White County IL (hub); borders Hamilton IL, Hardin IL, Saline IL, White IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-hardin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Elizabethtown; internal point 40 mi from White County IL (hub); borders Gallatin IL, Pope IL, Saline IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:east",
+      "countyId": "il-pope",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Golconda; internal point 50 mi from White County IL (hub); borders Hardin IL, Saline IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-jefferson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mount Vernon; internal point 39 mi from Williamson County IL (hub); borders Franklin IL, Perry IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-perry",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Pinckneyville; internal point 34 mi from Williamson County IL (hub); borders Franklin IL, Jackson IL, Jefferson IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-franklin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Benton; internal point 18 mi from Williamson County IL (hub); borders Jackson IL, Jefferson IL, Perry IL, Williamson IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-jackson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Murphysboro; internal point 25 mi from Williamson County IL (hub); borders Franklin IL, Perry IL, Union IL, Williamson IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-williamson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Marion; subregion hub; borders Franklin IL, Jackson IL, Johnson IL, Union IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-union",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Jonesboro; internal point 24 mi from Williamson County IL (hub); borders Alexander IL, Jackson IL, Johnson IL, Pulaski IL, Williamson IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-johnson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Vienna; internal point 19 mi from Williamson County IL (hub); borders Massac IL, Pulaski IL, Union IL, Williamson IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-alexander",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Cairo; internal point 44 mi from Williamson County IL (hub); borders Pulaski IL, Union IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-pulaski",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mound City; internal point 37 mi from Williamson County IL (hub); borders Alexander IL, Johnson IL, Massac IL, Union IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois:west",
+      "countyId": "il-massac",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Metropolis; internal point 38 mi from Williamson County IL (hub); borders Johnson IL, Pulaski IL in this subregion (Census adjacency 2025); split of the 22-county Southern Illinois region into its eastern river counties and its western Carbondale-Marion-Mount Vernon area",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025"
       ],
       "verifiedAt": "2026-10-18"
     }

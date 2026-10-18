@@ -1,0 +1,520 @@
+NAME_KEY|PLACES_ELSEWHERE|COUNTIES_ELSEWHERE|STATES
+advance|3|0|IN,MI,NC
+albion|10|0|CA,IA,ID,IN,MI,NE,NY,OK,PA,WA
+alexander|6|1|AR,IA,IL,KS,NC,ND,NY
+alford|1|0|FL
+alfordsville|0|0|
+allendale|5|1|CA,MI,MO,NJ,SC
+allensville|1|0|PA
+allenville|1|0|IL
+altenburg|0|0|
+alto pass|0|0|
+anna|2|0|OH,TX
+anniston|1|0|AL
+anthoston|0|0|
+arlington|20|1|AZ,GA,IA,IL,IN,KS,MA,MN,NE,NY,OH,OR,SD,TN,TX,VA,VT,WA,WI,WY
+arthur|4|1|IA,IL,ND,NE
+ava|1|0|MO
+baker|6|3|CA,FL,GA,LA,MN,MT,NV,OK,OR
+ballard|2|0|CA,UT
+bandana|0|0|
+bardwell|1|0|TX
+barlow|1|0|OR
+beaver dam|3|0|AZ,IN,WI
+beech grove|1|0|IN
+beechmont|0|0|
+belknap|1|1|MT,NH
+bell city|0|0|
+belle prairie city|0|0|
+belle rive|0|0|
+bellmont|0|0|
+benton|11|9|AL,AR,CA,IA,IN,KS,LA,MN,MO,MS,OR,PA,TN,WA,WI
+bernie|0|0|
+bertrand|1|0|NE
+bicknell|1|0|UT
+biehle|0|0|
+birdseye|0|0|
+blairsville|2|0|GA,PA
+blandville|0|0|
+blodgett|1|0|OR
+bloomfield|11|0|CA,IA,IL,IN,KY,MT,NE,NM,NY,PA,WI
+bluford|0|0|
+bollinger|0|0|
+bone gap|0|0|
+bonnie|0|0|
+boonville|4|0|CA,MO,NC,NY
+breckinridge center|0|0|
+bremen|4|0|GA,IN,KS,OH
+bretzville|0|0|
+brewer|1|0|ME
+bridgeport|14|0|AL,CA,CT,KS,MI,NE,NJ,NY,OH,OK,PA,TX,WA,WV
+brookport|0|0|
+broseley|0|0|
+broughton|1|0|OH
+browns|0|0|
+bruceville|0|0|
+buckner|3|0|AR,KY,MO
+buckskin|0|0|
+buncombe|0|1|NC
+burfordville|0|0|
+burna|0|0|
+burns city|0|0|
+burnt prairie|0|0|
+bush|0|0|
+butler|14|7|AL,GA,IA,IL,IN,KS,KY,MO,NE,NJ,OH,OK,PA,SD,TN,WI
+cadiz|2|0|IN,OH
+cairo|6|0|GA,MO,NE,NY,OH,WV
+caldwell|6|4|AR,ID,KS,LA,MO,NC,NJ,OH,TX
+calhoun|4|11|AL,AR,FL,GA,IA,IL,LA,MI,MO,MS,SC,TN,TX,WV
+calloway|0|0|
+calvert city|0|0|
+cambria|3|1|CA,MI,PA,WI
+campbell hill|0|0|
+canalou|0|0|
+cannelburg|0|0|
+cannelton|0|0|
+cape girardeau|0|0|
+carbondale|3|0|CO,KS,PA
+carlisle|8|0|AR,IA,IN,KY,OH,OK,PA,SC
+carmi|0|0|
+carrier mills|0|0|
+carrsville|1|0|VA
+carter|4|4|KY,MT,OK,TN,TX,WY
+carterville|1|0|MO
+catron|0|1|NM
+cave-in-rock|0|0|
+cayce|1|0|SC
+celestine|0|0|
+centertown|2|0|MO,TN
+central city|6|0|AR,IA,IL,NE,PA,SD
+centralia|5|0|IA,KS,MO,PA,WA
+cerulean|0|0|
+chaffee|0|1|CO
+chandler|4|0|AZ,MN,OK,TX
+charleston|7|1|AR,IL,MS,SC,TN,UT,WV
+chrisney|0|0|
+christian|0|2|IL,MO
+christopher|0|0|
+cisne|0|0|
+claremont|6|0|CA,MN,NC,NH,SD,VA
+clay city|2|0|IN,KY
+clay|5|17|AL,AR,CA,FL,GA,IA,IN,KS,KY,MN,MO,MS,NC,NE,PA,SD,TN,TX,WV
+cleaton|0|0|
+clinton|27|9|AR,CT,IA,IL,IN,KY,LA,MA,MD,ME,MI,MN,MO,MS,MT,NC,NE,NJ,NY,OH,OK,PA,SC,TN,UT,WA,WI
+cobden|1|0|MN
+colp|0|0|
+columbus|15|1|GA,IL,IN,KS,MN,MS,MT,NC,ND,NE,NM,OH,PA,TX,WI
+commerce|4|0|CA,GA,OK,TX
+corydon|2|0|IA,IN
+crab orchard|4|0|KY,NE,TN,WV
+crainville|0|0|
+crane|4|1|MO,MT,OR,TX
+crayne|0|0|
+creal springs|0|0|
+crittenden|1|1|AR,KY
+crofton|2|0|MD,NE
+crossville|2|0|AL,TN
+cunningham|1|0|KS
+curdsville|0|0|
+cutler|2|0|CA,IN
+cynthiana|2|0|KY,OH
+cypress|1|0|CA
+dahlgren|1|0|VA
+dale|4|1|AL,OK,PA,SC,WI
+darmstadt|1|0|IL
+daviess|0|1|MO
+dawson springs|0|0|
+de soto|6|1|GA,IA,KS,LA,MO,MS,WI
+decker|0|0|
+delta|7|3|AL,CO,IA,LA,MI,OH,PA,TX,UT
+dexter|9|0|GA,IA,KS,ME,MI,MN,NM,NY,OR
+diehlstadt|0|0|
+dix|1|0|NE
+dixon|8|1|CA,IA,IL,MO,NE,NM,OK,WY
+dongola|0|0|
+doniphan|1|1|KS,NE
+dover hill|0|0|
+dowell|0|0|
+drakesboro|0|0|
+du quoin|0|0|
+dubois|3|0|ID,PA,WY
+dudley|4|0|GA,NC,PA,SD
+dundas|1|0|MN
+dunmor|0|0|
+dutchtown|0|0|
+earlington|0|0|
+east cape girardeau|0|0|
+east prairie|0|0|
+eddyville|2|0|IA,NE
+edwards|3|2|CO,KS,MS,NY,TX
+edwardsport|0|0|
+elberfeld|0|0|
+eldorado|5|0|MD,OH,OK,PA,TX
+elizabethtown|6|0|IN,KY,NC,NY,OH,PA
+elkton|7|0|MD,MI,MN,OR,SD,TN,VA
+elkville|0|0|
+ellsinore|0|0|
+elnora|0|0|
+emison|0|0|
+energy|0|0|
+enfield|2|0|NC,NH
+equality|1|0|AL
+essex|5|5|IA,IL,MA,MD,MT,NJ,NY,VA,VT
+evansville|6|0|AK,AR,IL,MN,WI,WY
+ewing|4|0|KY,MO,NE,VA
+fairdealing|0|0|
+fairfield|17|2|AL,CA,IA,ID,KY,ME,MT,NC,NE,OH,OK,PA,SC,TN,TX,UT,VA,WA
+fairview|29|0|AL,CA,GA,IL,IN,KS,KY,MD,MO,MT,NC,NJ,NY,OH,OK,OR,PA,SD,TN,TX,UT,VA,WV,WY
+fancy farm|0|0|
+farley|2|0|IA,MO
+farmington|17|0|AR,CA,DE,IA,IL,ME,MI,MN,MO,MS,NC,NH,NM,PA,UT,WA,WV
+ferdinand|1|0|ID
+fisk|0|0|
+flora|2|0|IN,MS
+folsomville|0|0|
+fordsville|0|0|
+fort branch|0|0|
+fort campbell north|0|0|
+francisco|0|0|
+franklin|30|25|AL,AR,AZ,CA,FL,GA,IA,ID,IL,IN,KS,KY,LA,MA,MD,ME,MI,MN,MO,MS,NC,NE,NH,NJ,NY,OH,PA,TN,TX,VA,VT,WA,WI,WV
+fredonia|8|0|AL,AZ,IA,KS,ND,NY,PA,WI
+freelandville|0|0|
+freeman spur|0|0|
+fremont|9|4|CA,CO,IA,ID,IN,MI,NC,NE,OH,UT,WI,WY
+frohna|0|0|
+fulton|15|7|AL,AR,CA,GA,IL,IN,KS,MD,MI,MO,MS,NY,OH,PA,SD,TX,WI
+galatia|1|0|KS
+gallatin|3|2|KY,MO,MT,TN,TX
+gentryville|0|0|
+gibson|5|1|AR,GA,IA,NC,TN
+gideon|1|0|OK
+gilbertsville|2|0|NY,PA
+glen allen|2|0|AL,VA
+glezen|0|0|
+golconda|1|0|NV
+golden gate|1|0|FL
+gordonville|2|0|AL,PA
+goreville|0|0|
+gorham|4|0|KS,ME,NH,NY
+gracey|0|0|
+grand rivers|0|0|
+grand tower|0|0|
+grandin|1|0|ND
+grandview|7|0|IA,IL,MO,OH,OK,TX,WA
+graves|0|0|
+grayridge|0|0|
+grayville|0|0|
+greenville|24|1|AL,CA,DE,FL,GA,IA,IL,IN,ME,MI,MS,NC,NH,NY,OH,OK,PA,RI,SC,TX,VA,WI,WV
+griffin|1|0|GA
+guthrie|2|1|IA,OK,TX
+hamilton|16|9|AL,FL,GA,IA,IL,IN,KS,MO,MS,MT,NC,ND,NE,NY,OH,TN,TX,VA,WA
+hanaford|0|0|
+hancock|7|9|GA,IA,IL,IN,MD,ME,MI,MN,MS,NH,NY,OH,TN,WI,WV
+hanson|2|1|MA,OK,SD
+hardin|4|5|IA,IL,KY,MO,MT,OH,TN,TX
+harrisburg|9|0|AR,MO,NC,NE,OH,OR,PA,SD
+harrison|12|8|AR,GA,IA,ID,IN,KY,MI,MO,MS,MT,NE,NJ,NY,OH,SD,TN,TX,WI,WV
+hartford|9|0|AL,AR,CT,IA,IL,KS,MI,SD,WI
+harviell|0|0|
+hatfield|5|0|AR,MA,MN,PA,WI
+haubstadt|0|0|
+hawesville|0|0|
+haysville|2|0|KS,PA
+haywood city|0|0|
+hazel|1|0|SD
+hazleton|2|0|IA,PA
+henderson|15|4|AR,GA,IA,IL,LA,MD,MI,MN,NC,NE,NV,NY,TN,TX,WV
+hendron|0|0|
+herrin|0|0|
+hickman|3|1|CA,NE,TN
+hickory|4|1|MO,MS,NC,OK,PA
+highland|10|2|AR,CA,IL,IN,KS,MD,NY,OH,UT,VA,WI
+holland|9|0|AR,IA,MA,MI,MN,MO,NY,OH,TX
+hopkins|4|1|MI,MN,MO,SC,TX
+hopkinsville|0|0|
+howardville|0|0|
+hunter|7|0|AR,KS,ND,NY,OH,OK,TN
+huntingburg|0|0|
+hurst|1|0|TX
+ina|0|0|
+iola|4|0|KS,PA,TX,WI
+ireland|0|0|
+island|0|1|WA
+jackson|16|23|AL,AR,CA,CO,FL,GA,IA,IN,KS,KY,LA,MI,MN,MO,MS,MT,NC,NE,OH,OK,OR,SC,SD,TN,TX,WI,WV,WY
+jasper|10|8|AL,AR,FL,GA,IA,IL,IN,MI,MN,MO,MS,OR,SC,TN,TX
+jefferson|16|25|AL,AR,CO,FL,GA,IA,ID,IN,KS,KY,LA,MD,MO,MS,MT,NC,NE,NY,OH,OK,OR,PA,SC,SD,TN,TX,WA,WI,WV
+jeffersonville|6|0|GA,IN,KY,NY,OH,VT
+johnson|5|11|AR,GA,IA,IN,KS,KY,MN,MO,NE,OK,TN,TX,VT,WY
+johnsonville|1|0|SC
+johnston city|0|0|
+jonesboro|4|0|AR,GA,IN,LA
+joppa|1|0|AL
+junction|2|0|TX,UT
+karnak|0|0|
+keenes|0|0|
+keensburg|0|0|
+kelso|1|0|WA
+kevil|0|0|
+knottsville|0|0|
+knox|3|8|IL,IN,KY,ME,MO,ND,NE,OH,PA,TN,TX
+kuttawa|0|0|
+la center|1|0|WA
+lafayette|11|6|AR,CA,CO,FL,GA,IN,LA,MN,MO,MS,OH,OR,TN,VA,WI
+lambert|2|0|MS,OK
+lawrence|8|10|AL,AR,IL,IN,KS,KY,MA,MI,MO,MS,NE,NY,OH,PA,SD,TN
+lawrenceville|5|0|GA,NJ,OH,PA,VA
+ledbetter|0|0|
+leopold|0|0|
+lewisport|0|0|
+lilbourn|0|0|
+lithium|0|0|
+livermore|2|0|CA,IA
+livingston|10|5|AL,CA,IL,KY,LA,MI,MO,MT,NY,SC,TN,TX,WI
+longtown|1|0|OK
+loogootee|0|0|
+louisville|9|0|AL,CO,GA,KS,KY,MS,NE,OH,TN
+lovelaceville|0|0|
+lowes|0|0|
+lynnville|3|0|IA,IL,TN
+lyon|1|4|IA,KS,MN,MS,NV
+macedonia|3|0|AL,IA,OH
+maceo|0|0|
+mackey|0|0|
+madisonville|3|0|LA,TN,TX
+makanda|0|0|
+manitou|1|0|OK
+marble hill|0|0|
+mariah hill|0|0|
+marion|23|17|AL,AR,FL,GA,IA,IL,IN,KS,KY,LA,MI,MN,MO,MS,MT,NC,ND,NY,OH,OR,PA,SC,SD,TN,TX,UT,VA,WI,WV
+marshall|12|11|AK,AL,AR,IA,IL,IN,KS,MI,MN,MO,MS,NC,OK,SD,TN,TX,VA,WI,WV
+marston|0|0|
+martin|8|5|FL,GA,KY,LA,MI,MN,NC,ND,NE,SD,TN,TX
+masonville|1|0|IA
+massac|0|0|
+matthews|3|0|GA,IN,NC
+maunie|0|0|
+mayfield|5|0|KS,NY,OH,PA,UT
+mcclure|2|0|OH,PA
+mccracken|1|0|KS
+mchenry|2|2|IL,ND
+mclean|5|2|IL,ND,NE,NY,TX,VA
+mcleansboro|0|0|
+melody hill|0|0|
+metropolis|0|0|
+mill creek|4|0|OK,PA,WA,WV
+mill shoals|0|0|
+mill spring|0|0|
+millersville|2|0|PA,TN
+miner|0|1|SD
+mississippi|0|1|AR
+monroe city|1|0|MO
+montgomery|11|18|AL,AR,GA,IA,IL,IN,KS,KY,LA,MD,MI,MN,MO,MS,NC,NY,OH,PA,TN,TX,VA,WV
+morehouse|0|1|LA
+morganfield|0|0|
+morley|2|0|IA,MI
+mortons gap|0|0|
+moseleyville|0|0|
+mound city|3|0|KS,MO,SD
+mounds|1|0|OK
+mount carmel|6|0|FL,IN,OH,PA,SC,TN
+mount erie|0|0|
+mount vernon|14|0|AL,AR,GA,IA,KY,MD,MO,NY,OH,OR,SD,TX,VA,WA
+muddy|1|0|MT
+muhlenberg|0|0|
+mulkeytown|0|0|
+murphysboro|0|0|
+murray|4|3|CT,GA,IA,MN,NE,OK,UT
+nason|0|0|
+naylor|1|0|GA
+nebo|2|0|IL,NC
+neelyville|0|0|
+new burnside|0|0|
+new grand chain|0|0|
+new hamburg|1|0|NY
+new harmony|1|0|UT
+new haven|10|0|CT,IA,IN,KY,MI,MO,OH,VT,WV
+new madrid|0|0|
+new wells|0|0|
+newburgh|1|0|NY
+newtonville|1|0|NJ
+noble|2|3|IN,LA,OH,OK
+norris city|0|0|
+north city|0|0|
+north lilbourn|0|0|
+nortonville|1|0|KS
+oak grove|15|0|AL,AR,IL,LA,MN,MO,MS,OK,OR,SC,TN,TX,VA
+oak ridge|7|0|FL,LA,NC,NJ,TN,TX
+oakland city|0|0|
+oaktown|0|0|
+odon|0|0|
+ohio|1|2|IL,IN,WV
+old appleton|0|0|
+old shawneetown|0|0|
+olive branch|1|0|MS
+olmsted|0|1|MN
+olney|3|0|MD,MT,TX
+omaha|3|0|AR,NE,TX
+onton|0|0|
+opdyke|0|0|
+oran|0|0|
+orient|6|0|IA,NY,OH,OR,SD,WA
+otwell|0|0|
+owensboro|0|0|
+owensville|2|0|MO,OH
+oxly|0|0|
+paducah|1|0|TX
+panther|0|0|
+parkers settlement|0|0|
+parkersburg|2|0|IA,WV
+parma|3|0|ID,MI,OH
+patoka|1|0|IL
+pembroke|3|0|GA,NC,VA
+penermon|0|0|
+perkins|2|2|GA,NE,OK,SD
+perry|14|7|AL,AR,FL,GA,IA,IL,KS,KY,LA,MI,MO,MS,NY,OH,OK,PA,SC,TN,UT
+perryville|4|0|AK,AR,KY,MD
+petersburg|12|2|AK,IL,KY,MI,ND,NE,OH,PA,TN,TX,VA,WV
+phillipstown|0|0|
+philpot|0|0|
+piedmont|7|0|AL,CA,KS,OK,SC,SD,WV
+pike|2|9|AL,AR,CA,GA,IL,KY,MO,MS,NY,OH,PA
+pinckneyville|0|0|
+pinhook|0|0|
+pittsburg|5|1|CA,IN,KS,OK,TX
+plainville|4|0|GA,IL,KS,OH
+pleasant ridge|1|0|MI
+pocahontas|5|2|AR,IA,IL,TN,VA,WV
+poole|1|0|NE
+pope|1|2|AR,MN,MS
+poplar bluff|0|0|
+portageville|0|0|
+posey|1|0|CA
+poseyville|0|0|
+powderly|1|0|TX
+princeton|16|0|AR,CA,FL,IA,ID,IL,KS,MN,MO,NC,NE,NJ,SC,TX,WI,WV
+providence|3|1|AL,RI,UT
+pryorsburg|0|0|
+pulaski|9|6|AR,GA,IA,IN,KY,MO,NY,OH,PA,TN,VA,WI
+puxico|0|0|
+qulin|0|0|
+raglesville|0|0|
+ragsdale|0|0|
+raleigh|5|1|FL,MS,NC,ND,WV
+reidland|0|0|
+reo|0|0|
+richland|12|6|GA,IA,LA,MI,MO,MS,MT,ND,NE,NJ,OH,OR,PA,SC,SD,TX,WA,WI
+ridgway|2|0|CO,PA
+ripley|8|1|CA,IL,IN,MS,NY,OH,OK,TN,WV
+risco|0|0|
+robards|0|0|
+rockport|5|0|AR,IL,MA,TX,WA
+rosiclare|0|0|
+rosine|0|0|
+royalton|2|0|MN,PA
+russellville|8|0|AL,AR,IN,KY,MO,OH,SC,TN
+sacramento|2|1|CA,NM
+sailor springs|0|0|
+saint anthony|4|0|IA,ID,MN
+saint charles|10|2|AR,IA,ID,IL,LA,MI,MN,MO,SC,SD,VA
+saint francisville|2|0|LA,MO
+saint johns|4|1|AZ,FL,MI,OH
+saint joseph|8|2|IA,IL,IN,LA,MI,MN,MO,TN,WI
+saint meinrad|0|0|
+saint wendel|0|0|
+salem|20|2|AR,GA,IA,IL,IN,MA,MO,NC,NE,NJ,NM,NY,OH,OR,SC,SD,UT,VA,WV
+saline|2|4|AR,KS,LA,MI,MO,NE
+sandborn|0|0|
+santa claus|1|0|GA
+schnellville|0|0|
+scott city|1|0|KS
+scott|5|10|AR,IA,IL,IN,KS,KY,LA,MN,MS,OH,TN,VA
+sebree|0|0|
+sedalia|3|0|CO,MO,NC
+sedgewickville|0|0|
+sesser|0|0|
+shakertowne|0|0|
+shawneetown|0|0|
+shoals|0|0|
+sikeston|0|0|
+simpson|4|2|KS,KY,LA,MS,NC,PA
+sims|2|0|IN,NC
+slaughters|0|0|
+smithland|1|0|IA
+somerville|6|0|AL,MA,NJ,OH,TN,TX
+sorgho|0|0|
+south carrollton|0|0|
+spencer|13|1|IA,ID,IN,KY,MA,NC,NE,NY,OH,OK,SD,TN,WI,WV
+spillertown|0|0|
+spottsville|0|0|
+springerton|0|0|
+spurgeon|1|0|TN
+stanley|8|1|IA,ID,LA,NC,ND,NM,SD,VA,WI
+stendal|0|0|
+stewartsville|3|0|MO,NJ,VA
+stoddard|1|0|WI
+stonefort|0|0|
+sturgis|3|0|MI,MS,SD
+sumner|7|2|GA,IA,KS,MO,MS,NE,OK,TN,WA
+symsonia|0|0|
+tallapoosa|1|1|AL,GA
+tamaroa|0|0|
+tamms|0|0|
+tell city|0|0|
+tennyson|1|0|WI
+thebes|0|0|
+thompsonville|4|0|CT,MI,PA,TX
+thruston|0|0|
+todd|0|2|MN,SD
+tolu|0|0|
+trenton|15|0|FL,GA,IA,IL,MI,MO,NC,ND,NE,NJ,OH,SC,TN,TX,UT
+trigg|0|0|
+troy|16|0|AL,ID,IL,KS,MI,MO,MT,NC,NH,NY,OH,PA,SC,TN,TX,VT
+ullin|0|0|
+union|15|16|AL,AR,FL,GA,IA,IL,IN,KY,LA,MO,MS,NC,NE,NH,NJ,NM,OH,OR,PA,SC,SD,TN,WA,WV
+uniontown|6|0|AL,AR,KS,OH,PA,WA
+unity|4|0|ME,OR,SC,WI
+utica|14|0|IN,KS,MI,MN,MO,MS,MT,NE,NY,OH,OK,PA,SC,SD
+valier|1|0|MT
+van buren|4|4|AR,IA,IN,ME,MI,OH,TN
+vanderburgh|0|0|
+vanduser|0|0|
+velpen|0|0|
+vergennes|1|0|VT
+vienna|8|0|GA,LA,MD,MO,NJ,SD,VA,WV
+vincennes|0|0|
+wabash|1|1|IN
+wadesville|0|0|
+waltonville|0|0|
+warrick|0|0|
+washington|17|31|AL,AR,CA,CO,DC,FL,GA,IA,ID,IL,IN,KS,KY,LA,MD,ME,MN,MO,MS,NC,NE,NJ,NY,OH,OK,OR,PA,RI,TN,TX,UT,VA,VT,WI,WV
+water valley|1|0|MS
+waverly|19|0|AL,FL,GA,IA,IL,IN,KS,MI,MN,MO,NE,NY,OH,PA,SD,TN,VA,WA,WV
+wayne city|0|0|
+wayne|7|14|GA,IA,IL,IN,KY,MI,MS,NC,NE,NY,OH,OK,PA,TN,UT,WV
+webster|10|7|FL,GA,IA,IN,LA,MA,MO,MS,NC,NE,NY,PA,SD,TX,WI,WV
+west city|0|0|
+west frankfort|0|0|
+west louisville|0|0|
+west salem|2|0|OH,WI
+westphalia|5|0|IA,KS,MD,MI,MO
+wheatcroft|0|0|
+wheatland|6|1|CA,IA,MO,MT,ND,WY
+white plains|4|0|AL,GA,NC,NY
+white|2|4|AR,GA,IN,SD,TN
+whiteash|0|0|
+whitesville|2|0|VA,WV
+whitewater|5|0|CA,IN,KS,MT,WI
+whiting|5|0|IA,IN,KS,WI,WY
+wickliffe|2|0|OH,OK
+williamson|6|2|AZ,GA,IA,IL,NY,TN,TX,WV
+williamsville|2|0|IL,NY
+willisville|1|0|AR
+wilson city|0|0|
+wingo|0|0|
+winslow|5|0|AR,AZ,IL,ME,NE
+woodlawn|8|0|AR,KY,MD,NC,OH,VA
+wyatt|1|0|IN
+xenia|1|0|OH
+yelvington|0|0|
+zalma|0|0|
+zeigler|0|0|

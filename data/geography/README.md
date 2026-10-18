@@ -1,8 +1,8 @@
 # Geography manifest
 
-Reviewed, version-controlled county data for the 68-county expansion (plan PR 2.1). Nothing in `api/` or
-`public/` reads these files yet, and they are not served (the site only serves `public/`). The aliases table,
-the generated lookups and the `/api/counties` and `/api/regions` endpoints come in PR 2.2 and PR 2.3.
+Reviewed, version-controlled county data for the 68-county expansion (plan PR 2.1), and the locality and alias
+tables generated from it (PR 2.2). This folder is not served (the site only serves `public/`). No route uses the
+new lookups yet; the `/api/counties` and `/api/regions` endpoints come in PR 2.3.
 
 | File | What it holds |
 | --- | --- |
@@ -11,6 +11,20 @@ the generated lookups and the `/api/counties` and `/api/regions` endpoints come 
 | `census/2025_Gaz_counties_extract.txt` | The 72 rows for these counties, copied verbatim from the Census 2025 Gazetteer counties file |
 | `census/national_county2020_extract.txt` | The same 72 rows from the Census national county FIPS file (codes2020) |
 | `census/county_adjacency2025_extract.txt` | Census 2025 county adjacency rows between these counties, used to check region memberships |
+| `alias-review.json` | Editorial review input: always-ambiguous names, common words, and the few `distinctive` overrides |
+| `communities.json` | **Generated.** Census places with any part in a target county, with every target county they touch |
+| `locality-aliases.json` | **Generated.** Place and county aliases with `ambiguous`, `requiresState` and the reasons for each |
+| `census/2025_Gaz_place_extract.txt` | The 481 places' rows, verbatim from the Census 2025 Gazetteer places file |
+| `census/place_by_county2020_extract.txt` | Every county row of those places, verbatim from the Census 2020 place-by-county files (codes2020/place_by_cou) |
+| `census/place_county_geocoder_2025.txt` | Census Geocoder county for 2025 places not in the 2020 file (Public_AR_Current / Current_Current, 2026-10-18) |
+| `census/2025_Gaz_state_extract.txt` | State postal codes and names, verbatim from the 2025 Gazetteer states file |
+| `census/raw-sources.json` | URL, vintage, retrieval date and sha256 of each national Census file the extracts came from |
+| `census/2025_namesakes.txt` | Derived: for each local name, the number of places and counties outside the area with that name (2025 Gazetteer, national) |
+
+`scripts/build-geo.js` writes the two generated files above plus `api/_geo.js` (server lookups, not a function)
+and `public/geo-data.json` (a small client copy that no page loads yet). `node scripts/build-geo.js --check` and
+`test/geo-build.test.js` fail when a generated file is stale. `scripts/extract-census.js --raw <dir>` refreshes the
+Census extracts from the national downloads when moving to a new vintage.
 
 ## Where each field comes from
 
@@ -56,5 +70,40 @@ only in Cape Girardeau & SE Missouri and are never part of the historic Tri-Stat
 | Paducah, Murray & far western KY (`paducah-murray-far-western-ky`) | McCracken, Calloway KY | McCracken, Graves, Calloway, Marshall, Ballard, Carlisle, Hickman, Fulton, Livingston, Lyon, Trigg KY | Massac, Pulaski, Alexander IL |
 | Cape Girardeau & SE Missouri (`cape-girardeau-se-missouri`) | Cape Girardeau MO | All 11 Missouri counties | none |
 
+### Southern Illinois subregions
+
+Southern Illinois is the largest region (22 counties, about 75 to 95 miles from the hub at its edges) and covers two
+news markets, so it has two child groups (`kind: editorial_subregion`, `parent: region:southern-illinois`). Each
+Illinois county is in exactly one of them; both are contiguous by Census adjacency. They are editorial judgment too.
+
+| Subregion (`region:southern-illinois:<id>`) | Hub | Counties |
+| --- | --- | --- |
+| East: Wabash & Ohio valleys (`east`) | White IL | Clay, Richland, Lawrence, Wayne, Edwards, Wabash, Hamilton, White, Saline, Gallatin, Hardin, Pope |
+| West: Carbondale, Marion, Mount Vernon & Cairo (`west`) | Williamson IL | Jefferson, Perry, Franklin, Jackson, Williamson, Union, Johnson, Alexander, Pulaski, Massac |
+
+The east looks to Evansville, Mount Carmel, Carmi and Harrisburg and holds all ten Illinois `tri_state_core`
+counties; the west is the Carbondale-Marion-Mount Vernon area down to Cairo and Metropolis, all `extended`. The
+hub is the county whose internal point is nearest the subregion's mean internal point.
+
 Changing a region is an editorial decision: edit the members, give the reason in `sourceReference`, bump
-`manifestVersion`, and update the table above and `test/regions.test.js`.
+`manifestVersion`, and update the tables above and `test/regions.test.js`.
+
+## Localities and aliases
+
+**Communities** are Census places only (incorporated places and CDPs), never a hand-typed list. A place's counties
+come from the 2020 place-by-county relationship file, so a place that spans counties keeps all of them (Carbondale is
+Jackson and Williamson IL; Cape Girardeau is Cape Girardeau and Scott MO). `partlyOutside` marks places that also
+reach a county outside the 68 (Centralia). Places new since 2020 (mostly 2025 CDPs) take the county that contains
+their internal point from the Census Geocoder; for those `countyIdsComplete` is false.
+
+**Aliases** cover each place name (with Mount/Mt./Mt and Saint/St./St spellings), each county as "X County" and
+"X Co.", and a bare county name only when no place or county anywhere in the U.S. shares it ("Vanderburgh").
+
+- `ambiguous` when the name has two or more candidates in the area (Marion IL/KY, Mount Vernon IN/IL, Princeton,
+  Benton, Greenville, Perry/Wayne/Union/Daviess County, Jackson MO vs Jackson County IL), is a state name
+  (Washington), is a reviewed common word or surname (Clay, Murray, Providence), or is listed in `alwaysAmbiguous`
+  (Washington, Marion, Mount Vernon). An ambiguous name resolves only with a state qualifier or a county named in
+  the same text that leaves one candidate. A feed's own state never resolves it.
+- `requiresState` when the name is ambiguous or has namesakes elsewhere (Henderson, Carbondale). These resolve with
+  a qualifier, or bare in a feed from the candidate's state. A `distinctive` entry in `alias-review.json` can lift
+  `requiresState` (Evansville, Paducah) but can never lift `ambiguous`; the build fails if one tries.

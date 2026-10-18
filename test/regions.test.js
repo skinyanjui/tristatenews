@@ -11,7 +11,9 @@ const M = JSON.parse(fs.readFileSync(path.join(DIR, 'target-counties.json'), 'ut
 const OPT = JSON.parse(fs.readFileSync(path.join(DIR, 'optional-counties.json'), 'utf8'));
 const byId = new Map(M.counties.map(c => [c.id, c]));
 const REGIONS = M.groups.filter(g => g.kind === 'editorial_region');
-const RM = M.members.filter(m => m.groupId.startsWith('region:'));
+const REGION_IDS = new Set(REGIONS.map(g => g.id));
+const RM = M.members.filter(m => REGION_IDS.has(m.groupId)); // top-level regions; subregions are tested below
+const SUBS = M.groups.filter(g => g.kind === 'editorial_subregion');
 const primaryOf = id => RM.filter(m => m.countyId === id && m.membershipType === 'primary').map(m => m.groupId);
 const members = (g, type) => RM.filter(m => m.groupId === 'region:' + g && (!type || m.membershipType === type)).map(m => m.countyId).sort();
 
@@ -104,4 +106,45 @@ test('Case A: same-named counties land in the right state\'s region', () => {
     const regions = M.counties.filter(c => c.name === name).map(c => p(c.id));
     assert.equal(new Set(regions).size, regions.length, name + ' counties share a primary region');
   }
+});
+
+// Southern Illinois is 22 counties. It splits into two editorial subregions, child groups of the region, so a reader
+// filter can narrow to the eastern river counties or the Carbondale-Marion-Mount Vernon side without leaving the region.
+test('Southern Illinois subregions: east and west partition the region\'s 22 counties', () => {
+  assert.deepEqual(SUBS.map(g => g.id).sort(), ['region:southern-illinois:east', 'region:southern-illinois:west']);
+  const sub = id => M.members.filter(m => m.groupId === id).map(m => m.countyId).sort();
+  assert.deepEqual(sub('region:southern-illinois:east'), split('il-clay il-edwards il-gallatin il-hamilton il-hardin il-lawrence il-pope il-richland il-saline il-wabash il-wayne il-white'));
+  assert.deepEqual(sub('region:southern-illinois:west'), split('il-alexander il-franklin il-jackson il-jefferson il-johnson il-massac il-perry il-pulaski il-union il-williamson'));
+  for (const id of members('southern-illinois')) {
+    const in_ = SUBS.filter(g => M.members.some(m => m.groupId === g.id && m.countyId === id));
+    assert.equal(in_.length, 1, id + ' is in exactly one subregion');
+  }
+  for (const g of SUBS) {
+    assert.equal(g.parent, 'region:southern-illinois');
+    assert.ok(REGION_IDS.has(g.parent));
+    assert.equal(g.overlapping, false);
+    assert.equal(g.membershipStatus, 'editorial_judgment');
+    for (const m of M.members.filter(x => x.groupId === g.id)) {
+      assert.equal(m.membershipType, 'primary', m.countyId);
+      assert.ok(members('southern-illinois', 'primary').includes(m.countyId), m.countyId + ' is a Southern Illinois primary');
+      assert.match(m.sourceReference, /^editorial judgment: county seat /, m.countyId);
+      assert.ok(m.sourceReference.includes(byId.get(m.countyId).seat.name), m.countyId);
+      assert.ok(m.basedOn.includes('census-county-adjacency-2025') && m.basedOn.every(x => M.sources[x]), m.countyId);
+      assert.match(m.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
+    }
+  }
+});
+
+test('Southern Illinois subregions are contiguous by Census adjacency and hold their hubs', () => {
+  for (const g of SUBS) {
+    const ids = M.members.filter(m => m.groupId === g.id).map(m => m.countyId);
+    const seen = new Set([ids[0]]), stack = [ids[0]];
+    while (stack.length) for (const n of ADJ.get(stack.pop()) || []) if (ids.includes(n) && !seen.has(n)) { seen.add(n); stack.push(n); }
+    assert.equal(seen.size, ids.length, g.id + ' is one connected piece');
+    for (const h of g.hubCountyIds) assert.ok(ids.includes(h), g.id + ' hub ' + h);
+  }
+  // The split follows the markets: Marion, Carbondale and Mount Vernon in the west; the Wabash and Ohio river towns east.
+  const subOf = id => SUBS.find(g => M.members.some(m => m.groupId === g.id && m.countyId === id)).id.split(':')[2];
+  for (const id of ['il-williamson', 'il-jackson', 'il-jefferson', 'il-alexander', 'il-massac']) assert.equal(subOf(id), 'west', id);
+  for (const id of ['il-white', 'il-wabash', 'il-gallatin', 'il-wayne', 'il-saline']) assert.equal(subOf(id), 'east', id);
 });

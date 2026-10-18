@@ -4,13 +4,12 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
-// Setup in-memory Redis mock if no external Upstash or Vercel KV Redis credentials are configured.
-// This allows local full-stack execution (caching snapshots, reactions, classifieds, jobs, deals, etc.)
-// without requiring an external database account.
-if (!process.env.UPSTASH_REDIS_REST_URL && !process.env.KV_REST_API_URL) {
-  process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${PORT}/_internal_redis`;
-  process.env.UPSTASH_REDIS_REST_TOKEN = 'internal_dev_token';
-}
+// Local runs use the in-memory Redis below (caching snapshots, reactions, classifieds, jobs, deals, etc.), never a
+// real database: any Upstash / Vercel KV credentials in the environment are ignored and removed before the API
+// handlers load, so `npm run dev` can't touch production data. Set TSN_ALLOW_LIVE_REDIS=1 to use them on purpose.
+const store = require('./scripts/dev-store.js').devStore(process.env, PORT);
+if (store.mode === 'live') console.warn('TSN_ALLOW_LIVE_REDIS=1: using the real Redis from ' + store.vars.join(', ') + '. Reads and writes are live.');
+else if (store.vars.length) console.warn('Ignoring ' + store.vars.join(', ') + ' and using the in-memory store. Set TSN_ALLOW_LIVE_REDIS=1 to use real Redis.');
 
 const app = express();
 
@@ -183,14 +182,10 @@ app.post('/_internal_redis/pipeline', express.json({ limit: '20mb' }), (req, res
 
 // Import API handlers
 const newsHandler = require('./api/news.js');
-const refreshHandler = require('./api/refresh.js');
 const listingsHandler = require('./api/listings.js');
-const advertiseHandler = require('./api/advertise.js');
-const checkoutHandler = require('./api/checkout.js');
+const inboxHandler = require('./api/inbox.js');
 const reactHandler = require('./api/react.js');
 const stripeWebhookHandler = require('./api/stripe-webhook.js');
-const submitHandler = require('./api/submit.js');
-const subscribeHandler = require('./api/subscribe.js');
 const unsubscribeHandler = require('./api/unsubscribe.js');
 const alertsHandler = require('./api/alerts.js');
 
@@ -208,32 +203,32 @@ app.all('/api/news', (req, res, next) => {
   Promise.resolve(newsHandler(req, res)).catch(next);
 });
 
-app.all('/api/refresh', (req, res, next) => {
-  Promise.resolve(refreshHandler(req, res)).catch(next);
+app.all('/api/refresh', (req, res, next) => { // served by api/news.js (see vercel.json rewrites)
+  Promise.resolve(newsHandler(req, res)).catch(next);
 });
 
 app.all('/api/listings', (req, res, next) => {
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 
-app.all('/api/advertise', (req, res, next) => {
-  Promise.resolve(advertiseHandler(req, res)).catch(next);
+app.all('/api/advertise', (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
+  Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 
-app.all('/api/checkout', (req, res, next) => {
-  Promise.resolve(checkoutHandler(req, res)).catch(next);
+app.all('/api/checkout', (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
+  Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 
 app.all('/api/react', (req, res, next) => {
   Promise.resolve(reactHandler(req, res)).catch(next);
 });
 
-app.all('/api/submit', (req, res, next) => {
-  Promise.resolve(submitHandler(req, res)).catch(next);
+app.all('/api/submit', (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
+  Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 
-app.all('/api/subscribe', (req, res, next) => {
-  Promise.resolve(subscribeHandler(req, res)).catch(next);
+app.all('/api/subscribe', (req, res, next) => { // served by api/unsubscribe.js (see vercel.json rewrites)
+  Promise.resolve(unsubscribeHandler(req, res)).catch(next);
 });
 app.all('/api/unsubscribe', (req, res, next) => {
   Promise.resolve(unsubscribeHandler(req, res)).catch(next);

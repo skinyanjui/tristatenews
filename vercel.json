@@ -3,9 +3,6 @@
     "api/news.js": {
       "maxDuration": 30
     },
-    "api/refresh.js": {
-      "maxDuration": 30
-    },
     "api/alerts.js": {
       "maxDuration": 20
     },
@@ -21,6 +18,26 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/refresh",
+      "destination": "/api/news?__route=refresh"
+    },
+    {
+      "source": "/api/checkout",
+      "destination": "/api/listings?__route=checkout"
+    },
+    {
+      "source": "/api/subscribe",
+      "destination": "/api/unsubscribe?__route=subscribe"
+    },
+    {
+      "source": "/api/submit",
+      "destination": "/api/inbox?__route=submit"
+    },
+    {
+      "source": "/api/advertise",
+      "destination": "/api/inbox?__route=advertise"
+    },
     {
       "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)",
       "destination": "/index.html"

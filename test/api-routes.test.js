@@ -39,7 +39,7 @@ test('vercel.json: every old /api path is a function or a rewrite to the host th
   // no rewrite captures any other /api path, the Stripe webhook or a static page. PR 2.3 adds two new read-only
   // paths hosted by news.js (test/geo-api.test.js covers them); ads PR 1 adds /api/catalog, hosted by listings.js
   // (test/catalog.test.js covers it).
-  const ADDED = { counties: 'news', regions: 'news', catalog: 'listings', orders: 'listings', creative: 'inbox' }; // ads PR 2: /api/orders (test/orders.test.js); ads PR C: /api/creative (test/creative.test.js)
+  const ADDED = { counties: 'news', regions: 'news', catalog: 'listings', orders: 'listings', creative: 'inbox', flowers: 'listings' }; // ads PR 4.3: /api/flowers (test/flowers.test.js); ads PR 2: /api/orders (test/orders.test.js); ads PR C: /api/creative (test/creative.test.js)
   for (const [p, h] of Object.entries(ADDED)) {
     assert.deepEqual(vercel.rewrites.filter(r => r.source === '/api/' + p).map(r => r.destination), ['/api/' + h + '?__route=' + p], p);
     assert.ok(!fns.includes(p), p + ' is not a function of its own');

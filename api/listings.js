@@ -190,7 +190,9 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+// /api/checkout (Featured payments for these posts) is served by this function too: vercel.json rewrites it to
+// /api/listings?__route=checkout and its handler lives in api/_checkout.js. Every other request is the listings handler.
+module.exports = require('./_dispatch.js').host({ checkout: () => require('./_checkout.js') }, handler);
 module.exports.validate = validate;
 module.exports.goodImage = goodImage;
 module.exports.indexTtl = indexTtl;

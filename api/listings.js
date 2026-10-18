@@ -193,11 +193,11 @@ async function handler(req, res) {
   }
 }
 
-// /api/checkout (Featured payments for these posts), /api/catalog (the read-only price list, api/_catalog.js) and
-// /api/orders (the admin's read-only order list, api/_orders.js) are served by this function too: vercel.json rewrites
-// them to /api/listings?__route=checkout, ?__route=catalog and ?__route=orders. Every other request is the listings
-// handler.
-module.exports = require('./_dispatch.js').host({ checkout: () => require('./_checkout.js'), catalog: () => require('./_catalog.js'), orders: () => require('./_orders.js') }, handler);
+// /api/checkout (Featured payments for these posts), /api/catalog (the read-only price list, api/_catalog.js),
+// /api/orders (the admin's read-only order list, api/_orders.js) and /api/flowers (the obituary "Send flowers" link,
+// api/_flowers.js) are served by this function too: vercel.json rewrites them to /api/listings?__route=checkout,
+// ?__route=catalog, ?__route=orders and ?__route=flowers. Every other request is the listings handler.
+module.exports = require('./_dispatch.js').host({ checkout: () => require('./_checkout.js'), catalog: () => require('./_catalog.js'), orders: () => require('./_orders.js'), flowers: () => require('./_flowers.js') }, handler);
 module.exports.validate = validate;
 module.exports.goodImage = goodImage;
 module.exports.indexTtl = indexTtl;

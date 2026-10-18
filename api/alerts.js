@@ -172,22 +172,31 @@ async function build(force) {
   if (!stored()) return (await refresh({}, now, new Set(), null)).snapshot;
   let snap = null, prev = {}, disabled = new Set(), overrides = null;
   try {
-    const out = await redis([['GET', K.snapshot], ['HGETALL', K.sources], ['GET', K.tiers]].concat(FEEDS.map(f => ['GET', K.src(f.id)])));
-    snap = parse(out[0] && out[0].result);
+    // Two billed commands: one MGET for the snapshot, the tier config and every feed's state, and the registry HGETALL.
+    const keys = [K.snapshot, K.tiers].concat(FEEDS.map(f => K.src(f.id)));
+    const out = await redis([['MGET'].concat(keys), ['HGETALL', K.sources]]);
+    const v = out && out[0] && out[0].result;
+    if (!Array.isArray(v) || v.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
+    snap = parse(v[0]);
     const h = (out[1] && out[1].result) || [];
-    for (let i = 0; i < h.length; i += 2) { const v = parse(h[i + 1]); if (v && v.enabled === false && v.feedId) disabled.add(v.feedId); }
-    const tc = parse(out[2] && out[2].result); overrides = tc && tc.nwsOverrides || null;
-    FEEDS.forEach((f, i) => { prev[f.id] = parse(out[3 + i] && out[3 + i].result); });
+    for (let i = 0; i < h.length; i += 2) { const x = parse(h[i + 1]); if (x && x.enabled === false && x.feedId) disabled.add(x.feedId); }
+    const tc = parse(v[1]); overrides = tc && tc.nwsOverrides || null;
+    FEEDS.forEach((f, i) => { prev[f.id] = parse(v[2 + i]); });
   } catch (e) { return (await refresh({}, now, new Set(), null)).snapshot; } // store down: fetch live, don't fail the page
   if (!force && snap && now - Date.parse(snap.updatedAt) < FRESH_MS) return snap;
   try { const l = await redis([['SET', K.lock, '1', 'NX', 'EX', '20']]); if (!(l[0] && l[0].result === 'OK') && snap && !force) return snap; } catch (e) { /* carry on */ }
   const { states, snapshot } = await refresh(prev, now, disabled, overrides);
   const cmds = [['SET', K.snapshot, JSON.stringify(snapshot), 'EX', '900'], ['ZREMRANGEBYSCORE', K.active, '-inf', String(now)], ['DEL', K.lock]];
   for (const [id, st] of Object.entries(states)) cmds.push(['SET', K.src(id), JSON.stringify(st), 'EX', String(7 * 86400)]);
+  // Each alert keeps its own SET with its own TTL; the active index gets one ZADD with every score/member pair
+  // (one billed command instead of one per alert, same resulting set).
+  const zadd = ['ZADD', K.active];
   for (const c of snapshot.alerts) {
     const end = B.endOf(c), ttl = Math.max(60, Math.ceil((end - now) / 1000)), k = hash(c.key);
-    cmds.push(['SET', K.alert(k), JSON.stringify(c), 'EX', String(ttl)], ['ZADD', K.active, String(end), k]);
+    cmds.push(['SET', K.alert(k), JSON.stringify(c), 'EX', String(ttl)]);
+    zadd.push(String(end), k);
   }
+  if (zadd.length > 2) cmds.push(zadd);
   try { await redis(cmds); } catch (e) { /* serve anyway */ }
   return snapshot;
 }

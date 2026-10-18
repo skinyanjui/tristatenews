@@ -83,7 +83,7 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
 test('Privacy: order records are described as stored, and the payment code never keeps card or contact details from Stripe', () => {
   const t = text(privacy);
   for (const s of ['Order records', 'We don’t store your name, email or card details from Stripe', 'An unpaid checkout is deleted after 30 days', 'have no automatic expiry',
-    'what you’re interested in', 'Stripe receives the post’s ID, title and board', 'Last updated October 18, 2026'])
+    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 18, 2026'])
     assert.ok(t.includes(s), s);
   for (const f of ['api/stripe-webhook.js', 'api/_orders.js', 'api/_checkout.js'])
     assert.ok(!/customer_details|customer_email|receipt_email|billing_details|\.card\b|payment_method_details/.test(read(f)), f + ' stores no card or contact data');

@@ -698,6 +698,12 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .like:focus-visible, .share:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 .like[aria-pressed="true"], .card .like[aria-pressed="true"] { color:var(--react-on); }
 .like[aria-pressed="true"] svg { fill:currentColor; }
+/* Legal link at the end of every view (the fixed bar below keeps Advertise / Submit news). */
+.legal-foot { margin:32px 0 0; padding:12px 0 0; border-top:1px solid var(--border); color:var(--text-muted); font-size:12px; line-height:16px; }
+.legal-link { display:inline-flex; align-items:center; min-height:40px; padding:0 8px; margin-left:-8px; border-radius:var(--radius-md); color:var(--foreground); font-size:13px; font-weight:500; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--gray-400); }
+.legal-link:hover { background:var(--gray-100); text-decoration:underline; text-underline-offset:2px; }
+.legal-foot p { margin:0; max-width:68ch; }
+.cl-note a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
 </style>
 </head>
 <body>
@@ -742,6 +748,10 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   <div id="list" class="list" aria-busy="true"></div>
   <div class="more" id="more"></div>
   <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
+  <div class="legal-foot">
+    <a class="legal-link" href="/legal.html">Legal</a>
+    <p>© 2026 Tri-State News. Headlines and excerpts link to their publishers, who own them. An arrest or charge is an accusation, not a conviction.</p>
+  </div>
 </main>
 
 <footer class="sfoot"><div class="sfoot-in"><b>Tristate</b><span>Headlines link to the original publisher · News refreshed about every 15 min, alerts every 5</span><button type="button" class="sfoot-btn sfoot-ghost" id="adOpen">Advertise</button><button type="button" class="sfoot-btn" id="snOpen">Submit news</button></div></footer>
@@ -1053,6 +1063,13 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
   // An official alert drawn with the same card as a story (no picture; links to the official page).
   function alertItem(b) { return { id: b.key, title: b.title, summary: b.summary || '', link: b.link, source: b.source, sourceId: b.sourceId || 'alert', published: b.start ? new Date(b.start).toISOString() : '', image: '' }; }
 
+  // "By posting, you agree to our Terms of Use and Privacy Policy." with real links.
+  function legalNote(lead) {
+    var p = el('p', 'cl-note'); p.appendChild(document.createTextNode(lead + ', you agree to our '));
+    var t = el('a', null, 'Terms of Use'); t.href = '/legal.html#terms'; t.target = '_blank'; p.appendChild(t);
+    p.appendChild(document.createTextNode(' and ')); var v = el('a', null, 'Privacy Policy'); v.href = '/legal.html#privacy'; v.target = '_blank'; p.appendChild(v);
+    p.appendChild(document.createTextNode('.')); return p;
+  }
   function el(tagName, cls, text) {
     var n = document.createElement(tagName);
     if (cls) n.className = cls;
@@ -1703,6 +1720,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); f.appendChild(top);
     var go = el('button', 'cl-go cl-wide', 'Post obituary'); go.type = 'submit'; f.appendChild(go);
     f.appendChild(el('p', 'cl-note', 'For funeral homes and families. Posts come down after 30 days. No links. Anyone can report a post.'));
+    f.appendChild(legalNote('By posting'));
     var order = ['title', 'business', 'town', 'svc', 'contact'];
     function show(e) { order.forEach(function (k) { if (F[k]) F[k].err(e[k] || ''); }); var first = order.filter(function (k) { return e[k]; })[0]; if (first) { var n = F[first].querySelector('input,select'); if (n) n.focus(); } }
     f.addEventListener('submit', function (ev) {
@@ -1779,6 +1797,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     var go = el('button', 'cl-go cl-wide', label); go.type = 'submit';
     f.appendChild(top); f.appendChild(go);
     f.appendChild(el('p', 'cl-note', 'No links. ' + (isJob ? 'Jobs come down after 45 days. Post only real openings.' : isDeal ? 'Deals come down on their end date or after 30 days.' : isEv ? 'Events come down after they happen.' : 'Listings expire after 30 days.') + ' Anyone can report a post.'));
+    f.appendChild(legalNote('By posting'));
     var order = isJob ? ['employer', 'title', 'category', 'town', 'jobType', 'pay', 'contact'] : isDeal ? ['business', 'title', 'category', 'town', 'code', 'ends', 'contact'] : isEv ? ['title', 'category', 'town', 'date', 'time', 'contact'] : ['title', 'category', 'town', 'price', 'contact'];
     function clientCheck() {
       var e = {};
@@ -2439,6 +2458,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     tips.appendChild(ul); snEl.appendChild(tips);
     var fine = sec('Good to know');
     ['Please be accurate and stick to what you know firsthand. We may verify before using anything.', 'We don’t publish tips that name private individuals accused of a crime.', 'Your email and phone number are never published.'].forEach(function (t) { fine.appendChild(el('p', 'cl-note', t)); });
+    fine.appendChild(legalNote('By sending'));
     snEl.appendChild(fine);
 
     var order = ['headline', 'details', 'town', 'when', 'name', 'email', 'phone', 'consent'];
@@ -2541,6 +2561,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
     var two = el('div', 'cl-two'); two.appendChild(F.email); two.appendChild(F.phone);
     [F.business, F.name, two, F.interest, F.message, hp].forEach(function (x) { f.appendChild(x); });
     var top = el('div', 'cl-err'); top.setAttribute('role', 'alert'); f.appendChild(top);
+    f.appendChild(legalNote('By sending this'));
     var go = el('button', 'cl-go cl-wide', 'Send inquiry'); go.type = 'submit'; f.appendChild(go);
     snEl.appendChild(f);
     function show(e) { ['business', 'name', 'email', 'phone'].forEach(function (k) { F[k].err(e[k] || ''); }); var first = ['business', 'name', 'email', 'phone'].filter(function (k) { return e[k]; })[0]; if (first) F[first].querySelector('input').focus(); }

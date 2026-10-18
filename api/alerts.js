@@ -1,6 +1,7 @@
 // Official alerts for the single Breaking slot (see public/breaking.js for the tiers and ranking).
-//   GET /api/alerts             -> { updatedAt, alerts: [candidate...], sources: [{id, ok, count, error}] }
-//   GET /api/alerts?refresh=1   with  Authorization: Bearer <CRON_SECRET>  forces a refresh (GitHub Action).
+//   GET /api/alerts             -> { updatedAt, alerts: [candidate...], sources: [{id, ok, count, ...}] }  (no error text)
+//   GET /api/alerts?refresh=1   with  Authorization: Bearer <CRON_SECRET>  forces a refresh (GitHub Action); this answer
+//                               keeps each feed's error so the workflow can warn about it.
 // Only official, machine-readable feeds that were verified with curl on 2026-10-17 are used. Everything else
 // is listed as "no feed found" in the alert-sources registry (scripts/alert-sources.json), not guessed here.
 // Cached in Upstash Redis when configured (keys under tsn:alerts:*) and at Vercel's edge for 60 s, so the NWS
@@ -201,6 +202,9 @@ async function build(force) {
   return snapshot;
 }
 
+// Public answers carry no error text (PR 1.3); the stored snapshot and the forced (secret) answer keep it.
+const publicAlerts = snap => Object.assign({}, snap, { sources: (snap.sources || []).map(s => { const o = Object.assign({}, s); delete o.error; return o; }) });
+
 module.exports = async function (req, res) {
   const secret = process.env.CRON_SECRET || '';
   const force = !!(req.query && req.query.refresh) && !!secret && same(req.headers.authorization || '', 'Bearer ' + secret);
@@ -208,7 +212,7 @@ module.exports = async function (req, res) {
     const snap = await build(force);
     res.setHeader('Cache-Control', force ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=60, max-age=30');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(200).send(JSON.stringify(force ? Object.assign({ ok: snap.sources.every(s => s.ok || s.cached) }, snap) : snap));
+    res.status(200).send(JSON.stringify(force ? Object.assign({ ok: snap.sources.every(s => s.ok || s.cached) }, snap) : publicAlerts(snap)));
   } catch (e) {
     res.setHeader('Cache-Control', 'no-store');
     res.status(503).json({ error: 'alerts temporarily unavailable', alerts: [] });
@@ -219,3 +223,4 @@ module.exports.KEYS = K;
 module.exports.loadFeed = loadFeed;
 module.exports.rssItems = rssItems;
 module.exports.refresh = refresh;
+module.exports.publicAlerts = publicAlerts;

@@ -140,6 +140,12 @@ try {
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
 
 const { inTriState } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
+// Every publisher request goes through safeFetch (http/https only, no private or metadata addresses after DNS, at most
+// 3 redirects, each re-checked) and every body through readCapped (PR 1.3). Caps are about 3x the largest body seen
+// on 2026-10-18 (Indiana Chronicle feed 1.34 MB, Barnett sitemap 0.66 MB). Items parsed per feed were already capped
+// below the plan's 200: PER_SOURCE_LIMIT (30) for RSS/Atom, 200 events for iCal.
+const { safeFetch, readCapped } = require('./_safe.js');
+const CAP = { feed: 4 * 1024 * 1024, sitemap: 5 * 1024 * 1024, page: 2 * 1024 * 1024, json: 4 * 1024 * 1024 };
 
 // Places between and around the anchor cities. Ambiguous names are state-qualified.
 const REGION_TERMS = [
@@ -406,14 +412,14 @@ function parseVenue(html, source, base) {
 const TM_SEGMENT = { Sports: 'Sports', Music: 'Music', 'Arts & Theatre': 'Arts' };
 async function fetchTicketmaster(source, url) {
   const key = process.env.TICKETMASTER_API_KEY;
-  if (!key) return { items: [], error: 'no items', url };
+  if (!key) return { items: [], error: 'no items', missingKey: true, url };
   const items = [];
   const start = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   for (let page = 0; page < 2; page++) {
     const q = '?apikey=' + encodeURIComponent(key) + '&latlong=37.9716,-87.5711&radius=75&unit=miles&size=100&sort=date,asc&page=' + page + '&startDateTime=' + start;
-    const r = await fetch(url + q, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
-    if (!r.ok) { if (!page) return { items: [], error: 'HTTP ' + r.status, url }; break; }
-    const d = await r.json();
+    const r = await safeFetch(url + q, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { if (!page) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url }; break; }
+    const d = JSON.parse(await readCapped(r, CAP.json));
     for (const e of (d._embedded && d._embedded.events) || []) {
       const st = e.dates && e.dates.start;
       if (!st || !e.name || (e.dates.status && /cancel|postpon/i.test(e.dates.status.code || ''))) continue;
@@ -434,7 +440,7 @@ async function fetchTicketmaster(source, url) {
     }
     if (!d.page || page + 1 >= d.page.totalPages) break;
   }
-  return { items, error: items.length ? null : 'no items', url };
+  return { items, error: items.length ? null : 'no items', httpStatus: 200, url };
 }
 
 // Identifies the reader honestly, with a URL publishers can check. Google News and some BLOX/Arc sites
@@ -515,9 +521,9 @@ function parseObitPage(html, source, entry) {
 async function fetchSitemap(source, url, prev) {
   const now = Date.now();
   const headers = { 'user-agent': USER_AGENT, accept: 'application/xml, text/xml, */*' };
-  const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
-  if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
-  const xml = await r.text();
+  const r = await safeFetch(url, { headers, signal: AbortSignal.timeout(10000) });
+  if (!r.ok) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url };
+  const xml = await readCapped(r, CAP.sitemap);
   const cutoff = now - (source.maxAgeDays || 21) * 864e5;
   const entries = (xml.match(/<url>[\s\S]*?<\/url>/gi) || [])
     .map(b => ({ loc: safeUrl(tag(b, 'loc').trim(), true), lastmod: Date.parse(tag(b, 'lastmod').trim()) }))
@@ -534,16 +540,16 @@ async function fetchSitemap(source, url, prev) {
     if (fetched) await new Promise(res => setTimeout(res, 900));
     fetched++;
     try {
-      const pr = await fetch(e.loc, { headers: { ...headers, accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
+      const pr = await safeFetch(e.loc, { headers: { ...headers, accept: 'text/html' }, signal: AbortSignal.timeout(10000) });
       if (pr.status === 429 || pr.status === 403) { blockedErr = 'HTTP ' + pr.status; continue; }
       if (!pr.ok) continue;
-      const it = parseObitPage(await pr.text(), source, e);
+      const it = parseObitPage(await readCapped(pr, CAP.page), source, e);
       if (it) items.push(it);
     } catch (_) { /* one slow page should not sink the source */ }
   }
   // A block on the detail pages backs the whole host off (loadSource) once nothing usable came back.
-  if (!items.length && blockedErr) return { items: [], error: blockedErr, url };
-  return { items, error: items.length ? null : 'no items', url };
+  if (!items.length && blockedErr) return { items: [], error: blockedErr, httpStatus: +blockedErr.slice(5), url };
+  return { items, error: items.length ? null : 'no items', httpStatus: r.status, url };
 }
 
 // Fetches one URL. When we hold validators (ETag / Last-Modified) from the last good fetch, they are
@@ -560,26 +566,28 @@ async function tryUrl(source, url, prev) {
     if (source.parser === 'venue') {
       const items = [];
       for (const start of [0, 20, 40]) {
-        const r = await fetch(url + (start ? '?start=' + start : ''), { headers: { ...headers, accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(10000) });
-        if (!r.ok) { if (!start) return { items: [], error: 'HTTP ' + r.status, url }; break; }
-        const page = parseVenue(await r.text(), source, url);
+        const r = await safeFetch(url + (start ? '?start=' + start : ''), { headers: { ...headers, accept: 'text/html' }, signal: AbortSignal.timeout(10000) });
+        if (!r.ok) { if (!start) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url }; break; }
+        const page = parseVenue(await readCapped(r, CAP.page), source, url);
         if (!page.length) break;
         items.push(...page);
         if (page.length < 20) break;
       }
-      return { items, error: items.length ? null : 'no items', url };
+      return { items, error: items.length ? null : 'no items', httpStatus: 200, url };
     }
     if (isGoogleNews(url)) await googleTurn();
-    const r = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(10000) });
-    if (r.status === 304) return { items: [], notModified: true, error: null, url };
-    if (!r.ok) return { items: [], error: 'HTTP ' + r.status, url };
-    const xml = await r.text();
+    const r = await safeFetch(url, { headers, signal: AbortSignal.timeout(10000) });
+    if (r.status === 304) return { items: [], notModified: true, error: null, httpStatus: 304, url };
+    if (!r.ok) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url };
+    const xml = await readCapped(r, CAP.feed);
     const viaGoogle = isGoogleNews(url);
-    const items = (/BEGIN:VCALENDAR/.test(xml) ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url }))
-      .filter(it => passesFilters(it, source, viaGoogle));
-    return { items, error: items.length ? null : 'no items', url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
+    const ical = /BEGIN:VCALENDAR/.test(xml);
+    const parsed = ical ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url });
+    const items = parsed.filter(it => passesFilters(it, source, viaGoogle));
+    return { items, error: items.length ? null : 'no items', httpStatus: r.status, received: parsed.length,
+      feedLike: ical || /<(rss|feed|rdf:RDF|channel)\b/i.test(xml), url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
-    return { items: [], error: String(e && e.message || e).slice(0, 80), url };
+    return { items: [], error: String(e && e.message || e).slice(0, 80), errorCode: (e && (e.code || e.name)) || '', url };
   }
 }
 
@@ -735,12 +743,62 @@ function mergeState(source, prev, res, now) {
   return state;
 }
 
+// ---------- adapter results and run records (plan 6.1, PR 1.3) ----------
+// Every source fetched in a run gets one typed result; the run's results are stored privately under tsn:runs:<runId>
+// for 7 days (one extra SET in the run's single write request). Error text lives only there and in tsn:src:<id>,
+// never in the public /api/news answer.
+const RUN_TTL = 7 * 86400;
+const runKey = id => 'tsn:runs:' + id;
+// <ISO minute>-<tier>-<4 hex>, e.g. 2026-10-18T13:38Z-fast-3f9a
+const newRunId = (now, tier) => new Date(now).toISOString().slice(0, 16) + 'Z-' + tier + '-' + require('crypto').randomBytes(2).toString('hex');
+const STATUSES = ['success', 'not_modified', 'empty_valid_feed', 'rate_limited', 'temporary_failure', 'invalid_response', 'blocked', 'configuration_error'];
+
+// The loadSource result -> one status. 403s count as rate_limited until the host has been blocked 3 runs in a row.
+function statusOf(r) {
+  if (r.notModified) return 'not_modified';
+  if (r.items && r.items.length) return 'success';
+  const e = r.error || '', h = r.httpStatus || 0, c = r.errorCode || '', blocks = r.blockCount || 0;
+  if (e === 'no items') return r.missingKey ? 'configuration_error' : r.feedLike === false && !r.received ? 'invalid_response' : 'empty_valid_feed';
+  if (e === 'cooling down after rate limit' || h === 403) return blocks >= 3 ? 'blocked' : 'rate_limited';
+  if (h === 429) return 'rate_limited';
+  if (h >= 500) return 'temporary_failure';
+  if (h >= 400) return 'configuration_error';
+  if (h >= 300) return 'invalid_response';
+  if (c === 'ERR_URL_BLOCKED' || c === 'ERR_URL_INVALID' || e === 'no url') return 'configuration_error';
+  if (c === 'ERR_BODY_TOO_LARGE' || c === 'ERR_TOO_MANY_REDIRECTS' || c === 'SyntaxError') return 'invalid_response';
+  return 'temporary_failure'; // timeouts, DNS and network errors
+}
+
+function adapterResult(r, ctx) {
+  const src = r.source || {}, urls = [src.url].concat(src.altUrls || []);
+  const at = r.url ? urls.indexOf(r.url) : -1;
+  const accepted = (r.items || []).length;
+  const received = Math.max(accepted, Number.isFinite(r.received) ? r.received : accepted);
+  const out = {
+    runId: ctx.runId, sourceId: src.id, endpointId: at === 0 ? 'main' : at > 0 ? 'alt' + at : 'none',
+    attemptedAt: r.attemptedAt || ctx.attemptedAt || null, status: statusOf(r), httpStatus: r.httpStatus || null,
+    durationMs: Number.isFinite(r.durationMs) ? r.durationMs : null, notModified: !!r.notModified,
+    itemsReceived: received, itemsAccepted: accepted, itemsRejected: received - accepted,
+    rejectionReasons: received > accepted ? { not_eligible: received - accepted } : {}, warnings: [],
+  };
+  if (at > 0) out.warnings.push('fallback_endpoint');
+  if (r.error && r.error !== 'no items') out.detail = String(r.error).slice(0, 120); // private: tsn:runs only
+  return out;
+}
+
+// The public sources[] carries no error text (plan 6.1: error detail is admin-only; it stays in tsn:src:<id> and
+// tsn:runs:<runId>). Snapshots stored before PR 1.3 still have an error field, so it is also dropped when served.
+function publicSnapshot(snap) {
+  if (!snap || !Array.isArray(snap.sources) || !snap.sources.some(s => s && 'error' in s)) return snap;
+  return Object.assign({}, snap, { sources: snap.sources.map(s => { const o = Object.assign({}, s); delete o.error; return o; }) });
+}
+
 function buildSnapshot(states, now) {
   const results = SOURCES.map(src => ({ source: src, items: (states[src.id] && states[src.id].items) || [] }));
   const items = combine(results, now);
   const sources = SOURCES.map(src => {
     const st = states[src.id] || { items: [] };
-    return { logo: logoFor(src.url), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, error: st.error || null, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
+    return { logo: logoFor(src.url), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
   });
   return { updatedAt: new Date(now).toISOString(), sources, items };
 }
@@ -770,11 +828,16 @@ async function refreshAll(opts) {
   const byHost = {};
   targets.forEach(s => { let h = ''; try { h = new URL(s.url).hostname; } catch (_) { /* ignore */ } (byHost[h] = byHost[h] || []).push(s); });
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const tier = opts.tier === 'fast' ? 'fast' : 'all';
+  const runId = newRunId(now, tier);
   const fetched = (await Promise.all(Object.values(byHost).map(async group => {
     const out = [];
     for (let i = 0; i < group.length; i++) {
       if (i) await sleep(900);
-      out.push(await loadSource(group[i], prevStates[group[i].id], now));
+      const t = Date.now();
+      const r = await loadSource(group[i], prevStates[group[i].id], now);
+      r.attemptedAt = new Date(t).toISOString(); r.durationMs = Date.now() - t;
+      out.push(r);
     }
     return out;
   }))).flat();
@@ -787,20 +850,26 @@ async function refreshAll(opts) {
   // sources not fetched this round (fast tier) still need a record
   SOURCES.forEach(s => { if (!states[s.id]) states[s.id] = { items: [], error: null, lastOk: null }; });
   const snap = buildSnapshot(states, now);
+  const results = fetched.map(r => adapterResult(r, { runId }));
+  const statusCounts = {};
+  results.forEach(x => { statusCounts[x.status] = (statusCounts[x.status] || 0) + 1; });
+  const finished = Date.now();
+  const run = { runId, tier, startedAt: new Date(now).toISOString(), finishedAt: new Date(finished).toISOString(), durationMs: finished - now, attempted: results.length, statusCounts, results };
   if (persist) {
     const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
     cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
+    cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
     store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
-  return { snapshot: snap, report, store };
+  return { snapshot: snap, report, store, runId, run };
 }
 
 async function handler(req, res) {
   try { await run(req, res); } catch (e) {
     console.error('news failed', e && e.stack || e);
     res.setHeader('Cache-Control', 'no-store');
-    res.status(503).json({ error: 'news temporarily unavailable', detail: String(e && e.message || e).slice(0, 200) });
+    res.status(503).json({ error: 'news temporarily unavailable' }); // the detail is in the function log only
   }
 }
 
@@ -815,7 +884,7 @@ async function run(req, res) {
   }
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900, max-age=120');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(200).send(JSON.stringify(snap));
+  res.status(200).send(JSON.stringify(publicSnapshot(snap)));
 }
 
 // /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
@@ -842,3 +911,8 @@ module.exports.loadSource = loadSource;
 module.exports.safetyView = safetyView;
 module.exports.ARREST_MAX_DAYS = ARREST_MAX_DAYS;
 module.exports.passesFilters = passesFilters;
+module.exports.adapterResult = adapterResult;
+module.exports.statusOf = statusOf;
+module.exports.STATUSES = STATUSES;
+module.exports.RUN_TTL = RUN_TTL;
+module.exports.publicSnapshot = publicSnapshot;

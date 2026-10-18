@@ -30,6 +30,10 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
 .cr fieldset { display:flex; flex-wrap:wrap; gap:4px 12px; margin:0; padding:8px; border:1px solid var(--border); border-radius:6px; }
 .cr label { display:inline-flex; gap:4px; align-items:center; font-size:12px; }
 .cr .acts { display:flex; flex-wrap:wrap; gap:8px; }
+select { min-height:44px; padding:0 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
+.st { display:inline-block; padding:0 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; line-height:20px; }
+.st-new { border-color:var(--accent); color:var(--accent); } .st-won { border-color:#30a46c; color:#30a46c; } .st-spam, .st-lost { color:var(--muted); }
+details summary { cursor:pointer; color:var(--muted); font-size:12px; }
 </style>
 </head>
 <body>
@@ -39,7 +43,8 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
   <p class="err" id="err" role="alert" hidden></p>
   <div id="out" hidden>
     <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV</button></div><div id="nl"></div></section>
-    <section><h2 id="adh">Advertising inquiries</h2><div id="ad"></div></section>
+    <section><div class="row"><h2 id="adh">Advertising inquiries</h2><select id="adf" aria-label="Which inquiries to show"></select></div><p class="m">Status and notes are for us only: changing them never emails the advertiser. Reply from your own inbox.</p><div id="ad"></div></section>
+    <section><h2 id="alh">Inquiry activity</h2><div id="adl"></div></section>
     <section><h2 id="crh">Creatives waiting for review</h2><p class="m">Nothing an advertiser uploads is shown until you approve it here. Check the image, words and destination against the Advertising Policy (truthful, legible, still image, the link goes where it says). Approve or reject with a reason; both are written to the audit log. Approving picks where it runs. Withdrawing an approved creative takes it off the site.</p><div id="crp"></div></section>
     <section><h2 id="cah">Approved creatives</h2><div id="cra"></div></section>
     <section><h2>Creative upload link</h2><p class="m">For an advertiser who has no inquiry reference or paid order: make a signed link tied to a reference (an inquiry or invoice number). It works for 14 days.</p><form id="tk"><input id="tkr" placeholder="Reference, e.g. AD-ABC123" aria-label="Reference" autocomplete="off"><button type="submit">Make link</button></form><p class="m" id="tko" role="status"></p></section>
@@ -98,6 +103,51 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
     d.appendChild(acts); d.appendChild(msg);
     return d;
   }
+  // Advertising leads (GET/POST /api/advertise, api/_leads.js): a status, our notes and a history per inquiry. Nothing
+  // here contacts the advertiser.
+  var leads = null;
+  function ct(t) { return t ? new Date(t).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' CT' : ''; }
+  function stLabel(d, k) { var x = (d.statuses || []).filter(function (s) { return s.key === k; })[0]; return x ? x.label : k; }
+  function budgetLabel(d, k) { var x = (d.budgets || []).filter(function (b) { return b.key === k; })[0]; return x ? x.label : ''; }
+  function leadCard(a, d) {
+    var l = a.lead || { status: 'new', notes: [], history: [] }, box = mk('div', { class: 'item cr' });
+    var head = mk('div'); head.appendChild(mk('b', null, a.business + ' · ' + a.interest + ' ')); head.appendChild(mk('span', { class: 'st st-' + l.status }, stLabel(d, l.status))); box.appendChild(head);
+    box.appendChild(mk('div', { class: 'm' }, a.name + ' · ' + a.email + (a.phone ? ' · ' + a.phone : '') + ' · ' + ct(a.at) + ' · ' + a.ref));
+    var want = [a.package ? 'Package ' + a.package : '', a.budget ? 'Budget per 30 days: ' + budgetLabel(d, a.budget) : ''].filter(Boolean).join(' · ');
+    if (want) box.appendChild(mk('div', { class: 'm' }, want));
+    if (a.message) { var p = mk('div', null, a.message); p.style.whiteSpace = 'pre-wrap'; box.appendChild(p); }
+    if (l.notes.length) { var nl = mk('div', { class: 'm' }); l.notes.forEach(function (n) { nl.appendChild(mk('div', null, ct(n.at) + ': ' + n.text)); }); box.appendChild(nl); }
+    var sel = mk('select', { 'aria-label': 'Status for ' + a.business });
+    (d.statuses || []).forEach(function (s) { var o = mk('option', { value: s.key }, s.label); if (s.key === l.status) o.selected = true; sel.appendChild(o); });
+    var note = mk('input', { placeholder: 'Note (optional with a status change; kept in the history)', 'aria-label': 'Note for ' + a.business, maxlength: '500' });
+    box.appendChild(note);
+    var acts = mk('div', { class: 'acts' }), msg = mk('p', { class: 'm', role: 'status' });
+    acts.appendChild(sel);
+    function save(body) { post('/api/advertise', body).then(function () { msg.textContent = 'Saved.'; return loadLeads(); }).catch(function (e) { msg.textContent = e.message; }); }
+    var bs = mk('button', { type: 'button' }, 'Change status'); bs.addEventListener('click', function () { save({ action: 'status', ref: a.ref, status: sel.value, note: note.value.trim() }); });
+    var bn = mk('button', { type: 'button', class: 'ghost' }, 'Add note'); bn.addEventListener('click', function () { if (note.value.trim().length < 2) { msg.textContent = 'Write a note first.'; return; } save({ action: 'note', ref: a.ref, note: note.value.trim() }); });
+    acts.appendChild(bs); acts.appendChild(bn); box.appendChild(acts); box.appendChild(msg);
+    if (l.history.length) {
+      var h = mk('details'); h.appendChild(mk('summary', null, 'History (' + l.history.length + ')'));
+      l.history.slice().reverse().forEach(function (x) { h.appendChild(mk('div', { class: 'm' }, ct(x.at) + ' · ' + (x.action === 'status' ? stLabel(d, x.from) + ' → ' + stLabel(d, x.to) : 'note') + (x.note ? ' · ' + x.note : ''))); });
+      box.appendChild(h);
+    }
+    return box;
+  }
+  function drawLeads(d) {
+    leads = d; var all = d ? d.items : [], f = $('adf'), keep = f.value || 'open';
+    f.textContent = '';
+    var c = (d && d.counts) || {};
+    [['open', 'Open (all but spam)']].concat(((d && d.statuses) || []).map(function (s) { return [s.key, s.label + ' (' + (c[s.key] || 0) + ')']; })).concat([['all', 'All (' + all.length + ')']]).forEach(function (o) { var x = mk('option', { value: o[0] }, o[1]); f.appendChild(x); });
+    f.value = keep;
+    var show = all.filter(function (a) { var st = (a.lead && a.lead.status) || 'new'; return keep === 'all' ? true : keep === 'open' ? st !== 'spam' : st === keep; });
+    $('adh').textContent = 'Advertising inquiries (' + all.length + (c.new ? ', ' + c.new + ' new' : '') + ')'; $('ad').textContent = '';
+    if (show.length) show.forEach(function (a) { $('ad').appendChild(leadCard(a, d)); }); else empty($('ad'), d ? (all.length ? 'None with that status.' : 'No inquiries yet.') : 'Not available.');
+    var log = (d && d.log) || []; $('alh').textContent = 'Inquiry activity (' + log.length + ')'; $('adl').textContent = '';
+    if (log.length) log.forEach(function (x) { line($('adl'), x.ref + ' · ' + (x.action === 'status' ? stLabel(d, x.from) + ' → ' + stLabel(d, x.to) : 'note'), ct(x.at), x.note || ''); }); else empty($('adl'), d ? 'No changes yet.' : 'Not available.');
+  }
+  function loadLeads() { return get('/api/advertise').then(drawLeads).catch(function () { drawLeads(null); }); }
+  $('adf').addEventListener('change', function () { drawLeads(leads); });
   function loadCreatives() {
     return get('/api/creative').then(function (c) {
       crUrls.forEach(function (u) { URL.revokeObjectURL(u); }); crUrls = [];
@@ -126,8 +176,7 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
       emails = r[0] ? r[0].emails.slice().sort() : [];
       $('nlh').textContent = 'Newsletter subscribers (' + emails.length + ')'; $('nl').textContent = '';
       if (emails.length) emails.forEach(function (x) { line($('nl'), x, ''); }); else empty($('nl'), r[0] ? 'No subscribers yet.' : 'Not available.');
-      var ads = r[1] ? r[1].items : []; $('adh').textContent = 'Advertising inquiries (' + ads.length + ')'; $('ad').textContent = '';
-      if (ads.length) ads.forEach(function (a) { line($('ad'), a.business + ' · ' + a.interest, a.name + ' · ' + a.email + (a.phone ? ' · ' + a.phone : '') + ' · ' + new Date(a.at).toLocaleString() + ' · ' + a.ref, a.message); }); else empty($('ad'), 'No inquiries yet.');
+      drawLeads(r[1]);
       var tips = r[2] ? r[2].items : []; $('tph').textContent = 'News tips (' + tips.length + ')'; $('tp').textContent = '';
       // Orders (read-only; GET /api/orders). Amounts are integer cents.
       var usd = function (c) { return '$' + ((Number(c) || 0) / 100).toFixed(2); };

@@ -1,0 +1,48 @@
+# Warms /api/alerts (official alerts for the single Breaking slot) every 5 minutes, the shortest schedule GitHub
+# allows. Visitors never depend on this: /api/alerts refreshes on demand when its cached copy is older than 60 s
+# (edge-cached, so the NWS sees about one request a minute at most). This run keeps it warm on quiet nights and
+# fails loudly if the NWS or the alert store stop answering.
+# Uses the same SITE_URL and CRON_SECRET repository secrets as "Refresh news".
+name: Refresh alerts
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: refresh-alerts
+  cancel-in-progress: true    # a newer run makes an older one pointless
+permissions:
+  contents: read
+  issues: write
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call /api/alerts?refresh=1
+        env:
+          SITE_URL: ${{ secrets.SITE_URL || 'https://tristatenewss.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then echo "::error::Add the CRON_SECRET repository secret."; exit 1; fi
+          code=$(curl -sS --max-time 30 --retry 2 --retry-all-errors --retry-delay 10 -o body.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/alerts?refresh=1" || echo 000)
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then echo "::error::/api/alerts answered HTTP $code"; cat body.json || true; exit 1; fi
+          { echo "### Official alerts: $(jq '.alerts | length' body.json) active"; echo; jq -r '.alerts[]? | "- tier \(.tier) \(.label): \(.title)"' body.json; } >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.sources[]? | select(.ok == false) | "::warning title=Alert feed failing::\(.id): \(.error)"' body.json
+          # The NWS feed is the one that matters most: fail the run if it did not answer.
+          if [ "$(jq -r '[.sources[]? | select(.id == "nws" and .ok == false)] | length' body.json)" != "0" ]; then echo "::error::NWS alerts feed failed"; exit 1; fi
+      - name: Open or update the failure issue
+        if: failure() && github.event_name == 'schedule'
+        env: { GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' }
+        run: |
+          n=$(gh issue list --label alerts-failing --state open --json number -q '.[0].number' || true)
+          msg="Refresh alerts failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$msg"; else gh label create alerts-failing --color B60205 2>/dev/null || true; gh issue create --title "Refresh alerts is failing" --label alerts-failing --body "$msg"; fi
+      - name: Close the failure issue after a good run
+        if: success()
+        env: { GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' }
+        run: |
+          for n in $(gh issue list --label alerts-failing --state open --json number -q '.[].number' || true); do gh issue close "$n" --comment "Recovered in run ${{ github.run_id }}."; done

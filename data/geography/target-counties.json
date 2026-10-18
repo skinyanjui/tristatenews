@@ -1,7 +1,7 @@
 {
   "$comment": "Reviewed, version-controlled list of the 68 target counties. Never generated from Wikipedia. FIPS, names, ANSI codes and centroids come from the committed Census extracts in census/; seats from the official state sources listed. Re-verify with: node --test test/geography.test.js",
   "schemaVersion": 1,
-  "manifestVersion": "2026-10-18.1",
+  "manifestVersion": "2026-10-18.2",
   "reviewStatus": "pending_review",
   "invariants": {
     "core": 30,
@@ -16,7 +16,8 @@
   },
   "censusExtracts": {
     "census/2025_Gaz_counties_extract.txt": "7133627ec5ea40ef49c6f2e229d28a2bd39749590b704e10aba32c5c1b8a8f66",
-    "census/national_county2020_extract.txt": "f57145c4fa2f26e2444681f8f994f10c36f1e312c2393d7d5d72d1ae9f1c1644"
+    "census/national_county2020_extract.txt": "f57145c4fa2f26e2444681f8f994f10c36f1e312c2393d7d5d72d1ae9f1c1644",
+    "census/county_adjacency2025_extract.txt": "97f0bf9bfbd4ddb27308e7562c084474546653407b46492c642e562a0abaf0b1"
   },
   "sources": {
     "census-gazetteer-2025": {
@@ -176,6 +177,29 @@
         "tier",
         "tri_state_historic",
         "optional list"
+      ]
+    },
+    "census-county-adjacency-2025": {
+      "publisher": "U.S. Census Bureau",
+      "title": "County Adjacency File, 2025",
+      "url": "https://www2.census.gov/geo/docs/reference/county_adjacency/county_adjacency2025.txt",
+      "vintage": "2025",
+      "lastModified": "2025-09-15T20:00:10Z",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "txt": "8233d2aed342f62eb02bae9f9002ad1d8fc6bd82d739185eba8bad832bf8fc87"
+      },
+      "usedFor": [
+        "region adjacency checks"
+      ],
+      "extract": "census/county_adjacency2025_extract.txt"
+    },
+    "editorial-regions-2026-10": {
+      "publisher": "Tri-State News (Sam Kinyanjui)",
+      "title": "Editorial regions: county memberships chosen by editorial judgment from the brief's region guidance, county-seat geography and Census adjacency",
+      "retrieved": "2026-10-18",
+      "usedFor": [
+        "region memberships"
       ]
     }
   },
@@ -2543,8 +2567,11 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "in-vanderburgh"
+      ]
     },
     {
       "id": "region:owensboro-western-ky",
@@ -2552,8 +2579,11 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "ky-daviess"
+      ]
     },
     {
       "id": "region:madisonville-coal-fields",
@@ -2561,8 +2591,11 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "ky-hopkins"
+      ]
     },
     {
       "id": "region:vincennes-jasper-sw-indiana",
@@ -2570,8 +2603,12 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "in-knox",
+        "in-dubois"
+      ]
     },
     {
       "id": "region:southern-illinois",
@@ -2579,8 +2616,11 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "il-williamson"
+      ]
     },
     {
       "id": "region:paducah-murray-far-western-ky",
@@ -2588,8 +2628,12 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "ky-mccracken",
+        "ky-calloway"
+      ]
     },
     {
       "id": "region:cape-girardeau-se-missouri",
@@ -2597,8 +2641,11 @@
       "kind": "editorial_region",
       "parent": null,
       "overlapping": true,
-      "membershipStatus": "awaiting_editorial_review",
-      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+      "membershipStatus": "editorial_judgment",
+      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
+      "hubCountyIds": [
+        "mo-cape-girardeau"
+      ]
     }
   ],
   "members": [
@@ -3286,6 +3333,1007 @@
       "countyId": "mo-new-madrid",
       "membershipType": "tier",
       "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "in-vanderburgh",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Evansville; region hub; borders Gibson IN, Posey IN, Warrick IN, Henderson KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "in-warrick",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Boonville; internal point 18 mi from Vanderburgh County IN (hub); borders Gibson IN, Vanderburgh IN, Henderson KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "in-posey",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mount Vernon; internal point 15 mi from Vanderburgh County IN (hub); borders Gibson IN, Vanderburgh IN, Henderson KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "in-gibson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Princeton; internal point 21 mi from Vanderburgh County IN (hub); borders Posey IN, Vanderburgh IN, Warrick IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "ky-henderson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Henderson; internal point 16 mi from Vanderburgh County IN (hub); borders Posey IN, Vanderburgh IN, Warrick IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "in-spencer",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Rockport; internal point 31 mi from Vanderburgh County IN (hub); borders Warrick IN in this region (Census adjacency 2025); on the Ohio between Evansville and Owensboro; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "ky-union",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Morganfield; internal point 32 mi from Vanderburgh County IN (hub); borders Posey IN, Henderson KY in this region (Census adjacency 2025); across the Ohio from Henderson and Posey; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "il-gallatin",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Shawneetown; internal point 39 mi from Vanderburgh County IN (hub); borders Posey IN in this region (Census adjacency 2025); at the Wabash and Ohio confluence; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:evansville-ohio-river",
+      "countyId": "il-white",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Carmi; internal point 33 mi from Vanderburgh County IN (hub); borders Gibson IN, Posey IN in this region (Census adjacency 2025); across the Wabash from Posey and Gibson; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:owensboro-western-ky",
+      "countyId": "ky-daviess",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Owensboro; region hub; borders Hancock KY, McLean KY, Ohio KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:owensboro-western-ky",
+      "countyId": "ky-hancock",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Hawesville; internal point 18 mi from Daviess County KY (hub); borders Daviess KY, Ohio KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:owensboro-western-ky",
+      "countyId": "ky-mclean",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Calhoun; internal point 17 mi from Daviess County KY (hub); borders Daviess KY, Ohio KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:owensboro-western-ky",
+      "countyId": "ky-ohio",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Hartford; internal point 22 mi from Daviess County KY (hub); borders Daviess KY, Hancock KY, McLean KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:owensboro-western-ky",
+      "countyId": "ky-muhlenberg",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Greenville; internal point 36 mi from Daviess County KY (hub); borders McLean KY, Ohio KY in this region (Census adjacency 2025); the brief lists it under Owensboro as a possible secondary; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-hopkins",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Madisonville; region hub; borders Caldwell KY, Christian KY, Muhlenberg KY, Webster KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-webster",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Dixon; internal point 16 mi from Hopkins County KY (hub); borders Caldwell KY, Crittenden KY, Hopkins KY, Union KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-muhlenberg",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Greenville; internal point 23 mi from Hopkins County KY (hub); borders Christian KY, Hopkins KY, Todd KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-union",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Morganfield; internal point 33 mi from Hopkins County KY (hub); borders Crittenden KY, Webster KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-christian",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Hopkinsville; internal point 29 mi from Hopkins County KY (hub); borders Caldwell KY, Hopkins KY, Muhlenberg KY, Todd KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-todd",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Elkton; internal point 38 mi from Hopkins County KY (hub); borders Christian KY, Muhlenberg KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-caldwell",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Princeton; internal point 21 mi from Hopkins County KY (hub); borders Christian KY, Crittenden KY, Hopkins KY, Webster KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:madisonville-coal-fields",
+      "countyId": "ky-crittenden",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Marion; internal point 31 mi from Hopkins County KY (hub); borders Caldwell KY, Union KY, Webster KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-knox",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Vincennes; region hub; borders Daviess IN, Pike IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-daviess",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Washington; internal point 19 mi from Knox County IN (hub); borders Dubois IN, Knox IN, Martin IN, Pike IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-dubois",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Jasper; region hub; borders Daviess IN, Martin IN, Perry IN, Pike IN, Spencer IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-pike",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Petersburg; internal point 20 mi from Dubois County IN (hub); borders Daviess IN, Dubois IN, Knox IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-martin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Shoals; internal point 23 mi from Dubois County IN (hub); borders Daviess IN, Dubois IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-perry",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Tell City; internal point 24 mi from Dubois County IN (hub); borders Dubois IN, Spencer IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "in-spencer",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Rockport; internal point 26 mi from Dubois County IN (hub); borders Dubois IN, Perry IN in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:vincennes-jasper-sw-indiana",
+      "countyId": "il-lawrence",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Lawrenceville; internal point 17 mi from Knox County IN (hub); borders Knox IN in this region (Census adjacency 2025); across the Wabash from Vincennes; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-clay",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Louisville; internal point 74 mi from Williamson County IL (hub); borders Richland IL, Wayne IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-edwards",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Albion; internal point 67 mi from Williamson County IL (hub); borders Richland IL, Wabash IL, Wayne IL, White IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-gallatin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Shawneetown; internal point 38 mi from Williamson County IL (hub); borders Hamilton IL, Hardin IL, Saline IL, White IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-hamilton",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat McLeansboro; internal point 32 mi from Williamson County IL (hub); borders Franklin IL, Gallatin IL, Jefferson IL, Saline IL, Wayne IL, White IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-lawrence",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Lawrenceville; internal point 94 mi from Williamson County IL (hub); borders Richland IL, Wabash IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-richland",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Olney; internal point 82 mi from Williamson County IL (hub); borders Clay IL, Edwards IL, Lawrence IL, Wabash IL, Wayne IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-saline",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Harrisburg; internal point 21 mi from Williamson County IL (hub); borders Franklin IL, Gallatin IL, Hamilton IL, Hardin IL, Johnson IL, Pope IL, Williamson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-wabash",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mount Carmel; internal point 77 mi from Williamson County IL (hub); borders Edwards IL, Lawrence IL, Richland IL, White IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-wayne",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Fairfield; internal point 56 mi from Williamson County IL (hub); borders Clay IL, Edwards IL, Hamilton IL, Jefferson IL, Richland IL, White IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-white",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Carmi; internal point 48 mi from Williamson County IL (hub); borders Edwards IL, Gallatin IL, Hamilton IL, Wabash IL, Wayne IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-jefferson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mount Vernon; internal point 39 mi from Williamson County IL (hub); borders Franklin IL, Hamilton IL, Perry IL, Wayne IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-perry",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Pinckneyville; internal point 34 mi from Williamson County IL (hub); borders Franklin IL, Jackson IL, Jefferson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-franklin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Benton; internal point 18 mi from Williamson County IL (hub); borders Hamilton IL, Jackson IL, Jefferson IL, Perry IL, Saline IL, Williamson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-jackson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Murphysboro; internal point 25 mi from Williamson County IL (hub); borders Franklin IL, Perry IL, Union IL, Williamson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-williamson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Marion; region hub; borders Franklin IL, Jackson IL, Johnson IL, Saline IL, Union IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-union",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Jonesboro; internal point 24 mi from Williamson County IL (hub); borders Alexander IL, Jackson IL, Johnson IL, Pulaski IL, Williamson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-johnson",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Vienna; internal point 19 mi from Williamson County IL (hub); borders Massac IL, Pope IL, Pulaski IL, Saline IL, Union IL, Williamson IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-pope",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Golconda; internal point 30 mi from Williamson County IL (hub); borders Hardin IL, Johnson IL, Massac IL, Saline IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-hardin",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Elizabethtown; internal point 39 mi from Williamson County IL (hub); borders Gallatin IL, Pope IL, Saline IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-alexander",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Cairo; internal point 44 mi from Williamson County IL (hub); borders Pulaski IL, Union IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-pulaski",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mound City; internal point 37 mi from Williamson County IL (hub); borders Alexander IL, Johnson IL, Massac IL, Union IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:southern-illinois",
+      "countyId": "il-massac",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Metropolis; internal point 38 mi from Williamson County IL (hub); borders Johnson IL, Pope IL, Pulaski IL in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-mccracken",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Paducah; region hub; borders Ballard KY, Carlisle KY, Graves KY, Livingston KY, Marshall KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-graves",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Mayfield; internal point 22 mi from Calloway County KY (hub); borders Calloway KY, Carlisle KY, Hickman KY, Marshall KY, McCracken KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-calloway",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Murray; region hub; borders Graves KY, Marshall KY, Trigg KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-marshall",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Benton; internal point 18 mi from Calloway County KY (hub); borders Calloway KY, Graves KY, Livingston KY, Lyon KY, McCracken KY, Trigg KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-ballard",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Wickliffe; internal point 16 mi from McCracken County KY (hub); borders Carlisle KY, McCracken KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-carlisle",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Bardwell; internal point 20 mi from McCracken County KY (hub); borders Ballard KY, Graves KY, Hickman KY, McCracken KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-hickman",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Clinton; internal point 30 mi from McCracken County KY (hub); borders Carlisle KY, Fulton KY, Graves KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-fulton",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Hickman; internal point 44 mi from McCracken County KY (hub); borders Hickman KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-livingston",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Smithland; internal point 22 mi from McCracken County KY (hub); borders Lyon KY, Marshall KY, McCracken KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-lyon",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Eddyville; internal point 30 mi from Calloway County KY (hub); borders Livingston KY, Marshall KY, Trigg KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "ky-trigg",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Cadiz; internal point 26 mi from Calloway County KY (hub); borders Calloway KY, Lyon KY, Marshall KY in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "il-massac",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Metropolis; internal point 11 mi from McCracken County KY (hub); borders Livingston KY, McCracken KY in this region (Census adjacency 2025); Metropolis is across the Ohio from Paducah; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "il-pulaski",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Mound City; internal point 25 mi from McCracken County KY (hub); borders Ballard KY, McCracken KY in this region (Census adjacency 2025); across the Ohio from McCracken and Ballard; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:paducah-murray-far-western-ky",
+      "countyId": "il-alexander",
+      "membershipType": "secondary",
+      "sourceReference": "editorial judgment: county seat Cairo; internal point 36 mi from McCracken County KY (hub); borders Ballard KY in this region (Census adjacency 2025); Cairo is across the Ohio from Ballard; brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-perry",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Perryville; internal point 23 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Cape Girardeau MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-bollinger",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Marble Hill; internal point 19 mi from Cape Girardeau County MO (hub); borders Cape Girardeau MO, Perry MO, Stoddard MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-cape-girardeau",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Jackson; region hub; borders Bollinger MO, Perry MO, Scott MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-wayne",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Greenville; internal point 46 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Butler MO, Carter MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-carter",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Van Buren; internal point 76 mi from Cape Girardeau County MO (hub); borders Butler MO, Ripley MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-ripley",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Doniphan; internal point 83 mi from Cape Girardeau County MO (hub); borders Butler MO, Carter MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-butler",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Poplar Bluff; internal point 61 mi from Cape Girardeau County MO (hub); borders Carter MO, Ripley MO, Stoddard MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-stoddard",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Bloomfield; internal point 40 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Butler MO, Cape Girardeau MO, New Madrid MO, Scott MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-scott",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Benton; internal point 24 mi from Cape Girardeau County MO (hub); borders Cape Girardeau MO, Mississippi MO, New Madrid MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-mississippi",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat Charleston; internal point 44 mi from Cape Girardeau County MO (hub); borders New Madrid MO, Scott MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "region:cape-girardeau-se-missouri",
+      "countyId": "mo-new-madrid",
+      "membershipType": "primary",
+      "sourceReference": "editorial judgment: county seat New Madrid; internal point 55 mi from Cape Girardeau County MO (hub); borders Mississippi MO, Scott MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
+      "basedOn": [
+        "editorial-regions-2026-10",
+        "census-county-adjacency-2025",
+        "census-gazetteer-2025",
+        "brief-2026-10"
+      ],
       "verifiedAt": "2026-10-18"
     }
   ]

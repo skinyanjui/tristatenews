@@ -90,7 +90,7 @@ test('sources: Census URLs and vintages recorded; every reference resolves', () 
   assert.match(S['census-national-county-2020'].url, /^https:\/\/www2\.census\.gov\/geo\/docs\/reference\/codes2020\//);
   for (const [id, s] of Object.entries(S)) {
     assert.ok(s.retrieved && /^\d{4}-\d{2}-\d{2}$/.test(s.retrieved), id);
-    if (id !== 'brief-2026-10') assert.match(s.url, /^https:\/\//, id);
+    if (!['brief-2026-10', 'editorial-regions-2026-10'].includes(id)) assert.match(s.url, /^https:\/\//, id);
   }
   for (const c of C.concat(OPT.counties)) {
     assert.ok(S[c.seat.source], c.id + ' seat source');
@@ -136,18 +136,22 @@ test('every membership has a known group, a known county, source_reference and v
   for (const m of M.members) {
     assert.ok(groups.has(m.groupId), m.groupId);
     assert.ok(byId.has(m.countyId), m.countyId);
-    assert.ok(M.sources[m.sourceReference], m.countyId + ' ' + m.sourceReference);
+    if (m.groupId.startsWith('region:')) {
+      assert.match(m.sourceReference, /^editorial judgment: /, m.countyId);
+      for (const x of m.basedOn) assert.ok(M.sources[x], m.countyId + ' ' + x);
+    } else assert.ok(M.sources[m.sourceReference], m.countyId + ' ' + m.sourceReference);
     assert.match(m.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(m.membershipType);
   }
   const keys = M.members.map(m => m.groupId + '|' + m.countyId);
   assert.equal(new Set(keys).size, keys.length, 'no duplicate memberships');
-  // Editorial regions are listed but get members only after editorial review.
+  // Editorial regions: seven, overlapping, members by editorial judgment (see test/regions.test.js).
   const regions = M.groups.filter(g => g.kind === 'editorial_region');
   assert.equal(regions.length, 7);
   for (const g of regions) {
     assert.equal(g.overlapping, true);
-    if (g.membershipStatus === 'awaiting_editorial_review') assert.equal(M.members.filter(m => m.groupId === g.id).length, 0, g.id);
+    assert.equal(g.membershipStatus, 'editorial_judgment', g.id);
+    assert.ok(M.members.some(m => m.groupId === g.id), g.id);
   }
 });
 

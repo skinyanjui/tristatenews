@@ -191,6 +191,7 @@ const reactHandler = require('./api/react.js');
 const stripeWebhookHandler = require('./api/stripe-webhook.js');
 const submitHandler = require('./api/submit.js');
 const subscribeHandler = require('./api/subscribe.js');
+const unsubscribeHandler = require('./api/unsubscribe.js');
 const alertsHandler = require('./api/alerts.js');
 
 // Mount Stripe webhook BEFORE body-parser so it can consume the raw request stream
@@ -233,6 +234,9 @@ app.all('/api/submit', (req, res, next) => {
 
 app.all('/api/subscribe', (req, res, next) => {
   Promise.resolve(subscribeHandler(req, res)).catch(next);
+});
+app.all('/api/unsubscribe', (req, res, next) => {
+  Promise.resolve(unsubscribeHandler(req, res)).catch(next);
 });
 app.all('/api/alerts', (req, res, next) => {
   Promise.resolve(alertsHandler(req, res)).catch(next);

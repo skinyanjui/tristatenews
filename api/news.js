@@ -207,7 +207,9 @@ function passesFilters(it, source, viaGoogle) {
 // Items that involve juveniles are dropped from police and court sources. Offense
 // names such as "child exploitation" describe an adult defendant's crime and are not matched.
 const JUVENILE_RE = /\b(?:juveniles?|teens?|teenagers?|(?:[1-9]|1[0-7])-year-olds?|boys?|girls?|students?|high school(?:ers?)?|middle school|minors? (?:arrested|charged|detained|cited|taken)|under 18)\b/i;
-// Arrested or charged, not (yet) convicted: these get the note on their card and a 14-day window.
+// Arrested or charged, not (yet) convicted: these get the note on their card and a 14-day window, from police and
+// sheriff's offices and from prosecutors, U.S. Attorneys, the FBI and courts alike. Outcome items (sentenced,
+// convicted, pleaded guilty, acquitted) and other releases keep their source's window.
 const ARREST_RE = /\b(?:arrest(?:s|ed)?|charged|charges?|indicted|indictment|accused|suspects?|in custody|booked|jailed|warrant)\b/i;
 // ("Convicted killer back in jail on new charges" is still an arrest: only a verdict or sentence counts.)
 const OUTCOME_RE = /\b(?:sentenced|sentencing|(?:is|was|were|been|be) convicted|convicted (?:of|in|on)|found guilty|pleads? guilty|pleaded guilty|guilty (?:plea|verdict)|acquitted)\b/i;
@@ -221,7 +223,7 @@ function safetyView(it, source) {
   if (JUVENILE_RE.test(it.title + ' ' + (it.summary || ''))) return null;
   const arrest = ARREST_RE.test(it.title) && !OUTCOME_RE.test(it.title);
   const out = { ...it, image: '', arrest };
-  if (arrest && kind === 'police') out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
+  if (arrest) out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
   return out;
 }
 
@@ -812,4 +814,5 @@ module.exports.mergeState = mergeState;
 module.exports.stored = stored;
 module.exports.loadSource = loadSource;
 module.exports.safetyView = safetyView;
+module.exports.ARREST_MAX_DAYS = ARREST_MAX_DAYS;
 module.exports.passesFilters = passesFilters;

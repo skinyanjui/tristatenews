@@ -44,7 +44,7 @@ test('likes refresh a 180-day TTL on every write; listing index gets a TTL and i
     assert.equal(JSON.parse(r2.body).count, 2);
     const listings = fresh('../api/listings.js');
     f.z.set('tsn:ls:index', new Map([['oldone', Date.now() - 40 * 864e5]]));
-    const body = { kind: 'item', uid: 'user-0001', title: 'Oak table', price: '$40', town: 'Evansville, IN', desc: 'Solid oak, seats four.', contact: '812-555-0100', category: 'Furniture', condition: 'Good' };
+    const body = { adult: true, kind: 'item', uid: 'user-0001', title: 'Oak table', price: '$40', town: 'Evansville, IN', desc: 'Solid oak, seats four.', contact: '812-555-0100', category: 'Furniture', condition: 'Good' };
     const r = res(); await listings({ method: 'POST', body, query: {}, headers: {} }, r);
     assert.equal(r.code, 200, r.body);
     assert.equal(f.ttl.get('tsn:ls:index'), 37 * 86400);

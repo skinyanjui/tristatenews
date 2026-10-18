@@ -1,0 +1,3292 @@
+{
+  "$comment": "Reviewed, version-controlled list of the 68 target counties. Never generated from Wikipedia. FIPS, names, ANSI codes and centroids come from the committed Census extracts in census/; seats from the official state sources listed. Re-verify with: node --test test/geography.test.js",
+  "schemaVersion": 1,
+  "manifestVersion": "2026-10-18.1",
+  "reviewStatus": "pending_review",
+  "invariants": {
+    "core": 30,
+    "extended": 38,
+    "total": 68,
+    "byState": {
+      "IL": 22,
+      "IN": 11,
+      "KY": 24,
+      "MO": 11
+    }
+  },
+  "censusExtracts": {
+    "census/2025_Gaz_counties_extract.txt": "7133627ec5ea40ef49c6f2e229d28a2bd39749590b704e10aba32c5c1b8a8f66",
+    "census/national_county2020_extract.txt": "f57145c4fa2f26e2444681f8f994f10c36f1e312c2393d7d5d72d1ae9f1c1644"
+  },
+  "sources": {
+    "census-gazetteer-2025": {
+      "publisher": "U.S. Census Bureau",
+      "title": "2025 Gazetteer Files, Counties (national)",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip",
+      "vintage": "2025",
+      "lastModified": "2025-09-10T17:30:11Z",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "zip": "4c90d0f805779923b5958ab13d0c1e9b99fe4932b786bfcf75dd739bb2dcb4ea",
+        "txt": "1914f0d83243362de83b8ddd298c213b1768d63d62d19464743289abd8bb35b1"
+      },
+      "extract": "census/2025_Gaz_counties_extract.txt",
+      "usedFor": [
+        "fips",
+        "name",
+        "ansiCode",
+        "centroid"
+      ]
+    },
+    "census-national-county-2020": {
+      "publisher": "U.S. Census Bureau",
+      "title": "National County FIPS codes, 2020 (codes2020/national_county2020.txt)",
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
+      "vintage": "2020",
+      "lastModified": "2023-02-13T20:11:55Z",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "txt": "9f6e5f6eb6ac2f5e9a36d5fd01dec77991bddc75118f748a069441a4782970d6"
+      },
+      "extract": "census/national_county2020_extract.txt",
+      "usedFor": [
+        "fips",
+        "name",
+        "ansiCode",
+        "functionalStatus"
+      ]
+    },
+    "census-gazetteer-2024": {
+      "publisher": "U.S. Census Bureau",
+      "title": "2024 Gazetteer Files, Counties (national); cross-check only",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_counties_national.zip",
+      "vintage": "2024",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "zip": "3c337402b5c6e8d5aa26b4278ccf4edc8989f2683765b3ffbf22296cdb2df3a0"
+      },
+      "usedFor": [
+        "fips cross-check"
+      ]
+    },
+    "il-sos-blue-book-2025-26": {
+      "publisher": "Illinois Secretary of State",
+      "title": "Illinois Blue Book 2025-2026, Counties & County Officers",
+      "url": "https://www.ilsos.gov/content/dam/publications/illinois-bluebook/2025-26/counties-and-county-officers.pdf",
+      "vintage": "2025-2026",
+      "retrieved": "2026-10-18",
+      "note": "ilsos.gov times out from the build box; the PDF (HTTP 200, application/pdf, 331427 bytes) was read as text through a remote fetcher. sha256 is of that extracted text.",
+      "sha256": {
+        "text": "97de4a8d382775e47d3d8ac000d3d8e8b393ec452d29f5af8b6356bb67245b2b"
+      },
+      "usedFor": [
+        "seat"
+      ]
+    },
+    "il-cgfa-county-data-book-2025": {
+      "publisher": "Illinois General Assembly, Commission on Government Forecasting and Accountability",
+      "title": "Illinois County Data Book, Eighth Edition (Publication 606, January 2025)",
+      "url": "https://www.ilga.gov/commission/lru/CountyDataBook2025.pdf",
+      "vintage": "2025-01",
+      "retrieved": "2026-10-18",
+      "note": "corroboration only; the text read covered Adams through Grundy",
+      "usedFor": [
+        "seat corroboration"
+      ]
+    },
+    "in-gov-counties": {
+      "publisher": "State of Indiana (IN.gov)",
+      "title": "Counties: Home, county profiles",
+      "url": "https://www.in.gov/counties/",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "html": "fdb9fdbc279fb43a8f6fcbd4a210d8222f19da09bbe8f242ce1becd73ec5e1a8"
+      },
+      "usedFor": [
+        "seat"
+      ]
+    },
+    "in-gov-usa250-county-information": {
+      "publisher": "State of Indiana, America 250 - Indiana",
+      "title": "Indiana County Information",
+      "url": "https://www.in.gov/usa250/educational-information/indiana-county-information/",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "html": "6d63e3c421c7a63150e55590a3419c02cd99421ca18fb64e3202daf559863983"
+      },
+      "note": "corroboration only; the page spells Daviess as DAVIES",
+      "usedFor": [
+        "seat corroboration"
+      ]
+    },
+    "ky-kdla-county-formation-chart": {
+      "publisher": "Kentucky Department for Libraries and Archives",
+      "title": "Kentucky County Formation Chart",
+      "url": "https://kdla.ky.gov/Archives-and-Reference/Pages/Kentucky-County-Formation-Chart.aspx",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "html": "4372f2f19fe55b2081808550af490b41084e16523f55a418f5172ef4c126ee3a"
+      },
+      "usedFor": [
+        "seat"
+      ]
+    },
+    "ky-gis-county-seats": {
+      "publisher": "Commonwealth of Kentucky, KyGIS",
+      "title": "County Seats layer (Ky_CountySeats_WGS84WM/MapServer/0)",
+      "url": "https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountySeats_WGS84WM/MapServer/0",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "json": "c98191ed2e6cd16e384f44408964cc4b0c195b8b3c6c75c142aed0dcb57f7e50"
+      },
+      "usedFor": [
+        "seat corroboration"
+      ]
+    },
+    "mo-sos-official-manual-2025-26": {
+      "publisher": "Missouri Secretary of State",
+      "title": "Official Manual, State of Missouri 2025-2026, Chapter 8: Cities and Counties",
+      "url": "https://www.sos.mo.gov/cmsimages/bluebook/2025-2026/8_Counties.pdf",
+      "vintage": "2025-2026",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "pdf": "fa9df62ceda2d9aaed79516a8909fd404ccf2ea21aafcd451643c8bca508089f"
+      },
+      "usedFor": [
+        "seat"
+      ]
+    },
+    "mo-data-portal-counties": {
+      "publisher": "State of Missouri, data.mo.gov",
+      "title": "Missouri Counties (byps-gsbw)",
+      "url": "https://data.mo.gov/d/byps-gsbw",
+      "retrieved": "2026-10-18",
+      "sha256": {
+        "csv": "21261f083249ded56b4092aa7464fbce7d0e64b9e9b0e4c26aa2e39ef85a989b"
+      },
+      "usedFor": [
+        "seat corroboration"
+      ]
+    },
+    "brief-2026-10": {
+      "publisher": "Sam Kinyanjui (Tri-State News)",
+      "title": "68-county expansion brief, exact county lists and tiers",
+      "retrieved": "2026-10-18",
+      "usedFor": [
+        "tier",
+        "tri_state_historic",
+        "optional list"
+      ]
+    }
+  },
+  "counties": [
+    {
+      "id": "il-clay",
+      "state": "IL",
+      "name": "Clay",
+      "fullName": "Clay County",
+      "fips": "17025",
+      "stateFips": "17",
+      "countyFips": "025",
+      "ansiCode": "00424214",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Louisville",
+        "source": "il-sos-blue-book-2025-26",
+        "corroboratedBy": [
+          "il-cgfa-county-data-book-2025"
+        ]
+      },
+      "centroid": {
+        "lat": 38.746819,
+        "lon": -88.482325,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-edwards",
+      "state": "IL",
+      "name": "Edwards",
+      "fullName": "Edwards County",
+      "fips": "17047",
+      "stateFips": "17",
+      "countyFips": "047",
+      "ansiCode": "00424225",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Albion",
+        "source": "il-sos-blue-book-2025-26",
+        "corroboratedBy": [
+          "il-cgfa-county-data-book-2025"
+        ]
+      },
+      "centroid": {
+        "lat": 38.417095,
+        "lon": -88.047941,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-gallatin",
+      "state": "IL",
+      "name": "Gallatin",
+      "fullName": "Gallatin County",
+      "fips": "17059",
+      "stateFips": "17",
+      "countyFips": "059",
+      "ansiCode": "00424231",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Shawneetown",
+        "source": "il-sos-blue-book-2025-26",
+        "corroboratedBy": [
+          "il-cgfa-county-data-book-2025"
+        ]
+      },
+      "centroid": {
+        "lat": 37.768677,
+        "lon": -88.227964,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-hamilton",
+      "state": "IL",
+      "name": "Hamilton",
+      "fullName": "Hamilton County",
+      "fips": "17065",
+      "stateFips": "17",
+      "countyFips": "065",
+      "ansiCode": "00424234",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "McLeansboro",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.085227,
+        "lon": -88.539009,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-lawrence",
+      "state": "IL",
+      "name": "Lawrence",
+      "fullName": "Lawrence County",
+      "fips": "17101",
+      "stateFips": "17",
+      "countyFips": "101",
+      "ansiCode": "00424252",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Lawrenceville",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.718954,
+        "lon": -87.730221,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-richland",
+      "state": "IL",
+      "name": "Richland",
+      "fullName": "Richland County",
+      "fips": "17159",
+      "stateFips": "17",
+      "countyFips": "159",
+      "ansiCode": "00424281",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Olney",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.712187,
+        "lon": -88.085452,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-saline",
+      "state": "IL",
+      "name": "Saline",
+      "fullName": "Saline County",
+      "fips": "17165",
+      "stateFips": "17",
+      "countyFips": "165",
+      "ansiCode": "00424283",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Harrisburg",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.751508,
+        "lon": -88.545024,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-wabash",
+      "state": "IL",
+      "name": "Wabash",
+      "fullName": "Wabash County",
+      "fips": "17185",
+      "stateFips": "17",
+      "countyFips": "185",
+      "ansiCode": "00424293",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Mount Carmel",
+        "source": "il-sos-blue-book-2025-26",
+        "asPublished": "Mt. Carmel"
+      },
+      "centroid": {
+        "lat": 38.445821,
+        "lon": -87.839167,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-wayne",
+      "state": "IL",
+      "name": "Wayne",
+      "fullName": "Wayne County",
+      "fips": "17191",
+      "stateFips": "17",
+      "countyFips": "191",
+      "ansiCode": "00424296",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Fairfield",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.431857,
+        "lon": -88.43243,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-white",
+      "state": "IL",
+      "name": "White",
+      "fullName": "White County",
+      "fips": "17193",
+      "stateFips": "17",
+      "countyFips": "193",
+      "ansiCode": "00424297",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Carmi",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.087307,
+        "lon": -88.17862,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-daviess",
+      "state": "IN",
+      "name": "Daviess",
+      "fullName": "Daviess County",
+      "fips": "18027",
+      "stateFips": "18",
+      "countyFips": "027",
+      "ansiCode": "00450343",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Washington",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.69609,
+        "lon": -87.076943,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-dubois",
+      "state": "IN",
+      "name": "Dubois",
+      "fullName": "Dubois County",
+      "fips": "18037",
+      "stateFips": "18",
+      "countyFips": "037",
+      "ansiCode": "00451675",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Jasper",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.373344,
+        "lon": -86.873385,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-gibson",
+      "state": "IN",
+      "name": "Gibson",
+      "fullName": "Gibson County",
+      "fips": "18051",
+      "stateFips": "18",
+      "countyFips": "051",
+      "ansiCode": "00450354",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Princeton",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.317398,
+        "lon": -87.580523,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-knox",
+      "state": "IN",
+      "name": "Knox",
+      "fullName": "Knox County",
+      "fips": "18083",
+      "stateFips": "18",
+      "countyFips": "083",
+      "ansiCode": "00450366",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Vincennes",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.688381,
+        "lon": -87.420358,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-martin",
+      "state": "IN",
+      "name": "Martin",
+      "fullName": "Martin County",
+      "fips": "18101",
+      "stateFips": "18",
+      "countyFips": "101",
+      "ansiCode": "00451679",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Shoals",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.705322,
+        "lon": -86.801847,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-perry",
+      "state": "IN",
+      "name": "Perry",
+      "fullName": "Perry County",
+      "fips": "18123",
+      "stateFips": "18",
+      "countyFips": "123",
+      "ansiCode": "00451682",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Tell City",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.081436,
+        "lon": -86.62654,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-pike",
+      "state": "IN",
+      "name": "Pike",
+      "fullName": "Pike County",
+      "fips": "18125",
+      "stateFips": "18",
+      "countyFips": "125",
+      "ansiCode": "00450381",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Petersburg",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.397961,
+        "lon": -87.232547,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-posey",
+      "state": "IN",
+      "name": "Posey",
+      "fullName": "Posey County",
+      "fips": "18129",
+      "stateFips": "18",
+      "countyFips": "129",
+      "ansiCode": "00450383",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Mount Vernon",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.027614,
+        "lon": -87.868653,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-spencer",
+      "state": "IN",
+      "name": "Spencer",
+      "fullName": "Spencer County",
+      "fips": "18147",
+      "stateFips": "18",
+      "countyFips": "147",
+      "ansiCode": "00450388",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Rockport",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.009697,
+        "lon": -87.010375,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-vanderburgh",
+      "state": "IN",
+      "name": "Vanderburgh",
+      "fullName": "Vanderburgh County",
+      "fips": "18163",
+      "stateFips": "18",
+      "countyFips": "163",
+      "ansiCode": "00450396",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Evansville",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.02007,
+        "lon": -87.586166,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "in-warrick",
+      "state": "IN",
+      "name": "Warrick",
+      "fullName": "Warrick County",
+      "fips": "18173",
+      "stateFips": "18",
+      "countyFips": "173",
+      "ansiCode": "00450335",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Boonville",
+        "source": "in-gov-counties",
+        "corroboratedBy": [
+          "in-gov-usa250-county-information"
+        ]
+      },
+      "centroid": {
+        "lat": 38.097728,
+        "lon": -87.272049,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-daviess",
+      "state": "KY",
+      "name": "Daviess",
+      "fullName": "Daviess County",
+      "fips": "21059",
+      "stateFips": "21",
+      "countyFips": "059",
+      "ansiCode": "00516876",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Owensboro",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.731671,
+        "lon": -87.087139,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-hancock",
+      "state": "KY",
+      "name": "Hancock",
+      "fullName": "Hancock County",
+      "fips": "21091",
+      "stateFips": "21",
+      "countyFips": "091",
+      "ansiCode": "00516892",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Hawesville",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.843325,
+        "lon": -86.792761,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-henderson",
+      "state": "KY",
+      "name": "Henderson",
+      "fullName": "Henderson County",
+      "fips": "21101",
+      "stateFips": "21",
+      "countyFips": "101",
+      "ansiCode": "00516897",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Henderson",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.792542,
+        "lon": -87.572577,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-hopkins",
+      "state": "KY",
+      "name": "Hopkins",
+      "fullName": "Hopkins County",
+      "fips": "21107",
+      "stateFips": "21",
+      "countyFips": "107",
+      "ansiCode": "00516900",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Madisonville",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.31107,
+        "lon": -87.542196,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-mclean",
+      "state": "KY",
+      "name": "McLean",
+      "fullName": "McLean County",
+      "fips": "21149",
+      "stateFips": "21",
+      "countyFips": "149",
+      "ansiCode": "00516927",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Calhoun",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.526707,
+        "lon": -87.265597,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-muhlenberg",
+      "state": "KY",
+      "name": "Muhlenberg",
+      "fullName": "Muhlenberg County",
+      "fips": "21177",
+      "stateFips": "21",
+      "countyFips": "177",
+      "ansiCode": "00516935",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Greenville",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.213816,
+        "lon": -87.134092,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-ohio",
+      "state": "KY",
+      "name": "Ohio",
+      "fullName": "Ohio County",
+      "fips": "21183",
+      "stateFips": "21",
+      "countyFips": "183",
+      "ansiCode": "00516938",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Hartford",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.477859,
+        "lon": -86.844871,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-union",
+      "state": "KY",
+      "name": "Union",
+      "fullName": "Union County",
+      "fips": "21225",
+      "stateFips": "21",
+      "countyFips": "225",
+      "ansiCode": "00516959",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Morganfield",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.658029,
+        "lon": -87.95165,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-webster",
+      "state": "KY",
+      "name": "Webster",
+      "fullName": "Webster County",
+      "fips": "21233",
+      "stateFips": "21",
+      "countyFips": "233",
+      "ansiCode": "00516963",
+      "tier": "tri_state_core",
+      "seat": {
+        "name": "Dixon",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.520375,
+        "lon": -87.685206,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-jefferson",
+      "state": "IL",
+      "name": "Jefferson",
+      "fullName": "Jefferson County",
+      "fips": "17081",
+      "stateFips": "17",
+      "countyFips": "081",
+      "ansiCode": "00424242",
+      "tier": "extended",
+      "seat": {
+        "name": "Mount Vernon",
+        "source": "il-sos-blue-book-2025-26",
+        "asPublished": "Mt. Vernon"
+      },
+      "centroid": {
+        "lat": 38.30078,
+        "lon": -88.92421,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-perry",
+      "state": "IL",
+      "name": "Perry",
+      "fullName": "Perry County",
+      "fips": "17145",
+      "stateFips": "17",
+      "countyFips": "145",
+      "ansiCode": "01784940",
+      "tier": "extended",
+      "seat": {
+        "name": "Pinckneyville",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 38.084381,
+        "lon": -89.368525,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-franklin",
+      "state": "IL",
+      "name": "Franklin",
+      "fullName": "Franklin County",
+      "fips": "17055",
+      "stateFips": "17",
+      "countyFips": "055",
+      "ansiCode": "00424229",
+      "tier": "extended",
+      "seat": {
+        "name": "Benton",
+        "source": "il-sos-blue-book-2025-26",
+        "corroboratedBy": [
+          "il-cgfa-county-data-book-2025"
+        ]
+      },
+      "centroid": {
+        "lat": 37.991852,
+        "lon": -88.926321,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-jackson",
+      "state": "IL",
+      "name": "Jackson",
+      "fullName": "Jackson County",
+      "fips": "17077",
+      "stateFips": "17",
+      "countyFips": "077",
+      "ansiCode": "00424240",
+      "tier": "extended",
+      "seat": {
+        "name": "Murphysboro",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.786096,
+        "lon": -89.381212,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-williamson",
+      "state": "IL",
+      "name": "Williamson",
+      "fullName": "Williamson County",
+      "fips": "17199",
+      "stateFips": "17",
+      "countyFips": "199",
+      "ansiCode": "01785215",
+      "tier": "extended",
+      "seat": {
+        "name": "Marion",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.730353,
+        "lon": -88.930018,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-union",
+      "state": "IL",
+      "name": "Union",
+      "fullName": "Union County",
+      "fips": "17181",
+      "stateFips": "17",
+      "countyFips": "181",
+      "ansiCode": "01785113",
+      "tier": "extended",
+      "seat": {
+        "name": "Jonesboro",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.485652,
+        "lon": -89.244639,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-johnson",
+      "state": "IL",
+      "name": "Johnson",
+      "fullName": "Johnson County",
+      "fips": "17087",
+      "stateFips": "17",
+      "countyFips": "087",
+      "ansiCode": "00424245",
+      "tier": "extended",
+      "seat": {
+        "name": "Vienna",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.460709,
+        "lon": -88.882131,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-pope",
+      "state": "IL",
+      "name": "Pope",
+      "fullName": "Pope County",
+      "fips": "17151",
+      "stateFips": "17",
+      "countyFips": "151",
+      "ansiCode": "00424277",
+      "tier": "extended",
+      "seat": {
+        "name": "Golconda",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.417169,
+        "lon": -88.542374,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-hardin",
+      "state": "IL",
+      "name": "Hardin",
+      "fullName": "Hardin County",
+      "fips": "17069",
+      "stateFips": "17",
+      "countyFips": "069",
+      "ansiCode": "00424236",
+      "tier": "extended",
+      "seat": {
+        "name": "Elizabethtown",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.517852,
+        "lon": -88.266148,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-alexander",
+      "state": "IL",
+      "name": "Alexander",
+      "fullName": "Alexander County",
+      "fips": "17003",
+      "stateFips": "17",
+      "countyFips": "003",
+      "ansiCode": "00424203",
+      "tier": "extended",
+      "seat": {
+        "name": "Cairo",
+        "source": "il-sos-blue-book-2025-26",
+        "corroboratedBy": [
+          "il-cgfa-county-data-book-2025"
+        ]
+      },
+      "centroid": {
+        "lat": 37.183658,
+        "lon": -89.349516,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-pulaski",
+      "state": "IL",
+      "name": "Pulaski",
+      "fullName": "Pulaski County",
+      "fips": "17153",
+      "stateFips": "17",
+      "countyFips": "153",
+      "ansiCode": "01784966",
+      "tier": "extended",
+      "seat": {
+        "name": "Mound City",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.215615,
+        "lon": -89.127755,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "il-massac",
+      "state": "IL",
+      "name": "Massac",
+      "fullName": "Massac County",
+      "fips": "17127",
+      "stateFips": "17",
+      "countyFips": "127",
+      "ansiCode": "01784730",
+      "tier": "extended",
+      "seat": {
+        "name": "Metropolis",
+        "source": "il-sos-blue-book-2025-26"
+      },
+      "centroid": {
+        "lat": 37.216119,
+        "lon": -88.705658,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-fulton",
+      "state": "KY",
+      "name": "Fulton",
+      "fullName": "Fulton County",
+      "fips": "21075",
+      "stateFips": "21",
+      "countyFips": "075",
+      "ansiCode": "00516884",
+      "tier": "extended",
+      "seat": {
+        "name": "Hickman",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.552511,
+        "lon": -89.187659,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-hickman",
+      "state": "KY",
+      "name": "Hickman",
+      "fullName": "Hickman County",
+      "fips": "21105",
+      "stateFips": "21",
+      "countyFips": "105",
+      "ansiCode": "00516899",
+      "tier": "extended",
+      "seat": {
+        "name": "Clinton",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.675896,
+        "lon": -88.972084,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-carlisle",
+      "state": "KY",
+      "name": "Carlisle",
+      "fullName": "Carlisle County",
+      "fips": "21039",
+      "stateFips": "21",
+      "countyFips": "039",
+      "ansiCode": "00516866",
+      "tier": "extended",
+      "seat": {
+        "name": "Bardwell",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.85718,
+        "lon": -88.976614,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-ballard",
+      "state": "KY",
+      "name": "Ballard",
+      "fullName": "Ballard County",
+      "fips": "21007",
+      "stateFips": "21",
+      "countyFips": "007",
+      "ansiCode": "00516850",
+      "tier": "extended",
+      "seat": {
+        "name": "Wickliffe",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.051323,
+        "lon": -89.010367,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-mccracken",
+      "state": "KY",
+      "name": "McCracken",
+      "fullName": "McCracken County",
+      "fips": "21145",
+      "stateFips": "21",
+      "countyFips": "145",
+      "ansiCode": "00516925",
+      "tier": "extended",
+      "seat": {
+        "name": "Paducah",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.054111,
+        "lon": -88.712454,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-graves",
+      "state": "KY",
+      "name": "Graves",
+      "fullName": "Graves County",
+      "fips": "21083",
+      "stateFips": "21",
+      "countyFips": "083",
+      "ansiCode": "00516888",
+      "tier": "extended",
+      "seat": {
+        "name": "Mayfield",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.723344,
+        "lon": -88.649897,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-livingston",
+      "state": "KY",
+      "name": "Livingston",
+      "fullName": "Livingston County",
+      "fips": "21139",
+      "stateFips": "21",
+      "countyFips": "139",
+      "ansiCode": "00516916",
+      "tier": "extended",
+      "seat": {
+        "name": "Smithland",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.209517,
+        "lon": -88.363426,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-marshall",
+      "state": "KY",
+      "name": "Marshall",
+      "fullName": "Marshall County",
+      "fips": "21157",
+      "stateFips": "21",
+      "countyFips": "157",
+      "ansiCode": "00516922",
+      "tier": "extended",
+      "seat": {
+        "name": "Benton",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.882017,
+        "lon": -88.332752,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-calloway",
+      "state": "KY",
+      "name": "Calloway",
+      "fullName": "Calloway County",
+      "fips": "21035",
+      "stateFips": "21",
+      "countyFips": "035",
+      "ansiCode": "00516864",
+      "tier": "extended",
+      "seat": {
+        "name": "Murray",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.620978,
+        "lon": -88.274086,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-crittenden",
+      "state": "KY",
+      "name": "Crittenden",
+      "fullName": "Crittenden County",
+      "fips": "21055",
+      "stateFips": "21",
+      "countyFips": "055",
+      "ansiCode": "00516874",
+      "tier": "extended",
+      "seat": {
+        "name": "Marion",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.358149,
+        "lon": -88.10501,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-lyon",
+      "state": "KY",
+      "name": "Lyon",
+      "fullName": "Lyon County",
+      "fips": "21143",
+      "stateFips": "21",
+      "countyFips": "143",
+      "ansiCode": "00516918",
+      "tier": "extended",
+      "seat": {
+        "name": "Eddyville",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.023976,
+        "lon": -88.083391,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-trigg",
+      "state": "KY",
+      "name": "Trigg",
+      "fullName": "Trigg County",
+      "fips": "21221",
+      "stateFips": "21",
+      "countyFips": "221",
+      "ansiCode": "00516957",
+      "tier": "extended",
+      "seat": {
+        "name": "Cadiz",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.807681,
+        "lon": -87.858652,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-caldwell",
+      "state": "KY",
+      "name": "Caldwell",
+      "fullName": "Caldwell County",
+      "fips": "21033",
+      "stateFips": "21",
+      "countyFips": "033",
+      "ansiCode": "00516863",
+      "tier": "extended",
+      "seat": {
+        "name": "Princeton",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 37.148642,
+        "lon": -87.870509,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-christian",
+      "state": "KY",
+      "name": "Christian",
+      "fullName": "Christian County",
+      "fips": "21047",
+      "stateFips": "21",
+      "countyFips": "047",
+      "ansiCode": "00516870",
+      "tier": "extended",
+      "seat": {
+        "name": "Hopkinsville",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.892059,
+        "lon": -87.492986,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "ky-todd",
+      "state": "KY",
+      "name": "Todd",
+      "fullName": "Todd County",
+      "fips": "21219",
+      "stateFips": "21",
+      "countyFips": "219",
+      "ansiCode": "00516956",
+      "tier": "extended",
+      "seat": {
+        "name": "Elkton",
+        "source": "ky-kdla-county-formation-chart",
+        "corroboratedBy": [
+          "ky-gis-county-seats"
+        ]
+      },
+      "centroid": {
+        "lat": 36.840338,
+        "lon": -87.183642,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-perry",
+      "state": "MO",
+      "name": "Perry",
+      "fullName": "Perry County",
+      "fips": "29157",
+      "stateFips": "29",
+      "countyFips": "157",
+      "ansiCode": "00758533",
+      "tier": "extended",
+      "seat": {
+        "name": "Perryville",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 37.71113,
+        "lon": -89.802125,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-bollinger",
+      "state": "MO",
+      "name": "Bollinger",
+      "fullName": "Bollinger County",
+      "fips": "29017",
+      "stateFips": "29",
+      "countyFips": "017",
+      "ansiCode": "00758463",
+      "tier": "extended",
+      "seat": {
+        "name": "Marble Hill",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 37.318427,
+        "lon": -90.024645,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-cape-girardeau",
+      "state": "MO",
+      "name": "Cape Girardeau",
+      "fullName": "Cape Girardeau County",
+      "fips": "29031",
+      "stateFips": "29",
+      "countyFips": "031",
+      "ansiCode": "00758470",
+      "tier": "extended",
+      "seat": {
+        "name": "Jackson",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 37.384141,
+        "lon": -89.685658,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-wayne",
+      "state": "MO",
+      "name": "Wayne",
+      "fullName": "Wayne County",
+      "fips": "29223",
+      "stateFips": "29",
+      "countyFips": "223",
+      "ansiCode": "00758564",
+      "tier": "extended",
+      "seat": {
+        "name": "Greenville",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 37.111074,
+        "lon": -90.453931,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-carter",
+      "state": "MO",
+      "name": "Carter",
+      "fullName": "Carter County",
+      "fips": "29035",
+      "stateFips": "29",
+      "countyFips": "035",
+      "ansiCode": "00758472",
+      "tier": "extended",
+      "seat": {
+        "name": "Van Buren",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.944858,
+        "lon": -90.945705,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-ripley",
+      "state": "MO",
+      "name": "Ripley",
+      "fullName": "Ripley County",
+      "fips": "29181",
+      "stateFips": "29",
+      "countyFips": "181",
+      "ansiCode": "00758545",
+      "tier": "extended",
+      "seat": {
+        "name": "Doniphan",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.65017,
+        "lon": -90.874834,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-butler",
+      "state": "MO",
+      "name": "Butler",
+      "fullName": "Butler County",
+      "fips": "29023",
+      "stateFips": "29",
+      "countyFips": "023",
+      "ansiCode": "00758466",
+      "tier": "extended",
+      "seat": {
+        "name": "Poplar Bluff",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.71518,
+        "lon": -90.40313,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-stoddard",
+      "state": "MO",
+      "name": "Stoddard",
+      "fullName": "Stoddard County",
+      "fips": "29207",
+      "stateFips": "29",
+      "countyFips": "207",
+      "ansiCode": "00758556",
+      "tier": "extended",
+      "seat": {
+        "name": "Bloomfield",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.851557,
+        "lon": -89.947481,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-scott",
+      "state": "MO",
+      "name": "Scott",
+      "fullName": "Scott County",
+      "fips": "29201",
+      "stateFips": "29",
+      "countyFips": "201",
+      "ansiCode": "00758553",
+      "tier": "extended",
+      "seat": {
+        "name": "Benton",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 37.047793,
+        "lon": -89.568098,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-mississippi",
+      "state": "MO",
+      "name": "Mississippi",
+      "fullName": "Mississippi County",
+      "fips": "29133",
+      "stateFips": "29",
+      "countyFips": "133",
+      "ansiCode": "00758521",
+      "tier": "extended",
+      "seat": {
+        "name": "Charleston",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.826264,
+        "lon": -89.295929,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    },
+    {
+      "id": "mo-new-madrid",
+      "state": "MO",
+      "name": "New Madrid",
+      "fullName": "New Madrid County",
+      "fips": "29143",
+      "stateFips": "29",
+      "countyFips": "143",
+      "ansiCode": "00758526",
+      "tier": "extended",
+      "seat": {
+        "name": "New Madrid",
+        "source": "mo-sos-official-manual-2025-26",
+        "corroboratedBy": [
+          "mo-data-portal-counties"
+        ]
+      },
+      "centroid": {
+        "lat": 36.594261,
+        "lon": -89.655948,
+        "kind": "census_internal_point",
+        "source": "census-gazetteer-2025"
+      },
+      "verification": {
+        "fips": "verified",
+        "seat": "verified",
+        "centroid": "verified",
+        "fipsSources": [
+          "census-gazetteer-2025",
+          "census-national-county-2020",
+          "census-gazetteer-2024"
+        ],
+        "verifiedAt": "2026-10-18"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "tri_state_core",
+      "name": "Tri-State core",
+      "kind": "tier",
+      "parent": null,
+      "overlapping": false,
+      "description": "The 30 core counties in Illinois, Indiana and Kentucky. The default experience."
+    },
+    {
+      "id": "extended",
+      "name": "Extended coverage",
+      "kind": "tier",
+      "parent": null,
+      "overlapping": false,
+      "description": "The 38 extended counties in Illinois, Kentucky and Missouri. Never part of the historic Tri-State."
+    },
+    {
+      "id": "tri_state_historic",
+      "name": "Historic Tri-State",
+      "kind": "label",
+      "parent": null,
+      "overlapping": true,
+      "description": "Counties that may be labeled part of the historic Tri-State (IL, IN, KY core). Missouri is never a member."
+    },
+    {
+      "id": "region:evansville-ohio-river",
+      "name": "Evansville metro & Ohio River",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:owensboro-western-ky",
+      "name": "Owensboro & Western Kentucky",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:madisonville-coal-fields",
+      "name": "Madisonville & Western Coal Fields",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:vincennes-jasper-sw-indiana",
+      "name": "Vincennes, Jasper & Southwest Indiana",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:southern-illinois",
+      "name": "Southern Illinois / Little Egypt",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:paducah-murray-far-western-ky",
+      "name": "Paducah, Murray & far western Kentucky",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    },
+    {
+      "id": "region:cape-girardeau-se-missouri",
+      "name": "Cape Girardeau & Southeast Missouri",
+      "kind": "editorial_region",
+      "parent": null,
+      "overlapping": true,
+      "membershipStatus": "awaiting_editorial_review",
+      "description": "Editorial region from the brief. Members are added only after editorial review; none are assigned yet."
+    }
+  ],
+  "members": [
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-clay",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-clay",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-edwards",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-edwards",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-gallatin",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-gallatin",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-hamilton",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-hamilton",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-lawrence",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-lawrence",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-richland",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-richland",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-saline",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-saline",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-wabash",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-wabash",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-wayne",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-wayne",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "il-white",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "il-white",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-daviess",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-daviess",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-dubois",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-dubois",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-gibson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-gibson",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-knox",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-knox",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-martin",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-martin",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-perry",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-perry",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-pike",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-pike",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-posey",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-posey",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-spencer",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-spencer",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-vanderburgh",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-vanderburgh",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "in-warrick",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "in-warrick",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-daviess",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-daviess",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-hancock",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-hancock",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-henderson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-henderson",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-hopkins",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-hopkins",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-mclean",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-mclean",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-muhlenberg",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-muhlenberg",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-ohio",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-ohio",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-union",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-union",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_core",
+      "countyId": "ky-webster",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "tri_state_historic",
+      "countyId": "ky-webster",
+      "membershipType": "label",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-jefferson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-perry",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-franklin",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-jackson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-williamson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-union",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-johnson",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-pope",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-hardin",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-alexander",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-pulaski",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "il-massac",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-fulton",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-hickman",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-carlisle",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-ballard",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-mccracken",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-graves",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-livingston",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-marshall",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-calloway",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-crittenden",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-lyon",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-trigg",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-caldwell",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-christian",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "ky-todd",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-perry",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-bollinger",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-cape-girardeau",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-wayne",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-carter",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-ripley",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-butler",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-stoddard",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-scott",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-mississippi",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    },
+    {
+      "groupId": "extended",
+      "countyId": "mo-new-madrid",
+      "membershipType": "tier",
+      "sourceReference": "brief-2026-10",
+      "verifiedAt": "2026-10-18"
+    }
+  ]
+}

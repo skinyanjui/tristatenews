@@ -6,7 +6,9 @@
      there. It is not paid, so it has no "paid link" label.
    - Otherwise, if an affiliate ID is set (FLORIST_ONE_AFFILIATE_ID on the server, or data/flowers.json), the link is
      the affiliate link, labeled "paid link" and marked rel="sponsored noopener".
-   - Otherwise there is no link at all.
+   - Otherwise, if data/flowers.json has a fallbackUrl (a florist's public funeral-flowers page, no affiliate code),
+     the link goes there. Nothing is earned, so there is no "paid link" label; rel="noopener nofollow".
+   - Otherwise (fallbackUrl emptied) there is no link at all.
    - The link carries nothing about the reader or the obituary: the florist page as listed, or the affiliate URL with
      only our ID in it. Same link for every reader. */
 (function (root, factory) {
@@ -27,14 +29,18 @@
   // The funeral home an obituary names: a posted notice's "business", or the Source of a feed card (only funeral
   // homes' names are in the map, so a paper's name never matches).
   function homeOf(it) { return it ? (it.business || it.source || '') : ''; }
-  // cfg is GET /api/flowers: { homes: { key: url }, affiliate: url | null }. Returns { href, paid } or null.
+  // cfg is GET /api/flowers: { homes: { key: url }, affiliate: url | null, fallbackUrl: url | null }.
+  // Returns { href, paid, rel } or null.
   function linkFor(it, cfg) {
     if (!cfg || typeof cfg !== 'object') return null;
     var k = key(homeOf(it));
     var home = k && cfg.homes && Object.prototype.hasOwnProperty.call(cfg.homes, k) ? httpsUrl(cfg.homes[k]) : '';
-    if (home) return { href: home, paid: false };
+    if (home) return { href: home, paid: false, rel: REL_HOME };
     var aff = httpsUrl(cfg.affiliate);
-    return aff ? { href: aff, paid: true } : null;
+    if (aff) return { href: aff, paid: true, rel: REL_PAID };
+    var fb = httpsUrl(cfg.fallbackUrl);
+    return fb ? { href: fb, paid: false, rel: REL_FALLBACK } : null;
   }
-  return { key: key, httpsUrl: httpsUrl, homeOf: homeOf, linkFor: linkFor, REL_PAID: 'sponsored noopener', LABEL_PAID: 'paid link' };
+  var REL_HOME = 'noopener', REL_PAID = 'sponsored noopener', REL_FALLBACK = 'noopener nofollow';
+  return { key: key, httpsUrl: httpsUrl, homeOf: homeOf, linkFor: linkFor, REL_HOME: REL_HOME, REL_PAID: REL_PAID, REL_FALLBACK: REL_FALLBACK, LABEL_PAID: 'paid link' };
 });

@@ -2,6 +2,8 @@
 // rewrites it to /api/listings?__route=flowers; no new function.
 //   homes      { key: https url } for funeral homes in data/funeral-homes.json with a checked florist page
 //   affiliate  the affiliate link (data/flowers.json affiliateUrl with the ID), or null when no ID is set
+//   fallbackUrl  data/flowers.json fallbackUrl (a florist's public page, no affiliate code, unpaid), or null when
+//              it is empty; used only when there is no florist page and no affiliate link
 // The ID comes from FLORIST_ONE_AFFILIATE_ID when set, else data/flowers.json affiliateId. It is a public tracking
 // code (it ends up in the link), not a secret; anything that isn't 1-40 letters, digits, - or _ counts as unset.
 const HOMES = require('../data/funeral-homes.json');
@@ -32,7 +34,9 @@ function homesMap(list) {
   return out;
 }
 
-function config(env) { return { homes: homesMap(), affiliate: affiliateUrl(env || process.env) }; }
+function fallbackUrl(config) { return httpsUrl(String((config || CONFIG).fallbackUrl || '')) || null; }
+
+function config(env) { return { homes: homesMap(), affiliate: affiliateUrl(env || process.env), fallbackUrl: fallbackUrl() }; }
 
 function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -42,4 +46,4 @@ function handler(req, res) {
 }
 
 module.exports = handler;
-Object.assign(module.exports, { affiliateId, affiliateUrl, homesMap, config, ID_RE });
+Object.assign(module.exports, { affiliateId, affiliateUrl, fallbackUrl, homesMap, config, ID_RE });

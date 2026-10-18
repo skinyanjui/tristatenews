@@ -141,3 +141,11 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 15. **Naming the partner:** the code is built for Florist One, but the policy still doesn't name it. Florist One's affiliate agreement (§3(f)) says affiliates may not use its name on their websites except as its own materials include it or it approves in writing. Once Sam joins, check whether naming it in the Advertising and Privacy policies is allowed or needs its written OK, then name it.
 16. **Florist One terms (Sam):** the agreement also forbids changing the links it provides and appearing to be a local florist. Replace the placeholder link shape in `data/flowers.json` with the exact link from the affiliate area, and keep the wording "Send flowers" (no local-florist claim).
 17. **Funeral-home florist pages:** none are listed yet. Before adding one, confirm the page is the funeral home's own (or one it names) and that linking needs no agreement (item 8).
+
+## Ads PR 4.3.1: "Send flowers" shown without an affiliate ID (Advertising Policy §8, Privacy §3)
+- With no florist page and no affiliate ID, the link now goes to a flower-delivery service's public funeral-flowers page (`data/flowers.json` `fallbackUrl`), with no affiliate code, no "paid link" label and rel="noopener nofollow". Emptying `fallbackUrl` hides it again.
+- **Advertising §8:** "If neither applies, the obituary shows no link" is replaced by: the link goes to the funeral home's florist page or otherwise to an online flower-delivery service; when marked "paid link" it's an affiliate link and may earn a commission; without that label it earns us nothing.
+- **Privacy §3:** a link not marked "paid link" isn't an affiliate link and carries no code at all.
+
+### Needs review (ads PR 4.3.1)
+18. **An unpaid link to one commercial florist:** a plain link to one service on every obituary, before any agreement with it. Confirm Sam is comfortable sending readers there unpaid, and that the policy wording ("an online flower-delivery service", unnamed) is enough until the service is named (item 15).

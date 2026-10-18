@@ -2016,21 +2016,22 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   // "Send flowers" (public/flowers.js; Advertising Policy section 8): a quiet text link under an obituary, never an
   // ad. GET /api/flowers says where it goes: the funeral home's own florist page when we know it, otherwise the
-  // affiliate link labeled "paid link" (rel="sponsored noopener"). With neither there is no link at all.
+  // affiliate link labeled "paid link" (rel="sponsored noopener"), otherwise the unpaid fallbackUrl (no label,
+  // rel="noopener nofollow"). With none of them there is no link at all.
   var FLOWERS = null, flowersAsked = false;
   function loadFlowers() {
     if (flowersAsked) return;
     flowersAsked = true;
     fetch('/api/flowers').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       FLOWERS = d && typeof d === 'object' ? d : null;
-      if (FLOWERS && (FLOWERS.affiliate || Object.keys(FLOWERS.homes || {}).length) && state.cat === 'obits') render();
+      if (FLOWERS && (FLOWERS.affiliate || FLOWERS.fallbackUrl || Object.keys(FLOWERS.homes || {}).length) && state.cat === 'obits') render();
     }).catch(function () {});
   }
   function flowersLink(it, tag) {
     var f = window.TSNFlowers ? TSNFlowers.linkFor(it, FLOWERS) : null;
     if (!f) return null;
     var p = el(tag || 'div', 'ob-flw'), a = el('a', null, 'Send flowers');
-    a.href = f.href; a.target = '_blank'; a.rel = f.paid ? TSNFlowers.REL_PAID : 'noopener';
+    a.href = f.href; a.target = '_blank'; a.rel = f.paid ? TSNFlowers.REL_PAID : f.rel;
     p.appendChild(a);
     if (f.paid) p.appendChild(el('span', 'ob-paid', TSNFlowers.LABEL_PAID));
     return p;

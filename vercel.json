@@ -8,8 +8,24 @@
     },
     "api/alerts.js": {
       "maxDuration": 20
+    },
+    "api/newsletter.js": {
+      "maxDuration": 60
     }
   },
+  "redirects": [
+    {
+      "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)/",
+      "destination": "/:tab",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

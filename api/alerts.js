@@ -41,7 +41,13 @@ const FEEDS = [
   { id: 'hendco-alerts', name: 'Henderson County, Ky.', everyMin: 5, type: 'rss', keyword: true, url: 'https://www.hendersoncountyky.gov/RSSFeed.aspx?ModID=63&CID=All-0' },
   { id: 'hendcity-alerts', name: 'City of Henderson', everyMin: 5, type: 'rss', keyword: true, url: 'https://www.hendersonky.gov/RSSFeed.aspx?ModID=63&CID=All-0' },
   // Other official sites with news feeds: keyword-classified only
-  { id: 'daviessco', name: 'Daviess County Fiscal Court', everyMin: 15, type: 'rss', keyword: true, url: 'https://www.daviessky.org/feed/' },
+  // daviessky.org sits behind Cloudflare, which answers 403 to Vercel's servers only (same URL, User-Agent and Node fetch
+  // answer 200 from other networks), so it is a network block on the county's side, not a dead feed or a UA problem.
+  { id: 'daviessco', name: 'Daviess County Fiscal Court', disabled: '2026-10-17: HTTP 403 from Vercel on every run (Cloudflare block of Vercel IPs; 200 elsewhere). Replaced by owensboro-city. Delete this flag to re-enable.', everyMin: 15, type: 'rss', keyword: true, url: 'https://www.daviessky.org/feed/' },
+  // City of Owensboro and Owensboro Police news releases (Revize CMS RSS, verified 2026-10-17). The feed has no dates and
+  // relative links: undated items are timed from when this feed first saw them, and items already there on the first
+  // load are a baseline that never shows (so old releases cannot reach the Breaking slot).
+  { id: 'owensboro-city', name: 'City of Owensboro', everyMin: 15, type: 'rss', keyword: true, undated: true, base: 'https://owensboro.org/', url: 'https://owensboro.org/rss.xml' },
   { id: 'warricksheriff', name: 'Warrick County Sheriff', everyMin: 15, type: 'rss', keyword: true, url: 'https://warricksheriff.com/feed/' },
   { id: 'epd', name: 'Evansville Police Department', everyMin: 15, type: 'rss', keyword: true, url: 'https://evansvillepolice.com/feed/' },
   { id: 'gibsonco', name: 'Gibson County, Ind.', disabled: '2026-10-17: stale, newest item is old COVID-testing info. Delete this flag to re-enable.', everyMin: 15, type: 'rss', keyword: true, url: 'https://gibsoncounty-in.gov/feed/' },
@@ -87,22 +93,31 @@ function inBox(geom) {
 const MAJOR_ROAD = /^(I[- ]?69|US[- ]?41)\b/i;
 
 // One feed -> candidates (shape documented in public/breaking.js).
-async function loadFeed(f, now) {
+async function loadFeed(f, now, prev) {
   if (f.type === 'nws') {
     const g = await (await get(f.url, 'application/geo+json')).json();
     return (g.features || []).map(x => B.fromNws(x.properties)).filter(Boolean);
   }
   if (f.type === 'rss') {
     const items = rssItems(await (await get(f.url, 'application/rss+xml, application/xml, text/xml')).text());
-    return items.map(it => {
+    if (f.base) items.forEach(it => { try { it.link = it.link ? new URL(it.link, f.base).href : ''; } catch (e) { it.link = ''; } });
+    // First-seen times for feeds without dates, kept in the feed's state (seen: { itemKey: ms }); 0 = baseline, never shown.
+    const seenBefore = prev && prev.seen, seen = {};
+    // (Revize gives every item the same <guid>0.00</guid>, so undated feeds are keyed by link.)
+    const itemKey = it => f.id + ':' + hash((f.undated ? '' : it.guid) || it.link || it.title);
+    if (f.undated) items.forEach(it => { const k = itemKey(it); seen[k] = seenBefore ? (k in seenBefore ? seenBefore[k] : now) : 0; });
+    const out = items.map(it => {
       let c = null;
       if (f.tier) { if (!/\b(lifted|rescinded|cancel+ed)\b/i.test(it.title)) c = { tier: f.tier, label: f.label }; }
       else if (f.keyword) c = B.classifyOfficial(it);
       if (!c) return null;
-      const start = Date.parse(it.published);
-      return { key: f.id + ':' + hash(it.guid || it.link || it.title), kind: 'alert', official: true, tier: c.tier, label: c.label, title: it.title, summary: it.summary,
+      let start = Date.parse(it.published);
+      if (isNaN(start) && f.undated) start = seen[itemKey(it)] || NaN;
+      return { key: itemKey(it), kind: 'alert', official: true, tier: c.tier, label: c.label, title: it.title, summary: it.summary,
         source: f.name, sourceId: f.id, link: it.link || f.link || '', start: isNaN(start) ? null : start, end: null, sent: isNaN(start) ? null : start };
     }).filter(Boolean);
+    if (f.undated) out.seen = seen;
+    return out;
   }
   if (f.type === 'wzdx') {
     const g = await (await get(f.url, 'application/geo+json, application/json')).json();
@@ -134,13 +149,15 @@ async function refresh(prev, now, disabled, nwsOverrides) {
     if (p && f.everyMin && p.lastTry && now - Date.parse(p.lastTry) < f.everyMin * 6e4 - 15e3) { states[f.id] = p; report.push({ id: f.id, ok: !p.error, count: (p.items || []).length, error: p.error || null, cached: true }); return; }
     const t0 = Date.now();
     try {
-      const items = await loadFeed(f, now);
+      const items = await loadFeed(f, now, p);
       states[f.id] = { items, lastTry: new Date(now).toISOString(), lastOk: new Date(now).toISOString(), fails: 0, error: null };
+      if (items.seen) states[f.id].seen = items.seen;
       report.push({ id: f.id, ok: true, count: items.length, error: null, ms: Date.now() - t0 });
     } catch (e) {
       const err = String(e && e.message || e).slice(0, 120);
       // keep the last good items for a failed feed, but only those still active
       states[f.id] = { items: ((p && p.items) || []).filter(c => B.isActive(c, now)), lastTry: new Date(now).toISOString(), lastOk: p && p.lastOk || null, fails: ((p && p.fails) || 0) + 1, error: err };
+      if (p && p.seen) states[f.id].seen = p.seen;
       report.push({ id: f.id, ok: false, count: states[f.id].items.length, error: err, ms: Date.now() - t0 });
     }
   }));

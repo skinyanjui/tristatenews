@@ -63,15 +63,16 @@ const SOURCES = [
   { id: 'weht-crime', name: 'Eyewitness News', area: 'Evansville', geo: true, url: 'https://www.tristatehomepage.com/news/crime/feed/' },
   // Federal courts and prosecutors (press releases are infrequent, so they stay on the page longer)
   // S.D. Indiana covers Evansville (verified 2026-10-17: field_component=1836 is the office's own feed).
-  { id: 'usaosdin', name: 'U.S. Attorney, S.D. Indiana', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0' },
+  { id: 'usaosdin', name: 'U.S. Attorney, S.D. Indiana', area: 'Indiana', kind: 'courts', geo: true, strictGeo: 'ind', maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&field_component=1836&search_api_language=en&require_all=0' },
   // geoTerms: extra place names that are unambiguous inside this one office's district (a W.D. Kentucky
   // release that says "Madisonville-area" or "Henderson" means the Kentucky towns).
-  { id: 'usaowdky', name: 'U.S. Attorney, W.D. Kentucky', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, geoTerms: ['madisonville', 'henderson', 'hopkins county', 'webster county', 'union county', 'mclean county', 'hancock county', 'ohio county', 'muhlenberg'], url: 'https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0' },
-  { id: 'usaosdil', name: 'U.S. Attorney, S.D. Illinois', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&groupname=296&field_component=1826&search_api_language=en&require_all=0' },
-  // FBI field offices covering the region (all three verified)
-  { id: 'fbilou', name: 'FBI Louisville', area: 'Kentucky', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/louisville-news/rss.xml' },
-  { id: 'fbiind', name: 'FBI Indianapolis', area: 'Indiana', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/indianapolis-news/rss.xml' },
-  { id: 'fbispr', name: 'FBI Springfield', area: 'Illinois', kind: 'courts', geo: true, maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/springfield-news/rss.xml' },
+  { id: 'usaowdky', name: 'U.S. Attorney, W.D. Kentucky', area: 'Kentucky', kind: 'courts', geo: true, strictGeo: 'ky', maxAgeDays: 60, geoTerms: ['madisonville', 'henderson', 'hopkins county', 'webster county', 'union county', 'mclean county', 'hancock county', 'ohio county', 'muhlenberg'], url: 'https://www.justice.gov/news/rss?type=press_release&groupname=331&field_component=1851&search_api_language=en&require_all=0' },
+  { id: 'usaosdil', name: 'U.S. Attorney, S.D. Illinois', area: 'Illinois', kind: 'courts', geo: true, strictGeo: 'ill', maxAgeDays: 60, url: 'https://www.justice.gov/news/rss?type=press_release&groupname=296&field_component=1826&search_api_language=en&require_all=0' },
+  // FBI field offices covering the region (all three verified). strictGeo: these offices (and the U.S. Attorneys above)
+  // publish for a whole state or district, so their items must name a Tri-State place (api/_places.js), not just the region.
+  { id: 'fbilou', name: 'FBI Louisville', area: 'Kentucky', kind: 'courts', geo: true, strictGeo: 'ky', maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/louisville-news/rss.xml' },
+  { id: 'fbiind', name: 'FBI Indianapolis', area: 'Indiana', kind: 'courts', geo: true, strictGeo: 'ind', maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/indianapolis-news/rss.xml' },
+  { id: 'fbispr', name: 'FBI Springfield', area: 'Illinois', kind: 'courts', geo: true, strictGeo: 'ill', maxAgeDays: 60, url: 'https://www.fbi.gov/feeds/springfield-news/rss.xml' },
   // Local law enforcement and prosecutors (verified 2026-10-17). Police & courts carries official sources only
   // (kind 'police' / 'courts'); they pass through safetyView(): no images, no items about juveniles, and
   // arrest-type items leave after 14 days.
@@ -133,10 +134,12 @@ try {
   const extra = JSON.parse(process.env.EXTRA_FEEDS || '[]');
   for (const e of Array.isArray(extra) ? extra : []) {
     if (e && e.id && e.name && /^https?:\/\//.test(e.url || '') && !SOURCES.some(s => s.id === e.id)) {
-      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events', 'obits'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, everyMin: Number(e.everyMin) > 0 ? Number(e.everyMin) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
+      SOURCES.push({ id: String(e.id), name: String(e.name), area: String(e.area || ''), kind: ['institution', 'courts', 'police', 'events', 'obits'].includes(e.kind) ? e.kind : undefined, geo: !!e.geo, strictGeo: ['ind', 'ky', 'ill'].includes(e.strictGeo) ? e.strictGeo : undefined, maxAgeDays: Number(e.maxAgeDays) > 0 ? Number(e.maxAgeDays) : undefined, everyMin: Number(e.everyMin) > 0 ? Number(e.everyMin) : undefined, url: e.url, altUrls: Array.isArray(e.altUrls) ? e.altUrls.filter(u => /^https?:\/\//.test(u)) : [] });
     }
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
+
+const { inTriState } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 
 // Places between and around the anchor cities. Ambiguous names are state-qualified.
 const REGION_TERMS = [
@@ -198,7 +201,8 @@ function passesFilters(it, source, viaGoogle) {
   if (viaGoogle === undefined) viaGoogle = isGoogleNews(it.link || '');
   if (isWire(it)) return false;
   // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
-  if ((source.geo || (viaGoogle && news)) && !inRegion(it, source.geoTerms)) return false;
+  if (source.strictGeo) { if (!inTriState(it, source.strictGeo)) return false; }
+  else if ((source.geo || (viaGoogle && news)) && !inRegion(it, source.geoTerms)) return false;
   return !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim()));
 }
 
@@ -805,6 +809,7 @@ module.exports = handler;
 module.exports.parseFeed = parseFeed;
 module.exports.combine = combine;
 module.exports.inRegion = inRegion;
+module.exports.inTriState = inTriState;
 module.exports.isWire = isWire;
 module.exports.parseIcal = parseIcal;
 module.exports.refreshAll = refreshAll;

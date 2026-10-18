@@ -692,13 +692,14 @@
    "tier": "a,d,e",
    "url": "https://www.daviessky.org/feed/",
    "format": "RSS (WordPress)",
-   "verified": "verified-feed",
-   "http_status": 200,
+   "verified": "blocked",
+   "http_status": 403,
    "checked": "2026-10-17",
-   "wired": true,
+   "wired": false,
    "feedId": "daviessco",
-   "enabled": true,
-   "notes": "Posts road/bridge closures and notices. Keyword-matched only."
+   "enabled": false,
+   "notes": "Disabled 2026-10-17: daviessky.org (Cloudflare) answers HTTP 403 to Vercel servers on every run, while the same URL, User-Agent and Node fetch get 200 from other networks, so it is a network block on the county side. The WP JSON API is on the same host. The flag is in api/alerts.js (FEEDS daviessco.disabled). Replaced by owensboro-city; county EMA alerts go out via Regroup (sign-up only) and, once certified, IPAWS (fema-ipaws).",
+   "disabled": "2026-10-17"
   },
   {
    "id": "daviess-regroup",
@@ -758,15 +759,15 @@
    "agency": "City of Owensboro / Owensboro Police",
    "type": "government/police",
    "tier": "a,e",
-   "url": "https://www.owensboro.org/",
-   "format": "HTML",
-   "verified": "facebook-only",
+   "url": "https://owensboro.org/rss.xml",
+   "format": "RSS (Revize CMS, no dates, relative links)",
+   "verified": "verified-feed",
    "http_status": 200,
    "checked": "2026-10-17",
-   "wired": false,
-   "feedId": null,
-   "enabled": false,
-   "notes": "/feed/ and /rss 404. Facebook: OwensboroPolice."
+   "wired": true,
+   "feedId": "owensboro-city",
+   "enabled": true,
+   "notes": "City of Owensboro and Owensboro Police news releases (owensboropolice.org redirects to owensboro.org/departments/police/). 25 items, no pubDate: api/alerts.js times items from first sight and treats the first load as a baseline. Keyword-matched only. Also behind Cloudflare: check its source status after deploy."
   },
   {
    "id": "daviess-schools",

@@ -1,0 +1,45 @@
+# Weekly newsletter. OFF until Sam approves:
+#   - scheduled runs do nothing unless the repository VARIABLE NEWSLETTER_ENABLED is 'true'
+#     (Settings > Secrets and variables > Actions > Variables), and
+#   - /api/newsletter itself refuses to send unless NEWSLETTER_ENABLED=true and the Resend settings are set in Vercel.
+# A manual run (Actions > Newsletter > Run workflow) defaults to a dry run: it builds the issue and puts the
+# subject, counts and anything still missing in the job summary, and sends nothing.
+name: Newsletter
+on:
+  schedule:
+    - cron: '17 12 * * 5'   # Fridays 12:17 UTC = 7:17 AM CDT / 6:17 AM CST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run builds the issue only; send mails the list (also needs NEWSLETTER_ENABLED)'
+        type: choice
+        options: [dry-run, send]
+        default: dry-run
+concurrency:
+  group: newsletter
+  cancel-in-progress: false   # never cut a send short
+permissions:
+  contents: read
+jobs:
+  newsletter:
+    if: github.event_name == 'workflow_dispatch' || vars.NEWSLETTER_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Build (and, when enabled, send) this week's issue
+        env:
+          SITE_URL: ${{ secrets.SITE_URL || 'https://tristatenewss.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SEND: ${{ (github.event_name == 'schedule' || inputs.mode == 'send') && vars.NEWSLETTER_ENABLED == 'true' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then echo "::error::Add the CRON_SECRET repository secret."; exit 1; fi
+          if [ "$SEND" = "1" ]; then method=POST; q='send=1'; else method=GET; q='dry=1'; fi
+          code=$(curl -sS --max-time 90 -X "$method" -o body.json -w '%{http_code}' -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/newsletter?$q" || echo 000)
+          echo "HTTP $code (send=$SEND)"
+          jq 'del(.html, .text)' body.json || cat body.json
+          {
+            echo "### Newsletter: $([ "$SEND" = 1 ] && echo send || echo dry run), HTTP $code"
+            jq -r 'if .dryRun then "subject: \(.subject)\n\nheadlines \(.headlines), events \(.events), subscribers \(.subscribers // "?")\n\nmissing before it can send: \(.missingForSend | join(", ") | if . == "" then "nothing" else . end)" else "sent \(.sent // 0) of \(.subscribers // "?") (already sent this week: \(.skippedAlreadySent // 0)) \(.error // "")" end' body.json 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != "200" ]; then echo "::error::/api/newsletter answered HTTP $code"; exit 1; fi

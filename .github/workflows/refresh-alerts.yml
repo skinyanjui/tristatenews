@@ -6,7 +6,9 @@
 name: Refresh alerts
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    # Offset from :00/:05 (the busiest minutes on GitHub's scheduler). GitHub still delays or drops scheduled runs under
+    # load (5 runs between 10:24 and 11:21 PM CT on Oct 17 instead of ~12), which is fine: /api/alerts refreshes on demand.
+    - cron: '2-59/5 * * * *'
   workflow_dispatch:
 concurrency:
   group: refresh-alerts

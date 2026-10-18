@@ -1,0 +1,68 @@
+{
+  "file": "illinois",
+  "description": "Sources listed under a southern Illinois area (Carbondale, Mt. Carmel, Murphysboro, Southern Illinois). KFVS12 (Cape Girardeau) and WPSD (Paducah) are listed here because their area is Southern Illinois; only stories naming a place in the region are kept.",
+  "sources": [
+    {
+      "seq": 13,
+      "id": "kfvs",
+      "name": "KFVS12",
+      "area": "Southern Illinois",
+      "geo": true,
+      "url": "https://www.kfvs12.com/arc/outboundfeeds/rss/?outputType=xml"
+    },
+    {
+      "seq": 14,
+      "id": "wpsd",
+      "everyMin": 60,
+      "name": "WPSD Local 6",
+      "area": "Southern Illinois",
+      "geo": true,
+      "url": "https://www.wpsdlocal6.com/search/?f=rss&t=article&l=25&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Awpsdlocal6.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 15,
+      "id": "southern",
+      "everyMin": 60,
+      "name": "The Southern Illinoisan",
+      "area": "Carbondale",
+      "url": "https://thesouthern.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Athesouthern.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+        "https://thesouthern.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
+      ]
+    },
+    {
+      "seq": 16,
+      "id": "degypt",
+      "name": "Daily Egyptian",
+      "area": "Carbondale",
+      "url": "https://dailyegyptian.com/feed/",
+      "altUrls": [
+        "https://dailyegyptian.com/category/news/feed/"
+      ],
+      "note": "unverified"
+    },
+    {
+      "seq": 18,
+      "id": "mtcarmel",
+      "everyMin": 60,
+      "name": "Daily Republican-Register",
+      "area": "Mt. Carmel",
+      "url": "https://www.hometownregister.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Ahometownregister.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 61,
+      "id": "ev-murph",
+      "name": "Murphysboro Chamber",
+      "area": "Murphysboro",
+      "kind": "events",
+      "url": "https://www.murphysboro.com/events/?ical=1&eventDisplay=list&posts_per_page=100"
+    }
+  ]
+}

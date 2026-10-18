@@ -1,0 +1,203 @@
+{
+  "file": "kentucky",
+  "description": "Sources listed under a Kentucky area (Henderson, Owensboro, Madisonville, Western Kentucky).",
+  "sources": [
+    {
+      "seq": 5,
+      "id": "gleaner",
+      "name": "Henderson Gleaner",
+      "area": "Henderson",
+      "geo": true,
+      "everyMin": 30,
+      "url": "https://news.google.com/rss/search?q=site%3Athegleaner.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+      "note": "Gannett via Google News. Also carries USA TODAY Network sports, so it is geo-filtered."
+    },
+    {
+      "seq": 6,
+      "id": "owtimes",
+      "name": "Owensboro Times",
+      "area": "Owensboro",
+      "url": "https://www.owensborotimes.com/feed/"
+    },
+    {
+      "seq": 7,
+      "id": "messinq",
+      "everyMin": 60,
+      "name": "Messenger-Inquirer",
+      "area": "Owensboro",
+      "url": "https://www.messenger-inquirer.com/search/?f=rss&t=article&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 8,
+      "id": "msgr",
+      "everyMin": 60,
+      "name": "The Messenger",
+      "area": "Madisonville",
+      "url": "https://www.the-messenger.com/search/?f=rss&t=article&c[]=news/local*&l=25&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Athe-messenger.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
+        "https://www.the-messenger.com/search/?f=rss&t=article&l=25"
+      ],
+      "note": "Local-news section only (verified 2026-10-17); the all-articles feed is mostly AP wire."
+    },
+    {
+      "seq": 19,
+      "id": "wsto",
+      "name": "WSTO Radio",
+      "area": "Owensboro",
+      "geo": true,
+      "url": "https://wsto.com/feed/"
+    },
+    {
+      "seq": 20,
+      "id": "wkdq",
+      "name": "WKDQ Radio",
+      "area": "Henderson",
+      "geo": true,
+      "url": "https://wkdq.com/feed/"
+    },
+    {
+      "seq": 21,
+      "id": "owradio",
+      "name": "Owensboro Radio",
+      "area": "Owensboro",
+      "url": "https://owensbororadio.com/feed/"
+    },
+    {
+      "seq": 26,
+      "id": "wbkr",
+      "name": "WBKR",
+      "area": "Owensboro",
+      "geo": true,
+      "url": "https://wbkr.com/feed/",
+      "note": "Wider-market station: kept only when a story names a place in the region."
+    },
+    {
+      "seq": 36,
+      "id": "ob-messinq",
+      "everyMin": 60,
+      "name": "Messenger-Inquirer",
+      "area": "Owensboro",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.messenger-inquirer.com/search/?f=rss&t=article&c=obituaries&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 37,
+      "id": "ob-owtimes",
+      "name": "Owensboro Times",
+      "area": "Owensboro",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.owensborotimes.com/obituaries/feed/"
+    },
+    {
+      "seq": 41,
+      "id": "ob-msgr",
+      "everyMin": 60,
+      "name": "The Messenger",
+      "area": "Madisonville",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.the-messenger.com/search/?f=rss&t=article&c=obituaries&l=25",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fobituaries%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ]
+    },
+    {
+      "seq": 45,
+      "id": "ob-haley",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Haley-McGinnis Funeral Home",
+      "area": "Owensboro",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.haleymcginnis.com/rss.xml"
+    },
+    {
+      "seq": 46,
+      "id": "ob-davis",
+      "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "James H. Davis Funeral Home",
+      "area": "Owensboro",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "url": "https://www.davisfuneralhome.com/rss.xml"
+    },
+    {
+      "seq": 48,
+      "id": "ob-bgt",
+      "disabled": "2026-10-17: HTTP 403 on every production run (never one success from Vercel). The same URL answers 200 from a non-Vercel IP, so this is an IP block of Vercel, not a dead feed. Delete this flag to re-enable.",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Benton-Glunt & Tapp Funeral Home",
+      "area": "Henderson",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://www.bentongluntandtappfuneralhome.com/obituaries/sitemap.xml"
+    },
+    {
+      "seq": 52,
+      "id": "ob-glenn",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Glenn Funeral Home",
+      "area": "Owensboro",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://obits.glennfuneralhome.com/obituary-sitemap.xml"
+    },
+    {
+      "seq": 53,
+      "id": "ob-barnett",
+      "everyMin": 60,
+      "funeralHome": true,
+      "name": "Barnett-Strother Funeral Home",
+      "area": "Madisonville",
+      "kind": "obits",
+      "maxAgeDays": 21,
+      "parser": "sitemap",
+      "url": "https://barnettstrother.com/app/embed/f472797a-8210-4a0c-93b5-14da112340f9/sitemap0.xml"
+    },
+    {
+      "seq": 59,
+      "id": "ev-hend",
+      "name": "Henderson Tourist Commission",
+      "area": "Henderson",
+      "kind": "events",
+      "url": "https://hendersonky.org/events/?ical=1&eventDisplay=list&posts_per_page=100",
+      "note": "Events (RSS or iCal). Tourism sites often block datacenter requests; each tries its RSS feed, then its iCal export."
+    },
+    {
+      "seq": 62,
+      "id": "ev-mad",
+      "name": "Visit Madisonville",
+      "area": "Madisonville",
+      "kind": "events",
+      "url": "https://www.visitmadisonvilleky.com/events/feed/",
+      "altUrls": [
+        "https://www.visitmadisonvilleky.com/events/?ical=1"
+      ]
+    },
+    {
+      "seq": 63,
+      "id": "wkms",
+      "name": "WKMS Public Radio",
+      "area": "Western Kentucky",
+      "geo": true,
+      "url": "https://www.wkms.org/rss.xml",
+      "note": "Public radio from a neighboring market: geo-filtered."
+    }
+  ]
+}

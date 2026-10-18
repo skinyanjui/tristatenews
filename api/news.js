@@ -806,8 +806,14 @@ async function run(req, res) {
 }
 
 // /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
-// with its own CRON_SECRET check, lives in api/_refresh.js. Every other request is the news handler above.
-module.exports = require('./_dispatch.js').host({ refresh: () => require('./_refresh.js') }, handler);
+// with its own CRON_SECRET check, lives in api/_refresh.js. /api/counties and /api/regions (rewritten to
+// ?__route=counties / ?__route=regions) are the read-only geography API in api/_geoapi.js, which never touches Redis.
+// Every other request is the news handler above.
+module.exports = require('./_dispatch.js').host({
+  refresh: () => require('./_refresh.js'),
+  counties: () => require('./_geoapi.js').counties,
+  regions: () => require('./_geoapi.js').regions
+}, handler);
 module.exports.parseFeed = parseFeed;
 module.exports.combine = combine;
 module.exports.inRegion = inRegion;

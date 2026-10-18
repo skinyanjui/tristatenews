@@ -5,6 +5,9 @@
     },
     "api/refresh.js": {
       "maxDuration": 30
+    },
+    "api/alerts.js": {
+      "maxDuration": 20
     }
   },
   "headers": [

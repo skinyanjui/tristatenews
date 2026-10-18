@@ -581,6 +581,23 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   .card.breaking .bd p:not(.cl-note) { font-size:13px; line-height:18px; }
   .card.breaking .cf { margin:0 6px 0 14px; padding:0; min-height:44px; }
 }
+/* Reactions: heart and share are one family everywhere (news, Breaking, Police & courts, obituaries, events).
+   Same 18px outline icon on the same 24-unit grid with the same stroke, one shared colour token, the same
+   bare round 40px button, and the same hover / pressed / keyboard-focus look. Liked = the heart filled in the
+   darker shade of that same neutral (the site keeps red for Breaking and alerts). */
+:root { --react:var(--text-muted); --react-strong:var(--foreground); --react-on:var(--foreground); --react-hover:var(--gray-100); --react-press:var(--gray-200); }
+.like, .share,
+.card .like, .card .share, .card.breaking .like, .card.breaking .acts .share,
+.ev .acts .like, .ev .acts .share, .ev.ev-plain .acts .like, .ev.ev-plain .acts .share {
+  color:var(--react); background:transparent; border:0; box-shadow:none; border-radius:9999px;
+  transition:background-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.like svg, .share svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.like:hover, .share:hover, .ev .acts .like:hover, .ev .acts .share:hover { background:var(--react-hover); color:var(--react-strong); }
+.like:active, .share:active, .ev .acts .like:active, .ev .acts .share:active { background:var(--react-press); color:var(--react-strong); }
+.like:focus-visible, .share:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+.like[aria-pressed="true"], .card .like[aria-pressed="true"] { color:var(--react-on); }
+.like[aria-pressed="true"] svg { fill:currentColor; }
 </style>
 </head>
 <body>

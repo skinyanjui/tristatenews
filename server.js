@@ -247,6 +247,10 @@ app.all('/api/alerts', (req, res, next) => {
   Promise.resolve(alertsHandler(req, res)).catch(next);
 });
 
+// The /advertise page (api/_adpage.js behind ADS_PAGE; vercel.json rewrites it to api/inbox.js)
+const adPageHandler = require('./api/_adpage.js');
+app.all(['/advertise', '/advertise/'], (req, res) => adPageHandler(req, res));
+
 // Serve static frontend files from /public
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir, { extensions: ['html'] }));

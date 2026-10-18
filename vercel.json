@@ -8,6 +8,9 @@
     },
     "api/newsletter.js": {
       "maxDuration": 60
+    },
+    "api/inbox.js": {
+      "includeFiles": "data/pages/**"
     }
   },
   "redirects": [
@@ -57,6 +60,10 @@
     {
       "source": "/api/regions",
       "destination": "/api/news?__route=regions"
+    },
+    {
+      "source": "/advertise",
+      "destination": "/api/inbox?__route=adpage"
     },
     {
       "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)",

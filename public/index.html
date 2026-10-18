@@ -25,6 +25,7 @@
 <script src="/breaking.js"></script>
 <script src="/routes.js"></script>
 <script src="/featured.js"></script>
+<script src="/adslots.js"></script>
 <script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -163,6 +164,12 @@ main:focus { outline:none; }
 .rail-ad .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
 .rail-ad .bav { width:40px; height:40px; font-size:13px; }
 .rail-house { border-style:dashed; }
+/* the in-listing ad card (public/adslots.js): in the flow of the list, never sticky, no images or motion */
+.ad-card { display:grid; gap:6px; justify-items:start; align-content:start; min-width:0; padding:16px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font:inherit; text-align:left; text-decoration:none; }
+.ad-card:hover { background:var(--gray-100); }
+.ad-card b { font-size:16px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
+.ad-card .ad-tx { color:var(--text-muted); font-size:14px; line-height:20px; overflow-wrap:anywhere; }
+.ad-card .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
 .spon { display:flex; flex-wrap:nowrap; overflow:hidden; white-space:nowrap; height:var(--ctl); align-items:center; gap:4px 10px; width:100%; min-height:0; padding:0 12px; margin:0 0 12px; border:1px dashed var(--gray-400); border-radius:var(--radius-lg); background:var(--background-subtle); color:var(--foreground); font-size:14px; line-height:20px; text-align:left; }
 .spon:hover { background:var(--gray-100); }
 .spon-tag { flex:none; font-size:11px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
@@ -891,6 +898,25 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         if (!houseAd) return null;
         var h = el('button', 'spon spon-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with Tri-State News.')); h.appendChild(el('b', null, 'Learn more'));
+        h.addEventListener('click', openAd);
+        return h;
+      },
+      // The in-listing ad card for a board (public/adslots.js decides where it may go and what fills it). A direct
+      // sponsor is labeled "Sponsored" and linked rel="sponsored" (https only); an unsold slot holds our own
+      // "Advertise with us" unit, which opens the inquiry form. Same for every reader: nothing about the reader is used.
+      adCard: function (kind) {
+        var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now()) : null;
+        if (!f) return null;
+        if (f.type === 'direct') {
+          var ad = f.ad, a = el('a', 'ad-card'); a.href = ad.url; a.target = '_blank'; a.rel = 'sponsored noopener noreferrer';
+          a.setAttribute('aria-label', 'Sponsored: ' + ad.name);
+          a.appendChild(el('span', 'spon-tag', 'Sponsored')); a.appendChild(el('b', null, ad.name));
+          if (ad.text) a.appendChild(el('span', 'ad-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
+          return a;
+        }
+        var h = el('button', 'ad-card ad-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
+        h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here'));
+        h.appendChild(el('span', 'ad-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more'));
         h.addEventListener('click', openAd);
         return h;
       },
@@ -2059,7 +2085,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (kind === 'job') root.appendChild(jobFilters(b));
     if (kind !== 'obit') { var cr = chips(b, kind); if (cr.children.length > 1) root.appendChild(cr); } // no lone "All" chip on an empty board
     var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
-    items.forEach(function (it) { list.appendChild(card(it, kind, b)); });
+    var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1); // one ad card per board view
+    items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.adCard(kind); if (ac) list.appendChild(ac); } });
     if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
     if (!items.length) {
       var emp = el('div', 'cl-empty');
@@ -2310,7 +2337,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     var lim = b.lim || EVX_PAGE, shown = rows.slice(0, lim), groups = [], byDay = {};
     shown.forEach(function (it) { if (!byDay[it.date]) { byDay[it.date] = []; groups.push(it.date); } byDay[it.date].push(it); });
     var dayCount = {}; rows.forEach(function (it) { dayCount[it.date] = (dayCount[it.date] || 0) + 1; });
-    var list = el('div', 'evx-sec');
+    var list = el('div', 'evx-sec'), seen = 0, adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1); // one ad card per board view
     groups.forEach(function (d) {
       var g = el('section', 'evx-day'), h = el('h3'), rel = evxRel(d);
       if (rel) h.appendChild(el('span', 'evx-rel', rel));
@@ -2318,7 +2345,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       h.appendChild(el('small', null, String(dayCount[d])));
       g.setAttribute('aria-label', (rel ? rel + ', ' : '') + evxDayLabel(d));
       g.appendChild(h);
-      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b)); });
+      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b)); if (++seen === adAt) { var ac = UI.adCard('event'); if (ac) g.appendChild(ac); } });
       list.appendChild(g);
     });
     root.appendChild(list);
@@ -2538,6 +2565,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   fetch('/sponsors.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     SPONSORS = d && d.slots ? d.slots : {};
     SPONSORS.__rails = d && d.rails ? d.rails : {};
+    SPONSORS.__cards = d && d.cards ? d.cards : {};
     UI.rails();
     Object.keys(boards).forEach(drawBoard);
   }).catch(function () { SPONSORS = {}; UI.rails(); });

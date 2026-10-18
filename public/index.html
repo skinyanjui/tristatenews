@@ -1830,6 +1830,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     });
     return f;
   }
+  // Whole dollars when there are no cents: 1900 -> "$19", 119900 -> "$1,199", 1950 -> "$19.50".
+  function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
   function actions(it, kind, b, foot) {
     if (it.sample || it.feed) return;
@@ -1844,13 +1846,13 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     foot.appendChild(act);
     var pr = PAY.prices[kind];
     if (mine && PAY.configured && pr && !it.featured) {
-      var ft = UI.button('Feature · $' + (pr.cents / 100).toFixed(pr.cents % 100 ? 2 : 0), 'cl-link cl-feature', function () {
+      var ft = UI.button('Feature for ' + pr.days + ' days · ' + money(pr.cents), 'cl-link cl-feature', function () {
         ft.disabled = true; ft.textContent = 'Opening checkout…';
         fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: it.id, kind: kind, uid: uid }) })
           .then(function (r) { return r.json(); }).then(function (d) { if (d && d.url) location.href = d.url; else { ft.disabled = false; ft.textContent = (d && d.error) || 'Try again'; } })
           .catch(function () { ft.disabled = false; ft.textContent = 'Try again'; });
       });
-      ft.setAttribute('aria-label', 'Feature this post for ' + pr.days + ' days');
+      ft.setAttribute('aria-label', 'Feature this post for ' + pr.days + ' days, ' + money(pr.cents));
       foot.appendChild(ft);
     }
   }
@@ -2529,9 +2531,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     snEl.appendChild(el('p', 'sn-lede', 'Reach people across Evansville, Henderson, Owensboro and the Tri-State who come here for local news, events, jobs and deals.'));
     var rt = el('div', 'sn-sec'); rt.appendChild(el('h2', null, 'Ways to be seen'));
     var ul = el('ul', 'rates'), pr = PAY.prices || {};
-    [['job', 'Featured job'], ['deal', 'Featured deal'], ['event', 'Featured event']].forEach(function (k) {
+    [['job', 'Featured job'], ['deal', 'Featured deal'], ['event', 'Featured event'], ['item', 'Featured classified']].forEach(function (k) {
       if (!pr[k[0]]) return;
-      var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, '$' + (pr[k[0]].cents / 100).toFixed(pr[k[0]].cents % 100 ? 2 : 0))); ul.appendChild(li);
+      var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, money(pr[k[0]].cents))); ul.appendChild(li);
     });
     [['Section sponsorship', 'Your name on Jobs, Deals or Events'], ['Newsletter sponsorship', 'One sponsor in each email']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, 'Ask')); ul.appendChild(li); });
     rt.appendChild(ul);
@@ -2579,8 +2581,12 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     UI.rails();
     Object.keys(boards).forEach(drawBoard);
   }).catch(function () { SPONSORS = {}; UI.rails(); });
-  fetch('/api/checkout', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-    if (d) { PAY = { configured: !!d.configured, prices: d.prices || {} }; Object.keys(boards).forEach(drawBoard); }
+  // Prices and durations come from the server's catalog (api/_catalog.js via /api/catalog), the same table checkout charges.
+  fetch('/api/catalog').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (d && d.featured) {
+      var f = d.featured, on = Object.keys(f).some(function (k) { return f[k].purchasable; });
+      PAY = { configured: on, prices: f, version: d.priceVersion || '' }; Object.keys(boards).forEach(drawBoard);
+    }
   }).catch(function () {});
   (function () {
     var m = /[?&]featured=(ok|cancel)/.exec(location.search); if (!m) return;

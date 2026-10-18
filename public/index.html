@@ -549,6 +549,20 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev-foot .acts + .ev-go { margin-left:0; }
 .ev-plain .ev-acts { flex-wrap:nowrap; }
 .ev.ev-plain .ev-title { padding-right:0; }
+/* phones: the same ad-card layout as desktop, in a narrower column. The picture fills the card's left edge
+   top to bottom; source, headline, description and the link/heart/share row sit to its right. */
+@media (max-width:639px) {
+  .card:not(.breaking):has(a.ca > .th) { --pic:clamp(112px, 36%, 140px); padding-left:var(--pic); min-height:168px; }
+  .card:not(.breaking) a.ca > .th { position:absolute; left:0; top:0; bottom:0; width:var(--pic); height:100%; aspect-ratio:auto; object-position:center 30%; }
+  .card:not(.breaking):has(a.ca > .th) a.ca .bd { padding:12px 12px 4px 14px; gap:4px; }
+  .card:not(.breaking):has(a.ca > .th) .src { gap:6px; font-size:12px; margin:0; }
+  .card:not(.breaking):has(a.ca > .th) .av { width:18px; height:18px; }
+  .card:not(.breaking):has(a.ca > .th) h2 { font-size:16px; line-height:21px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .card:not(.breaking):has(a.ca > .th) .bd p:not(.cl-note) { font-size:13px; line-height:18px; }
+  .card:not(.breaking):has(a.ca > .th) .cf { margin:0 4px 0 14px; padding:0; min-height:44px; }
+  .card:not(.breaking):has(a.ca > .th) .lnk svg { width:14px; height:14px; }
+}
+@media (max-width:374px) { .card:not(.breaking):has(a.ca > .th) .bd p:not(.cl-note) { display:none; } } /* too narrow for a description */
 @media (min-width:640px) {
   /* picture flush left for the card's full height; text, then the link/reaction row, on the right */
   .card:not(.breaking):has(a.ca > .th) { padding-left:240px; min-height:168px; }

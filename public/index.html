@@ -169,6 +169,8 @@ main:focus { outline:none; }
 .ad-card:hover { background:var(--gray-100); }
 .ad-card b { font-size:16px; line-height:24px; font-weight:600; overflow-wrap:anywhere; }
 .ad-card .ad-tx { color:var(--text-muted); font-size:14px; line-height:20px; overflow-wrap:anywhere; }
+.ad-card.ad-sample .ad-note { font-size:12px; line-height:16px; }
+.ad-sample .spon-tag { font-style:italic; }
 .ad-card .ad-img, .rail-ad .ad-img { display:block; width:100%; height:auto; max-height:180px; object-fit:cover; border-radius:var(--radius-md); background:var(--gray-100); }
 .spon .ad-img { flex:none; width:24px; height:24px; object-fit:cover; border-radius:var(--radius-sm, 4px); }
 .ad-card .rail-cta { display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:12px; font-weight:500; }
@@ -836,6 +838,15 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         if (ad.img) { var im = el('img', 'ad-img'); im.src = ad.img; im.alt = ad.name; im.loading = 'lazy'; im.decoding = 'async'; if (ad.w && ad.h) { im.width = ad.w; im.height = ad.h; } a.appendChild(im); }
         return a;
       },
+      // A placeholder sample ad (sponsors.json "samples", while the spot is unsold): a made-up business, labeled
+      // "Sample ad" so it can't pass for a real advertiser, linking only to our /advertise page.
+      sampleAd: function (cls, ad) {
+        var a = el('a', cls + ' ad-sample'); a.href = '/advertise';
+        a.setAttribute('aria-label', 'Sample ad: ' + ad.name + ', not a real business. Advertise with Tri-State News.');
+        a.appendChild(el('span', 'spon-tag', 'Sample ad'));
+        return a;
+      },
+      sample: function (offset) { return window.TSNAds && SPONSORS ? TSNAds.sample(SPONSORS.__samples, offset, Date.now()) : null; },
       // A tall ad for the side margins on wide screens. A real ad (an approved creative) is labeled "Sponsored" and its link
       // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
       // business, price or number, and opens the advertising inquiry form.
@@ -852,7 +863,11 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         [['rail-l', 'left'], ['rail-r', 'right']].forEach(function (r) {
           var box = document.getElementById(r[0]); box.textContent = '';
           var list = (cfg[r[1]] || []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean);
-          if (!list.length && r[1] === 'right') list = [UI.railAd(null)]; // one house unit, right margin only (unobtrusive); an unsold left margin stays empty
+          if (!list.length && r[1] === 'right') { // one sample ad or house unit, right margin only (unobtrusive); an unsold left margin stays empty
+            var sm = UI.sample(1);
+            if (sm) { var sa = UI.sampleAd('rail-ad', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [sa]; }
+            else list = [UI.railAd(null)];
+          }
           list.forEach(function (x) { box.appendChild(x); });
         });
       },
@@ -908,6 +923,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
           return a;
         }
         if (!houseAd) return null;
+        var sm = window.TSNAds ? UI.sample((TSNAds.OFFSET[slot] || 0) + 1) : null;
+        if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (sm.text) s2.appendChild(el('span', null, sm.text)); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
         var h = el('button', 'spon spon-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with Tri-State News.')); h.appendChild(el('b', null, 'Learn more'));
         h.addEventListener('click', openAd);
@@ -917,8 +934,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // sponsor is labeled "Sponsored" and linked rel="sponsored" (https only); an unsold slot holds our own
       // "Advertise with us" unit, which opens the inquiry form. Same for every reader: nothing about the reader is used.
       adCard: function (kind) {
-        var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now()) : null;
+        var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
         if (!f) return null;
+        if (f.type === 'sample') {
+          var sa = UI.sampleAd('ad-card', f.ad); sa.appendChild(el('b', null, f.ad.name));
+          if (f.ad.text) sa.appendChild(el('span', 'ad-tx', f.ad.text));
+          sa.appendChild(el('span', 'ad-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here'));
+          return sa;
+        }
         if (f.type === 'direct') {
           var ad = f.ad, a = UI.adLink('ad-card', ad);
           a.appendChild(el('b', null, ad.name));
@@ -2582,14 +2605,20 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 
   /* ---------- sponsors, paid placement and return from checkout ---------- */
   // Only creatives an admin approved (api/_creative.js) fill sponsor lines, cards and side ads; the same list for
-  // every reader. Nothing else is ever shown as an ad.
-  fetch('/api/creative?live=1').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+  // every reader. From sponsors.json the page reads only "samples": placeholder sample ads for unsold spots, labeled
+  // "Sample ad", one switch ("on") for all of them. A real ad always comes first.
+  Promise.all([
+    fetch('/api/creative?live=1').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    fetch('/sponsors.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (got) {
+    var d = got[0], sj = got[1];
     SPONSORS = d && d.slots ? d.slots : {};
     SPONSORS.__rails = d && d.rails ? d.rails : {};
     SPONSORS.__cards = d && d.cards ? d.cards : {};
+    SPONSORS.__samples = sj && sj.samples ? sj.samples : null;
     UI.rails();
     Object.keys(boards).forEach(drawBoard);
-  }).catch(function () { SPONSORS = {}; UI.rails(); });
+  });
   // Prices and durations come from the server's catalog (api/_catalog.js via /api/catalog), the same table checkout charges.
   fetch('/api/catalog').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     if (d && d.featured) {

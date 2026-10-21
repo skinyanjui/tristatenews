@@ -34,6 +34,14 @@ select { min-height:44px; padding:0 8px; border:1px solid var(--border); border-
 .st { display:inline-block; padding:0 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; line-height:20px; }
 .st-new { border-color:var(--accent); color:var(--accent); } .st-won { border-color:#30a46c; color:#30a46c; } .st-spam, .st-lost { color:var(--muted); }
 details summary { cursor:pointer; color:var(--muted); font-size:12px; }
+/* card spacing, the same tokens as the site's cards: 16px inside (12px on phones), 40px+ tap targets */
+:root { --card-pad:16px; --card-stack:8px; }
+@media (max-width:639px) { :root { --card-pad:12px; } }
+section { padding:var(--card-pad); }
+.item { padding:12px 0; display:grid; gap:4px; }
+.cr { gap:var(--card-stack); }
+.cr label { min-height:40px; }
+details summary { min-height:40px; display:flex; align-items:center; }
 </style>
 </head>
 <body>

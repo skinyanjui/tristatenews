@@ -24,6 +24,10 @@ button:disabled { opacity:.6; cursor:default; }
 .err { color:#e5484d; }
 [hidden] { display:none !important; }
 a { color:inherit; }
+/* card spacing, the same tokens as the site's cards: 16px inside (12px on phones) */
+:root { --card-pad:16px; }
+@media (max-width:639px) { :root { --card-pad:12px; } }
+form { padding:var(--card-pad); }
 </style>
 </head>
 <body>

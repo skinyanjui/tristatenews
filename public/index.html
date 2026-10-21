@@ -712,6 +712,49 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .cl-adult .cl-check input { flex:none; margin-top:-2px; }
 .cl-adult .cl-check a { text-decoration:underline; text-underline-offset:2px; }
 .cl-note a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+/* ---------- card spacing: one set of tokens for every card (news and police, Breaking, Events, Jobs, Deals,
+   Classifieds, obituaries, the in-listing Sponsored card, sponsor lines and side ads). Spacing only: colours,
+   fonts and layout stay as above. --card-pad inner padding (16px desktop, 12px phone); --card-gap between cards;
+   --card-stack between the lines inside a card (title, meta, body, chips); --card-tap the smallest tap target. */
+:root { --card-pad:16px; --card-gap:16px; --card-stack:6px; --card-tap:40px; }
+@media (max-width:639px) { :root { --card-pad:12px; --card-gap:12px; } }
+.list, .cl-list, .evx-day, .evx-sec, .ev-grid, .evx-sk { gap:var(--card-gap); }
+/* news and police cards (photo rules are in makeCard: police and court items never carry one) */
+.card a.ca .bd, .card.breaking .bd { padding:var(--card-pad) var(--card-pad) 4px; gap:var(--card-stack); }
+.card .cf { margin:0 var(--card-pad); min-height:calc(var(--card-tap) + 8px); }
+@media (max-width:639px) {
+  .card:not(.breaking):has(a.ca > .th) a.ca .bd { padding:var(--card-pad) var(--card-pad) 4px; gap:4px; }
+  .card:not(.breaking):has(a.ca > .th) .cf, .card.breaking .cf { margin:0 calc(var(--card-pad) - 8px) 0 var(--card-pad); min-height:44px; }
+  .card.breaking .bd { padding:var(--card-pad) var(--card-pad) 4px; }
+}
+@media (min-width:640px) { .card a.ca .bd { padding:var(--card-pad) var(--card-pad) 4px; } .card .cf { margin:0 var(--card-pad); } }
+/* Events: the card grows with its text instead of a fixed height; even padding and line spacing; a 40px foot */
+.evr { height:auto; min-height:164px; }
+.evr-body, .evc-body { padding:var(--card-pad); grid-template-rows:auto; align-content:start; row-gap:var(--card-stack); }
+.evt > * { padding-right:0; }
+.evt-title { margin:0; }
+.evt-when { margin-top:2px; }
+.evt-foot { height:auto; min-height:var(--card-tap); margin:2px 0 0; padding-right:0; align-self:end; gap:8px; }
+@media (min-width:640px) { .evr { min-height:172px; } .evr-body { padding:var(--card-pad) var(--card-pad) var(--card-pad) 20px; } }
+.ev-body { padding:var(--card-pad); gap:var(--card-stack); }
+.ev.ev-plain { padding:var(--card-pad); }
+.ev-foot { padding-top:12px; gap:8px; }
+.ev-go, .evt-foot .ev-go { min-height:var(--card-tap); }
+/* Jobs, Deals, Classifieds and obituary posts */
+.cl-item { padding:var(--card-pad); gap:var(--card-stack) var(--card-pad); }
+.cl-main { gap:var(--card-stack); }
+.cl-foot { margin-top:2px; gap:8px; }
+.cl-link { min-height:var(--card-tap); padding:0 8px; }
+.cl-foot .cl-link:last-child { margin-right:-8px; } /* the text lines up with the padding; the 40px target stays */
+.cl-links a { min-height:var(--card-tap); }
+.ob { padding:var(--card-pad); gap:var(--card-stack); }
+.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; min-height:var(--card-tap); }
+/* in-listing Sponsored card, sponsor lines and side ads */
+.ad-card { padding:var(--card-pad); gap:var(--card-stack); }
+.ad-card .rail-cta, .rail-ad .rail-cta { min-height:var(--card-tap); margin-top:2px; padding:0 14px; }
+.rail-ad { padding:var(--card-pad); gap:8px; }
+.spon { padding:0 var(--card-pad); min-width:0; max-width:100%; }
+.ad-card .ad-img, .rail-ad .ad-img { width:100%; margin:0; }
 </style>
 </head>
 <body>

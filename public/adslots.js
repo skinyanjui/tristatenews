@@ -88,10 +88,24 @@
     if (sm) return { type: 'sample', ad: sm };
     return { type: 'house' }; // unsold, or a reserved network entry (no network is connected)
   }
+  // The side ads (vertical, skyscraper-shaped rails on wide screens). tab: the page's tab id; side: 'left' | 'right';
+  // list: the approved ads for that rail. { type: 'direct', ads } | { type: 'sample', ad } | { type: 'house' } |
+  // { type: 'none' }, or null on any tab without ads (News, which carries Police & courts, Obituaries, search...).
+  // A real ad always comes first. Unsold: a vertical sample ad on either rail while samples are on (different ones
+  // left and right); with samples off, the house unit on the right and nothing on the left.
+  var RAIL_OFFSET = { left: 3, right: 1 };
+  function railFill(tab, side, list, now, samples) {
+    if (AD_TABS.indexOf(tab) < 0 || !Object.prototype.hasOwnProperty.call(RAIL_OFFSET, side)) return null;
+    var ads = order(list, now).filter(validAd).slice(0, 2);
+    if (ads.length) return { type: 'direct', ads: ads };
+    var sm = sample(samples, RAIL_OFFSET[side], now);
+    if (sm) return { type: 'sample', ad: sm };
+    return side === 'right' ? { type: 'house' } : { type: 'none' };
+  }
   // How many posts come before the card, or -1 for no card.
   function position(count) {
     count = Number(count) || 0;
     return count <= 0 ? -1 : Math.min(count, AFTER);
   }
-  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position };
+  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position, railFill: railFill, RAIL_OFFSET: RAIL_OFFSET };
 });

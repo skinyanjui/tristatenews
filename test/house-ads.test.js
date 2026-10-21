@@ -78,8 +78,8 @@ test('open spots: one house unit labeled "Advertise with us", no business, price
     h.listeners.click();
   }
   assert.strictEqual(opened(), 4);
-  UI.rails();
-  assert.strictEqual(boxes['rail-l'].children.length, 0, 'an unsold left margin stays empty');
+  UI.rails('jobs');
+  assert.strictEqual(boxes['rail-l'].children.length, 0, 'an unsold left margin stays empty (no samples configured)');
   assert.strictEqual(boxes['rail-r'].children.length, 1);
   const r = boxes['rail-r'].children[0];
   assert.deepStrictEqual([r.tag, tagOf(r)], ['button', 'Advertise with us']);
@@ -93,7 +93,7 @@ test('real ads: labeled "Sponsored", rel="sponsored", https only; they replace t
   const a = UI.sponsor('jobs', true);
   assert.deepStrictEqual([a.tag, a.href, a.rel, tagOf(a)], ['a', 'https://acme.test/', 'sponsored noopener noreferrer', 'Sponsored']);
   assert.strictEqual(UI.sponsor('deals', true).tag, 'button', 'a non-https ad is not shown; the house unit is');
-  UI.rails();
+  UI.rails('jobs');
   assert.deepStrictEqual([boxes['rail-l'].children.length, boxes['rail-r'].children.length], [1, 2], 'at most two per margin');
   for (const n of boxes['rail-l'].children.concat(boxes['rail-r'].children)) assert.deepStrictEqual([n.tag, n.rel, tagOf(n)], ['a', 'sponsored noopener noreferrer', 'Sponsored']);
 });

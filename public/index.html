@@ -767,6 +767,33 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .rail-ad { padding:var(--card-pad); gap:8px; }
 .spon { padding:0 var(--card-pad); min-width:0; max-width:100%; }
 .ad-card .ad-img, .rail-ad .ad-img { width:100%; margin:0; }
+/* ---------- wide screens: a wider page, with tall side ads in the margins on the board tabs only ----------
+   --page-max is the content width (nav, tabs and main share it); --rail-w the side-ad column; --rail-gap the space
+   between them. Rails are fixed (they stay put while the list scrolls), hidden below 1360px, where the in-listing
+   card still applies, and absent on News and Obituaries (body[data-ads] and TSNAds.railFill). Lists gain columns
+   rather than stretching; text keeps its line-length caps. */
+:root { --page-max:960px; --rail-w:160px; --rail-gap:24px; }
+@media (min-width:1440px) { :root { --page-max:1040px; } }
+@media (min-width:1680px) { :root { --page-max:1120px; --rail-w:240px; --rail-gap:32px; } }
+@media (min-width:1920px) { :root { --page-max:1240px; --rail-w:300px; } }
+@media (min-width:2560px) { :root { --page-max:1360px; --rail-gap:48px; } }
+.nav-in, .nav-tabs, main { max-width:var(--page-max); }
+@media (min-width:1360px) {
+  .rail { top:124px; width:var(--rail-w); max-height:calc(100vh - 140px); overflow:hidden; gap:var(--card-gap); }
+  .rail-l { left:calc(50% - var(--page-max) / 2 - var(--rail-gap) - var(--rail-w)); }
+  .rail-r { right:calc(50% - var(--page-max) / 2 - var(--rail-gap) - var(--rail-w)); }
+  .rail-ad.rail-sky { min-height:min(600px, calc(100vh - 140px)); align-content:start; grid-template-rows:auto auto auto auto 1fr auto; }
+  .rail-ad.rail-sky .rail-cta { align-self:end; }
+}
+@media (min-width:1440px) {
+  .list { grid-template-columns:1fr 1fr; gap:var(--card-gap); align-items:stretch; }
+  .list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; }
+  .evx-day { grid-template-columns:1fr 1fr; }
+  .evx-day > h3, .evx-day > :not(.evr) { grid-column:1 / -1; }
+}
+@media (min-width:1920px) {
+  .deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }
+}
 </style>
 </head>
 <body>
@@ -942,16 +969,18 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
         return a;
       },
-      rails: function () {
+      // Side ads (public/adslots.js railFill): tall, vertical units in the margins on wide screens, only on the board tabs
+      // (Events, Jobs, Deals, Classifieds). News (with Police & courts) and Obituaries get none: railFill answers null.
+      rails: function (tab) {
         var cfg = (SPONSORS && SPONSORS.__rails) || {};
         [['rail-l', 'left'], ['rail-r', 'right']].forEach(function (r) {
           var box = document.getElementById(r[0]); box.textContent = '';
-          var list = (window.TSNAds ? TSNAds.order(cfg[r[1]], Date.now()) : []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean); // the top spot takes turns
-          if (!list.length && r[1] === 'right') { // one sample ad or house unit, right margin only (unobtrusive); an unsold left margin stays empty
-            var sm = UI.sample(1);
-            if (sm) { var sa = UI.sampleAd('rail-ad', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [sa]; }
-            else list = [UI.railAd(null)];
-          }
+          var f = window.TSNAds ? TSNAds.railFill(tab, r[1], cfg[r[1]], Date.now(), SPONSORS && SPONSORS.__samples) : null;
+          if (!f || f.type === 'none') return;
+          var list = [];
+          if (f.type === 'direct') list = f.ads.map(function (x) { return UI.railAd(x); }).filter(Boolean); // the top spot takes turns
+          else if (f.type === 'sample') { var sm = f.ad, sa = UI.sampleAd('rail-ad rail-sky', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [sa]; }
+          else list = [UI.railAd(null)];
           list.forEach(function (x) { box.appendChild(x); });
         });
       },
@@ -2738,7 +2767,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     SPONSORS.__rails = d && d.rails ? d.rails : {};
     SPONSORS.__cards = d && d.cards ? d.cards : {};
     SPONSORS.__samples = sj && sj.samples ? sj.samples : null;
-    UI.rails();
+    UI.rails(state.cat);
     Object.keys(boards).forEach(drawBoard);
   });
   // Prices and durations come from the server's catalog (api/_catalog.js via /api/catalog), the same table checkout charges.
@@ -3089,6 +3118,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function render() {
     syncRoute();
     document.body.toggleAttribute('data-ads', AD_TABS.indexOf(state.cat) >= 0 && !state.q.trim());
+    if (SPONSORS) UI.rails(state.cat); // the side ads follow the tab (none on News or Obituaries)
     breakCards = {};
     state.brk = breakingPick();
     renderList();

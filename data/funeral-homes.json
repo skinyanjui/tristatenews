@@ -1,61 +1,89 @@
 {
-  "note": "Funeral homes whose obituaries we show (data/sources funeralHome entries), with each one’s own florist page for the obituary “Send flowers” link. florist stays empty until someone has checked the page on the funeral home’s own site and confirmed it is theirs: never guess or invent a URL. An https URL here wins over the affiliate link (data/flowers.json). Names are matched loosely (case, punctuation, “Funeral Home”, “&”/“and”).",
+  "note": "Funeral homes whose obituaries we show (data/sources funeralHome entries), with each one’s own florist page for the obituary “Send flowers” link. florist stays empty until someone has checked the page on the funeral home’s own site and confirmed it is theirs: never guess or invent a URL. An https URL here wins over the affiliate link (data/flowers.json). Names are matched loosely (case, punctuation, “Funeral Home”, “&”/“and”). treeUrl (the home’s own memorial-tree page) and donateUrl (its own memorial-donation page) follow the same rule: empty until checked on the home’s own site; an https URL there wins over the defaults in data/flowers.json.",
   "homes": [
     {
       "name": "Ziemer Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Browning Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Koehler Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Nass & Son Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Becher & Kluesner Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Colvin Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Doyle Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Goodwin-Sievers Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Duesterberg-Fredrick Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Haley-McGinnis Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "James H. Davis Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Benton-Glunt & Tapp Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Glenn Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     },
     {
       "name": "Barnett-Strother Funeral Home",
-      "florist": ""
+      "florist": "",
+      "treeUrl": "",
+      "donateUrl": ""
     }
   ]
 }

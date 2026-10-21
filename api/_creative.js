@@ -13,7 +13,8 @@
 //
 // Nothing is ever served until an admin approves it with a reason, and every approve, reject and withdraw is
 // written to the audit log. Only approved creatives fill the in-listing card, sponsor lines and side ads
-// (public/adslots.js reads /api/creative?live=1; raw ads in sponsors.json are ignored).
+// (public/adslots.js reads /api/creative?live=1; raw ads in sponsors.json are ignored). With ADS_CAMPAIGNS=on, only
+// approved creatives booked in a campaign running today fill them (api/_campaigns.js).
 //
 // Storage (Upstash Redis, like listing photos; no new service): a creative's image is a still JPEG, PNG or WebP of at
 // most MAX_IMAGE_BYTES, kept as a data URL beside its record.
@@ -207,6 +208,8 @@ async function handler(req, res) {
     if (req.method === 'GET') {
       const q = req.query || {};
       if (q.live) {
+        const camp = require('./_campaigns.js');
+        if (camp.enabled()) return send(200, Object.assign({ configured: true, campaigns: true }, await camp.livePlan(now, pub)), 'public, max-age=60, s-maxage=60'); // only booked, running campaigns
         const ids = (await pipeline([['SMEMBERS', K.live]]))[0].result || [];
         const recs = ids.length ? (await pipeline([['MGET', ...ids.map(K.rec)]]))[0].result || [] : [];
         return send(200, Object.assign({ configured: true }, livePlan(recs.map(parse))), 'public, max-age=60, s-maxage=60');
@@ -293,4 +296,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-Object.assign(module.exports, { validate, destination, image, tokenFor, tokenRef, livePlan, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });
+Object.assign(module.exports, { validate, destination, image, tokenFor, tokenRef, livePlan, pub, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });

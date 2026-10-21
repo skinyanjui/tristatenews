@@ -14,7 +14,7 @@
   // cat: the page's tab id (CATS in index.html). index: listed in sitemap.xml and indexable.
   var ROUTES = [
     { cat: 'news', path: '/', index: true, title: SITE,
-      desc: 'The latest local news from Evansville, Henderson, Owensboro and the Tri-State, gathered from the region\u2019s newsrooms.' },
+      desc: 'The latest local news, police and courts from Evansville, Henderson, Owensboro and the Tri-State, gathered from the region\u2019s newsrooms and official sources.' },
     { cat: 'safety', path: '/police-courts', index: true, title: 'Police & courts · ' + SITE,
       desc: 'Arrests, charges and court news from official police, sheriff, prosecutor and court sources across the Tri-State. Charged or arrested is not convicted.' },
     // No institution feeds are wired today (the tab hides when empty), so it stays out of the sitemap and noindex.

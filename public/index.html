@@ -1094,6 +1094,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (cat === 'events' || cat === 'jobs') return false;
     // official sources only (police, sheriff, prosecutors, courts); crime stories from news outlets stay in News
     if (cat === 'safety') return k === 'police' || k === 'courts';
+    // News (the landing tab) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
+    // their rules here too (makeCard decides by source kind): no photos, and "Charged or arrested, not convicted."
+    if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
     return k === cat;
   }
   function filtered() {

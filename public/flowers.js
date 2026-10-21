@@ -9,6 +9,11 @@
    - Otherwise, if data/flowers.json has a fallbackUrl (a florist's public funeral-flowers page, no affiliate code),
      the link goes there. Nothing is earned, so there is no "paid link" label; rel="noopener nofollow".
    - Otherwise (fallbackUrl emptied) there is no link at all.
+   "Plant a tree" (treeFor) works the same way from cfg.tree: the home's treeUrl, else a paid affiliate link (only with
+   an ID and a link template), else the unpaid fallbackUrl (One Tree Planted's memorial-tree page), else nothing.
+   "Donate" (donateFor) never invents a charity: the home's donateUrl; else, when the obituary text itself asks for
+   donations ("in lieu of flowers", "memorial contributions may be made to ..."), an https link written in that text,
+   or the obituary's own page (where the family's wording and the charity are); otherwise there is no Donate link.
    - The link carries nothing about the reader or the obituary: the florist page as listed, or the affiliate URL with
      only our ID in it. Same link for every reader. */
 (function (root, factory) {
@@ -41,6 +46,30 @@
     var fb = httpsUrl(cfg.fallbackUrl);
     return fb ? { href: fb, paid: false, rel: REL_FALLBACK } : null;
   }
+  // "Plant a tree": cfg.tree is { homes, affiliate, fallbackUrl }, the same shape and order as flowers.
+  function treeFor(it, cfg) { return cfg && typeof cfg === 'object' && cfg.tree && typeof cfg.tree === 'object' ? linkFor(it, cfg.tree) : null; }
+  // The obituary asks for donations: "in lieu of flowers", "memorial contributions/donations may be made to",
+  // "donations in his memory to" and the like. Only the obituary's own words count.
+  var ASK_RE = /\bin lieu of flowers\b|\b(memorial|memorials|contributions|donations|gifts)\b[^.]{0,60}\b(may|can|be|are)\b[^.]{0,30}\b(made|given|sent|directed)\b[^.]{0,10}\bto\b|\b(donations|contributions|memorials)\b[^.]{0,40}\b(in (his|her|their) (memory|honor|name))\b[^.]{0,20}\bto\b/i;
+  function asksDonations(text) { return ASK_RE.test(String(text || '').slice(0, 4000)); }
+  // An https link written in the donation sentence (the family's charity), if any.
+  function linkInAsk(text) {
+    var t = String(text || '').slice(0, 4000), m = ASK_RE.exec(t); if (!m) return '';
+    var rest = t.slice(m.index, m.index + 400), u = /https:\/\/[^\s<>"')]+/i.exec(rest);
+    return u ? httpsUrl(u[0].replace(/[.,;:]+$/, '')) : '';
+  }
+  // "Donate": { href, paid:false, rel } or null (hidden).
+  function donateFor(it, cfg) {
+    if (!it) return null;
+    var k = key(homeOf(it)), dh = cfg && cfg.donate && cfg.donate.homes;
+    var home = k && dh && Object.prototype.hasOwnProperty.call(dh, k) ? httpsUrl(dh[k]) : '';
+    if (home) return { href: home, paid: false, rel: REL_HOME };
+    var text = [it.summary, it.desc].filter(Boolean).join(' ');
+    if (!asksDonations(text)) return null;
+    var inText = linkInAsk(text); if (inText) return { href: inText, paid: false, rel: REL_FALLBACK };
+    var page = httpsUrl(it.link || '');
+    return page ? { href: page, paid: false, rel: REL_FALLBACK, page: true } : null;
+  }
   var REL_HOME = 'noopener', REL_PAID = 'sponsored noopener', REL_FALLBACK = 'noopener nofollow';
-  return { key: key, httpsUrl: httpsUrl, homeOf: homeOf, linkFor: linkFor, REL_HOME: REL_HOME, REL_PAID: REL_PAID, REL_FALLBACK: REL_FALLBACK, LABEL_PAID: 'paid link' };
+  return { key: key, httpsUrl: httpsUrl, homeOf: homeOf, linkFor: linkFor, treeFor: treeFor, donateFor: donateFor, asksDonations: asksDonations, linkInAsk: linkInAsk, REL_HOME: REL_HOME, REL_PAID: REL_PAID, REL_FALLBACK: REL_FALLBACK, LABEL_PAID: 'paid link' };
 });

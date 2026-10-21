@@ -1,8 +1,8 @@
 /* The in-listing ad card: which boards may carry it, where it goes, and what fills it. One rule, shared by the page
    (window.TSNAds) and the tests.
 
-   - Only the Jobs, Deals, Classifieds and Events boards carry it. News/All, News, Police & courts, Institutions,
-     Obituaries, Breaking cards, Liked and search results never do (fill() returns null for anything else).
+   - Only the Jobs, Deals, Classifieds and Events boards carry it. News, Police & courts, Institutions,
+     Obituaries, Breaking cards and search results never do (fill() returns null for anything else).
    - One card per board view: after the 6th post, or after the last one on a shorter board; none on an empty board.
    - Only approved creatives fill it. The page reads /api/creative?live=1 (api/_creative.js), which lists only what an
      admin approved in admin.html, with a reason, for that placement; ads typed into sponsors.json are never shown.

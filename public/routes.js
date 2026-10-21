@@ -1,7 +1,9 @@
 /* One shareable URL per tab. Shared by the page (window.TSNRoutes, loaded in <head> so the title, description
    and canonical are right before anything renders) and by node (tests, sitemap check).
    vercel.json rewrites these paths to /index.html; the page reads location.pathname to open the tab and uses
-   history.pushState when the tab changes, so back/forward and direct loads work. "/" stays the All tab. */
+   history.pushState when the tab changes, so back/forward and direct loads work. "/" is the News tab (the landing
+   tab). Old paths that no longer have a tab of their own (ALIASES: /news, /all, /liked) open News at "/"; vercel.json
+   also redirects them to "/" so shared links keep working. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.TSNRoutes = factory();
@@ -11,9 +13,7 @@
   var SITE = 'Tri-State News';
   // cat: the page's tab id (CATS in index.html). index: listed in sitemap.xml and indexable.
   var ROUTES = [
-    { cat: 'all', path: '/', index: true, title: SITE,
-      desc: 'Local news, police and courts, events, obituaries, jobs and deals from across the Evansville, IN-KY-IL Tri-State.' },
-    { cat: 'news', path: '/news', index: true, title: 'News · ' + SITE,
+    { cat: 'news', path: '/', index: true, title: SITE,
       desc: 'The latest local news from Evansville, Henderson, Owensboro and the Tri-State, gathered from the region\u2019s newsrooms.' },
     { cat: 'safety', path: '/police-courts', index: true, title: 'Police & courts · ' + SITE,
       desc: 'Arrests, charges and court news from official police, sheriff, prosecutor and court sources across the Tri-State. Charged or arrested is not convicted.' },
@@ -29,12 +29,14 @@
     { cat: 'deals', path: '/deals', index: true, title: 'Deals · ' + SITE,
       desc: 'Coupons and specials from local Tri-State businesses.' },
     { cat: 'classifieds', path: '/classifieds', index: true, title: 'Classifieds · ' + SITE,
-      desc: 'Free local classifieds: furniture, electronics, vehicles and more for sale across the Tri-State.' },
-    { cat: 'saved', path: '/liked', index: false, title: 'Liked · ' + SITE,
-      desc: 'Stories you liked on this device.' }
+      desc: 'Free local classifieds: furniture, electronics, vehicles and more for sale across the Tri-State.' }
   ];
+  // Retired tab paths: the All tab (it duplicated News), the Liked page (removed) and the old /news path.
+  var ALIASES = { '/news': '/', '/all': '/', '/liked': '/' };
+  // Retired tab ids in an old hash or ?tab= link (#all, ?tab=all, #liked, ...), all of which now mean News.
+  var OLD_TABS = { all: 1, news: 1, liked: 1, saved: 1, likes: 1 };
   function norm(path) { var p = String(path || '/').split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase(); return p || '/'; }
-  function byPath(path) { var p = norm(path); for (var i = 0; i < ROUTES.length; i++) if (ROUTES[i].path === p) return ROUTES[i]; return null; }
+  function byPath(path) { var p = norm(path); if (ALIASES[p]) p = ALIASES[p]; for (var i = 0; i < ROUTES.length; i++) if (ROUTES[i].path === p) return ROUTES[i]; return null; }
   function byCat(cat) { for (var i = 0; i < ROUTES.length; i++) if (ROUTES[i].cat === cat) return ROUTES[i]; return null; }
   function meta(doc, sel, attr, make) {
     var m = doc.head.querySelector(sel);
@@ -54,5 +56,5 @@
     var rb = meta(doc, 'meta[name="robots"]', 'content', r.index ? null : { tag: 'meta', attrs: { name: 'robots' } });
     if (rb) { if (r.index) rb.parentNode.removeChild(rb); else rb.setAttribute('content', 'noindex'); }
   }
-  return { ORIGIN: ORIGIN, ROUTES: ROUTES, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
+  return { ORIGIN: ORIGIN, ROUTES: ROUTES, ALIASES: ALIASES, OLD_TABS: OLD_TABS, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
 });

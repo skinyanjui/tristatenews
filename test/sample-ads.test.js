@@ -61,7 +61,7 @@ test('sample ads on the page: labeled "Sample ad", say they are not a real busin
   const { UI, boxes } = pageUI({ __samples: sponsors.samples.on ? sponsors.samples : ON, __rails: {}, __cards: {} });
   const names = (sponsors.samples.on ? sponsors.samples : ON).ads.map(a => a.name);
   const spots = ['jobs', 'deals', 'events', 'classifieds'].map(b => UI.sponsor(b, true)).concat(Object.keys(A.BOARDS).map(k => UI.adCard(k)));
-  UI.rails();
+  UI.rails('jobs');
   spots.push(boxes['rail-r'].children[0]);
   for (const n of spots) {
     assert.deepStrictEqual([n.tag, n.href, tagOf(n), n.rel, n.target], ['a', '/advertise', 'Sample ad', undefined, undefined], n.className);
@@ -71,20 +71,28 @@ test('sample ads on the page: labeled "Sample ad", say they are not a real busin
     assert.ok(!/Sponsored/.test(n.textContent), 'never labeled as a real sponsor');
   }
   assert.ok(spots.slice(4, 8).every(c => c.textContent.includes('A sample, not a real business.')));
-  assert.strictEqual(boxes['rail-l'].children.length, 0, 'an unsold left margin stays empty');
+  const left = boxes['rail-l'].children[0];
+  assert.deepStrictEqual([left.tag, left.href, tagOf(left)], ['a', '/advertise', 'Sample ad'], 'an unsold left margin shows a vertical sample too');
+  assert.match(left.className, /rail-sky/); assert.match(boxes['rail-r'].children[0].className, /rail-sky/);
+  assert.notStrictEqual(left.children.find(c => c.tag === 'b').textContent, boxes['rail-r'].children[0].children.find(c => c.tag === 'b').textContent, 'different samples left and right');
+  for (const tab of ['news', 'obits', 'safety', 'institution', 'saved', 'submit', '']) {
+    UI.rails(tab);
+    assert.deepStrictEqual([boxes['rail-l'].children.length, boxes['rail-r'].children.length], [0, 0], 'no side ads on ' + (tab || 'search/none'));
+  }
 });
 
 test('real approved ads take every spot first; with the switch off the plain house units come back', () => {
   const { UI, boxes } = pageUI({ jobs: real, __samples: ON, __rails: { right: [real] }, __cards: { jobs: real } });
   assert.deepStrictEqual([UI.sponsor('jobs', true).href, tagOf(UI.sponsor('jobs', true))], ['https://real.test/', 'Sponsored']);
   assert.deepStrictEqual([UI.adCard('job').href, tagOf(UI.adCard('job'))], ['https://real.test/', 'Sponsored']);
-  UI.rails();
+  UI.rails('jobs');
   assert.strictEqual(boxes['rail-r'].children[0].href, 'https://real.test/');
   assert.strictEqual(tagOf(UI.sponsor('deals', true)), 'Sample ad', 'other boards still show samples');
   const off = pageUI({ __samples: { on: false, ads: ON.ads }, __rails: {}, __cards: {} });
   assert.deepStrictEqual([off.UI.sponsor('jobs', true).tag, tagOf(off.UI.sponsor('jobs', true)), tagOf(off.UI.adCard('job'))], ['button', 'Advertise with us', 'Advertise with us']);
-  off.UI.rails();
+  off.UI.rails('jobs');
   assert.strictEqual(tagOf(off.boxes['rail-r'].children[0]), 'Advertise with us');
+  assert.strictEqual(off.boxes['rail-l'].children.length, 0, 'samples off: an unsold left margin stays empty');
   assert.strictEqual(off.UI.sponsor('jobs', false), null, 'no sample where the caller asks for no house unit');
 });
 

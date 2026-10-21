@@ -15,7 +15,17 @@
   },
   "redirects": [
     {
-      "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)/",
+      "source": "/:old(news|all|liked)",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:old(news|all|liked)/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:tab(police-courts|institutions|events|obituaries|jobs|deals|classifieds)/",
       "destination": "/:tab",
       "permanent": true
     }
@@ -78,7 +88,7 @@
       "destination": "/api/inbox?__route=adpage"
     },
     {
-      "source": "/:tab(news|police-courts|institutions|events|obituaries|jobs|deals|classifieds|liked)",
+      "source": "/:tab(police-courts|institutions|events|obituaries|jobs|deals|classifieds)",
       "destination": "/index.html"
     }
   ],

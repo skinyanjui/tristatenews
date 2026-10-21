@@ -39,7 +39,7 @@
   --gray-500:#a8a8a8; --gray-600:#8f8f8f; --gray-700:#666; --gray-800:#444; --gray-900:#2e2e2e; --gray-1000:#171717;
   --blue:#0070f3; --blue-subtle:#e6f0fd; --blue-text:#0050b3;
   --brand:#0b6b86; --brand-fg:#fff; --brand-subtle:#e4f3f7;   /* Ohio River teal */
-  --c-news:#0b6b86; --c-safety:#c4262c; --c-institution:#5b4bd6; --c-events:#c2410c; --c-obits:#64748b; --c-jobs:#1d4ed8; --c-deals:#136f35; --c-classifieds:#a16207; --c-saved:#c4262c;
+  --c-news:#0b6b86; --c-safety:#c4262c; --c-institution:#5b4bd6; --c-events:#c2410c; --c-obits:#64748b; --c-jobs:#1d4ed8; --c-deals:#136f35; --c-classifieds:#a16207;
   --h-music:#7b3fe4; --h-food:#c2410c; --h-family:#136f35; --h-sports:#1d4ed8; --h-arts:#be185d; --h-community:#0b6b86; --h-other:#64748b; --red:#e5484d; --red-strong:#c4262c; --amber:#f5a623; --green:#45a557;
   --border:var(--gray-300); --text-muted:var(--gray-700);
   --radius-sm:6px; --radius-md:6px; --radius-lg:6px; --radius-xl:6px;
@@ -54,7 +54,7 @@
   --gray-500:#878787; --gray-600:#a1a1a1; --gray-700:#b4b4b4; --gray-800:#d4d4d4; --gray-900:#e3e3e3; --gray-1000:#ededed;
   --blue:#3291ff; --blue-subtle:#10233c; --blue-text:#6cb0ff;
   --brand:#4cc3dd; --brand-fg:#04222b; --brand-subtle:#0c2a33;
-  --c-news:#4cc3dd; --c-safety:#ff6369; --c-institution:#a79bff; --c-events:#ff9f6b; --c-obits:#a1aab8; --c-jobs:#6cb0ff; --c-deals:#5dc36f; --c-classifieds:#f7b955; --c-saved:#ff6369;
+  --c-news:#4cc3dd; --c-safety:#ff6369; --c-institution:#a79bff; --c-events:#ff9f6b; --c-obits:#a1aab8; --c-jobs:#6cb0ff; --c-deals:#5dc36f; --c-classifieds:#f7b955;
   --h-music:#b99cff; --h-food:#ff9f6b; --h-family:#5dc36f; --h-sports:#6cb0ff; --h-arts:#ff7eb6; --h-community:#4cc3dd; --h-other:#a1aab8; --red:#ff6369; --red-strong:#ff6369; --amber:#f7b955; --green:#5dc36f;
   --shadow-md:0 4px 12px rgba(0,0,0,.5); --shadow-lg:0 12px 32px rgba(0,0,0,.6);
 }
@@ -504,9 +504,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
   *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
 /* color: one brand (river teal) plus a hue per section; tints are mixed from the same tokens so dark mode follows */
-[data-sec="all"], [data-sec="news"] { --c:var(--c-news); } [data-sec="safety"] { --c:var(--c-safety); } [data-sec="institution"] { --c:var(--c-institution); }
+[data-sec="news"] { --c:var(--c-news); } [data-sec="safety"] { --c:var(--c-safety); } [data-sec="institution"] { --c:var(--c-institution); }
 [data-sec="events"] { --c:var(--c-events); } [data-sec="obits"] { --c:var(--c-obits); } [data-sec="jobs"] { --c:var(--c-jobs); }
-[data-sec="deals"] { --c:var(--c-deals); } [data-sec="classifieds"] { --c:var(--c-classifieds); } [data-sec="saved"] { --c:var(--c-saved); }
+[data-sec="deals"] { --c:var(--c-deals); } [data-sec="classifieds"] { --c:var(--c-classifieds); }
 .brand { color:var(--brand); }
 :focus-visible { outline-color:var(--brand); }
 .tab { padding:0 8px; gap:6px; }
@@ -554,7 +554,7 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .ev.ev-plain .ev-title { padding-right:0; }
 /* ===== Events tab, Bandsintown-style layout: location header, date chips, featured/popular row, date-grouped rows.
    Uses the site's tokens, card radius, buttons, chips, pills and the shared heart/share family. ===== */
-/* Advertising policy: side ads only on the Events, Jobs, Deals and Classifieds tabs (never on News/All, News,
+/* Advertising policy: side ads only on the Events, Jobs, Deals and Classifieds tabs (never on News,
    Police & courts or Obituaries). render() sets body[data-ads] on those tabs; without it the margins stay empty. */
 body:not([data-ads]) .rail { display:none !important; }
 .evx { gap:16px; min-width:0; }
@@ -1025,10 +1025,20 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 
   var HOUR = 60 * 60 * 1000;
   var PAGE = 24;
-  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'all', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
+  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'news', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
   // Tab URLs (public/routes.js): a direct load of /news, /police-courts, /events ... opens that tab.
   var RT = window.TSNRoutes || null, ROUTE_SYNCED = false;
   (function () { var r = RT && RT.byPath(location.pathname); if (r) state.cat = r.cat; })();
+  // Old links to the removed All tab and Liked page (#all, #liked, ?tab=all, ?tab=liked) open News; drop the old part.
+  (function () {
+    if (!RT || !RT.OLD_TABS) return;
+    var h = location.hash.replace(/^#\/?/, '').toLowerCase(), sp = /[?&]tab=([^&#]*)/i.exec(location.search), t = sp ? decodeURIComponent(sp[1]).toLowerCase() : '';
+    var oldH = !!RT.OLD_TABS[h], oldT = !!RT.OLD_TABS[t];
+    if (!oldH && !oldT) return;
+    state.cat = 'news';
+    var q = oldT ? location.search.replace(/([?&])tab=[^&#]*&?/i, '$1').replace(/[?&]$/, '') : location.search;
+    try { history.replaceState(history.state, '', '/' + q + (oldH ? '' : location.hash)); } catch (e) {}
+  })();
   try { var sv = JSON.parse(localStorage.getItem('tsn.saved') || '[]'); if (Array.isArray(sv)) state.saved = sv.filter(function (x) { return x && x.link && x.title; }); } catch (e) {}
   function storyId(link) { // short stable id from the story link (cyrb53)
     var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -1069,7 +1079,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : 'news'; }
   var CATS = [
-    { id: 'all', label: 'All' },
     { id: 'news', label: 'News' },
     { id: 'safety', label: 'Police & courts' },
     { id: 'institution', label: 'Institutions' },
@@ -1077,20 +1086,21 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     { id: 'obits', label: 'Obituaries' },
     { id: 'jobs', label: 'Jobs' },
     { id: 'deals', label: 'Deals' },
-    { id: 'classifieds', label: 'Classifieds' },
-    { id: 'saved', label: 'Liked' }
+    { id: 'classifieds', label: 'Classifieds' }
   ];
   function inCat(it, cat) {
     var k = kindOf(it.sourceId);
     if (cat === 'deals') return false;
     if (cat === 'events' || cat === 'jobs') return false;
-    if (cat === 'all') return k !== 'events' && k !== 'obits';
     // official sources only (police, sheriff, prosecutors, courts); crime stories from news outlets stay in News
     if (cat === 'safety') return k === 'police' || k === 'courts';
+    // News (the landing tab) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
+    // their rules here too (makeCard decides by source kind): no photos, and "Charged or arrested, not convicted."
+    if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
     return k === cat;
   }
   function filtered() {
-    var base = state.cat === 'saved' ? state.saved : state.items.filter(function (i) { return inCat(i, state.cat); });
+    var base = state.items.filter(function (i) { return inCat(i, state.cat); });
     var q = state.q.trim().toLowerCase();
     if (q) {
       var words = q.split(/\s+/);
@@ -1390,13 +1400,13 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   document.getElementById('home').addEventListener('click', function (ev) {
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
     ev.preventDefault();
-    clearTimeout(qTimer); qEl.value = ''; state.q = ''; state.cat = 'all'; SN_DONE = '';
+    clearTimeout(qTimer); qEl.value = ''; state.q = ''; state.cat = 'news'; SN_DONE = '';
     if (boards) Object.keys(boards).forEach(function (k) { boards[k].form = false; boards[k].filter = ''; boards[k].when = 'any'; boards[k].town = ''; boards[k].jt = ''; });
     resetPaging(); render(); window.scrollTo({ top: 0 });
   });
   qEl.addEventListener('input', function () {
     clearTimeout(qTimer);
-    qTimer = setTimeout(function () { state.q = qEl.value; state.sf = 'all'; state.srl = PAGE; if (state.cat === 'submit') state.cat = state.prevCat || 'all'; resetPaging(); render(); }, 150);
+    qTimer = setTimeout(function () { state.q = qEl.value; state.sf = 'all'; state.srl = PAGE; if (state.cat === 'submit') state.cat = state.prevCat || 'news'; resetPaging(); render(); }, 150);
   });
 
   /* ---------- banners ---------- */
@@ -2465,8 +2475,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   var snEl = document.getElementById('sn'), SN_TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
   var SN_DONE = '', SN_VIEW = 'news';
   function icoCheck() { var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke-width', '2'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round'); n.setAttribute('aria-hidden', 'true'); var p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M20 6 9 17l-5-5'); n.appendChild(p); return n; }
-  function openSubmit() { SN_DONE = ''; state.prevCat = state.cat === 'submit' ? (state.prevCat || 'all') : state.cat; state.cat = 'submit'; resetPaging(); render(); window.scrollTo(0, 0); }
-  function closeSubmit() { state.cat = state.prevCat || 'all'; resetPaging(); render(); window.scrollTo(0, 0); }
+  function openSubmit() { SN_DONE = ''; state.prevCat = state.cat === 'submit' ? (state.prevCat || 'news') : state.cat; state.cat = 'submit'; resetPaging(); render(); window.scrollTo(0, 0); }
+  function closeSubmit() { state.cat = state.prevCat || 'news'; resetPaging(); render(); window.scrollTo(0, 0); }
   function renderSubmit() {
     if (SN_VIEW === 'ad') return renderAdvertise();
     snEl.textContent = '';
@@ -2872,7 +2882,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   var qSug = document.getElementById('qsug'), sugItems = [], sugIdx = -1;
   function setQuery(v, commit) {
     clearTimeout(qTimer); qEl.value = v; state.q = v; state.sf = 'all'; state.srl = PAGE;
-    if (state.cat === 'submit') state.cat = state.prevCat || 'all';
+    if (state.cat === 'submit') state.cat = state.prevCat || 'news';
     if (commit) saveRecent(v);
     closeSug(); resetPaging(); render(); if (commit) window.scrollTo({ top: 0 });
   }
@@ -2971,7 +2981,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     var sb = UI.heart({
       get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
       toggle: function () { toggleSaved(it); },
-      after: function () { if (state.cat === 'saved') render(); else { sb.paint(); renderTabs(); } }
+      after: function () { sb.paint(); renderTabs(); }
     });
     // Option B (ad-card style): picture flush left on desktop / on top on phones; source row, headline and a short
     // description; a bottom row with where the link goes plus the heart and share.
@@ -3011,7 +3021,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   window.addEventListener('popstate', function () {
     var r = RT && RT.byPath(location.pathname);
-    state.cat = r ? r.cat : 'all';
+    state.cat = r ? r.cat : 'news';
     if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
     resetPaging(); render();
   });
@@ -3031,7 +3041,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function renderList() {
     renderTabs();
     var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isSn;
-    nlEl.hidden = NL_WAS || !(state.cat === 'all' || state.cat === 'news') || !!state.q.trim();
+    nlEl.hidden = NL_WAS || !(state.cat === 'news') || !!state.q.trim();
     snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; boards.obit.el.hidden = state.cat !== 'obits'; listEl.hidden = board; document.getElementById('more').hidden = board;
     var srQ = state.q.trim();
     srEl.hidden = !(srQ && !isSn);
@@ -3054,7 +3064,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     }
     var all = filtered();
     var top = state.brk.top;
-    var brk = (top && !state.q.trim() && (state.cat === 'all' || state.cat === 'news')) ? [top] : []; // at most ONE Breaking item
+    var brk = (top && !state.q.trim() && (state.cat === 'news')) ? [top] : []; // at most ONE Breaking item
     var rest = brk.length && top.item ? all.filter(function (i) { return i !== top.item; }) : all;
     var shown = rest.slice(0, state.limit);
     var moreEl = document.getElementById('more'); moreEl.textContent = '';
@@ -3064,7 +3074,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       ' · Updated ' + new Date(state.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     if (!shown.length && !brk.length) {
       var noQ = !state.q.trim();
-      if (state.cat === 'saved' && noQ) return stateBox('Nothing liked yet', 'Tap the heart on any story to keep it here.', 'See all stories', function () { state.cat = 'all'; resetPaging(); render(); });
       return stateBox('No stories to show', noQ ? 'Nothing has been published by these sources recently.' : 'Nothing matches. Try different words.', noQ ? 'Refresh' : 'Clear search', function () { if (noQ) { load(true); } else { state.q = ''; qEl.value = ''; resetPaging(); render(); } });
     }
     listEl.textContent = '';

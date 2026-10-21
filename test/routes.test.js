@@ -58,3 +58,18 @@ test('old All and Liked links redirect to News at /: vercel redirects, hash and 
   assert.ok(html.includes("cat: 'news', limit"), 'News is the default tab');
   assert.ok(html.includes('toggleSaved(it)') && html.includes("fetch('/api/react'"), 'hearts and shared counts stay');
 });
+
+test('News merges Police & courts items in feed order; their cards keep no photos and the not-convicted note; no ads on News', () => {
+  const src = html.slice(html.indexOf('function inCat('), html.indexOf('function filtered('));
+  const kinds = { n: 'news', p: 'police', c: 'courts', e: 'events', o: 'obits', i: 'institution' };
+  const inCat = new Function('kindOf', src + '; return inCat;')(id => kinds[id]);
+  const items = ['n', 'p', 'e', 'c', 'o', 'i', 'n'].map((k, i) => ({ sourceId: k, t: i }));
+  assert.deepEqual(items.filter(i => inCat(i, 'news')).map(i => i.sourceId + i.t), ['n0', 'p1', 'c3', 'n6'], 'news + police + courts, same order');
+  assert.deepEqual(items.filter(i => inCat(i, 'safety')).map(i => i.sourceId), ['p', 'c'], 'Police & courts tab unchanged');
+  assert.ok(RT.byCat('safety') && /id: 'safety'/.test(html), 'the Police & courts tab stays');
+  const mk = html.slice(html.indexOf('function makeCard('), html.indexOf('function makeCard(') + 3000);
+  assert.ok(mk.includes("safe = kd === 'police' || kd === 'courts'") && mk.includes("var pic = safe ? '' : it.image;"), 'no photos, decided by source kind on every tab');
+  assert.ok(mk.includes("if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));"));
+  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds'];"), 'no ads on News');
+  assert.ok(html.includes("(state.cat === 'news')) ? [top] : []; // at most ONE Breaking item"), 'one Breaking item');
+});

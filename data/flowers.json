@@ -2,5 +2,11 @@
   "note": "The obituary \"Send flowers\" fallback: a Florist One affiliate link, used only when the obituary's funeral home has no known florist page (data/funeral-homes.json). affiliateId is empty until Sam joins the program; with no ID the link goes to fallbackUrl instead: Florist One's public funeral-flowers page, no affiliate code, no \"paid link\" label, rel=\"noopener nofollow\" (checked: it answered 200 on Oct 18, 2026). Set fallbackUrl to \"\" to hide the link again when there is no florist page and no ID. The server env var FLORIST_ONE_AFFILIATE_ID, when set, wins over affiliateId. affiliateUrl is the link with {id} replaced by the ID. Its shape is the one Florist One's own published affiliate links use (https://www.floristone.com/index.cfm?AffiliateID=<id>&source_id=aff); the signup page doesn't show it before joining. TODO: once joined, replace affiliateUrl with the exact link Florist One gives in its affiliate area (its agreement says not to change the links it provides).",
   "affiliateId": "",
   "affiliateUrl": "https://www.floristone.com/index.cfm?AffiliateID={id}&source_id=aff",
-  "fallbackUrl": "https://www.floristone.com/funeral-flowers/"
+  "fallbackUrl": "https://www.floristone.com/funeral-flowers/",
+  "tree": {
+    "note": "The obituary \"Plant a tree\" link, used when the funeral home has no treeUrl in data/funeral-homes.json. fallbackUrl is One Tree Planted's public Gift Trees In Memory page (a nonprofit; no affiliate code, unpaid, no \"paid link\" label, rel=\"noopener nofollow\"; checked: it answered 200 on Oct 21, 2026). Set it to \"\" to hide the link when there is no tree page. affiliateId stays empty; TREE_AFFILIATE_ID on the server wins over it. affiliateUrl is empty on purpose: we don't know the program's link shape, so fill it in (with {id}) only from the program's own affiliate area. With an ID and an affiliateUrl the link is labeled \"paid link\" and rel=\"sponsored noopener\", like flowers.",
+    "affiliateId": "",
+    "affiliateUrl": "",
+    "fallbackUrl": "https://onetreeplanted.org/products/gift-trees-in-memory"
+  }
 }

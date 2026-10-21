@@ -749,6 +749,18 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .cl-links a { min-height:var(--card-tap); }
 .ob { padding:var(--card-pad); gap:var(--card-stack); }
 .ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; min-height:var(--card-tap); }
+/* Obituary action row (Send flowers, Plant a tree, Donate): one row pinned to the bottom of the card, so cards side by
+   side line their rows up whatever the text length; wraps cleanly, and stacks on narrow phones; 40px targets. */
+.ob { display:flex; flex-direction:column; }
+.ob > .ob-acts { margin-top:auto; padding-top:var(--card-stack); border-top:1px solid var(--border); }
+.ob > .cl-foot { margin-bottom:var(--card-stack); }
+.ob-acts { display:flex; flex-wrap:wrap; align-items:center; gap:0 var(--card-pad); min-width:0; }
+.ob-act { display:inline-flex; align-items:baseline; gap:6px; white-space:nowrap; }
+.card .cf { flex-wrap:wrap; }
+.card:has(.cf .ob-acts) { display:flex; flex-direction:column; }
+.card:has(.cf .ob-acts) > .cf { margin-top:auto; }
+.card .cf .ob-acts { flex:1 1 auto; margin-right:auto; white-space:normal; }
+@media (max-width:374px) { .ob-acts { flex-direction:column; align-items:flex-start; } .card .cf .ob-acts { flex-basis:100%; } }
 /* in-listing Sponsored card, sponsor lines and side ads */
 .ad-card { padding:var(--card-pad); gap:var(--card-stack); }
 .ad-card .rail-cta, .rail-ad .rail-cta { min-height:var(--card-tap); margin-top:2px; padding:0 14px; }
@@ -1069,7 +1081,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   var HOUR = 60 * 60 * 1000;
   var PAGE = 24;
   var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'news', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
-  // Tab URLs (public/routes.js): a direct load of /news, /police-courts, /events ... opens that tab.
+  // Tab URLs (public/routes.js): a direct load of /events, /jobs ... opens that tab; /, /news and /police-courts open News.
   var RT = window.TSNRoutes || null, ROUTE_SYNCED = false;
   (function () { var r = RT && RT.byPath(location.pathname); if (r) state.cat = r.cat; })();
   // Old links to the removed All tab and Liked page (#all, #liked, ?tab=all, ?tab=liked) open News; drop the old part.
@@ -1123,7 +1135,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : 'news'; }
   var CATS = [
     { id: 'news', label: 'News' },
-    { id: 'safety', label: 'Police & courts' },
     { id: 'institution', label: 'Institutions' },
     { id: 'events', label: 'Events' },
     { id: 'obits', label: 'Obituaries' },
@@ -1135,9 +1146,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     var k = kindOf(it.sourceId);
     if (cat === 'deals') return false;
     if (cat === 'events' || cat === 'jobs') return false;
-    // official sources only (police, sheriff, prosecutors, courts); crime stories from news outlets stay in News
-    if (cat === 'safety') return k === 'police' || k === 'courts';
-    // News (the landing tab) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
+    // News (the landing tab, and since the Police & courts tab was merged into it the only home of official police and
+    // court items) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
     // their rules here too (makeCard decides by source kind): no photos, and "Charged or arrested, not convicted."
     if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
     return k === cat;
@@ -1421,7 +1431,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     tabsEl.textContent = '';
     CATS.forEach(function (c) {
       // Tabs show no counts; a count is only used to hide an empty News, Police & courts or Institutions tab (it still shows when its URL is open).
-      if (c.id === 'news' || c.id === 'safety' || c.id === 'institution') { if (state.cat !== c.id && !state.items.some(function (i) { return inCat(i, c.id); })) return; }
+      if (c.id === 'news' || c.id === 'institution') { if (state.cat !== c.id && !state.items.some(function (i) { return inCat(i, c.id); })) return; }
       var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id; b.dataset.sec = c.id;
       b.appendChild(el('span', null, c.label));
@@ -2102,14 +2112,21 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       if (FLOWERS && (FLOWERS.affiliate || FLOWERS.fallbackUrl || Object.keys(FLOWERS.homes || {}).length) && state.cat === 'obits') render();
     }).catch(function () {});
   }
+  // The obituary action row: "Send flowers", "Plant a tree" and "Donate" together, quiet text links in one row at the
+  // bottom of the card (public/flowers.js decides each link; a link with nowhere honest to go is left out).
   function flowersLink(it, tag) {
-    var f = window.TSNFlowers ? TSNFlowers.linkFor(it, FLOWERS) : null;
-    if (!f) return null;
-    var p = el(tag || 'div', 'ob-flw'), a = el('a', null, 'Send flowers');
-    a.href = f.href; a.target = '_blank'; a.rel = f.paid ? TSNFlowers.REL_PAID : f.rel;
-    p.appendChild(a);
-    if (f.paid) p.appendChild(el('span', 'ob-paid', TSNFlowers.LABEL_PAID));
-    return p;
+    var F = window.TSNFlowers; if (!F) return null;
+    var acts = [['Send flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', F.treeFor(it, FLOWERS)], ['Donate', F.donateFor(it, FLOWERS)]];
+    var p = el(tag || 'div', 'ob-flw ob-acts');
+    acts.forEach(function (x) {
+      var f = x[1]; if (!f) return;
+      var w = el('span', 'ob-act'), a = el('a', null, x[0]);
+      a.href = f.href; a.target = '_blank'; a.rel = f.paid ? F.REL_PAID : f.rel;
+      w.appendChild(a);
+      if (f.paid) w.appendChild(el('span', 'ob-paid', F.LABEL_PAID));
+      p.appendChild(w);
+    });
+    return p.children.length ? p : null;
   }
   function obitCard(it, b) {
     var c = el('article', 'ob');
@@ -2121,10 +2138,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (bits.length) c.appendChild(el('div', 'ob-svc', bits.join(' · ')));
     if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
     c.appendChild(el('div', 'cl-meta', [it.town, 'Posted ' + new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ')));
-    var fl = flowersLink(it); if (fl) c.appendChild(fl);
     var foot = el('div', 'cl-foot'), href = applyHref(it.contact);
     if (href) { var a = el('a', 'cl-contact', 'Contact ' + it.business + ': ' + it.contact); a.href = href; foot.appendChild(a); } else foot.appendChild(el('span', 'cl-contact', it.contact));
     actions(it, 'obit', b, foot); c.appendChild(foot);
+    var fl = flowersLink(it); if (fl) c.appendChild(fl); // the action row is always the card's last row
     return c;
   }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }

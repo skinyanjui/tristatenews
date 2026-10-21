@@ -15,8 +15,6 @@
   var ROUTES = [
     { cat: 'news', path: '/', index: true, title: SITE,
       desc: 'The latest local news, police and courts from Evansville, Henderson, Owensboro and the Tri-State, gathered from the region\u2019s newsrooms and official sources.' },
-    { cat: 'safety', path: '/police-courts', index: true, title: 'Police & courts · ' + SITE,
-      desc: 'Arrests, charges and court news from official police, sheriff, prosecutor and court sources across the Tri-State. Charged or arrested is not convicted.' },
     // No institution feeds are wired today (the tab hides when empty), so it stays out of the sitemap and noindex.
     { cat: 'institution', path: '/institutions', index: false, title: 'Institutions · ' + SITE,
       desc: 'News from Tri-State schools, universities, hospitals and public agencies.' },
@@ -31,10 +29,11 @@
     { cat: 'classifieds', path: '/classifieds', index: true, title: 'Classifieds · ' + SITE,
       desc: 'Free local classifieds: furniture, electronics, vehicles and more for sale across the Tri-State.' }
   ];
-  // Retired tab paths: the All tab (it duplicated News), the Liked page (removed) and the old /news path.
-  var ALIASES = { '/news': '/', '/all': '/', '/liked': '/' };
+  // Retired tab paths: the All tab (it duplicated News), the Liked page (removed), the old /news path and the
+  // Police & courts tab (merged into News, where its items keep their rules).
+  var ALIASES = { '/news': '/', '/all': '/', '/liked': '/', '/police-courts': '/', '/police': '/', '/courts': '/' };
   // Retired tab ids in an old hash or ?tab= link (#all, ?tab=all, #liked, ...), all of which now mean News.
-  var OLD_TABS = { all: 1, news: 1, liked: 1, saved: 1, likes: 1 };
+  var OLD_TABS = { all: 1, news: 1, liked: 1, saved: 1, likes: 1, safety: 1, police: 1, courts: 1, 'police-courts': 1 };
   function norm(path) { var p = String(path || '/').split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase(); return p || '/'; }
   function byPath(path) { var p = norm(path); if (ALIASES[p]) p = ALIASES[p]; for (var i = 0; i < ROUTES.length; i++) if (ROUTES[i].path === p) return ROUTES[i]; return null; }
   function byCat(cat) { for (var i = 0; i < ROUTES.length; i++) if (ROUTES[i].cat === cat) return ROUTES[i]; return null; }

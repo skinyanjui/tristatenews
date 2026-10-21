@@ -174,3 +174,11 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 ### Needs review (ads PR 5.3)
 23. **Hashed address:** the code is an HMAC of the address and the date keyed by a server secret (`ADSTATS_SECRET`, else derived from `LISTINGS_ADMIN_KEY`/`CRON_SECRET`), so it can't be reversed by trying every address without the secret. Still treat it as personal data kept for 24 hours (that's how the table words it); confirm this is fine under the states' privacy laws we follow.
 24. **Quoting counts:** only quote measured counts from the admin report or its CSV, labeled "views" and "clicks on Tri-State News pages". Don't turn them into "readers", "reach" or "impressions served" without saying how they were measured.
+
+## Obituary action row: "Plant a tree" and "Donate" (Advertising Policy §2 and §8)
+- **Advertising §8:** new paragraph. "Plant a tree": the home's own memorial-tree page (`treeUrl`, none confirmed yet), else One Tree Planted's public "Gift Trees In Memory" page, unpaid, rel="noopener nofollow". "Donate": only a home's own `donateUrl`, or when the obituary asks for donations (an https link in that sentence, else the full obituary page); otherwise hidden. We never choose a charity.
+- **Advertising §2:** the Obituaries exception mentions the two unpaid links.
+
+### Needs review (obituary action row)
+25. **Tree affiliate:** `TREE_AFFILIATE_ID` and `tree.affiliateUrl` exist but are empty. Turning them on makes "Plant a tree" a paid link, so Privacy §3 and Advertising §8 ("the only affiliate link we may use is Send flowers") must be updated first.
+26. **Naming One Tree Planted:** the policy says "a nonprofit's page" without naming it, like the florist. Confirm that's fine, and that linking a charity's donation page needs no agreement with it.

@@ -46,7 +46,7 @@ In the Vercel project, add an environment variable `EXTRA_FEEDS` containing a JS
 
 ## Features
 
-Search, tabs in the top nav (News, the landing tab at `/`, then Police & courts and the boards; the old All tab and Liked page are gone, and `/all`, `/liked`, `/news`, `#all` and `?tab=all` all open News), "Show more" paging, hearts with counts, a breaking news card (only when an outlet labels a story "Breaking", "Just in" or "Developing story", for up to 12 hours), light/dark toggle, a refresh button, and a weather button that changes location (nine regional towns, or search any U.S. city). Active National Weather Service alerts for the chosen location show above the headlines.
+Search, tabs in the top nav (News, the landing tab at `/`, which merges news outlets with Police & courts items in time order (those keep their no-photo rule and "not convicted" note), then Police & courts on its own and the boards; the old All tab and Liked page are gone, and `/all`, `/liked`, `/news`, `#all` and `?tab=all` all open News), "Show more" paging, hearts with counts, a breaking news card (only when an outlet labels a story "Breaking", "Just in" or "Developing story", for up to 12 hours), light/dark toggle, a refresh button, and a weather button that changes location (nine regional towns, or search any U.S. city). Active National Weather Service alerts for the chosen location show above the headlines.
 
 ## Shared heart counts (optional)
 

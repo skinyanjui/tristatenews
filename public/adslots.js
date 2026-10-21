@@ -6,8 +6,9 @@
    - One card per board view: after the 6th post, or after the last one on a shorter board; none on an empty board.
    - Only approved creatives fill it. The page reads /api/creative?live=1 (api/_creative.js), which lists only what an
      admin approved in admin.html, with a reason, for that placement; ads typed into sponsors.json are never shown.
-   - Never targeted. Every reader of a board sees the same ad, and when a board has several they rotate by the date
-     in Chicago, the same for everyone. No cookies, no storage, no reader data. When the slot is unsold it holds the
+   - Never targeted. Every reader of a board gets the same list. When several sponsors share a spot they take equal
+     turns of TURN_MIN minutes by the clock (fair rotation: over a day each gets the same number of turns, give or
+     take one), the same sponsor for every reader at the same moment. No cookies, no storage, no reader data. When the slot is unsold it holds the
      site's own "Advertise with us" unit.
    - Sample ads: while spots are unsold, sponsors.json "samples" (one switch: "on") can show made-up placeholder
      businesses instead of the plain house unit. Each is labeled "Sample ad", links only to /advertise, and never
@@ -23,6 +24,7 @@
   var AD_TABS = ['events', 'jobs', 'deals', 'classifieds']; // the only tabs with any ad (side ads included)
   var AFTER = 6;
   var DAY = 864e5;
+  var TURN_MIN = 15;
   var CTAS = ['Visit website', 'Call now', 'Get directions', 'Shop now', 'Learn more'];
   // An approved ad as /api/creative?live=1 gives it: a name (the headline) and an https or tel: destination; text,
   // a CTA from the fixed list, and an image served by /api/creative are optional.
@@ -40,10 +42,19 @@
     var d = new Date(now).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
     return Math.floor(Date.parse(d + 'T00:00:00Z') / DAY);
   }
-  // One ad from a slot (an ad or a list), rotating by the Chicago date; null when none is valid.
+  // The rotation turn: which TURN_MIN-minute block of the clock it is. The same number for everyone at that moment.
+  function turn(now) { return Math.floor(Number(now) / (TURN_MIN * 60000)); }
+  // One ad from a slot (an ad or a list), taking equal turns in the list's order; null when none is valid.
   function pick(v, now) {
     var list = (Array.isArray(v) ? v : v ? [v] : []).filter(validAd);
-    return list.length ? list[((dayNumber(now) % list.length) + list.length) % list.length] : null;
+    return list.length ? list[((turn(now) % list.length) + list.length) % list.length] : null;
+  }
+  // A whole list in turn order: the side ads show up to two at once, and the top spot moves by the same turns.
+  function order(v, now) {
+    var list = (Array.isArray(v) ? v : v ? [v] : []).filter(validAd), n = list.length;
+    if (!n) return [];
+    var s = ((turn(now) % n) + n) % n;
+    return list.slice(s).concat(list.slice(0, s));
   }
   // A placeholder sample ad: a short made-up name and line from sponsors.json. Its link is always /advertise (set by
   // the page, never taken from the file), so it can't send anyone to an outside site.
@@ -82,5 +93,5 @@
     count = Number(count) || 0;
     return count <= 0 ? -1 : Math.min(count, AFTER);
   }
-  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, fill: fill, position: position };
+  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position };
 });

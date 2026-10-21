@@ -28,12 +28,20 @@ test('unsold, invalid or reserved-network slots hold the house unit; a valid dir
   for (const [kind, key] of Object.entries(A.BOARDS)) assert.strictEqual(A.fill(kind, { [key]: ad(9) }, NOW).ad.name, 'Advertiser 9', kind);
 });
 
-test('rotation is by the Chicago date only: the same ad for every reader that day', () => {
-  const list = [ad(1), ad(2), ad(3)];
-  const day = n => A.fill('event', { events: list }, Date.parse('2026-10-18T15:00:00Z') + n * 864e5).ad.name;
-  assert.deepStrictEqual(new Set([0, 1, 2].map(day)).size, 3, 'rotates across days');
-  assert.strictEqual(day(0), day(3));
-  assert.strictEqual(A.fill('event', { events: list }, Date.parse('2026-10-18T05:01:00Z')).ad.name, A.fill('event', { events: list }, Date.parse('2026-10-19T04:59:00Z')).ad.name, 'one Chicago day, one ad');
+test('rotation is by the clock only: equal turns, the same ad for every reader at the same moment', () => {
+  const list = [ad(1), ad(2), ad(3)], T = A.TURN_MIN * 60000, t0 = Date.parse('2026-10-18T15:00:00Z');
+  const at = n => A.fill('event', { events: list }, t0 + n * T).ad.name;
+  assert.strictEqual(A.TURN_MIN, 15);
+  assert.deepStrictEqual(new Set([0, 1, 2].map(at)).size, 3, 'each sponsor gets a turn');
+  assert.strictEqual(at(0), at(3));
+  assert.strictEqual(A.fill('event', { events: list }, A.turn(t0) * T).ad.name, A.fill('event', { events: list }, A.turn(t0) * T + T - 1).ad.name, 'one turn, one ad');
+  // fair: over any Chicago day each of n sponsors gets the same number of turns, give or take one
+  for (const n of [1, 2, 3, 4, 5, 7]) {
+    const names = Array.from({ length: n }, (_, i) => ad(i + 1)), seen = {};
+    for (let m = 0; m < 24 * 60 / A.TURN_MIN; m++) { const x = A.pick(names, Date.parse('2026-10-18T05:00:00Z') + m * T).name; seen[x] = (seen[x] || 0) + 1; }
+    const v = Object.values(seen);
+    assert.strictEqual(v.length, n); assert.ok(Math.max(...v) - Math.min(...v) <= 1, n + ': ' + v);
+  }
   assert.strictEqual(A.dayNumber(Date.parse('2026-10-19T04:59:00Z')), A.dayNumber(Date.parse('2026-10-18T05:00:00Z')));
   assert.strictEqual(A.dayNumber(Date.parse('2026-10-19T05:00:00Z')), A.dayNumber(Date.parse('2026-10-18T05:00:00Z')) + 1);
   assert.strictEqual(A.fill.length, 4, 'fill(kind, cards, now, samples): site settings and the date; nothing about the reader goes in');

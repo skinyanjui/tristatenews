@@ -47,6 +47,14 @@ details summary { cursor:pointer; color:var(--muted); font-size:12px; }
     <section><h2 id="alh">Inquiry activity</h2><div id="adl"></div></section>
     <section><h2 id="crh">Creatives waiting for review</h2><p class="m">Nothing an advertiser uploads is shown until you approve it here. Check the image, words and destination against the Advertising Policy (truthful, legible, still image, the link goes where it says). Approve or reject with a reason; both are written to the audit log. Approving picks where it runs. Withdrawing an approved creative takes it off the site.</p><div id="crp"></div></section>
     <section><h2 id="cah">Approved creatives</h2><div id="cra"></div></section>
+    <section><h2 id="cph">Campaigns</h2><p class="m" id="cpon"></p>
+      <form id="cpf" class="cr"><select id="cpc" aria-label="Approved creative to book"></select><fieldset id="cpp"><legend class="m">Placements (only those the creative is approved for)</legend></fieldset>
+        <label class="m">Start <input id="cps" type="date" required></label><label class="m">End (inclusive) <input id="cpe" type="date" required></label>
+        <input id="cpn" placeholder="Note (order, invoice or package; kept in the log)" maxlength="300" aria-label="Campaign note"><button type="submit">Book campaign</button></form>
+      <p class="m" id="cpmsg" role="status"></p>
+      <h2>Inventory, next 30 days</h2><div id="cpinv"></div>
+      <h2>Booked</h2><div id="cpl"></div></section>
+    <section><h2 id="cpah">Campaign log</h2><div id="cpa"></div></section>
     <section><h2>Creative upload link</h2><p class="m">For an advertiser who has no inquiry reference or paid order: make a signed link tied to a reference (an inquiry or invoice number). It works for 14 days.</p><form id="tk"><input id="tkr" placeholder="Reference, e.g. AD-ABC123" aria-label="Reference" autocomplete="off"><button type="submit">Make link</button></form><p class="m" id="tko" role="status"></p></section>
     <section><h2 id="cuh">Creative review log</h2><div id="cru"></div></section>
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
@@ -148,6 +156,66 @@ details summary { cursor:pointer; color:var(--muted); font-size:12px; }
   }
   function loadLeads() { return get('/api/advertise').then(drawLeads).catch(function () { drawLeads(null); }); }
   $('adf').addEventListener('change', function () { drawLeads(leads); });
+  // Campaigns (api/_campaigns.js): book an approved creative on placements for dates, within the inventory caps.
+  var cpData = null;
+  function cpPlacements() {
+    var fs = $('cpp'), c = cpData && cpData.creatives.filter(function (x) { return x.id === $('cpc').value; })[0];
+    [].slice.call(fs.querySelectorAll('label')).forEach(function (l) { l.remove(); });
+    (c ? c.placements : []).forEach(function (p) { var l = mk('label'), cb = mk('input', { type: 'checkbox', value: p }); cb.checked = true; l.appendChild(cb); l.appendChild(document.createTextNode(p)); fs.appendChild(l); });
+  }
+  function cpCard(c) {
+    var d = mk('div', { class: 'item cr' });
+    var h = mk('div'); h.appendChild(mk('b', null, c.advertiser + ' ')); h.appendChild(mk('span', { class: 'st' }, c.phase)); d.appendChild(h);
+    d.appendChild(mk('div', { class: 'm' }, c.start + ' to ' + c.end + ' · ' + c.placements.join(', ') + ' · ref ' + c.ref + ' · creative ' + c.creativeId + ' · ' + c.id + (c.creativeLive ? '' : ' · creative no longer approved: not running')));
+    var note = mk('input', { placeholder: 'Note (required to end)', maxlength: '300', 'aria-label': 'Note for ' + c.id }), acts = mk('div', { class: 'acts' }), msg = mk('p', { class: 'm', role: 'status' });
+    ({ active: [['Pause', 'pause'], ['End', 'end']], paused: [['Resume', 'resume'], ['End', 'end']] }[c.status] || []).forEach(function (b) {
+      var x = mk('button', { type: 'button', class: b[1] === 'end' ? 'ghost' : '' }, b[0]);
+      x.addEventListener('click', function () { post('/api/campaigns', { action: b[1], id: c.id, note: note.value.trim() }).then(function () { loadCampaigns(); }).catch(function (e) { msg.textContent = e.message; }); });
+      acts.appendChild(x);
+    });
+    if (acts.children.length) { d.appendChild(note); d.appendChild(acts); d.appendChild(msg); }
+    var cb = mk('div', { class: 'acts' }), cv = mk('button', { type: 'button', class: 'ghost' }, 'Counts'), cc = mk('button', { type: 'button', class: 'ghost' }, 'Counts CSV'), cbox = mk('div', { class: 'cpcounts' });
+    cv.addEventListener('click', function () { cpCounts(c.id, cbox); });
+    cc.addEventListener('click', function () { cpCsv(c.id, cbox); });
+    cb.appendChild(cv); cb.appendChild(cc); d.appendChild(cb); d.appendChild(cbox);
+    return d;
+  }
+  // Counts (api/_adstats.js): measured views (at least half on screen, once per page load) and clicks, by day.
+  function cpCounts(id, box) {
+    box.textContent = 'Loading…';
+    get('/api/adstats?cid=' + encodeURIComponent(id)).then(function (r) {
+      box.textContent = '';
+      box.appendChild(mk('p', { class: 'm' }, 'Total: ' + r.totals.views + ' views, ' + r.totals.clicks + ' clicks (measured on our pages; ad blockers and some browsers are not counted).'));
+      if (!r.rows.length) { empty(box, 'No counts yet.'); return; }
+      r.rows.slice().reverse().forEach(function (x) { line(box, x.date + ' · ' + x.placement, x.views + ' views · ' + x.clicks + ' clicks'); });
+    }).catch(function (e) { box.textContent = e.message; });
+  }
+  function cpCsv(id, box) {
+    fetch('/api/adstats?format=csv&cid=' + encodeURIComponent(id), { headers: { 'x-admin-key': key }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('Error ' + r.status); return r.blob(); }).then(function (b) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = id + '-counts.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }).catch(function (e) { box.textContent = e.message; });
+  }
+  function loadCampaigns() {
+    return get('/api/campaigns').then(function (d) {
+      cpData = d;
+      $('cpon').textContent = d.on ? 'ADS_CAMPAIGNS is on: only campaigns running today (' + d.today + ', Chicago) fill the ad spots.' : 'ADS_CAMPAIGNS is off: every approved creative still runs on its approved placements. Book campaigns here, then turn the flag on.';
+      $('cpc').textContent = ''; d.creatives.forEach(function (c) { $('cpc').appendChild(mk('option', { value: c.id }, c.headline + ' · ' + c.ref)); }); cpPlacements();
+      if (!$('cps').value) $('cps').value = d.today;
+      $('cpinv').textContent = '';
+      d.placements.forEach(function (p) { var v = d.inventory[p]; line($('cpinv'), p + ': ' + v.today + ' of ' + v.cap + ' booked today', 'busiest day in the next 30: ' + v.max + ' of ' + v.cap + ' · ' + v.free + ' free every day'); });
+      var open = d.campaigns.filter(function (c) { return c.phase !== 'ended' && c.phase !== 'finished'; });
+      $('cph').textContent = 'Campaigns (' + open.length + ' booked)'; $('cpl').textContent = '';
+      if (d.campaigns.length) d.campaigns.forEach(function (c) { $('cpl').appendChild(cpCard(c)); }); else empty($('cpl'), 'No campaigns yet.');
+      $('cpah').textContent = 'Campaign log (' + d.audit.length + ')'; $('cpa').textContent = '';
+      if (d.audit.length) d.audit.forEach(function (a) { line($('cpa'), a.action + ' · ' + a.id + (a.from ? ' (' + a.from + ' → ' + a.to + ')' : ''), new Date(a.at).toLocaleString('en-US', { timeZone: 'America/Chicago' }) + ' CT' + (a.start ? ' · ' + a.start + ' to ' + a.end + ' · ' + a.placements.join(', ') : ''), a.note || ''); }); else empty($('cpa'), 'Nothing yet.');
+    }).catch(function () { $('cpl').textContent = ''; empty($('cpl'), 'Not available.'); });
+  }
+  $('cpc').addEventListener('change', cpPlacements);
+  $('cpf').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var body = { action: 'create', creativeId: $('cpc').value, start: $('cps').value, end: $('cpe').value, note: $('cpn').value.trim(), placements: [].slice.call($('cpp').querySelectorAll('input:checked')).map(function (x) { return x.value; }) };
+    post('/api/campaigns', body).then(function () { $('cpmsg').textContent = 'Booked.'; $('cpn').value = ''; loadCampaigns(); }).catch(function (er) { $('cpmsg').textContent = er.message; });
+  });
   function loadCreatives() {
     return get('/api/creative').then(function (c) {
       crUrls.forEach(function (u) { URL.revokeObjectURL(u); }); crUrls = [];
@@ -170,7 +238,7 @@ details summary { cursor:pointer; color:var(--muted); font-size:12px; }
   $('key').addEventListener('submit', function (e) {
     e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
     Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; })]).then(function (r) {
-      loadCreatives();
+      loadCreatives(); loadCampaigns();
       if (!r[0] && !r[1] && !r[2] && !r[3]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
       emails = r[0] ? r[0].emails.slice().sort() : [];

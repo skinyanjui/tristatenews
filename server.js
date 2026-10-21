@@ -18,6 +18,7 @@ const kvStore = new Map();
 const zStore = new Map();     // key -> Map(member -> score)
 const setStore = new Map();   // key -> Set(member)
 const listStore = new Map();  // key -> Array
+const hashStore = new Map();  // key -> Map(field -> value)
 
 function handleRedisCommand(cmd) {
   if (!Array.isArray(cmd) || cmd.length === 0) return { result: null };
@@ -49,6 +50,7 @@ function handleRedisCommand(cmd) {
         if (zStore.delete(k)) count++;
         if (setStore.delete(k)) count++;
         if (listStore.delete(k)) count++;
+        if (hashStore.delete(k)) count++;
       }
       return { result: count };
     }
@@ -63,6 +65,15 @@ function handleRedisCommand(cmd) {
     }
     case 'MGET': {
       return { result: cmd.slice(1).map(k => (kvStore.has(k) ? kvStore.get(k) : null)) };
+    }
+    case 'HINCRBY': {
+      const h = hashStore.get(key) || new Map(); hashStore.set(key, h);
+      const n = (Number(h.get(cmd[2])) || 0) + (Number(cmd[3]) || 0);
+      h.set(String(cmd[2]), String(n));
+      return { result: n };
+    }
+    case 'HGETALL': {
+      return { result: [...(hashStore.get(key) || new Map())].flat() };
     }
     case 'PERSIST': { // no expiries in this dev store
       return { result: 0 };
@@ -221,7 +232,8 @@ app.all('/api/listings', (req, res, next) => {
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 
-app.all(['/api/advertise', '/api/creative'], (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
+app.post('/api/adstats', express.text({ type: 'text/plain', limit: '2kb' })); // ad counts arrive by sendBeacon as text/plain
+app.all(['/api/advertise', '/api/creative', '/api/campaigns', '/api/adstats'], (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 

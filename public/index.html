@@ -798,6 +798,27 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   /* ---------- components: one place for the pieces every board and form reuses ---------- */
   var SPONSORS = null, PAY = { configured: false, prices: {} };
+  // Ad counts (api/_adstats.js): a booked campaign's ad (it carries cid and pl) sends one "seen" when at least half of
+  // it is on screen, once per page load, and one "click" per click. The beacon holds only the campaign and the spot:
+  // no cookie, no ID, no page, nothing about the reader. Samples and our own house units are never counted.
+  var adSeen = {}, adIO = null;
+  function adBeacon(e, ad) {
+    try { if (navigator.sendBeacon && !navigator.webdriver) navigator.sendBeacon('/api/adstats', JSON.stringify({ e: e, cid: ad.cid, pl: ad.pl })); } catch (_) { /* counting must never break the page */ }
+  }
+  function adCount(a, ad) {
+    if (!ad.cid || !ad.pl || navigator.webdriver) return;
+    a.addEventListener('click', function () { adBeacon('c', ad); });
+    if (!('IntersectionObserver' in window)) return;
+    if (!adIO) adIO = new IntersectionObserver(function (es) {
+      es.forEach(function (x) {
+        if (!x.isIntersecting || x.intersectionRatio < 0.5) return;
+        adIO.unobserve(x.target);
+        var o = x.target.__ad, k = o.cid + '|' + o.pl;
+        if (!adSeen[k]) { adSeen[k] = 1; adBeacon('v', o); }
+      });
+    }, { threshold: 0.5 });
+    a.__ad = { cid: ad.cid, pl: ad.pl }; adIO.observe(a);
+  }
   var UI = (function () {
     var cv = document.createElement('canvas').getContext('2d'), pending = [];
     // A select is exactly as wide as its longest option (plus padding and the arrow), in every browser.
@@ -843,6 +864,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         a.setAttribute('aria-label', 'Sponsored: ' + ad.name);
         a.appendChild(el('span', 'spon-tag', 'Sponsored'));
         if (ad.img) { var im = el('img', 'ad-img'); im.src = ad.img; im.alt = ad.name; im.loading = 'lazy'; im.decoding = 'async'; if (ad.w && ad.h) { im.width = ad.w; im.height = ad.h; } a.appendChild(im); }
+        if (typeof adCount === 'function') adCount(a, ad); // count a booked campaign's ad (see adCount)
         return a;
       },
       // A placeholder sample ad (sponsors.json "samples", while the spot is unsold): a made-up business, labeled
@@ -869,7 +891,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         var cfg = (SPONSORS && SPONSORS.__rails) || {};
         [['rail-l', 'left'], ['rail-r', 'right']].forEach(function (r) {
           var box = document.getElementById(r[0]); box.textContent = '';
-          var list = (cfg[r[1]] || []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean);
+          var list = (window.TSNAds ? TSNAds.order(cfg[r[1]], Date.now()) : []).slice(0, 2).map(function (x) { return UI.railAd(x); }).filter(Boolean); // the top spot takes turns
           if (!list.length && r[1] === 'right') { // one sample ad or house unit, right margin only (unobtrusive); an unsold left margin stays empty
             var sm = UI.sample(1);
             if (sm) { var sa = UI.sampleAd('rail-ad', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [sa]; }

@@ -259,7 +259,7 @@ test('routing: /api/creative is a rewrite to inbox.js (no new function), local s
   assert.ok(!fs.existsSync(path.join(API, 'creative.js')));
   assert.strictEqual(fs.readdirSync(API).filter(f => f.endsWith('.js') && !f.startsWith('_')).length, 8);
   assert.ok(read('api/inbox.js').includes("creative: () => require('./_creative.js')"));
-  assert.ok(read('server.js').includes("app.all(['/api/advertise', '/api/creative'], (req"));
+  assert.ok(read('server.js').includes("app.all(['/api/advertise', '/api/creative', '/api/campaigns', '/api/adstats'], (req"));
 });
 
 test('the page fills ads only from approved creatives; images are still, lazy and described; tel links stay in the tab', () => {

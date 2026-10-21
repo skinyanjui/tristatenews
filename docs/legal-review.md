@@ -157,3 +157,20 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 ### Needs review (ads PR 4.2)
 19. **Notes about people:** admin notes are free text about a business contact. Keep them factual; confirm the 400-day retention, and whether won leads should move to a longer business record instead (they then become customers; see item 9 on order records).
 20. **Spam marking:** marking an inquiry spam blocks its upload reference but doesn't delete it; it ages out of the 300-inquiry list like any other. Confirm that's enough or whether spam should be deleted sooner.
+
+## Ads PR 5.1/5.2: campaigns, caps and rotation (Advertising Policy §2 and §3, Privacy §2)
+- **Advertising §2:** each paid spot runs for the agreed dates; fixed shares per spot so it can't be oversold (3 card and 3 sponsor-line shares per board, 2 per side ad).
+- **Advertising §3 and Privacy "Ads":** "turns by the date" becomes equal 15-minute turns by the clock, the same for every reader at the same moment.
+
+### Needs review (ads PR 5.1/5.2)
+21. **Caps as a promise:** the share counts are now in the policy and enforced in code. They come from the packages plan's open question 4; confirm them with Sam before selling.
+22. **Share of voice wording:** with 15-minute turns, a sponsor sharing a spot with two others is shown about a third of the time. Make sure package descriptions and invoices say "a share of the spot in rotation", not "always shown".
+
+## Ads PR 5.3: cookie-free ad counts (Privacy "Ads" and §2 table, Advertising Policy §3)
+- **Privacy "Ads":** paid ads are counted in daily totals per campaign and spot: a view (at least half on screen, once per page load) or a click sends only the campaign and the spot. No cookie, ID, page address or anything about the reader.
+- **Privacy §2 table (IP address):** for ad counts we keep only a one-way hash of the address and the date, for 24 hours, to stop one connection inflating the counts (600 events a day).
+- **Advertising §3:** what we report to advertisers is these counts; ad blockers, some browsers and obvious bots aren't counted, and we don't estimate reach or audiences.
+
+### Needs review (ads PR 5.3)
+23. **Hashed address:** the code is an HMAC of the address and the date keyed by a server secret (`ADSTATS_SECRET`, else derived from `LISTINGS_ADMIN_KEY`/`CRON_SECRET`), so it can't be reversed by trying every address without the secret. Still treat it as personal data kept for 24 hours (that's how the table words it); confirm this is fine under the states' privacy laws we follow.
+24. **Quoting counts:** only quote measured counts from the admin report or its CSV, labeled "views" and "clicks on Tri-State News pages". Don't turn them into "readers", "reach" or "impressions served" without saying how they were measured.

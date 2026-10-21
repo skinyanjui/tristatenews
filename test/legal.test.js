@@ -48,7 +48,7 @@ test('Advertising Policy: ad spots, house units, no targeting, ad-free sections,
   const t = text(ads);
   for (const s of ['Sponsor lines', 'Sponsored cards', 'after the sixth post', 'at most one per board', 'Side ads', '“Advertise with us,”', 'Featured · Paid',
     'only on the Events, Jobs, Deals and Classifieds boards', 'no ads on News, All, Police & courts, Institutions, Obituaries, breaking-news alerts or search results',
-    'Our own ads are never targeted', 'Every reader of a board sees the same ad', 'rel="sponsored"', 'https', 'don’t use animation, autoplaying video or sound, pop-ups',
+    'Our own ads are never targeted', 'Every reader of a board sees the same ad', 'they take equal turns of 15 minutes by the clock', 'so it can’t be oversold: three for the sponsored card and three for the sponsor line on each board, and two for each side ad', 'rel="sponsored"', 'https', 'don’t use animation, autoplaying video or sound, pop-ups',
     'We don’t use any third-party ad network today', 'consent notice', 'labeled “paid link”', 'we may earn a commission', 'never affects which obituaries appear or what they say',
     'the funeral home has its own florist page, the link goes there', 'no ad, image, script, cookie or tracking pixel', 'until then no affiliate links appear', 'A “Send flowers” link without that label earns us nothing', 'Last updated October 18, 2026'])
     assert.ok(t.includes(s), s);

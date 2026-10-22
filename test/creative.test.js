@@ -346,11 +346,52 @@ test('ad sizes: optional finished banners per IAB size are checked, stored besid
 test('upload page: live previews in every size, crop and resolution warnings, optional banner per size; admin sees banners', () => {
   const page = read('public/creative.html'), admin = read('public/admin.html');
   assert.ok(page.includes('<script src="/adsizes.js"></script>') && page.includes('S.inject(document)'));
-  assert.ok(page.includes('S.usedSizes().forEach') && page.includes('S.preview(document, k, ad)') && page.includes('S.check(dims.w, dims.h, k, false)') && page.includes('S.check(bn.w, bn.h, k, true)'));
+  assert.ok(page.includes('S.usedSizes().forEach') && page.includes('S.preview(document, k, ad)') && page.includes('S.check(pic.w, pic.h, k, false)') && page.includes('S.check(bn.w, bn.h, k, true)'));
   assert.ok(page.includes("['headline', 'text'].forEach(function (id) { $(id).addEventListener('input', previews); });"), 'previews follow the words as they are typed');
   assert.ok(page.includes('if (!S.fullOk(w, h, k)) return fail('), 'a banner of the wrong shape is refused before sending');
   assert.ok(page.includes('body.sizes[k] = banners[k].data'));
   assert.ok(page.includes('How your ad will look') && page.includes('We review all of them before anything runs.'));
   assert.ok(!/fetch\((?!'\/api\/creative')/.test(page), 'nothing leaves the browser but the upload itself');
   assert.ok(admin.includes("'&size=' + encodeURIComponent(k)") && admin.includes("{ headers: { 'x-admin-key': key }, cache: 'no-store' }"));
+});
+
+test('square picture: optional 1:1 (600×600 at least), stored beside the image, public only once approved, deleted with the creative', () => withStore(ENV, async ({ s, call, C }) => {
+  seedInquiry(s);
+  assert.strictEqual(C.squareImage(undefined), null); assert.strictEqual(C.squareImage(''), null);
+  assert.deepStrictEqual(C.squareImage(url('png', png(1200, 1200))), { type: 'png', bytes: png(1200, 1200).length, w: 1200, h: 1200 });
+  assert.ok(!C.squareImage(url('png', png(1200, 1180))).error, 'within 3% of square');
+  for (const [img, re] of [[url('png', png(1200, 628)), /must be square/], [url('png', png(500, 500)), /at least 600×600/], [url('png', png(800, 800, { animated: true })), /Animated/], ['data:image/gif;base64,R0lGOD', /JPEG, PNG or WebP/]])
+    assert.match(C.squareImage(img).error, re);
+  assert.strictEqual(C.validate(good({ square: url('png', png(1200, 628)) })).field, 'square');
+  assert.deepStrictEqual(C.validate(good({ square: url('jpeg', jpeg(1200, 1200)) })).square, { type: 'jpeg', bytes: jpeg(1200, 1200).length, w: 1200, h: 1200 });
+  assert.ok(!('square' in C.validate(good())));
+  const r = await call('POST', { body: good({ square: url('png', png(1200, 1200)), sizes: { '728x90': url('png', png(1456, 180)) } }) });
+  assert.strictEqual(r.status, 200); const id = r.json.id, key = 'tsn:cr:img:' + id + ':square';
+  assert.ok(s.kv.has(key) && s.exp.has(key));
+  assert.strictEqual((await call('GET', { query: { img: id, size: 'square' } })).status, 404, 'pending: not public');
+  const adm = await call('GET', { query: { img: id, size: 'square' }, admin: true });
+  assert.ok(adm.status === 200 && adm.body.equals(png(1200, 1200)));
+  const list = await call('GET', { admin: true });
+  assert.deepStrictEqual(list.json.pending[0].square, { type: 'png', bytes: png(1200, 1200).length, w: 1200, h: 1200 });
+  await call('POST', { body: { action: 'approve', id, reason: 'Checked both pictures', placements: ['card:news', 'rail:left'] }, admin: true });
+  assert.ok(!s.exp.has(key), 'kept while approved');
+  assert.strictEqual((await call('GET', { query: { img: id, size: 'square' } })).status, 200);
+  const live = await call('GET', { query: { live: '1' } }), ad = live.json.cards.news[0];
+  assert.deepStrictEqual([ad.sq, ad.sqW, ad.sqH, ad.sizes], ['/api/creative?img=' + id + '&size=square', 1200, 1200, ['728x90']]);
+  await call('POST', { body: { action: 'withdraw', id, reason: 'Campaign over' }, admin: true });
+  assert.ok(!s.kv.has(key) && !s.kv.has('tsn:cr:img:' + id + ':728x90'), 'deleted with the creative');
+  // a rejected one too
+  const r2 = await call('POST', { body: good({ headline: 'Another one', square: url('png', png(600, 600)) }) });
+  await call('POST', { body: { action: 'reject', id: r2.json.id, reason: 'Blurry' }, admin: true });
+  assert.ok(!s.kv.has('tsn:cr:img:' + r2.json.id + ':square'));
+}));
+
+test('upload page and admin: square picture input, per-size choice, nudge when crops are heavy; admin review shows it', () => {
+  const page = read('public/creative.html'), admin = read('public/admin.html');
+  assert.ok(page.includes('<input id="sq" type="file" accept="image/jpeg,image/png,image/webp">') && page.includes('Square picture (optional, recommended)') && page.includes('1200×1200 pixels is best, at least 600×600'));
+  assert.ok(page.includes("var useSq = !bn && square && S.pick(k, dims, sqDims) === 'square', pic = useSq ? sqDims : dims;"));
+  assert.ok(page.includes("c.warnings.push('Add a square picture (above) to use it here instead.')") && page.includes("$('sqnudge').hidden = !cropped;"));
+  assert.ok(page.includes('if (Math.abs(w / h - 1) > 0.03) return fail(') && page.includes('if (w < 600 || h < 600) return fail('));
+  assert.ok(page.includes('if (square) body.square = square;'));
+  assert.ok(admin.includes("'&size=square'") && admin.includes('Square picture · '));
 });

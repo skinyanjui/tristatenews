@@ -98,7 +98,7 @@ test('Advertising Policy §7 and Privacy: creative standards, the review process
     'A person at Tri-State News reviews every ad before it runs', 'nothing uploaded appears on the site until it’s approved', 'recorded reason', 'Rejected and withdrawn images are deleted',
     'Ad uploads (advertisers)', 'Waiting for review: 60 days', 'one still image with a short headline and text', 'signups and ad uploads',
     'Sizes: we use standard (IAB) ad sizes', '728×90 (leaderboard) for the sponsored card in News', '320×100 (large mobile banner) on phones', '300×250 (medium rectangle) for the sponsored card on the Events, Jobs, Deals and Classifieds boards',
-    '160×600 (wide skyscraper) for side ads, and 300×600 (half page)', 'The sponsor line is a line of text, not a sized unit', 'Banners for a size (optional)', 'exactly that shape', 'deleted when the ad is rejected or withdrawn'])
+    '160×600 (wide skyscraper) for side ads, and 300×600 (half page)', 'The sponsor line is a line of text, not a sized unit', 'Banners for a size (optional)', 'Square picture (optional)', 'at least 600×600 pixels (1,200×1,200 is best)', 'whichever of the two pictures its picture area crops less', 'exactly that shape', 'deleted when the ad is rejected or withdrawn'])
     assert.ok(t.includes(s), s);
   assert.ok(!/text only/i.test(t), 'no longer says ads are text only');
   assert.ok(fs.readFileSync(path.join(__dirname, '..', 'docs/legal-review.md'), 'utf8').includes('Ads PR C: advertiser creatives'));

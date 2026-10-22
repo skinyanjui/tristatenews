@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<title>Page not found · Tri-State News</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/legal.css">
+<style>
+#main { min-height:calc(100vh - 170px); min-height:calc(100dvh - 170px); }
+.nf-code { margin:0 0 4px; color:var(--muted-foreground, #666); font:600 13px/1.4 var(--font-sans); letter-spacing:.08em; text-transform:uppercase; }
+.nf-q { display:flex; gap:8px; max-width:480px; margin:20px 0 8px; }
+.nf-q input { flex:1; min-width:0; min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--background); color:var(--foreground); font:inherit; }
+.nf-q input:focus-visible { outline:2px solid var(--brand); outline-offset:1px; }
+.nf-q button { min-height:44px; padding:0 16px; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; font:600 15px/1 var(--font-sans); cursor:pointer; }
+[data-theme="dark"] .nf-q button { color:#04222b; }
+.nf-links { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; max-width:640px; margin:20px 0 0; padding:0; list-style:none; }
+.nf-links a { display:flex; align-items:center; min-height:44px; padding:0 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--background-subtle); color:var(--foreground); font-weight:500; text-decoration:none; }
+.nf-links a:hover { border-color:var(--brand); color:var(--brand); }
+.nf-links a:focus-visible { outline:2px solid var(--brand); outline-offset:1px; }
+</style>
+<script>try{var t=localStorage.getItem('tsn.theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="lg-top"><div class="lg-top-in"><a class="lg-brand" href="/">Tristate</a><a class="lg-back" href="/">Back to the news</a></div></header>
+<main id="main">
+<p class="nf-code">Error 404</p>
+<h1>We couldn’t find that page</h1>
+<p class="lg-lede">The link may be old or mistyped, or the page may have moved. Try a search, or pick a section below.</p>
+<form class="nf-q" role="search" method="get" action="/">
+  <label class="skip" for="nfQ">Search stories, events and obituaries</label>
+  <input id="nfQ" name="q" type="search" maxlength="100" placeholder="Search Tri-State News" autocomplete="off" enterkeyhint="search">
+  <button type="submit">Search</button>
+</form>
+<ul class="nf-links" aria-label="Sections">
+  <li><a href="/">News</a></li>
+  <li><a href="/events">Events</a></li>
+  <li><a href="/obituaries">Obituaries</a></li>
+  <li><a href="/jobs">Jobs</a></li>
+  <li><a href="/deals">Deals</a></li>
+  <li><a href="/classifieds">Classifieds</a></li>
+</ul>
+</main>
+<footer class="lg-foot"><div class="lg-foot-in"><p><a href="/legal.html">Legal</a> · <a href="/legal.html#privacy">Privacy</a> · <a href="/newsletter">Newsletter</a></p></div></footer>
+</body>
+</html>

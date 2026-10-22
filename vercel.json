@@ -98,6 +98,58 @@
     {
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/legal",
+      "destination": "/legal.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/accessibility",
+      "destination": "/accessibility.html"
+    },
+    {
+      "source": "/advertising",
+      "destination": "/advertising.html"
+    },
+    {
+      "source": "/copyright",
+      "destination": "/copyright.html"
+    },
+    {
+      "source": "/corrections",
+      "destination": "/corrections.html"
+    },
+    {
+      "source": "/order",
+      "destination": "/order.html"
+    },
+    {
+      "source": "/creative",
+      "destination": "/creative.html"
+    },
+    {
+      "source": "/unsubscribe",
+      "destination": "/unsubscribe.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/inbox?__route=notfound&api=1"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api/inbox?__route=notfound"
     }
   ],
   "headers": [

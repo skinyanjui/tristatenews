@@ -269,6 +269,15 @@ app.all('/api/alerts', (req, res, next) => {
 const adPageHandler = require('./api/_adpage.js');
 app.all(['/advertise', '/advertise/'], (req, res) => adPageHandler(req, res));
 
+// Retired tab paths: 308 to "/" as vercel.json redirects them (/all, /liked, /news, /police-courts, /police, /courts).
+const RT = require('./public/routes.js');
+app.get(/.*/, (req, res, next) => {
+  const p = req.path.replace(/\/+$/, '').toLowerCase();
+  if (!RT.ALIASES[p]) return next();
+  const qs = req.originalUrl.indexOf('?');
+  return res.redirect(308, RT.ALIASES[p] + (qs >= 0 ? req.originalUrl.slice(qs) : ''));
+});
+
 // Serve static frontend files from /public
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir, { extensions: ['html'] }));
@@ -278,10 +287,14 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// SPA fallback for all other routes
-app.use((req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
+// Tab paths (vercel.json rewrites them to index.html); everything else gets the 404 page, as on Vercel.
+const TAB_PATHS = new Set(RT.ROUTES.map(r => r.path));
+const notFoundHandler = require('./api/_notfound.js');
+app.get(/.*/, (req, res, next) => {
+  const p = req.path.replace(/\/+$/, '') || '/';
+  return TAB_PATHS.has(p) ? res.sendFile(path.join(publicDir, 'index.html')) : next();
 });
+app.use((req, res) => notFoundHandler(req, res));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

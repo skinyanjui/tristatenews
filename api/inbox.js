@@ -6,6 +6,7 @@
 //   /api/packages   -> /api/inbox?__route=packages   self-serve ad package orders (public order + admin), in api/_packages.js
 //   /api/adstats    -> /api/inbox?__route=adstats    cookie-free daily ad view and click counts, in api/_adstats.js
 //   /advertise      -> /api/inbox?__route=adpage     the advertising page behind ADS_PAGE, in api/_adpage.js
+//   (any unknown)   -> /api/inbox?__route=notfound   the 404 page (HTML, or JSON under /api), in api/_notfound.js
 // Each path keeps its own methods, admin GET (x-admin-key), rate limits and answers. /api/inbox itself answers 404.
 module.exports = require('./_dispatch.js').host({
   submit: () => require('./_submit.js'),
@@ -14,5 +15,6 @@ module.exports = require('./_dispatch.js').host({
   campaigns: () => require('./_campaigns.js'),
   packages: () => require('./_packages.js'),
   adstats: () => require('./_adstats.js'),
-  adpage: () => require('./_adpage.js')
+  adpage: () => require('./_adpage.js'),
+  notfound: () => require('./_notfound.js')
 });

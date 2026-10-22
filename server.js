@@ -233,6 +233,9 @@ app.all('/api/refresh', (req, res, next) => { // served by api/news.js (see verc
 app.all(['/api/counties', '/api/regions'], (req, res, next) => { // served by api/news.js (see vercel.json rewrites)
   Promise.resolve(newsHandler(req, res)).catch(next);
 });
+app.all('/api/locations', (req, res, next) => { // admin county-classification report, served by api/news.js (see vercel.json rewrites)
+  Promise.resolve(newsHandler(req, res)).catch(next);
+});
 
 app.all('/api/listings', (req, res, next) => {
   Promise.resolve(listingsHandler(req, res)).catch(next);

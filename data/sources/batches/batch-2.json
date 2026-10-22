@@ -13,7 +13,7 @@
         "il-wayne"
       ],
       "everyMin": 60,
-      "url": "https://www.wfiwradio.com/feed/",
+      "url": "https://www.wfiwradio.com/category/local-news/feed/",
       "batch": "b2",
       "review": {
         "approved": true,
@@ -25,7 +25,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22: the station feed (/feed/) mixes obituaries (category \"Obituaries\", e.g. \"John Henry Adams, 61, of Mill Shoals\") into news; this is its Local News category feed."
     },
     {
       "seq": 77,
@@ -73,7 +74,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "disabled": "paused 2026-10-22: paywalled. Its posts are members-only (\"This content is for members only\"), so readers cannot open the stories we would link."
     },
     {
       "seq": 79,

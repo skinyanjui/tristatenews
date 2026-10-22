@@ -770,13 +770,13 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 /* ---------- wide screens: a wider page, with tall side ads in the margins on the board tabs only ----------
    --page-max is the content width (nav, tabs and main share it); --rail-w the side-ad column; --rail-gap the space
    between them. Rails are fixed (they stay put while the list scrolls), hidden below 1360px, where the in-listing
-   card still applies, and absent on News and Obituaries (body[data-ads] and TSNAds.railFill). Lists gain columns
+   card still applies, and absent on Obituaries (body[data-ads] and TSNAds.railFill); News has them too. Lists gain columns
    rather than stretching; text keeps its line-length caps. */
 :root { --page-max:960px; --rail-w:160px; --rail-gap:24px; }
-@media (min-width:1440px) { :root { --page-max:1040px; } }
-@media (min-width:1680px) { :root { --page-max:1120px; --rail-w:240px; --rail-gap:32px; } }
-@media (min-width:1920px) { :root { --page-max:1240px; --rail-w:300px; } }
-@media (min-width:2560px) { :root { --page-max:1360px; --rail-gap:48px; } }
+@media (min-width:1440px) { :root { --page-max:1120px; --rail-w:120px; --rail-gap:20px; } } /* 120x600 skyscrapers */
+@media (min-width:1680px) { :root { --page-max:1280px; --rail-w:160px; --rail-gap:24px; } } /* 160x600 */
+@media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }
+@media (min-width:2560px) { :root { --page-max:1760px; --rail-w:300px; --rail-gap:48px; } } /* 300x600 */
 .nav-in, .nav-tabs, main { max-width:var(--page-max); }
 @media (min-width:1360px) {
   .rail { top:124px; width:var(--rail-w); max-height:calc(100vh - 140px); overflow:hidden; gap:var(--card-gap); }
@@ -787,13 +787,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 }
 @media (min-width:1440px) {
   .list { grid-template-columns:1fr 1fr; gap:var(--card-gap); align-items:stretch; }
-  .list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; }
+  .list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; } /* Breaking and the in-feed ad span the row */
   .evx-day { grid-template-columns:1fr 1fr; }
   .evx-day > h3, .evx-day > :not(.evr) { grid-column:1 / -1; }
 }
 @media (min-width:1920px) {
   .deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }
 }
+.list > .ad-card.ad-feed { max-width:none; }
 </style>
 </head>
 <body>
@@ -1046,6 +1047,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // The in-listing ad card for a board (public/adslots.js decides where it may go and what fills it). A direct
       // sponsor is labeled "Sponsored" and linked rel="sponsored" (https only); an unsold slot holds our own
       // "Advertise with us" unit, which opens the inquiry form. Same for every reader: nothing about the reader is used.
+      // The News in-feed card: a real campaign (card:news) or, while unsold, a sample ad; nothing otherwise (no house unit
+      // in the feed). Same markup and spacing as the boards' in-listing card.
+      newsAd: function () {
+        var f = window.TSNAds ? TSNAds.fill('news', SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
+        if (!f || f.type === 'house') return null;
+        var c = UI.adCard('news'); if (c) c.classList.add('ad-feed');
+        return c;
+      },
       adCard: function (kind) {
         var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
         if (!f) return null;
@@ -3108,13 +3117,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     ROUTE_SYNCED = true;
     RT.apply(document, r);
   }
+  if (window.matchMedia) { var wideMq = matchMedia('(min-width:1440px)'); if (wideMq.addEventListener) wideMq.addEventListener('change', function () { if (state.cat === 'news') render(); }); } // the in-feed ad follows the column count
   window.addEventListener('popstate', function () {
     var r = RT && RT.byPath(location.pathname);
     state.cat = r ? r.cat : 'news';
     if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
     resetPaging(); render();
   });
-  var AD_TABS = ['events', 'jobs', 'deals', 'classifieds']; // the only tabs with side ads (Advertising policy)
+  var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news']; // the only tabs with side ads (Advertising policy); never Obituaries
   function render() {
     syncRoute();
     document.body.toggleAttribute('data-ads', AD_TABS.indexOf(state.cat) >= 0 && !state.q.trim());
@@ -3170,7 +3180,17 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     listEl.setAttribute('aria-busy', 'false');
     mapLogos();
     brk.forEach(function (b) { var it = b.item || alertItem(b); storyKeys(it).forEach(function (k) { breakCards[k] = 1; }); listEl.appendChild(makeCard(it, true, b)); });
-    shown.forEach(function (it) { listEl.appendChild(makeCard(it, false)); });
+    // In-feed ads on News (public/adslots.js newsSlots): about every 6th story (every 10th in two columns, so at
+    // most one per screen), a full-row card, never next to a Police & courts item; none in search or beside Breaking.
+    var slots = {};
+    if (state.cat === 'news' && !state.q.trim() && window.TSNAds) {
+      var cols = window.matchMedia && matchMedia('(min-width:1440px)').matches ? 2 : 1;
+      TSNAds.newsSlots(shown.map(function (it) { var k = kindOf(it.sourceId); return k === 'police' || k === 'courts'; }), cols > 1 ? TSNAds.NEWS_EVERY_WIDE : TSNAds.NEWS_EVERY, cols).forEach(function (i) { slots[i] = 1; });
+    }
+    shown.forEach(function (it, i) {
+      if (slots[i]) { var ac = UI.newsAd(); if (ac) listEl.appendChild(ac); }
+      listEl.appendChild(makeCard(it, false));
+    });
     if (rest.length > shown.length) {
       var mb = el('button', null, 'Show more (' + (rest.length - shown.length) + ' left)'); mb.type = 'button';
       mb.addEventListener('click', function () { state.limit += PAGE; render(); });

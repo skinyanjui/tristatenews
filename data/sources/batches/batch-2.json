@@ -1,0 +1,199 @@
+{
+  "file": "batches/batch-2.json",
+  "batch": "b2",
+  "description": "County expansion batch 2 (plan phase 5): home sources for counties still without one after batch 1, core counties first. Off unless EXPANDED_SOURCES_ENABLED=true and SOURCE_BATCHES lists b2 (api/_sources.js). Each entry's evidence record is data/sources/evidence/<id>.json (scripts/verify-source.js).",
+  "sources": [
+    {
+      "seq": 76,
+      "id": "wfiw",
+      "name": "WFIW Radio",
+      "area": "Fairfield",
+      "site": "https://www.wfiwradio.com",
+      "counties": [
+        "il-wayne"
+      ],
+      "everyMin": 60,
+      "url": "https://www.wfiwradio.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 77,
+      "id": "wnoi",
+      "name": "WNOI Radio",
+      "area": "Flora",
+      "site": "https://www.wnoi.com",
+      "counties": [
+        "il-clay"
+      ],
+      "everyMin": 60,
+      "url": "https://www.wnoi.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 78,
+      "id": "octimes",
+      "name": "Ohio County Times-News",
+      "area": "Hartford, Ky.",
+      "site": "https://www.octimesnews.com",
+      "counties": [
+        "ky-ohio"
+      ],
+      "everyMin": 120,
+      "url": "https://www.octimesnews.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 79,
+      "id": "ocmonitor",
+      "name": "The Ohio County Monitor",
+      "area": "Hartford, Ky.",
+      "site": "https://ocmonitor.com",
+      "counties": [
+        "ky-ohio"
+      ],
+      "everyMin": 60,
+      "url": "https://ocmonitor.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 80,
+      "id": "leadernews",
+      "name": "Leader-News",
+      "area": "Central City",
+      "site": "https://ky-leadernews.com",
+      "counties": [
+        "ky-muhlenberg"
+      ],
+      "everyMin": 120,
+      "url": "https://ky-leadernews.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 81,
+      "id": "poseynews",
+      "name": "The Posey County News",
+      "area": "New Harmony",
+      "site": "https://www.theposeycountynews.com",
+      "counties": [
+        "in-posey"
+      ],
+      "everyMin": 120,
+      "url": "https://www.theposeycountynews.com/blog-feed.xml",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 82,
+      "id": "spencerco",
+      "name": "Spencer County Online",
+      "area": "Rockport",
+      "site": "https://spencercountyonline.com",
+      "counties": [
+        "in-spencer"
+      ],
+      "everyMin": 120,
+      "url": "https://spencercountyonline.com/feed/",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 83,
+      "id": "wcjbanner",
+      "name": "Wayne County Journal-Banner",
+      "area": "Piedmont",
+      "site": "https://www.waynecojournalbanner.com",
+      "counties": [
+        "mo-wayne"
+      ],
+      "everyMin": 120,
+      "url": "https://www.waynecojournalbanner.com/rss.xml",
+      "batch": "b2",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    }
+  ]
+}

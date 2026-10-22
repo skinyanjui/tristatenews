@@ -63,6 +63,12 @@ form { padding:var(--card-pad); }
       <input id="img" type="file" accept="image/jpeg,image/png,image/webp" required>
     </label>
     <img id="pv" alt="Your image" hidden>
+    <label>Square picture (optional, recommended)
+      <span class="hint">A second, square (1:1) version of your picture: 1200×1200 pixels is best, at least 600×600, same file rules. Phones and side ads use whichever of your two pictures fits their shape with less cropping.</span>
+      <input id="sq" type="file" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <div id="sqbox" hidden><img id="sqpv" alt="Your square picture" style="max-width:160px;max-height:160px;border:1px solid var(--border);border-radius:6px"> <button type="button" id="sqrm">Remove square picture</button></div>
+    <p class="hint" id="sqnudge" role="status" hidden>Some sizes crop your picture a lot. Add a square picture above and they’ll use it instead.</p>
     <label>Headline
       <span class="hint">Up to 60 characters. This is also the image’s description for screen readers.</span>
       <input id="headline" maxlength="60" required>
@@ -92,7 +98,7 @@ form { padding:var(--card-pad); }
 </main>
 <script>
 (function () {
-  var MAX = 300 * 1024, image = '', dims = null, banners = {}, S = window.TSNSizes;
+  var MAX = 300 * 1024, image = '', dims = null, square = '', sqDims = null, banners = {}, S = window.TSNSizes;
   if (S) S.inject(document);
   function $(id) { return document.getElementById(id); }
   var token = new URLSearchParams(location.search).get('token') || '';
@@ -129,15 +135,20 @@ form { padding:var(--card-pad); }
   function previews() {
     if (!S || !image || !dims) { $('pvsec').hidden = true; return; }
     var box = $('sizes'); box.textContent = ''; $('pvsec').hidden = false;
-    var ad = { name: $('headline').value.trim() || 'Your headline', text: $('text').value.trim(), cta: $('cta').value, img: image, full: {} };
+    var ad = { name: $('headline').value.trim() || 'Your headline', text: $('text').value.trim(), cta: $('cta').value, img: image, dims: dims, square: square, sqDims: sqDims, full: {} };
+    var cropped = false;
     Object.keys(banners).forEach(function (k) { ad.full[k] = banners[k].data; });
     S.usedSizes().forEach(function (k) {
       var z = S.SIZES[k], one = document.createElement('div'); one.className = 'one';
       one.appendChild(S.preview(document, k, ad));
       var bn = banners[k];
-      one.appendChild(warnList(bn ? S.check(bn.w, bn.h, k, true) : S.check(dims.w, dims.h, k, false)));
+      // the picture this size uses: the landscape one or the square one, whichever crops less (S.pick)
+      var useSq = !bn && square && S.pick(k, dims, sqDims) === 'square', pic = useSq ? sqDims : dims;
+      var c = bn ? S.check(bn.w, bn.h, k, true) : S.check(pic.w, pic.h, k, false);
+      if (!bn && !square && c && c.cut > 0.25) { cropped = true; c.warnings.push('Add a square picture (above) to use it here instead.'); }
+      one.appendChild(warnList(c));
       var hint = document.createElement('p'); hint.className = 'hint';
-      hint.textContent = bn ? 'Using your ' + bn.w + '×' + bn.h + ' banner for this size.' : 'Picture area ' + z.img[0] + '×' + z.img[1] + '; best image ' + z.img[0] * 2 + '×' + z.img[1] * 2 + ' pixels or larger in that shape.';
+      hint.textContent = bn ? 'Using your ' + bn.w + '×' + bn.h + ' banner for this size.' : 'Uses your ' + (useSq ? 'square' : 'main') + ' picture. Picture area ' + z.img[0] + '×' + z.img[1] + '; best image ' + z.img[0] * 2 + '×' + z.img[1] * 2 + ' pixels or larger in that shape.';
       one.appendChild(hint);
       var det = document.createElement('details'), sum = document.createElement('summary');
       sum.textContent = bn ? 'Change or remove the ' + k + ' banner' : 'Send a finished ' + k + ' banner instead (optional)'; det.appendChild(sum);
@@ -149,6 +160,7 @@ form { padding:var(--card-pad); }
       box.appendChild(one);
     });
     S.fit(box);
+    $('sqnudge').hidden = !cropped;
   }
   function banner(k, f) {
     $('err').hidden = true; if (!f) return;
@@ -166,6 +178,26 @@ form { padding:var(--card-pad); }
     };
     r.readAsDataURL(f);
   }
+  // The optional square picture: same file rules, at least 600×600, square within 3% (the server checks again).
+  $('sq').addEventListener('change', function () {
+    $('err').hidden = true; var f = $('sq').files[0]; if (!f) return;
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) return fail('Square picture: upload a JPEG, PNG or WebP image.');
+    if (f.size > MAX) return fail('Square picture: the image must be 300 KB or smaller.');
+    var r = new FileReader();
+    r.onload = function () {
+      var data = String(r.result), probe = new Image();
+      probe.onload = function () {
+        var w = probe.naturalWidth, h = probe.naturalHeight;
+        if (Math.abs(w / h - 1) > 0.03) return fail('Square picture: it must be square (1:1), like 1200×1200 pixels (yours is ' + w + '×' + h + ').');
+        if (w < 600 || h < 600) return fail('Square picture: it must be at least 600×600 pixels (yours is ' + w + '×' + h + '); 1200×1200 is best.');
+        square = data; sqDims = { w: w, h: h }; $('sqpv').src = data; $('sqbox').hidden = false; previews();
+      };
+      probe.onerror = function () { fail('That image couldn’t be read.'); };
+      probe.src = data;
+    };
+    r.readAsDataURL(f);
+  });
+  $('sqrm').addEventListener('click', function () { square = ''; sqDims = null; $('sq').value = ''; $('sqbox').hidden = true; previews(); });
   ['headline', 'text'].forEach(function (id) { $(id).addEventListener('input', previews); });
   $('cta').addEventListener('change', previews);
   window.addEventListener('resize', function () { if (S) S.fit($('sizes')); });
@@ -173,6 +205,7 @@ form { padding:var(--card-pad); }
     e.preventDefault(); $('err').hidden = true;
     if (!image) return fail('Add an image.');
     var body = { headline: $('headline').value, text: $('text').value, cta: $('cta').value, dest: $('dest').value, image: image };
+    if (square) body.square = square;
     var bk = Object.keys(banners); if (bk.length) { body.sizes = {}; bk.forEach(function (k) { body.sizes[k] = banners[k].data; }); }
     if (token) body.token = token; else { body.ref = $('ref').value.trim(); body.email = $('email').value.trim(); }
     $('go').disabled = true; $('go').textContent = 'Sending…';

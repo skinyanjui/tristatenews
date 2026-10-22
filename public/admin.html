@@ -96,6 +96,13 @@ details summary { min-height:40px; display:flex; align-items:center; }
     var d = mk('div', { class: 'item cr' });
     d.appendChild(mk('b', null, c.headline));
     crImage(c, d);
+    // The optional square picture (sizes that crop it less use it instead of the main picture).
+    if (c.square) (function () {
+      var f = mk('figure', { class: 'm' }); f.appendChild(mk('figcaption', null, 'Square picture · ' + c.square.type.toUpperCase() + ' ' + c.square.w + '×' + c.square.h + ' · ' + Math.round(c.square.bytes / 1024) + ' KB')); d.appendChild(f);
+      fetch('/api/creative?img=' + encodeURIComponent(c.id) + '&size=square', { headers: { 'x-admin-key': key }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+        var u = URL.createObjectURL(b); crUrls.push(u); var im = mk('img', { src: u, alt: 'Square picture: ' + c.headline }); im.style.maxWidth = '200px'; f.insertBefore(im, f.firstChild);
+      }).catch(function () { f.appendChild(mk('p', { class: 'm' }, 'Square picture unavailable.')); });
+    })();
     // Whole-unit banners the advertiser sent for particular sizes (public/adsizes.js): approve or reject them with the creative.
     Object.keys(c.sizes || {}).forEach(function (k) {
       var z = c.sizes[k], f = mk('figure', { class: 'm' }); f.appendChild(mk('figcaption', null, 'Banner ' + k + ' · ' + z.type.toUpperCase() + ' ' + z.w + '×' + z.h + ' · ' + Math.round(z.bytes / 1024) + ' KB')); d.appendChild(f);

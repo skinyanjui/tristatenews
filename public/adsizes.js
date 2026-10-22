@@ -4,6 +4,7 @@
 //   NOT_USED     common units we don't use, and why
 //   rulesFor(p)  placement -> [{min, max, size}] by viewport width; sizeFor(p, vw); sizesFor(p); usedSizes()
 //   cover()      object-fit: cover math (what part of an image shows in a box); check() warnings for an image at a size
+//   pick()       which of two pictures (landscape main, optional square) a size should use: the one cropped less
 //   fullOk()     whether an image can be a whole-unit banner for a size (same shape, at least 1x)
 //   css()        the layout of every size, by placement (media queries) and by fixed size (previews); inject() adds it
 //   mark()/decorate()  size an ad element on the page; render() builds a preview of an ad at a size
@@ -71,6 +72,14 @@
     else if (density < 2) warn('warn', 'Fine, but soft on sharp (high-density) screens. ' + bw * 2 + '×' + bh * 2 + ' pixels is best.');
     return out;
   }
+  // Which picture a size uses when the ad has a main (usually landscape) picture and an optional square one: the one
+  // its picture area crops less. Ties keep the main picture. main, square: { w, h } (square may be null).
+  function pick(key, main, square) {
+    var z = SIZES[key]; if (!z || !square || !(square.w > 0) || !(square.h > 0)) return 'main';
+    if (!main || !(main.w > 0) || !(main.h > 0)) return 'square';
+    var a = cover(main.w, main.h, z.img[0], z.img[1]).cut, b = cover(square.w, square.h, z.img[0], z.img[1]).cut;
+    return b < a - 0.005 ? 'square' : 'main';
+  }
   // A whole-unit banner for a size: within 3% of its shape, and at least as many pixels as the unit.
   function fullOk(iw, ih, key) {
     var z = SIZES[key]; if (!z) return false;
@@ -92,6 +101,9 @@
     r(' > .rail-cta', 'grid-area:cta; justify-self:start; align-self:end; min-height:28px; height:28px; padding:0 10px; font-size:12px; line-height:28px; white-space:nowrap');
     r(' > .ad-img', 'grid-area:img; display:block; width:' + z.img[0] + 'px; max-width:100%; height:' + z.img[1] + 'px; max-height:none; object-fit:cover; object-position:center; border-radius:0; margin:0');
     r(' > .bav', 'grid-area:img; margin:10px 0 0 10px');
+    r(' > .ad-sq', 'display:none');
+    r(' > .ad-sq.tsz-sq-' + key, 'grid-area:img; display:block; width:' + z.img[0] + 'px; max-width:100%; height:' + z.img[1] + 'px; max-height:none; object-fit:cover; object-position:center; border-radius:0; margin:0');
+    r(':has(> .ad-sq.tsz-sq-' + key + ') > .ad-img', 'display:none');
     r(' > .ad-full', 'display:none');
     r(' > .ad-full.tsz-only-' + key, 'display:block; position:absolute; inset:0; width:100%; height:100%; max-height:none; object-fit:cover; border-radius:0; margin:0');
     r(':has(> .ad-full.tsz-only-' + key + ') > :not(.ad-full):not(.spon-tag)', 'display:none');
@@ -153,6 +165,12 @@
   function decorate(doc, node, p, ad) {
     mark(node, p);
     var have = (ad && Array.isArray(ad.sizes)) ? ad.sizes : [];
+    // the square picture, for each size here that crops it less than the main one (shown instead of it by the CSS)
+    if (ad && ad.sq && ad.img) sizesFor(p).forEach(function (k) {
+      if (have.indexOf(k) >= 0 || pick(k, { w: ad.w, h: ad.h }, { w: ad.sqW, h: ad.sqH }) !== 'square') return;
+      var sq = doc.createElement('img'); sq.className = 'ad-sq tsz-sq-' + k; sq.src = ad.sq; sq.alt = ad.name || '';
+      sq.loading = 'lazy'; sq.decoding = 'async'; sq.width = ad.sqW; sq.height = ad.sqH; node.appendChild(sq);
+    });
     sizesFor(p).forEach(function (k) {
       if (have.indexOf(k) < 0 || !ad.img) return;
       var im = doc.createElement('img'); im.className = 'ad-full tsz-only-' + k; im.src = ad.img + '&size=' + k; im.alt = ad.name || '';
@@ -169,7 +187,9 @@
     box.setAttribute('role', 'img');
     box.setAttribute('aria-label', (ad.sample ? 'Sample ad' : 'Sponsored') + ' preview, ' + z.name + ' ' + key + ': ' + (ad.name || ''));
     box.appendChild(el('span', 'spon-tag', ad.sample ? 'Sample ad' : 'Sponsored'));
-    if (ad.img) { var im = el('img', 'ad-img'); im.src = ad.img; im.alt = ''; box.appendChild(im); }
+    // ad.square (url) with ad.dims / ad.sqDims ({w, h}): the size uses whichever picture crops less (pick)
+    var useSq = ad.square && pick(key, ad.dims, ad.sqDims) === 'square';
+    if (ad.img || useSq) { var im = el('img', 'ad-img'); im.src = useSq ? ad.square : ad.img; im.alt = ''; im.setAttribute('data-pic', useSq ? 'square' : 'main'); box.appendChild(im); }
     else if (ad.avatar) { var av = el('span', 'bav', initials(ad.name)); av.setAttribute('aria-hidden', 'true'); box.appendChild(av); }
     box.appendChild(el('b', null, ad.name || 'Your headline'));
     if (ad.text) box.appendChild(el('span', 'ad-tx', ad.text));
@@ -218,7 +238,23 @@
     box.appendChild(line);
     return box;
   }
-  return { SIZES: SIZES, SAMPLE: SAMPLE, gallery: gallery, ORDER: ORDER, NOT_USED: NOT_USED, WHERE: WHERE, NEWS_BAR_MIN: NEWS_BAR_MIN, RAIL_MIN: RAIL_MIN, RAIL_WIDE: RAIL_WIDE,
-    rulesFor: rulesFor, sizeFor: sizeFor, sizesFor: sizesFor, usedSizes: usedSizes, cover: cover, check: check, fullOk: fullOk, ratio: ratio,
+  // A "See ad sizes" button for a gallery box: collapsed by default (box hidden), aria-expanded and aria-controls kept
+  // in step, the previews built the first time it opens. Returns the button; put it just before the box.
+  function toggle(doc, box, id) {
+    if (!box.id) box.id = id || 'tsz-sizes';
+    box.hidden = true;
+    var btn = doc.createElement('button'), built = false;
+    btn.type = 'button'; btn.className = 'tsz-toggle'; btn.textContent = 'See ad sizes';
+    btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', box.id);
+    btn.addEventListener('click', function () {
+      var open = !!box.hidden;
+      if (open && !built) { gallery(doc, box); built = true; }
+      box.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? 'Hide ad sizes' : 'See ad sizes';
+      if (open) fit(box);
+    });
+    return btn;
+  }
+  return { SIZES: SIZES, SAMPLE: SAMPLE, gallery: gallery, toggle: toggle, ORDER: ORDER, NOT_USED: NOT_USED, WHERE: WHERE, NEWS_BAR_MIN: NEWS_BAR_MIN, RAIL_MIN: RAIL_MIN, RAIL_WIDE: RAIL_WIDE,
+    rulesFor: rulesFor, sizeFor: sizeFor, sizesFor: sizesFor, usedSizes: usedSizes, cover: cover, check: check, pick: pick, fullOk: fullOk, ratio: ratio,
     rules: rules, css: css, inject: inject, groupOf: groupOf, mark: mark, decorate: decorate, render: render, preview: preview, fit: fit, sampleImage: sampleImage, initials: initials };
 });

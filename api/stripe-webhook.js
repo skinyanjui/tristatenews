@@ -6,6 +6,9 @@
 //   charge.refunded, charge.dispute.created
 // The success redirect (/?featured=ok) never activates anything; only this signed webhook does.
 //
+// Packages A-C (metadata type 'package', api/_packages.js): the amount must equal the price on the order; the order is
+// marked paid (nothing goes live until an admin activates it with an approved creative). A full refund marks it refunded.
+//
 // Fulfillment (checkout.session.completed with payment_status 'paid', or async_payment_succeeded):
 //   1. load the order (tsn:order:<session>; rebuilt from the session's metadata if missing; sessions from before the
 //      catalog have no price_version and are "legacy": they get exactly the days they bought, as before)
@@ -24,6 +27,7 @@ const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TO
 const SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const CATALOG = require('./_catalog.js');
 const O = require('./_orders.js');
+const PKG = require('./_packages.js');
 const F = require('../public/featured.js');
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const SESSION_RE = /^cs_[A-Za-z0-9_]{1,200}$/, PI_RE = /^pi_[A-Za-z0-9_]{1,200}$/, OBJ_RE = /^[a-z]{2,4}_[A-Za-z0-9_]{1,200}$/;
@@ -86,6 +90,7 @@ async function onSession(ev, now) {
   };
   if (ev.type === 'checkout.session.async_payment_failed') return finish('payment_failed');
   if (!paidEvent) return 'pending'; // completed but not paid yet (delayed payment methods): wait for async_payment_succeeded
+  if (order.type === 'package' || (s.metadata || {}).type === 'package') return onPackage(s, order, finish, now);
   const paid = { paidCents: Number(s.amount_total), paidCurrency: String(s.currency || '').toLowerCase(), paidAt: new Date(now).toISOString() };
   // 2. amount and currency against the order, and the order against the catalog for its price version
   const expected = CATALOG.featuredPriceAt(order.priceVersion, order.kind);
@@ -125,6 +130,23 @@ async function onSession(ev, now) {
   return finish('fulfilled', Object.assign(paid, ext, { featuredFrom: from, featuredUntil: until }), cmds);
 }
 
+// A self-serve package (api/_packages.js): check the amount against the catalog, then mark the order paid. The
+// campaign itself starts only when an admin activates it with an approved creative.
+async function onPackage(s, order, finish, now) {
+  const m = s.metadata || {}, ref = String(order.ref || m.ref || ''), pkg = String(order.pkg || m.pkg || '');
+  const paid = { type: 'package', ref, pkg, paidCents: Number(s.amount_total), paidCurrency: String(s.currency || '').toLowerCase(), paidAt: new Date(now).toISOString() };
+  const p = Object.prototype.hasOwnProperty.call(CATALOG.PACKAGES, pkg) ? CATALOG.PACKAGES[pkg] : null;
+  if (!PKG.REF_RE.test(ref) || !p) return finish('needs_review', Object.assign(paid, { problem: 'bad_metadata' }));
+  const g = await pipeline([['GET', PKG.K.rec(ref)]]);
+  const po = parse(g[0] && g[0].result);
+  if (!po) return finish('needs_review', Object.assign(paid, { problem: 'order_missing' }));
+  const want = Number(po.cents);
+  if (po.pkg !== pkg || !(want > 0) || paid.paidCents !== want || paid.paidCurrency !== CATALOG.CURRENCY) return finish('amount_mismatch', Object.assign(paid, { expectedCents: want }));
+  const cmds = PKG.paidCmds(po, s, now);
+  if (!cmds) return finish('needs_review', Object.assign(paid, { problem: 'order_' + po.status })); // cancelled, or paid twice
+  return finish('fulfilled', paid, cmds);
+}
+
 async function lookup(pi) {
   if (!PI_RE.test(String(pi))) return null;
   const g = await pipeline([['GET', O.PI(pi)]]);
@@ -162,6 +184,10 @@ async function onRefund(ev, now) {
       }
     }
   } else rec.status = 'partially_refunded';
+  if (full && order.type === 'package' && PKG.REF_RE.test(String(order.ref))) { // the package order too; an admin ends its campaign
+    const g = await pipeline([['GET', PKG.K.rec(order.ref)]]);
+    cmds.push(...PKG.refundedCmds(parse(g[0] && g[0].result), now));
+  }
   await pipeline(cmds.concat(O.recordCmds(sid, rec, now)));
   return rec.status;
 }

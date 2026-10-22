@@ -7,7 +7,8 @@
 // what was agreed: the webhook applies the days recorded on the order, never today's table.
 //
 // status:
-//   available         sold self-serve (Featured posts, when Stripe is configured)
+//   available         sold self-serve (Featured posts, when Stripe is configured; Packages A-C, ordered online
+//                     through api/_packages.js and paid by card when Stripe is set up, else invoiced by us)
 //   inquiry           priced, sold through the Advertise form; no self-serve checkout yet
 //   request_proposal  quoted per advertiser (Package D); never purchasable online
 //   not_available     priced, but not for sale until its gates are met (newsletter, sponsored feature, creative)
@@ -24,9 +25,9 @@ const FEATURED = {
 };
 
 const PACKAGES = {
-  A: { label: 'Package A', cents: 24900, days: 30, status: 'inquiry' },
-  B: { label: 'Package B', cents: 59900, days: 30, status: 'inquiry' },
-  C: { label: 'Package C', cents: 119900, days: 30, status: 'inquiry' },
+  A: { label: 'Package A', cents: 24900, days: 30, status: 'available', contents: { boardCards: 1, sponsorLines: 1, newsCard: false, sideAds: false } },
+  B: { label: 'Package B', cents: 59900, days: 30, status: 'available', contents: { boardCards: 2, sponsorLines: 1, newsCard: true, sideAds: false } },
+  C: { label: 'Package C', cents: 119900, days: 30, status: 'available', contents: { boardCards: 4, sponsorLines: 2, newsCard: true, sideAds: true } },
   D: { label: 'Package D', cents: 249900, days: 30, status: 'request_proposal' },
 };
 

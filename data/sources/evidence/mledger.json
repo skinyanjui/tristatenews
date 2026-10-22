@@ -1,0 +1,114 @@
+{
+  "sourceId": "mledger",
+  "name": "Murray Ledger & Times",
+  "site": "https://www.murrayledger.com",
+  "feedUrl": "https://www.murrayledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+  "checkedAt": "2026-10-22T22:03:25.928Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.murrayledger.com/",
+      "title": "murrayledger.com"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.murrayledger.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "murrayledger.com": 28
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 12,
+      "of": 28,
+      "share": 43
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 28,
+    "durationMs": 128,
+    "runner": "box",
+    "fetchedUrl": "https://www.murrayledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc"
+  },
+  "activity": {
+    "latest": "2026-10-22T17:45:00.000Z",
+    "last30d": 28,
+    "undated": 0,
+    "inFeed": 28,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-calloway",
+      "items": 9,
+      "examples": [
+        "Bauer named Laker Champion for Kids",
+        "MSU Faculty Senate hosts judge-executive candidate forum tonight"
+      ]
+    },
+    {
+      "countyId": "ky-marshall",
+      "items": 1,
+      "examples": [
+        "KSP arrests escaped Marshall Co. inmate in Murray"
+      ]
+    },
+    {
+      "countyId": "il-clay",
+      "items": 1,
+      "examples": [
+        "UofL raising banner for Racer alum Klein; Pitino, St. John’s also honoring ex-SID"
+      ]
+    },
+    {
+      "countyId": "ky-mccracken",
+      "items": 1,
+      "examples": [
+        "Kentucky Region 1 Girls Soccer Championship;"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

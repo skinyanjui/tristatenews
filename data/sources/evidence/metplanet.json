@@ -1,0 +1,115 @@
+{
+  "sourceId": "metplanet",
+  "name": "Metropolis Planet",
+  "site": "https://www.metropolisplanet.com",
+  "feedUrl": "https://www.metropolisplanet.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+  "checkedAt": "2026-10-22T22:03:28.336Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.metropolisplanet.com/",
+      "title": "metropolisplanet.com | Serving Massac County, Illinois since 1865"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.metropolisplanet.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "metropolisplanet.com": 28
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 12,
+      "of": 28,
+      "share": 43
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 28,
+    "durationMs": 122,
+    "runner": "box",
+    "fetchedUrl": "https://www.metropolisplanet.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc"
+  },
+  "activity": {
+    "latest": "2026-10-22T16:00:00.000Z",
+    "last30d": 28,
+    "undated": 0,
+    "inFeed": 28,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "il-massac",
+      "items": 8,
+      "examples": [
+        "Patriot soccer shuts out Valmeyer 4-0 to advance",
+        "Brookport council hears final MPO Transportation Plan presentation"
+      ]
+    },
+    {
+      "countyId": "il-johnson",
+      "items": 2,
+      "examples": [
+        "Runge speaks at fourth annual One Shawnee regional summit",
+        "MCSO: Buncombe man charged with theft by deception"
+      ]
+    },
+    {
+      "countyId": "il-perry",
+      "items": 1,
+      "examples": [
+        "Patriots get sixth win, playoff berth at Pinckneyville"
+      ]
+    },
+    {
+      "countyId": "il-pulaski",
+      "items": 1,
+      "examples": [
+        "Illinois State Police opens Firearm Owner's Identification kiosk in Ullin"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

@@ -1,0 +1,123 @@
+{
+  "sourceId": "kne",
+  "name": "Kentucky New Era",
+  "site": "https://www.kentuckynewera.com",
+  "feedUrl": "https://www.kentuckynewera.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+  "checkedAt": "2026-10-22T22:03:26.472Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.kentuckynewera.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.kentuckynewera.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "kentuckynewera.com": 15
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 11,
+      "of": 15,
+      "share": 73
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 15,
+    "durationMs": 181,
+    "runner": "box",
+    "fetchedUrl": "https://www.kentuckynewera.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc"
+  },
+  "activity": {
+    "latest": "2026-10-22T05:00:00.000Z",
+    "last30d": 15,
+    "undated": 0,
+    "inFeed": 15,
+    "cadence": "daily",
+    "medianGapDays": 0.03
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-christian",
+      "items": 5,
+      "examples": [
+        "Crime Reports",
+        "Christian County falls 1-0 to Madisonville-North Hopkins in defensive 2nd Region title battle"
+      ]
+    },
+    {
+      "countyId": "ky-trigg",
+      "items": 5,
+      "examples": [
+        "Sheriff responds to additional complaints about his office",
+        "Trigg sheriff defends office amid complaints"
+      ]
+    },
+    {
+      "countyId": "ky-todd",
+      "items": 2,
+      "examples": [
+        "Trigg County hosts Todd Central with playoff seeding on line",
+        "Trigg County hosts Todd Central with playoff seeding on line"
+      ]
+    },
+    {
+      "countyId": "ky-hopkins",
+      "items": 1,
+      "examples": [
+        "Christian County falls 1-0 to Madisonville-North Hopkins in defensive 2nd Region title battle"
+      ]
+    },
+    {
+      "countyId": "ky-crittenden",
+      "items": 1,
+      "examples": [
+        "UHA cruises by Crittenden 9-0 on the way to second round match"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

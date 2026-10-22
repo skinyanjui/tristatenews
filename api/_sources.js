@@ -26,6 +26,14 @@ const FILES = [
   require('../data/sources/statewide.json'),
 ];
 
+// Expansion batches (plan phase 5): candidate sources that only join SOURCES when EXPANDED_SOURCES_ENABLED is exactly
+// "true" AND SOURCE_BATCHES (comma list, e.g. "b1") names the batch. Default off, so the live list is unchanged.
+// Each entry carries registry-only fields (batch, site, counties, review); its evidence is data/sources/evidence/<id>.json.
+const BATCHES = [
+  require('../data/sources/batches/batch-1.json'),
+];
+const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review'];
+
 const KINDS = ['institution', 'courts', 'police', 'events', 'obits'];
 const STRICT = ['ind', 'ky', 'ill'];
 const HTTP = /^https?:\/\//;
@@ -56,12 +64,24 @@ function validate(files) {
 function registry(files) {
   return (files || FILES).flatMap(f => f.sources).slice().sort((a, b) => a.seq - b.seq).map(s => {
     const o = {};
-    for (const k of Object.keys(s)) if (k !== 'seq' && k !== 'note') o[k] = s[k];
+    for (const k of Object.keys(s)) if (!BATCH_ONLY.includes(k)) o[k] = s[k];
     return o;
   });
 }
 
-const SOURCES = registry();
+// Batch ids switched on by the environment: [] unless the EXPANDED_SOURCES_ENABLED flag is on (api/_flags.js).
+function enabledBatches(env) {
+  const e = env || process.env;
+  if (!require('./_flags').on('EXPANDED_SOURCES_ENABLED', e)) return [];
+  return String(e.SOURCE_BATCHES || '').split(',').map(x => x.trim()).filter(Boolean);
+}
+// Batch files whose batch id is enabled; their entries are appended after the base registry (seq continues past it).
+function activeBatches(env) {
+  const on = enabledBatches(env);
+  return BATCHES.filter(b => on.includes(b.batch));
+}
+
+const SOURCES = registry(FILES.concat(activeBatches()));
 
 // A source with a `disabled` reason stays listed in the registry but is never fetched or shown.
 const DISABLED_SOURCES = SOURCES.filter(s => s.disabled);
@@ -80,4 +100,4 @@ try {
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
 
-module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES };
+module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES, BATCHES, enabledBatches, activeBatches };

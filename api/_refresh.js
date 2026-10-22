@@ -18,9 +18,9 @@ module.exports = async function (req, res) {
   try {
     const tier = req.query && req.query.tier === 'fast' ? 'fast' : 'all';
     const t0 = Date.now();
-    const { snapshot, report, store, runId, run } = await refreshAll({ tier });
+    const { snapshot, report, store, runId, run, locations } = await refreshAll({ tier });
     const bad = report.filter(r => r.result.startsWith('fail'));
-    send(200, { ok: true, tier, runId, ms: Date.now() - t0, stories: snapshot.items.length, sourcesWithStories: snapshot.sources.filter(s => s.count > 0).length, notModified: report.filter(r => r.result === '304').length, failing: bad, statuses: run.statusCounts, store });
+    send(200, { ok: true, tier, runId, ms: Date.now() - t0, stories: snapshot.items.length, sourcesWithStories: snapshot.sources.filter(s => s.count > 0).length, notModified: report.filter(r => r.result === '304').length, failing: bad, statuses: run.statusCounts, store, locations: locations ? { total: locations.total, assigned: locations.assigned, requiresReview: locations.requiresReview } : undefined });
   } catch (e) {
     send(502, { error: String(e && e.message || e).slice(0, 120) });
   }

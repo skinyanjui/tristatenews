@@ -16,6 +16,8 @@
 const { SOURCES, DISABLED_SOURCES } = require('./_sources.js');
 
 const { inTriState } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
+const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
+const FLAGS = require('./_flags.js');
 // Every publisher request goes through safeFetch (http/https only, no private or metadata addresses after DNS, at most
 // 3 redirects, each re-checked) and every body through readCapped (PR 1.3). Caps are about 3x the largest body seen
 // on 2026-10-18 (Indiana Chronicle feed 1.34 MB, Barnett sitemap 0.66 MB). Items parsed per feed were already capped
@@ -730,15 +732,19 @@ async function refreshAll(opts) {
   const statusCounts = {};
   results.forEach(x => { statusCounts[x.status] = (statusCounts[x.status] || 0) + 1; });
   const finished = Date.now();
+  let shadowLoc = null;
+  if (FLAGS.countyClassification()) { try { shadowLoc = LOC().shadow(snap, SOURCES, { runId, tier }); } catch (e) { console.error('location shadow failed', e && e.message); } }
   const run = { runId, tier, startedAt: new Date(now).toISOString(), finishedAt: new Date(finished).toISOString(), durationMs: finished - now, attempted: results.length, statusCounts, results };
   if (persist) {
     const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
     cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
     cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
+    // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
+    if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
     store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
-  return { snapshot: snap, report, store, runId, run };
+  return { snapshot: snap, report, store, runId, run, locations: shadowLoc ? shadowLoc.summary : null };
 }
 
 async function handler(req, res) {
@@ -766,13 +772,17 @@ async function run(req, res) {
 // /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
 // with its own CRON_SECRET check, lives in api/_refresh.js. /api/counties and /api/regions (rewritten to
 // ?__route=counties / ?__route=regions) are the read-only geography API in api/_geoapi.js, which never touches Redis.
+// /api/locations (?__route=locations) is the admin-only county-classification report in api/_locations.js.
 // Every other request is the news handler above.
 module.exports = require('./_dispatch.js').host({
   refresh: () => require('./_refresh.js'),
   counties: () => require('./_geoapi.js').counties,
-  regions: () => require('./_geoapi.js').regions
+  regions: () => require('./_geoapi.js').regions,
+  locations: () => require('./_locations.js')
 }, handler);
 module.exports.parseFeed = parseFeed;
+module.exports.readSnapshot = readSnapshot;
+module.exports.redis = redis;
 module.exports.combine = combine;
 module.exports.inRegion = inRegion;
 module.exports.inTriState = inTriState;

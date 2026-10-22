@@ -1,0 +1,309 @@
+{
+  "file": "batches/batch-1.json",
+  "batch": "b1",
+  "description": "County expansion batch 1 (plan phase 5): sources for under-covered counties, extended tier first. Off unless EXPANDED_SOURCES_ENABLED=true and SOURCE_BATCHES lists b1 (api/_sources.js). Each entry's evidence record is data/sources/evidence/<id>.json (scripts/verify-source.js).",
+  "sources": [
+    {
+      "seq": 65,
+      "id": "pasun",
+      "name": "The Paducah Sun",
+      "area": "Paducah",
+      "site": "https://www.paducahsun.com",
+      "counties": [
+        "ky-mccracken"
+      ],
+      "everyMin": 30,
+      "url": "https://www.paducahsun.com/search/?f=rss&t=article&c=news/local&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 66,
+      "id": "mledger",
+      "name": "Murray Ledger & Times",
+      "area": "Murray",
+      "site": "https://www.murrayledger.com",
+      "counties": [
+        "ky-calloway"
+      ],
+      "everyMin": 60,
+      "url": "https://www.murrayledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 67,
+      "id": "kne",
+      "name": "Kentucky New Era",
+      "area": "Hopkinsville",
+      "site": "https://www.kentuckynewera.com",
+      "counties": [
+        "ky-christian"
+      ],
+      "everyMin": 60,
+      "url": "https://www.kentuckynewera.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 68,
+      "id": "heraldledger",
+      "name": "The Herald Ledger",
+      "area": "Eddyville",
+      "site": "https://www.heraldledger.com",
+      "counties": [
+        "ky-lyon"
+      ],
+      "everyMin": 120,
+      "url": "https://www.heraldledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 69,
+      "id": "tribcourier",
+      "name": "The Tribune-Courier",
+      "area": "Benton, Ky.",
+      "site": "https://www.tribunecourier.com",
+      "counties": [
+        "ky-marshall"
+      ],
+      "everyMin": 120,
+      "url": "https://www.tribunecourier.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 70,
+      "id": "mayfield",
+      "name": "Mayfield Messenger",
+      "area": "Mayfield",
+      "site": "https://www.mayfield-messenger.com",
+      "counties": [
+        "ky-graves"
+      ],
+      "everyMin": 60,
+      "url": "https://www.mayfield-messenger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 71,
+      "id": "timesleader",
+      "name": "The Times Leader",
+      "area": "Princeton, Ky.",
+      "site": "https://www.timesleader.net",
+      "counties": [
+        "ky-caldwell"
+      ],
+      "everyMin": 120,
+      "url": "https://www.timesleader.net/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 72,
+      "id": "metplanet",
+      "name": "Metropolis Planet",
+      "area": "Metropolis",
+      "site": "https://www.metropolisplanet.com",
+      "counties": [
+        "il-massac"
+      ],
+      "everyMin": 120,
+      "url": "https://www.metropolisplanet.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 73,
+      "id": "kbsi",
+      "name": "KBSI Fox 23",
+      "area": "Cape Girardeau",
+      "site": "https://www.kbsi23.com",
+      "counties": [
+        "mo-cape-girardeau"
+      ],
+      "geo": true,
+      "geoTerms": [
+        "cape girardeau",
+        "jackson, mo",
+        "perryville",
+        "marble hill",
+        "bollinger",
+        "poplar bluff",
+        "butler county",
+        "sikeston",
+        "scott city",
+        "chaffee",
+        "dexter",
+        "bloomfield",
+        "stoddard",
+        "charleston, mo",
+        "new madrid",
+        "portageville",
+        "greenville, mo",
+        "piedmont",
+        "van buren",
+        "doniphan",
+        "ripley county",
+        "wayne county, mo",
+        "carter county",
+        "mississippi county",
+        "scott county",
+        "perry county, mo",
+        "southeast missouri",
+        "semo",
+        "oran",
+        "advance",
+        "puxico",
+        "east prairie",
+        "malden",
+        "kennett"
+      ],
+      "everyMin": 30,
+      "url": "https://www.kbsi23.com/feed/",
+      "note": "Regional station (SE Missouri, southern Illinois, west Kentucky); geo-filtered.",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 74,
+      "id": "clarion",
+      "name": "The Hancock Clarion",
+      "area": "Hawesville",
+      "site": "https://www.hancockclarion.com",
+      "counties": [
+        "ky-hancock"
+      ],
+      "everyMin": 120,
+      "url": "https://www.hancockclarion.com/feed/",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 75,
+      "id": "wrul",
+      "name": "WRUL",
+      "area": "Carmi",
+      "site": "https://www.wrul.com",
+      "counties": [
+        "il-white"
+      ],
+      "everyMin": 60,
+      "url": "https://www.wrul.com/feed/",
+      "batch": "b1",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    }
+  ]
+}

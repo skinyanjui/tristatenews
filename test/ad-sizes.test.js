@@ -142,9 +142,55 @@ test('wiring: the site, the Advertise panel and the /advertise page use the same
   assert.ok(html.includes("var place = kind === 'news' ? 'card:news' : 'card:' + kind;"));
   assert.equal((html.match(/return UI\.sized\(/g) || []).length, 5, 'card: sample, sponsor and house; side ad: sponsor and house');
   assert.ok(html.includes("list = [UI.sized(sa, 'rail:left')]"), 'the side sample too');
-  assert.ok(html.includes("var gal = TSNSizes.gallery(document, el('div', 'sn-sizes'))"), 'previews in the #advertise panel, where readers go while ADS_PAGE is off');
+  assert.ok(html.includes("var gal = el('div', 'sn-sizes'), tg = TSNSizes.toggle(document, gal, 'sn-sizes');"), 'previews in the #advertise panel, where readers go while ADS_PAGE is off, behind the toggle');
   const page = read('data/pages/advertise.html');
   assert.ok(page.includes('<h2 id="sizes">Ad sizes and where they run</h2>') && page.includes('<div id="size-previews"></div>'));
-  assert.ok(page.includes('<script src="/adsizes.js"></script>') && page.includes('TSNSizes.gallery(document, box)'));
+  assert.ok(page.includes('<script src="/adsizes.js"></script>') && page.includes("TSNSizes.toggle(document, box, 'size-previews')"));
   assert.ok(page.indexOf('<script src="/adsizes.js"></script>') > page.indexOf('</main>'), 'after the page script');
+});
+
+test('pick(): each size uses the picture its area crops less; a square picture wins only where it crops less', () => {
+  const L = { w: 1200, h: 628 }, Q = { w: 1200, h: 1200 };
+  assert.deepEqual(S.usedSizes().map(k => [k, S.pick(k, L, Q)]), [['728x90', 'main'], ['300x250', 'main'], ['320x100', 'square'], ['160x600', 'square'], ['300x600', 'square']]);
+  assert.equal(S.pick('320x100', L, null), 'main', 'no square picture, the main one');
+  assert.equal(S.pick('320x100', { w: 1200, h: 1200 }, Q), 'main', 'a tie keeps the main picture');
+  assert.equal(S.pick('728x90', { w: 1000, h: 1000 }, Q), 'main');
+  assert.equal(S.pick('300x250', { w: 600, h: 1200 }, Q), 'square', 'a tall main picture: the square crops less even in the wide card');
+  for (const k of S.usedSizes()) assert.ok(S.cover(Q.w, Q.h, ...S.SIZES[k].img).cut < S.cover(L.w, L.h, ...S.SIZES[k].img).cut === (S.pick(k, L, Q) === 'square'), k);
+  // render: the preview shows the chosen picture
+  const d = doc();
+  const ad = { name: 'A', img: 'blob:main', dims: L, square: 'blob:sq', sqDims: Q };
+  for (const k of S.usedSizes()) { const im = S.render(d, k, ad).children.find(c => c.className === 'ad-img'); assert.equal(im.src, S.pick(k, L, Q) === 'square' ? 'blob:sq' : 'blob:main', k); }
+  // the page: one square picture per size that uses it, none where a banner overrides, CSS swaps it in
+  const a = d.createElement('a');
+  S.decorate(d, a, 'rail:left', { name: 'A', img: '/api/creative?img=cr0000000001', w: 1200, h: 628, sq: '/api/creative?img=cr0000000001&size=square', sqW: 1200, sqH: 1200, sizes: ['300x600'] });
+  assert.deepEqual(a.children.map(c => c.className), ['ad-sq tsz-sq-160x600', 'ad-full tsz-only-300x600']);
+  const n = d.createElement('a');
+  S.decorate(d, n, 'card:news', { name: 'A', img: '/x?img=1', w: 1200, h: 628, sq: '/x?img=1&size=square', sqW: 1200, sqH: 1200 });
+  assert.deepEqual(n.children.map(c => [c.className, c.src, c.loading]), [['ad-sq tsz-sq-320x100', '/x?img=1&size=square', 'lazy']]);
+  const css = S.css();
+  assert.ok(css.includes('.tsz.tsz-k-320x100:has(> .ad-sq.tsz-sq-320x100) > .ad-img { display:none }'));
+  assert.ok(css.includes('.tsz.tsz-k-160x600 > .ad-sq.tsz-sq-160x600 { grid-area:img; display:block; width:160px; max-width:100%; height:160px; max-height:none; object-fit:cover;'));
+});
+
+test('toggle(): "See ad sizes" is a real button, collapsed by default, aria-expanded in step, previews built on first open', () => {
+  const d = doc(), mk = d.createElement;
+  d.createElement = t => { const n = mk(t); n.addEventListener = (e, f) => { n['on' + e] = f; }; return n; };
+  const box = d.createElement('div'), btn = S.toggle(d, box, 'sn-sizes');
+  assert.equal(btn.tagName, 'BUTTON'); assert.equal(btn.type, 'button'); assert.equal(btn.textContent, 'See ad sizes');
+  assert.deepEqual([btn.attrs['aria-expanded'], btn.attrs['aria-controls'], box.id, box.hidden, box.children.length], ['false', 'sn-sizes', 'sn-sizes', true, 0], 'collapsed, nothing built yet');
+  btn.onclick();
+  assert.deepEqual([btn.attrs['aria-expanded'], btn.textContent, box.hidden], ['true', 'Hide ad sizes', false]);
+  assert.equal(box.children.filter(c => c.tagName === 'FIGURE').length, 5, 'built on first open');
+  btn.onclick();
+  assert.deepEqual([btn.attrs['aria-expanded'], btn.textContent, box.hidden], ['false', 'See ad sizes', true]);
+  btn.onclick();
+  assert.equal(box.children.filter(c => c.tagName === 'FIGURE').length, 5, 'built once');
+});
+
+test('"See ad sizes" is a quiet outline button in the panel and on /advertise, not the primary style', () => {
+  assert.ok(html.includes('body .sn-sec > button.tsz-toggle { justify-self:start; width:auto; min-height:var(--ctl); padding:0 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground);'));
+  assert.ok(!/tg\.classList\.add\('cl-(go|chip)'\)/.test(html), 'no primary or chip class on the toggle');
+  const page = read('data/pages/advertise.html');
+  assert.ok(page.includes('section > button.tsz-toggle { display:block; min-height:36px; margin-bottom:12px; background:transparent; color:var(--fg); border:1px solid var(--border);'));
 });

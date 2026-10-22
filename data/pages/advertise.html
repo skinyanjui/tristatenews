@@ -28,6 +28,8 @@ ul.plain { margin:0; padding-left:20px; display:grid; gap:6px; }
 .price { font-size:20px; line-height:28px; font-weight:600; }
 .tag { justify-self:start; padding:2px 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; line-height:18px; color:var(--muted); }
 .card button { justify-self:start; margin-top:4px; }
+/* "See ad sizes": a quiet outline button, not the dark primary style */
+section > button.tsz-toggle { display:block; min-height:36px; margin-bottom:12px; background:transparent; color:var(--fg); border:1px solid var(--border); font-size:14px; }
 form { display:grid; gap:16px; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
 label { display:grid; gap:4px; font-weight:500; }
 input, select, textarea { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; }
@@ -74,7 +76,7 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
 
   <section aria-labelledby="sizes">
     <h2 id="sizes">Ad sizes and where they run</h2>
-    <p class="m" style="margin-bottom:16px">We use standard ad sizes, so a banner you already have may fit. Each ad is built from your picture, headline, short text and button, laid out for the size; or send a finished banner for a size. These previews use a made-up business.</p>
+    <p class="m" style="margin-bottom:12px">We use standard ad sizes, so a banner you already have may fit. Each ad is built from your picture, headline, short text and button, laid out for the size; or send a finished banner for a size. These previews use a made-up business.</p>
     <div id="size-previews"></div>
   </section>
 
@@ -214,7 +216,8 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
 (function () {
   var box = document.getElementById('size-previews');
   if (!window.TSNSizes || !box) return;
-  TSNSizes.inject(document); TSNSizes.gallery(document, box); TSNSizes.fit(box);
+  // collapsed behind "See ad sizes" (aria-expanded) so the page stays short; the previews are built on first open
+  TSNSizes.inject(document); box.parentNode.insertBefore(TSNSizes.toggle(document, box, 'size-previews'), box);
   window.addEventListener('resize', function () { TSNSizes.fit(box); });
 })();
 </script>

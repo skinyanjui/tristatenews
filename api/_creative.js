@@ -2,11 +2,13 @@
 //   POST /api/creative  {ref, email | token, headline, text, cta, dest, image, sizes?}   an advertiser submits a creative.
 //        sizes (optional): { '728x90': dataUrl, ... } a whole-unit banner for any IAB size we use (public/adsizes.js),
 //        the same shape as the unit and at least its pixel size; without one, that size is built from image + words.
+//        square (optional): a second, 1:1 picture (at least 600×600; 1200×1200 recommended). Each size uses whichever
+//        picture its picture area crops less (public/adsizes.js pick); a banner for a size still overrides both.
 //        -> { ok, id, status: 'pending' }. Access needs one of: an advertising inquiry reference (AD-...) with the
 //        email used on that inquiry, a paid order (the Stripe checkout id, cs_...), or a signed upload token the admin
 //        issued for a reference. Nobody can upload anonymously.
 //   GET  /api/creative?live=1                        the approved creatives, by placement (public; cached briefly)
-//   GET  /api/creative?img=<id>[&size=728x90]        an approved creative's image, or its banner for a size (public); pending or rejected
+//   GET  /api/creative?img=<id>[&size=728x90|square]  an approved creative's image, its banner for a size, or its square picture (public); pending or rejected
 //                                                    images only with x-admin-key
 //   GET  /api/creative       with x-admin-key       every creative (newest 100), the pending queue and the audit log
 //   POST /api/creative  {action:'approve', id, reason, placements[]} | {action:'reject', id, reason} |
@@ -23,6 +25,7 @@
 //   tsn:cr:<id>        record (pending: 60-day TTL; approved: no TTL; rejected/withdrawn: record kept 1 year, image deleted)
 //   tsn:cr:img:<id>    the image (same TTL as the record; deleted on reject or withdraw)
 //   tsn:cr:img:<id>:<size>  a whole-unit banner for that size (same TTL and deletion as the image)
+//   tsn:cr:img:<id>:square  the optional square picture (same TTL and deletion as the image)
 //   tsn:cr:index       sorted set of every creative by time; tsn:cr:pending  the review queue
 //   tsn:cr:live        set of approved, placed creative ids
 //   tsn:cr:audit       list of review actions (newest first, last 1000; no TTL)
@@ -37,7 +40,7 @@ const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 // Upload tokens are HMACs keyed by CREATIVE_TOKEN_SECRET, else derived from the admin key (so rotating it voids them).
 const TOKEN_KEY = process.env.CREATIVE_TOKEN_SECRET || (ADMIN ? crypto.createHmac('sha256', ADMIN).update('tsn-creative-token').digest('hex') : '');
 
-const MAX_IMAGE_BYTES = 300 * 1024, MIN_W = 300, MIN_H = 150, MAX_SIDE = 4000;
+const MAX_IMAGE_BYTES = 300 * 1024, MIN_W = 300, MIN_H = 150, MAX_SIDE = 4000, SQUARE_MIN = 600;
 const HEADLINE = [3, 60], TEXT = [0, 140], REASON = [3, 300];
 const CTAS = ['Visit website', 'Call now', 'Get directions', 'Shop now', 'Learn more'];
 const CTA_DEST = { 'Visit website': 'url', 'Shop now': 'url', 'Learn more': 'url', 'Call now': 'tel', 'Get directions': 'map' };
@@ -146,11 +149,24 @@ function validate(b) {
   if (d.error) return { error: d.error, field: 'dest' };
   const im = image(b.image);
   if (im.error) return { error: im.error, field: 'image' };
+  const sq = squareImage(b.square);
+  if (sq && sq.error) return { error: sq.error, field: 'square' };
   const sz = banners(b.sizes);
   if (sz.error) return sz;
   const out = { headline, text, cta: b.cta, dest: d.dest, destType: d.destType, image: { type: im.type, bytes: im.bytes, w: im.w, h: im.h } };
+  if (sq) out.square = { type: sq.type, bytes: sq.bytes, w: sq.w, h: sq.h };
   if (Object.keys(sz.sizes).length) out.sizes = sz.sizes;
   return out;
+}
+
+// The optional square picture -> null (none), { type, bytes, w, h } or { error }. Same file rules as the main image,
+// at least 600×600 and within 3% of 1:1.
+function squareImage(raw) {
+  if (raw == null || raw === '') return null;
+  const im = image(raw, { w: SQUARE_MIN, h: SQUARE_MIN });
+  if (im.error) return { error: 'Square picture: ' + im.error };
+  if (Math.abs(im.w / im.h - 1) > 0.03) return { error: 'Square picture: it must be square (1:1), like 1200×1200 pixels.' };
+  return im;
 }
 
 // Optional whole-unit banners, one per IAB size -> { sizes: { '728x90': {type, bytes, w, h} } } or { error, field }.
@@ -217,8 +233,10 @@ async function access(b, now) {
 
 // The public shape of an approved creative.
 const pub = c => Object.assign({ id: c.id, name: c.headline, text: c.text, cta: c.cta, url: c.dest, destType: c.destType, img: '/api/creative?img=' + c.id, w: c.image.w, h: c.image.h },
-  c.sizes && Object.keys(c.sizes).length ? { sizes: Object.keys(c.sizes).filter(k => BANNER_SIZES.includes(k)) } : {});
+  c.sizes && Object.keys(c.sizes).length ? { sizes: Object.keys(c.sizes).filter(k => BANNER_SIZES.includes(k)) } : {},
+  c.square ? { sq: '/api/creative?img=' + c.id + '&size=square', sqW: c.square.w, sqH: c.square.h } : {});
 const sizeKeys = c => Object.keys((c && c.sizes) || {}).filter(k => BANNER_SIZES.includes(k));
+const extraKeys = c => sizeKeys(c).concat(c && c.square ? ['square'] : []); // every image stored beside the main one
 function livePlan(list) {
   const out = { cards: {}, slots: {}, rails: { left: [], right: [] } };
   BOARDS.forEach(b => { out.cards[b] = []; out.slots[b] = []; });
@@ -249,7 +267,7 @@ async function handler(req, res) {
       }
       if (q.img) {
         const id = String(q.img), size = q.size == null ? '' : String(q.size);
-        if (!ID_RE.test(id) || (size && !BANNER_SIZES.includes(size))) return send(404, { error: 'not found' });
+        if (!ID_RE.test(id) || (size && !BANNER_SIZES.includes(size) && size !== 'square')) return send(404, { error: 'not found' });
         const g = await pipeline([['GET', K.rec(id)], ['GET', size ? K.imgSize(id, size) : K.img(id)]]);
         const c = parse(g[0] && g[0].result), data = g[1] && g[1].result;
         if (!c || !data || (c.status !== 'approved' && !admin)) return send(404, { error: 'not found' });
@@ -299,8 +317,8 @@ async function handler(req, res) {
       if (to === 'approved') Object.assign(rec, { approvedAt: at, placements });
       else rec.placements = [];
       const cmds = [['LPUSH', K.audit, JSON.stringify(entry)], ['LTRIM', K.audit, '0', String(AUDIT_KEEP - 1)]]; // the audit entry is written first
-      if (to === 'approved') cmds.push(['SET', K.rec(c.id), JSON.stringify(rec)], ['PERSIST', K.img(c.id)], ...sizeKeys(c).map(k => ['PERSIST', K.imgSize(c.id, k)]), ['SADD', K.live, c.id], ['ZREM', K.pending, c.id]);
-      else cmds.push(['SET', K.rec(c.id), JSON.stringify(rec), 'EX', String(CLOSED_TTL)], ['DEL', K.img(c.id)], ...sizeKeys(c).map(k => ['DEL', K.imgSize(c.id, k)]), ['SREM', K.live, c.id], ['ZREM', K.pending, c.id], ['SREM', K.ref(c.ref), c.id]);
+      if (to === 'approved') cmds.push(['SET', K.rec(c.id), JSON.stringify(rec)], ['PERSIST', K.img(c.id)], ...extraKeys(c).map(k => ['PERSIST', K.imgSize(c.id, k)]), ['SADD', K.live, c.id], ['ZREM', K.pending, c.id]);
+      else cmds.push(['SET', K.rec(c.id), JSON.stringify(rec), 'EX', String(CLOSED_TTL)], ['DEL', K.img(c.id)], ...extraKeys(c).map(k => ['DEL', K.imgSize(c.id, k)]), ['SREM', K.live, c.id], ['ZREM', K.pending, c.id], ['SREM', K.ref(c.ref), c.id]);
       await pipeline(cmds);
       return send(200, { ok: true, id: c.id, status: to });
     }
@@ -319,6 +337,7 @@ async function handler(req, res) {
     await pipeline([
       ['SET', K.img(id), String(b.image), 'EX', String(PENDING_TTL)],
       ...sizeKeys(v).map(k => ['SET', K.imgSize(id, k), String(b.sizes[k]), 'EX', String(PENDING_TTL)]),
+      ...(v.square ? [['SET', K.imgSize(id, 'square'), String(b.square), 'EX', String(PENDING_TTL)]] : []),
       ['SET', K.rec(id), JSON.stringify(rec), 'EX', String(PENDING_TTL)],
       ['ZADD', K.index, String(now), id], ['ZADD', K.pending, String(now), id],
       ['SADD', K.ref(who.ref), id], ['EXPIRE', K.ref(who.ref), String(CLOSED_TTL)]
@@ -330,4 +349,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-Object.assign(module.exports, { validate, destination, image, banners, BANNER_SIZES, tokenFor, tokenRef, livePlan, pub, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });
+Object.assign(module.exports, { validate, destination, image, banners, squareImage, SQUARE_MIN, BANNER_SIZES, tokenFor, tokenRef, livePlan, pub, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });

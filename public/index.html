@@ -487,6 +487,9 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .sn-ref { font-family:var(--font-mono); font-size:14px; border:1px dashed var(--gray-500); border-radius:var(--radius-md); padding:4px 10px; user-select:all; }
 .sn-sec .cl-check { align-items:flex-start; min-height:0; padding:6px 0; font-weight:400; font-size:14px; line-height:20px; }
 .sn-sec .cl-check input { margin-top:1px; flex:none; }
+/* "See ad sizes": a quiet outline button, so it doesn't compete with "Send inquiry" (specific enough to beat the panel's button styles) */
+body .sn-sec > button.tsz-toggle { justify-self:start; width:auto; min-height:var(--ctl); padding:0 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font-size:14px; font-weight:500; box-shadow:none; }
+body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
 
 @media (min-width:640px) {
   .nav-in, .nav-tabs, main { padding-left:24px; padding-right:24px; }
@@ -2742,8 +2745,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (window.TSNSizes) {
       var sz = el('div', 'sn-sec'); sz.appendChild(el('h2', null, 'Ad sizes and where they run'));
       sz.appendChild(el('p', 'cl-note', 'Standard sizes, built from your picture, headline, short text and button, or a finished banner you send. These use a made-up business.'));
-      var gal = TSNSizes.gallery(document, el('div', 'sn-sizes')); sz.appendChild(gal); snEl.appendChild(sz);
-      requestAnimationFrame(function () { TSNSizes.fit(gal); });
+      // collapsed behind "See ad sizes" so the inquiry form stays near the top
+      var gal = el('div', 'sn-sizes'), tg = TSNSizes.toggle(document, gal, 'sn-sizes');
+      sz.appendChild(tg); sz.appendChild(gal); snEl.appendChild(sz);
     }
     var f = el('form', 'cl-form'); f.noValidate = true;
     var F = {}, els = {};

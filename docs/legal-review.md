@@ -200,3 +200,8 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 
 ### Needs review (ad sizes)
 29. **Finished banners and our label:** a banner fills the whole unit, with our "Sponsored" label laid over its top-left corner. Confirm in review that a banner doesn't imitate a news story or a Tri-State News label (§7 already forbids it) and that the overlay label stays legible.
+
+## Square picture and collapsed size previews (Advertising Policy §7; /creative.html; /advertise and the Advertise panel)
+- **§7 Square picture (optional):** a second 1:1 picture (≥600×600, 1200×1200 best, same file rules). Each size uses whichever picture its area crops less; per-size banners still override. Reviewed with the ad, public only after approval, deleted on reject/withdraw (`tsn:cr:img:<id>:square`). Admin review shows it.
+- **Upload page:** previews and crop warnings use the chosen picture per size; heavy crops (>25%) without a square picture add "Add a square picture (above) to use it here instead."
+- **Size previews** on /advertise and in the site's Advertise panel are collapsed behind a "See ad sizes" button (aria-expanded, aria-controls) so the inquiry form stays near the top. No change to what's shown.

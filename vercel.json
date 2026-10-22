@@ -88,6 +88,10 @@
       "destination": "/api/news?__route=regions"
     },
     {
+      "source": "/api/locations",
+      "destination": "/api/news?__route=locations"
+    },
+    {
       "source": "/newsletter",
       "destination": "/newsletter.html"
     },

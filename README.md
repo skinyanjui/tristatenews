@@ -31,6 +31,7 @@ Vercel's Hobby plan allows 12 functions per deployment, and every `api/*.js` fil
 | `/api/advertise` | `api/inbox.js` | `api/_advertise.js` |
 | `/api/packages` | `api/inbox.js` | `api/_packages.js` |
 | `/api/alerts`, `/api/react`, `/api/newsletter`, `/api/stripe-webhook` | own file | own file |
+| `/api/locations` (admin) | `api/news.js` | `api/_locations.js` |
 | any unknown path (last two rewrites) | `api/inbox.js` | `api/_notfound.js` |
 
 To add a path without a new function, put its handler in an `_`-prefixed file, add it to a host's `host({...})` table and add the rewrite; `test/api-routes.test.js` checks the map and the function count (at most 9).
@@ -47,6 +48,22 @@ In the Vercel project, add an environment variable `EXTRA_FEEDS` containing a JS
 ```
 
 `kind` can be `institution`, `courts`, `police`, `events` or `obits`. Add `"geo": true` for outlets that cover a wider region, so only stories naming a local place are kept, and `"everyMin": 60` (minutes between fetches) for hosts that rate-limit. An entry whose `id` matches a built-in source is ignored. Redeploy after changing it.
+
+## County classification (shadow mode)
+
+Step 1 of the county expansion (plan PR 4.2). `api/_location.js` gives each story a location contract: `scope` (county, multi_county, regional, statewide, unknown), `primaryCountyId`, `countyIds` (ids like `in-perry`, `ky-daviess`), `confidence`, `method`, `level`, `evidence`, `requiresReview` and a `reason`.
+
+- **Where the story happens.** Evidence comes from the story's own headline and summary, matched with `api/_places.js` `locate()` over the generated alias table.
+  - A dateline ("HENDERSON, Ky. (WEHT) -") is where the newsroom filed from. When it is the only place named, the story is not assigned; the dateline is recorded in `datelinePrior`.
+  - The publisher's area is recorded in `publisherPrior` (confidence 0.3) and never assigns a county.
+- **Ambiguous names stay unassigned.** Washington, Marion, Mount Vernon, Princeton, Perry County, Daviess County and the other shared names get `reason: ambiguous_name` and their candidates in `unresolved`, unless a state qualifier ("Marion, Ill.") or a county named alongside picks one. A place in another state ("Henderson, Nev.") gets `out_of_area`. A city in two counties (Sikeston, Carbondale) lists both with no primary.
+- **Separate fields.** Source coverage (`sourceCoverage(source)`, from the registry `area`), article geography (the contract) and reader preference (browser only, not touched) stay separate. Missouri counties are never in the historic Tri-State group (`inTriStateHistoric` is false for them).
+- **Shadow only.** With `COUNTY_CLASSIFICATION_ENABLED=true` (`api/_flags.js`; off by default, only the exact value `true` turns it on), each refresh stores the result privately in `tsn:loc:shadow` (7 days, one extra SET in the same request). The public snapshot and every page stay exactly as they are.
+- **Checking accuracy.**
+  - `GET /api/locations` with `x-admin-key` returns the stored record.
+  - `?live=1` classifies the current snapshot without storing anything (works with the flag off).
+  - `POST {labels: [{id, expected: {countyIds}}]}` returns precision and recall.
+  - `node scripts/location-report.js` does the same read-only from the public `/api/news`, or from `--file`. `--labels labels.json` scores a labeled sample; `--sample 200 --out sheet.json` writes a labeling sheet with empty `expected` fields for a person to fill in.
 
 ## Features
 

@@ -164,7 +164,7 @@ test('refreshAll writes tsn:runs:<runId> (EX 7 days) in the same write request; 
     }
     const fbi = rec.results.filter(r => /^fbi/.test(r.sourceId));
     assert.ok(fbi.length >= 3 && fbi.every(r => r.status === 'temporary_failure' && r.httpStatus === 503 && r.detail === 'HTTP 503'), JSON.stringify(fbi));
-    assert.equal(st.log.filter(op => op === 'SET').length, N.SOURCES.length + 2);
+    assert.equal(st.log.filter(op => op === 'SET').length, N.SOURCES.length + 3); // + snapshot, run record, depth record
 
     // fast tier through /api/refresh: runId in the answer, run record stored, statuses counted
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };

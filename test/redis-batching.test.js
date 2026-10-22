@@ -6,6 +6,7 @@
 //   news refresh, tier fast, right after: before 60 GET + 13 SET + 1 = 74    after 1 MGET + 13 SET + 1 = 15
 //   PR 1.3 adds one SET per run (the tsn:runs:<runId> record): all 63, fast 16, still 2 round trips
 //   2026-10-22 adds HGETALL tsn:loc:overrides to the read request: all 64, fast 17, still 2 round trips
+//   step 5 adds the rolling county depth record (GET in the read, SET in the write): all 66, fast 19, still 2 trips
 //     (13 of the 15 fast sources are due; Courier & Press and the Gleaner poll every 30 minutes)
 //   alerts, snapshot still fresh:         before 17 (3 + 14 GET)             after 2 (MGET + HGETALL)
 //   alerts refresh, A active alerts:      before 17 + 1 + 3 + 12 + 2A        after 2 + 1 + 3 + 12 + A + 1
@@ -85,13 +86,13 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     const all = await news.refreshAll({});
     assert.equal(store.log.requests, 2, 'one read request, one write request');
     assert.equal(count(store.log, 'MGET'), 1);
-    assert.equal(count(store.log, 'GET'), 0, 'no per-source GET');
-    assert.equal(count(store.log, 'SET'), N + 2, 'one SET per fetched source, the snapshot and the run record');
+    assert.equal(count(store.log, 'GET'), 1, 'no per-source GET; the one GET is the rolling county depth record');
+    assert.equal(count(store.log, 'SET'), N + 3, 'one SET per fetched source, the snapshot, the run record and the depth record');
     // 2026-10-22: the read request also carries HGETALL tsn:loc:overrides (admin county overrides): +1 command, same trips.
     assert.equal(count(store.log, 'HGETALL'), 1);
-    assert.equal(store.log.commands.length, N + 4);
+    assert.equal(store.log.commands.length, N + 6);
     assert.equal(all.report.length, N);
-    assert.deepEqual(all.store, { requests: 2, commands: N + 4 }, 'refreshAll reports what it sent');
+    assert.deepEqual(all.store, { requests: 2, commands: N + 6 }, 'refreshAll reports what it sent');
     // Same keys and TTLs as before: tsn:src:<id> for 14 days, the snapshot for 2 days.
     for (const s of news.SOURCES) assert.equal(store.ttl.get('tsn:src:' + s.id), 14 * 86400, s.id);
     assert.equal(store.ttl.get('tsn:news:snapshot'), 2 * 86400);
@@ -103,9 +104,10 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     const fast = await news.refreshAll({ tier: 'fast' });
     const F = fast.report.length;
     assert.ok(F > 0 && F <= 15, 'fast sources fetched: ' + F);
-    assert.deepEqual([store.log.requests, count(store.log, 'MGET'), count(store.log, 'GET'), count(store.log, 'SET')], [2, 1, 0, F + 2]);
-    assert.deepEqual(fast.store, { requests: 2, commands: F + 4 });
-    assert.equal(F + 4, 17, '13 due fast sources + MGET + HGETALL + snapshot + run record');
+    assert.deepEqual([store.log.requests, count(store.log, 'MGET'), count(store.log, 'GET'), count(store.log, 'SET')], [2, 1, 1, F + 3]);
+    assert.deepEqual(fast.store, { requests: 2, commands: F + 6 });
+    assert.equal(F + 6, 19, '13 due fast sources + MGET + HGETALL + GET depth + snapshot + run record + SET depth');
+    assert.equal(store.ttl.get('tsn:geo:depth'), 14 * 86400, 'depth record expires with its window');
     console.log('# measured news commands per run: all=' + (N + 3) + ' (PR 1.2: ' + (N + 2) + '), fast=' + store.log.commands.length + ' (PR 1.2: ' + (F + 2) + ')');
   } finally { restore(); }
 });
@@ -228,7 +230,7 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    assert.deepEqual(res.body.store, { requests: 2, commands: N + 4 });
+    assert.deepEqual(res.body.store, { requests: 2, commands: N + 6 });
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
     for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'notModified', 'failing', 'statuses']) assert.ok(k in res.body, k);
   } finally { restore(); }

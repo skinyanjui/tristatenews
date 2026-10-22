@@ -33,13 +33,16 @@ const PACKAGES = {
 
 // Newsletter sponsorship stays off sale until every gate in NEWSLETTER_GATES is met: NEWSLETTER_MIN_VERIFIED verified
 // (confirmed) subscribers, measured deliverability, defined inventory (which issues carry how many sponsor slots),
-// and Sam's approval. The list has 0 verified subscribers today (there is no confirmation step yet), so these are
-// priced but not purchasable. A dedicated email is quoted per advertiser (no list price).
+// and Sam's approval. Verified = confirmed through the double opt-in link (tsn:nl:confirmed, api/_subscribe.js); the
+// public catalog shows the live count ("coming soon — X of 1,500 subscribers") and api/_packages.js refuses a
+// newsletter order on the server until every gate is met. Until then these are priced but not purchasable.
+// The placement is one sponsor block per issue (NEWSLETTER_PLACEMENT, api/newsletter.js sponsorBlock). A dedicated email is quoted per advertiser (no list price).
 const NEWSLETTER_MIN_VERIFIED = 1500;
+const NEWSLETTER_PLACEMENT = 'newsletter:sponsor';
 const NEWSLETTER_GATES = ['verified_subscribers', 'measured_deliverability', 'defined_inventory', 'approved'];
 const NEWSLETTER = {
-  single: { label: 'Newsletter sponsorship, 1 send', cents: 19900, sends: 1, status: 'not_available' },
-  four: { label: 'Newsletter sponsorship, 4 sends', cents: 69900, sends: 4, status: 'not_available' },
+  single: { label: 'Newsletter sponsorship, 1 send', cents: 19900, sends: 1, status: 'not_available', placement: NEWSLETTER_PLACEMENT },
+  four: { label: 'Newsletter sponsorship, 4 sends', cents: 69900, sends: 4, status: 'not_available', placement: NEWSLETTER_PLACEMENT },
   dedicated: { label: 'Dedicated newsletter email', sends: 1, status: 'request_proposal' },
 };
 
@@ -117,7 +120,8 @@ function newsletterEligibility(facts) {
 }
 
 // The public catalog (GET /api/catalog). checkoutConfigured: whether Featured checkout is switched on.
-function publicCatalog(checkoutConfigured) {
+// verifiedSubscribers: the confirmed newsletter count (GET /api/catalog reads it; null when the store is off).
+function publicCatalog(checkoutConfigured, verifiedSubscribers) {
   const map = (o, f) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, f(v, k)]));
   return {
     priceVersion: PRICE_VERSION,
@@ -125,22 +129,24 @@ function publicCatalog(checkoutConfigured) {
     featured: map(FEATURED, v => ({ label: v.label, cents: v.cents, days: v.days, status: checkoutConfigured ? 'available' : 'not_available', purchasable: !!checkoutConfigured })),
     packages: map(PACKAGES, v => withFlags(v)),
     newsletter: map(NEWSLETTER, v => withFlags(v)),
-    newsletterGate: { minVerifiedSubscribers: NEWSLETTER_MIN_VERIFIED, gates: NEWSLETTER_GATES.slice() },
+    newsletterGate: Object.assign({ minVerifiedSubscribers: NEWSLETTER_MIN_VERIFIED, gates: NEWSLETTER_GATES.slice() }, verifiedSubscribers == null ? {} : { verifiedSubscribers: Number(verifiedSubscribers) || 0 }),
     addons: map(ADDONS, v => withFlags(v)),
     budgets: budgetBands(),
   };
 }
 
-function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.setHeader('Cache-Control', 'no-store'); return res.status(405).send(JSON.stringify({ error: 'method' })); }
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-  return res.status(200).send(JSON.stringify(publicCatalog(require('./_checkout.js').isConfigured())));
+  let verified = null;
+  try { verified = await require('./_subscribe.js').verifiedCount(); } catch (_) { verified = null; } // the rates still show
+  return res.status(200).send(JSON.stringify(publicCatalog(require('./_checkout.js').isConfigured(), verified)));
 }
 
 module.exports = handler;
 Object.assign(module.exports, {
-  PRICE_VERSION, CURRENCY, FEATURED: freeze(FEATURED), PACKAGES: freeze(PACKAGES), NEWSLETTER: freeze(NEWSLETTER), ADDONS: freeze(ADDONS),
+  PRICE_VERSION, CURRENCY, NEWSLETTER_PLACEMENT, FEATURED: freeze(FEATURED), PACKAGES: freeze(PACKAGES), NEWSLETTER: freeze(NEWSLETTER), ADDONS: freeze(ADDONS),
   HISTORY: freeze(HISTORY), NEWSLETTER_MIN_VERIFIED, CREATIVE_WAIVER_MIN_CENTS,
   featuredPrice, featuredPriceAt, packageEligibility, creativeCents, newsletterEligibility, publicCatalog, budgetBands,
 });

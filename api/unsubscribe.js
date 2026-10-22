@@ -1,7 +1,8 @@
 // Newsletter unsubscribe (the /unsubscribe.html page, and one-click links in newsletter emails).
 //   POST /api/unsubscribe {email, token?, website}            -> { ok, message }
 //   POST /api/unsubscribe?email=..&token=..  body "List-Unsubscribe=One-Click"   (RFC 8058 one-click from mail apps)
-// Removes the address from the Redis set tsn:nl:subs (written by /api/subscribe, api/_subscribe.js) and, when RESEND_API_KEY and
+// Removes the address from the Redis sets tsn:nl:subs and tsn:nl:confirmed and the pending signups (adding it to
+// tsn:nl:unsubs if it was there) (written by /api/subscribe, api/_subscribe.js) and, when RESEND_API_KEY and
 // RESEND_AUDIENCE_ID are set, marks it unsubscribed in that Resend audience. The answer is the same whether or not
 // the address was on the list, so the endpoint can't be used to check who subscribes.
 // Tokens: link(email) builds https://<site>/unsubscribe.html?email=..&token=.. with an HMAC of the address keyed by
@@ -52,7 +53,9 @@ async function handler(req, res) {
     const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
     const rl = await pipeline([['INCR', 'tsn:nl:unrl:' + ip], ['EXPIRE', 'tsn:nl:unrl:' + ip, '86400', 'NX']]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'Too many attempts today. Try again tomorrow, or email us.' });
-    await pipeline([['SREM', 'tsn:nl:subs', email]]);
+    const rm = await pipeline([['SREM', 'tsn:nl:subs', email], ['SREM', 'tsn:nl:confirmed', email], ['ZREM', 'tsn:nl:pending', email]]);
+    // Remember who left (for the admin's count), but only addresses that were on the list or pending.
+    if (rm.some(x => Number(x && x.result) === 1)) await pipeline([['SADD', 'tsn:nl:unsubs', email]]);
     // Done for every address (listed or not) so the response time doesn't hint either way.
     if (RESEND && AUDIENCE) {
       try { await fetch('https://api.resend.com/audiences/' + encodeURIComponent(AUDIENCE) + '/contacts/' + encodeURIComponent(email), { method: 'PATCH', headers: { authorization: 'Bearer ' + RESEND, 'content-type': 'application/json' }, body: JSON.stringify({ unsubscribed: true }), signal: AbortSignal.timeout(8000) }); } catch (_) {}

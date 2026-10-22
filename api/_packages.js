@@ -202,6 +202,15 @@ async function startCheckout(o, req, now) {
   return d;
 }
 
+// Newsletter sponsorship (api/_catalog.js NEWSLETTER) is never ordered here until every gate is met; today that is
+// never, so a newsletter order is always refused on the server with the live count, whatever the page sends.
+const isNewsletter = pkg => ['NEWSLETTER', 'SINGLE', 'FOUR', 'DEDICATED', 'NL'].includes(String(pkg || '').toUpperCase());
+function newsletterGate(verified) {
+  const el = CATALOG.newsletterEligibility({ verifiedSubscribers: verified });
+  const count = el.unmet.includes('verified_subscribers') ? ' — ' + Number(verified || 0).toLocaleString('en-US') + ' of ' + CATALOG.NEWSLETTER_MIN_VERIFIED.toLocaleString('en-US') + ' subscribers' : ' (final launch checks pending)';
+  return el.ok ? null : { error: 'Newsletter sponsorship is coming soon' + count + '.', field: 'pkg', code: 409, unmet: el.unmet, verified: Number(verified) || 0 };
+}
+
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const send = (c, o) => res.status(c).json(o);
@@ -223,6 +232,7 @@ async function handler(req, res) {
       }
       const q = req.query || {};
       if (!q.pkg) return send(200, publicInfo());
+      if (isNewsletter(q.pkg)) { const g = newsletterGate(stored ? await require('./_subscribe.js').verifiedCount() : 0); if (g) return send(200, { ok: false, error: g.error, field: g.field, unmet: g.unmet }); }
       if (!stored) return send(200, { ok: false, error: 'Online ordering isn’t open yet. Ask us on the Advertise page.' });
       const [campaigns, orders] = await Promise.all([openCampaigns(), openOrders()]);
       const r = check({ pkg: q.pkg, boards: q.boards, start: q.start }, campaigns, orders, now);
@@ -277,6 +287,7 @@ async function handler(req, res) {
       return send(200, { ok: true, invoice: true, holdDays: HOLD_DAYS });
     }
     if (b.action !== 'order') return send(400, { error: 'bad request' });
+    if (isNewsletter(b.pkg)) { const g = newsletterGate(await require('./_subscribe.js').verifiedCount()); if (g) return send(g.code, { error: g.error, field: g.field, unmet: g.unmet }); return send(400, { error: 'bad request' }); }
     if (b.website) return send(200, { ok: true, ref: 'AD-' + Date.now().toString(36).toUpperCase().slice(-6) + 'XX' });
     const who = contact(b);
     if (who.error) return send(400, who);
@@ -315,4 +326,4 @@ function refundedCmds(o, now) {
 }
 
 module.exports = handler;
-Object.assign(module.exports, { SELF_SERVE, PICKS, LEAD_DAYS, AHEAD_DAYS, HOLD_DAYS, INVOICE_HOLD_DAYS, STATUSES, LABELS, REF_RE, K, cardReady, placementsFor, flight, holds, asCampaigns, check, contact, change, activation, publicInfo, paidCmds, refundedCmds });
+Object.assign(module.exports, { isNewsletter, newsletterGate, SELF_SERVE, PICKS, LEAD_DAYS, AHEAD_DAYS, HOLD_DAYS, INVOICE_HOLD_DAYS, STATUSES, LABELS, REF_RE, K, cardReady, placementsFor, flight, holds, asCampaigns, check, contact, change, activation, publicInfo, paidCmds, refundedCmds });

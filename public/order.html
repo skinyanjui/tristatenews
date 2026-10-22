@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Order an ad package · Tri-State News</title>
+<style>
+:root { --bg:#fff; --fg:#111; --muted:#666; --border:#e2e2e2; --card:#fafafa; --ok:#1a7f37; --err:#e5484d; color-scheme:light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0a0a0a; --fg:#ededed; --muted:#a1a1a1; --border:#2e2e2e; --card:#111; --ok:#3fb950; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/24px system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:720px; margin:0 auto; padding:24px 16px 64px; display:grid; gap:24px; }
+h1 { margin:0; font-size:28px; line-height:36px; }
+h2 { margin:0 0 4px; font-size:18px; line-height:28px; }
+p { margin:0; color:var(--muted); }
+a { color:inherit; }
+section { display:grid; gap:12px; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+@media (max-width:639px) { section { padding:12px; } }
+.pk { display:grid; gap:8px; grid-template-columns:repeat(3, minmax(0, 1fr)); }
+@media (max-width:639px) { .pk { grid-template-columns:1fr; } }
+.pk label { display:grid; gap:4px; align-content:start; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); cursor:pointer; }
+.pk label:has(input:checked) { border-color:var(--fg); box-shadow:0 0 0 1px var(--fg); }
+.pk input { position:absolute; opacity:0; pointer-events:none; }
+.pk label:has(input:focus-visible) { outline:2px solid var(--fg); outline-offset:2px; }
+.pk b { font-size:16px; } .pk .price { font-size:22px; line-height:28px; font-weight:600; } .pk .per { color:var(--muted); font-size:14px; font-weight:400; }
+.pk ul { margin:4px 0 0; padding-left:18px; color:var(--muted); font-size:14px; line-height:20px; }
+fieldset { display:flex; flex-wrap:wrap; gap:8px 16px; margin:0; padding:0; border:0; }
+fieldset label { display:inline-flex; gap:8px; align-items:center; min-height:44px; }
+legend { padding:0; margin-bottom:4px; font-weight:500; }
+.f { display:grid; gap:4px; font-weight:500; }
+.two { display:grid; gap:12px; grid-template-columns:1fr 1fr; } @media (max-width:639px) { .two { grid-template-columns:1fr; } }
+input:not([type=radio]):not([type=checkbox]) { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; font-weight:400; width:100%; }
+input[type=checkbox] { width:20px; height:20px; }
+button { min-height:44px; padding:0 16px; border:0; border-radius:6px; background:var(--fg); color:var(--bg); font:inherit; font-weight:500; cursor:pointer; justify-self:start; }
+button[disabled] { opacity:.5; cursor:default; }
+.m { color:var(--muted); font-size:14px; line-height:20px; }
+.avail { font-size:14px; line-height:20px; } .avail.ok { color:var(--ok); } .avail.no { color:var(--err); }
+.err { color:var(--err); }
+.ref { font:600 20px/28px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.next { display:inline-flex; align-items:center; min-height:44px; padding:0 16px; border-radius:6px; background:var(--fg); color:var(--bg); font-weight:500; text-decoration:none; justify-self:start; }
+.soon { opacity:.75; }
+.hp { position:absolute; left:-9999px; }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header><p><a href="/advertise">← Advertise</a></p><h1>Order an ad package</h1>
+    <p>Pick a package and a start date, send your ad, then pay. Every package runs 30 days in rotation with up to two other local businesses on each spot, and is labeled “Sponsored”. No targeting and no tracking of readers.</p></header>
+
+  <div id="loading" class="m" role="status">Loading packages…</div>
+  <p id="closed" class="err" hidden>Online ordering isn’t open right now. <a href="/advertise#contact">Ask us on the Advertise page</a> and we’ll set it up by email.</p>
+
+  <form id="f" novalidate hidden>
+    <section aria-labelledby="s1">
+      <h2 id="s1">1. Package</h2>
+      <div class="pk" id="pk" role="radiogroup" aria-labelledby="s1"></div>
+      <p class="m">Bigger campaigns (Package D), newsletter ads and sponsored features aren’t sold online yet. <a href="/advertise#contact">Ask us</a>.</p>
+      <p class="m soon"><b>Sponsored feature:</b> coming soon.</p>
+    </section>
+
+    <section aria-labelledby="s2">
+      <h2 id="s2">2. Boards and start date</h2>
+      <fieldset id="boards"><legend id="pickhelp"></legend></fieldset>
+      <label class="f">Start date <input id="start" type="date" required></label>
+      <p class="avail" id="avail" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="s3">
+      <h2 id="s3">3. Your business</h2>
+      <label class="f">Business <input id="business" maxlength="80" autocomplete="organization" required></label>
+      <div class="two">
+        <label class="f">Your name <input id="name" maxlength="60" autocomplete="name" required></label>
+        <label class="f">Email <input id="email" type="email" maxlength="80" autocomplete="email" required></label>
+      </div>
+      <label class="f">Phone (optional) <input id="phone" type="tel" maxlength="20" autocomplete="tel" placeholder="812-555-0142"></label>
+      <div class="hp" aria-hidden="true"><input id="website" tabindex="-1" autocomplete="off"></div>
+      <label class="m" style="display:flex;gap:8px;align-items:flex-start"><input id="agree" type="checkbox"> <span>I agree to the <a href="/legal.html#advertising">Advertising Policy</a> and <a href="/legal.html#terms-packages">package terms</a>. My ad is reviewed before it runs, and it runs only once paid.</span></label>
+      <p class="err" id="err" role="alert" hidden></p>
+      <p class="m" id="total"></p>
+      <button id="go" type="submit">Place order and send your ad</button>
+    </section>
+  </form>
+
+  <section id="placed" hidden aria-labelledby="s4">
+    <h2 id="s4">Order saved</h2>
+    <p>Your reference: <span class="ref" id="ref"></span></p>
+    <p id="placedtx"></p>
+    <a class="next" id="toad" href="/creative.html">Send your ad</a>
+    <p class="m">Keep the reference. On the upload page, enter it with the email you used here. After you send your ad you’ll go on to payment.</p>
+  </section>
+
+  <section id="pay" hidden aria-labelledby="s5">
+    <h2 id="s5">Pay for your order</h2>
+    <p>Reference <span class="ref" id="pref"></span></p>
+    <label class="f" id="pemailw">Email used on your order <input id="pemail" type="email" maxlength="80" autocomplete="email"></label>
+    <p class="err" id="perr" role="alert" hidden></p>
+    <button id="paygo" type="button">Continue to payment</button>
+    <p id="paid" role="status" hidden></p>
+  </section>
+
+  <footer class="m"><a href="/legal.html#advertising">Advertising Policy</a> · <a href="/legal.html#terms-packages">Package terms</a> · <a href="/legal.html#privacy">Privacy</a></footer>
+</main>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function money(c) { return '$' + (Number(c) / 100).toLocaleString('en-US'); }
+  var BOARD = { jobs: 'Jobs', deals: 'Deals', events: 'Events', classifieds: 'Classifieds' };
+  // What a package holds, in words, from its catalog contents (api/_catalog.js PACKAGES[k].contents).
+  function lines(c) {
+    var out = [];
+    if (c.newsCard) out.push('Your ad between News stories (728×90 on wide screens, 320×100 on phones)');
+    out.push(c.boardCards >= 4 ? 'The Sponsored card on all four boards (300×250)' : 'The Sponsored card on ' + (c.boardCards === 1 ? 'one board' : c.boardCards + ' boards') + ' (300×250)');
+    out.push(c.sponsorLines === 1 ? 'The sponsor line on one board' : 'The sponsor line on ' + c.sponsorLines + ' boards');
+    if (c.sideAds) out.push('Both side ads on wide screens (160×600 / 300×600)');
+    out.push('30 days, one of up to 3 businesses in rotation' + (c.sideAds ? ' (2 on side ads)' : ''));
+    return out;
+  }
+  var info = null, timer = 0, q = new URLSearchParams(location.search);
+  function pkg() { var x = document.querySelector('input[name=pkg]:checked'); return x ? x.value : ''; }
+  function picks() { return Array.prototype.map.call(document.querySelectorAll('#boards input:checked'), function (x) { return x.value; }); }
+  function addDays(d, n) { var t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+  function todayChicago() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
+  function nice(d) { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); }
+  function setPkg() {
+    var k = pkg(), p = info.packages[k]; if (!p) return;
+    $('pickhelp').textContent = p.pickHelp;
+    var boxes = document.querySelectorAll('#boards input');
+    Array.prototype.forEach.call(boxes, function (b) { b.disabled = !b.checked && picks().length >= p.picks; });
+    $('total').textContent = p.label + ': ' + money(p.cents) + ' for 30 days. Nothing is charged until you pay in the last step.';
+    check();
+  }
+  function check() {
+    clearTimeout(timer);
+    var k = pkg(), p = info.packages[k], s = $('start').value;
+    if (!p || picks().length !== p.picks || !s) { $('avail').textContent = ''; $('avail').className = 'avail'; return; }
+    timer = setTimeout(function () {
+      fetch('/api/packages?pkg=' + k + '&boards=' + picks().join(',') + '&start=' + s).then(function (r) { return r.json(); }).then(function (d) {
+        $('avail').className = 'avail ' + (d.ok ? 'ok' : 'no');
+        $('avail').textContent = d.ok ? 'Open: runs ' + nice(d.start) + ' to ' + nice(d.end) + '.' : d.error;
+      }).catch(function () { $('avail').textContent = ''; });
+    }, 250);
+  }
+  function build() {
+    ['A', 'B', 'C'].forEach(function (k) {
+      var p = info.packages[k]; if (!p) return;
+      var l = el('label'), r = el('input'); r.type = 'radio'; r.name = 'pkg'; r.value = k; l.appendChild(r);
+      l.appendChild(el('b', null, p.label));
+      var pr = el('span', 'price', money(p.cents)); pr.appendChild(el('span', 'per', ' / 30 days')); l.appendChild(pr);
+      var ul = el('ul'); lines(p.contents).forEach(function (t) { ul.appendChild(el('li', null, t)); }); l.appendChild(ul);
+      r.addEventListener('change', function () { Array.prototype.forEach.call(document.querySelectorAll('#boards input'), function (b) { b.checked = false; }); setPkg(); });
+      $('pk').appendChild(l);
+    });
+    info.boards.forEach(function (b) {
+      var l = el('label'), c = el('input'); c.type = 'checkbox'; c.value = b; l.appendChild(c); l.appendChild(document.createTextNode(BOARD[b] || b));
+      c.addEventListener('change', setPkg); $('boards').appendChild(l);
+    });
+    var t = todayChicago(); $('start').min = addDays(t, info.leadDays); $('start').max = addDays(t, info.aheadDays); $('start').value = addDays(t, info.leadDays);
+    $('start').addEventListener('change', check);
+    var want = (q.get('pkg') || 'A').toUpperCase(), r = document.querySelector('input[name=pkg][value="' + (info.packages[want] ? want : 'A') + '"]');
+    r.checked = true; setPkg();
+  }
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function fail(t, id) { $('err').textContent = t; $('err').hidden = false; if (id && $(id)) $(id).focus(); }
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); $('err').hidden = true;
+    var k = pkg(), p = info.packages[k];
+    if (!p) return fail('Pick a package.');
+    if (picks().length !== p.picks) return fail(p.pickHelp);
+    var v = { action: 'order', pkg: k, boards: picks(), start: $('start').value, business: $('business').value.trim(), name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), agree: $('agree').checked, website: $('website').value };
+    if (v.business.length < 2) return fail('Add your business name.', 'business');
+    if (v.name.length < 2) return fail('Add your name.', 'name');
+    if (!EMAIL_RE.test(v.email)) return fail('Enter a valid email address.', 'email');
+    if (!v.agree) return fail('Agree to the Advertising Policy and package terms to continue.', 'agree');
+    $('go').disabled = true;
+    fetch('/api/packages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(v) }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); }).then(function (x) {
+      $('go').disabled = false;
+      if (!x.ok || !x.d.ok) return fail(x.d.error || 'Couldn’t save that. Try again.', x.d.field === 'start' ? 'start' : x.d.field);
+      $('f').hidden = true; $('placed').hidden = false; $('ref').textContent = x.d.ref;
+      $('placedtx').textContent = p.label + ', ' + nice(x.d.start) + ' to ' + nice(x.d.end) + ', ' + money(x.d.cents) + '. We’re holding these spots for ' + info.holdDays + ' days. Next, send your ad; then you’ll pay.';
+      $('toad').href = '/creative.html?order=1&ref=' + encodeURIComponent(x.d.ref);
+      $('placed').scrollIntoView({ behavior: 'smooth' });
+    }).catch(function () { $('go').disabled = false; fail('Couldn’t save that. Try again in a moment.'); });
+  });
+  function payStep(ref) {
+    $('loading').hidden = true; $('pay').hidden = false; $('pref').textContent = ref;
+    if (q.get('paid') === '1') { $('paygo').hidden = true; $('pemailw').hidden = true; $('paid').hidden = false; $('paid').textContent = 'Thanks, your payment went through. We’ll review your ad and email you before it starts.'; return; }
+    if (q.get('paid') === '0') { $('perr').textContent = 'Payment wasn’t finished. You can try again.'; $('perr').hidden = false; }
+    $('paygo').addEventListener('click', function () {
+      $('perr').hidden = true; $('paygo').disabled = true;
+      fetch('/api/packages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'checkout', ref: ref, email: $('pemail').value.trim() }) }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); }).then(function (x) {
+        $('paygo').disabled = false;
+        if (x.ok && x.d.url) { location.href = x.d.url; return; }
+        if (!x.ok) { $('perr').textContent = x.d.error || 'Couldn’t start payment. Try again.'; $('perr').hidden = false; if (x.d.next === 'creative') { var a = el('a', null, ' Send your ad'); a.href = '/creative.html?order=1&ref=' + encodeURIComponent(ref); $('perr').appendChild(a); } return; }
+        $('paygo').hidden = true; $('pemailw').hidden = true; $('paid').hidden = false;
+        $('paid').textContent = x.d.paid ? 'This order is already paid.' : 'Card payment isn’t open online yet, so we’ll email you an invoice within one business day. Your spots stay held while it’s open, and your ad runs once it’s paid and approved.';
+      }).catch(function () { $('paygo').disabled = false; $('perr').textContent = 'Couldn’t start payment. Try again in a moment.'; $('perr').hidden = false; });
+    });
+  }
+  var ref = (q.get('ref') || '').toUpperCase();
+  if (/^AD-[A-Z0-9]{6,10}$/.test(ref)) return payStep(ref);
+  fetch('/api/packages').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+    if (!d || !d.packages || !d.packages.A) throw 0;
+    info = d; $('loading').hidden = true; $('f').hidden = false; build();
+  }).catch(function () { $('loading').hidden = true; $('closed').hidden = false; });
+})();
+</script>
+</body>
+</html>

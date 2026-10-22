@@ -490,6 +490,8 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 /* "See ad sizes": a quiet outline button, so it doesn't compete with "Send inquiry" (specific enough to beat the panel's button styles) */
 body .sn-sec > button.tsz-toggle { justify-self:start; width:auto; min-height:var(--ctl); padding:0 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font-size:14px; font-weight:500; box-shadow:none; }
 body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
+.sn-pk-go { justify-self:start; display:inline-flex; align-items:center; min-height:var(--ctl); padding:0 16px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:14px; font-weight:500; text-decoration:none; }
+.sn-pk .rates a { color:inherit; font-weight:600; }
 
 @media (min-width:640px) {
   .nav-in, .nav-tabs, main { padding-left:24px; padding-right:24px; }
@@ -2730,7 +2732,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       if (!pr[k[0]]) return;
       var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, money(pr[k[0]].cents))); ul.appendChild(li);
     });
-    [['Section sponsorship', 'Your name on Jobs, Deals or Events', 'Ask'], ['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, k[2])); ul.appendChild(li); });
+    [['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, k[2])); ul.appendChild(li); });
     rt.appendChild(ul);
     // A link to the full rates page, only when it's switched on (/advertise answers 200; off, it redirects back here).
     var full = el('p', 'cl-note'); full.hidden = true; rt.appendChild(full);
@@ -2740,6 +2742,26 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     }).catch(function () {});
     if (PAY.configured) rt.appendChild(el('p', 'cl-note', 'To feature a post, publish it on its board, then tap “Feature” on your post.'));
     snEl.appendChild(rt);
+    // Ad packages A-C, ordered online (/order.html). Prices and contents come only from /api/packages (api/_catalog.js).
+    var pks = el('div', 'sn-sec sn-pk'); pks.hidden = true; pks.appendChild(el('h2', null, 'Ad packages'));
+    pks.appendChild(el('p', 'cl-note', '30 days, labeled “Sponsored”, in rotation with up to two other local businesses. Order online; we review your ad before it runs.'));
+    var pkl = el('ul', 'rates'); pks.appendChild(pkl); snEl.appendChild(pks);
+    fetch('/api/packages').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+      ['A', 'B', 'C'].forEach(function (k) {
+        var p = d.packages && d.packages[k]; if (!p) return;
+        var c = p.contents || {}, bits = [];
+        if (c.newsCard) bits.push('News ad');
+        bits.push(c.boardCards >= 4 ? 'card on every board' : 'card on ' + c.boardCards + (c.boardCards === 1 ? ' board' : ' boards'));
+        bits.push(c.sponsorLines + (c.sponsorLines === 1 ? ' sponsor line' : ' sponsor lines'));
+        if (c.sideAds) bits.push('side ads');
+        var li = el('li'), a = el('a', null, p.label); a.href = '/order.html?pkg=' + k;
+        var sp = el('span'); sp.appendChild(a); sp.appendChild(document.createTextNode(' · ' + bits.join(', '))); li.appendChild(sp);
+        li.appendChild(el('b', null, money(p.cents))); pkl.appendChild(li);
+      });
+      var o = el('a', 'sn-pk-go', 'Order a package'); o.href = '/order.html'; pks.appendChild(o);
+      pks.appendChild(el('p', 'cl-note', 'Sponsored features: coming soon.'));
+      pks.hidden = false;
+    }).catch(function () {});
     // What the ads look like: every IAB size we use, previewed with a made-up sample business (public/adsizes.js).
     // Readers reach advertising here (/advertise redirects to #advertise while ADS_PAGE is off), so the previews are here too.
     if (window.TSNSizes) {

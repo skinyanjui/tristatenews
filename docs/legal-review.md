@@ -184,7 +184,7 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 26. **Naming One Tree Planted:** the policy says "a nonprofit's page" without naming it, like the florist. Confirm that's fine, and that linking a charity's donation page needs no agreement with it.
 
 ## Ads on News (Advertising Policy short version, §1 and §2; /advertise "How our ads work")
-- **§1:** new "Sponsored cards in News": a card between News stories, about every 6th story (every 10th in two columns, so at most about one per screen), on its own row, never directly before or after a Police & courts item (it moves to the next safe spot), never first or next to Breaking, never in search. Samples follow the same rule.
+- **§1:** new "Sponsored cards in News": a card between News stories, about every 6th story (News is one story per row at every width, so at most about one per screen), on its own row, never directly before or after a Police & courts item (it moves to the next safe spot), never first or next to Breaking, never in search. Samples follow the same rule.
 - **§2:** News (with Police & courts items) now has sponsored cards and side ads, no sponsor line. Still no ads on Institutions, Obituaries, breaking-news alerts or search results. Caps add three shares for the News card (`card:news`).
 - **Short version:** "kept off news, Police & courts and obituaries" becomes "never placed right next to a Police & courts item, and kept off obituaries".
 

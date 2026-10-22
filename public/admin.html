@@ -52,6 +52,8 @@ details summary { min-height:40px; display:flex; align-items:center; }
   <div id="out" hidden>
     <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV</button></div><div id="nl"></div></section>
     <section><div class="row"><h2 id="adh">Advertising inquiries</h2><select id="adf" aria-label="Which inquiries to show"></select></div><p class="m">Status and notes are for us only: changing them never emails the advertiser. Reply from your own inbox.</p><div id="ad"></div></section>
+    <section><div class="row"><h2 id="poh">Package orders</h2><select id="pof" aria-label="Which package orders to show"><option value="open">Needs action</option><option value="all">All</option></select></div>
+      <p class="m" id="pocard"></p><div id="po"></div></section>
     <section><h2 id="alh">Inquiry activity</h2><div id="adl"></div></section>
     <section><h2 id="crh">Creatives waiting for review</h2><p class="m">Nothing an advertiser uploads is shown until you approve it here. Check the image, words and destination against the Advertising Policy (truthful, legible, still image, the link goes where it says). Approve or reject with a reason; both are written to the audit log. Approving picks where it runs. Withdrawing an approved creative takes it off the site.</p><div id="crp"></div></section>
     <section><h2 id="cah">Approved creatives</h2><div id="cra"></div></section>
@@ -178,6 +180,44 @@ details summary { min-height:40px; display:flex; align-items:center; }
   }
   function loadLeads() { return get('/api/advertise').then(drawLeads).catch(function () { drawLeads(null); }); }
   $('adf').addEventListener('change', function () { drawLeads(leads); });
+  // Package orders (api/_packages.js): invoice by hand when card payment isn't set up, mark paid, activate, cancel.
+  var poData = null;
+  function poCard(o) {
+    var d = mk('div', { class: 'item cr' });
+    var h = mk('div'); h.appendChild(mk('b', null, o.business + ' · ' + o.pkg + ' ')); h.appendChild(mk('span', { class: 'st' }, o.label)); d.appendChild(h);
+    d.appendChild(mk('div', { class: 'm' }, o.ref + ' · $' + (o.cents / 100).toLocaleString('en-US') + ' · ' + o.start + ' to ' + o.end + ' · ' + o.placements.join(', ')));
+    d.appendChild(mk('div', { class: 'm' }, o.name + ' · ' + o.email + (o.phone ? ' · ' + o.phone : '') + ' · ordered ' + new Date(o.at).toLocaleString() + (o.holding ? ' · spots held' : (['pending_payment', 'checkout', 'invoiced'].indexOf(o.status) >= 0 ? ' · hold lapsed' : ''))));
+    if (o.status === 'pending_payment') d.appendChild(mk('div', { class: 'm' }, o.invoiceRequested ? 'Waiting for an invoice: card payment isn’t set up, so send one by hand, then mark it Invoiced.' : 'Ad not sent or payment not started yet.'));
+    if (o.status === 'refunded') d.appendChild(mk('div', { class: 'm err' }, 'Refunded in Stripe.' + (o.campaignId ? ' End campaign ' + o.campaignId + ' under Campaigns.' : '')));
+    var crs = o.creatives || [];
+    d.appendChild(mk('div', { class: 'm' }, crs.length ? 'Creatives: ' + crs.map(function (c) { return c.headline + ' (' + c.id + ', ' + c.status + (c.status === 'approved' && !c.covers ? ', not approved for every placement' : '') + ')'; }).join('; ') : 'No creative sent yet.'));
+    var note = mk('input', { placeholder: 'Note (invoice number, how it was paid, or reason)', maxlength: '300', 'aria-label': 'Note for ' + o.ref }), acts = mk('div', { class: 'acts' }), msg = mk('p', { class: 'm', role: 'status' });
+    var ready = crs.filter(function (c) { return c.status === 'approved' && c.covers; });
+    var pick = mk('select', { 'aria-label': 'Creative to run for ' + o.ref }); ready.forEach(function (c) { pick.appendChild(mk('option', { value: c.id }, c.headline + ' (' + c.id + ')')); });
+    var acts_ = { pending_payment: [['Mark invoiced', 'invoiced'], ['Mark paid', 'paid'], ['Cancel', 'cancel']], checkout: [['Mark paid', 'paid'], ['Cancel', 'cancel']], invoiced: [['Mark paid', 'paid'], ['Cancel', 'cancel']], paid: [['Activate', 'activate'], ['Cancel', 'cancel']] }[o.status] || [];
+    acts_.forEach(function (b) {
+      var x = mk('button', { type: 'button', class: b[1] === 'cancel' ? 'ghost' : '' }, b[0]);
+      if (b[1] === 'activate' && !ready.length) { x.disabled = true; x.title = 'Approve a creative for every placement first'; }
+      x.addEventListener('click', function () {
+        post('/api/packages', { action: b[1], ref: o.ref, note: note.value.trim(), creativeId: pick.value }).then(function () { loadPackages(); if (b[1] === 'activate') loadCampaigns(); }).catch(function (e) { msg.textContent = e.message; });
+      });
+      acts.appendChild(x);
+    });
+    if (acts.children.length) { if (o.status === 'paid' && ready.length) d.appendChild(pick); d.appendChild(note); d.appendChild(acts); d.appendChild(msg); }
+    if (o.campaignId) d.appendChild(mk('div', { class: 'm' }, 'Campaign ' + o.campaignId + (o.runs ? ' · runs ' + o.runs[0] + ' to ' + o.runs[1] : '')));
+    return d;
+  }
+  function drawPackages() {
+    var box = $('po'); box.textContent = '';
+    if (!poData) { $('poh').textContent = 'Package orders'; empty(box, 'Not available.'); return; }
+    var open = ['pending_payment', 'checkout', 'invoiced', 'paid', 'refunded'];
+    var list = poData.items.filter(function (o) { return $('pof').value === 'all' || open.indexOf(o.status) >= 0; });
+    $('poh').textContent = 'Package orders (' + poData.items.filter(function (o) { return open.indexOf(o.status) >= 0; }).length + ' need action)';
+    $('pocard').textContent = poData.card ? 'Card payment is on: orders pay through Stripe Checkout; the webhook marks them paid.' : 'Card payment is off (no Stripe key): orders wait as “Pending payment”. Send an invoice by hand, mark it Invoiced, then Paid when the money arrives.';
+    if (!list.length) empty(box, 'No package orders.'); else list.forEach(function (o) { box.appendChild(poCard(o)); });
+  }
+  function loadPackages() { return get('/api/packages').then(function (d) { poData = d; drawPackages(); }).catch(function () { poData = null; drawPackages(); }); }
+  $('pof').addEventListener('change', drawPackages);
   // Campaigns (api/_campaigns.js): book an approved creative on placements for dates, within the inventory caps.
   var cpData = null;
   function cpPlacements() {
@@ -260,7 +300,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
   $('key').addEventListener('submit', function (e) {
     e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
     Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; })]).then(function (r) {
-      loadCreatives(); loadCampaigns();
+      loadCreatives(); loadCampaigns(); loadPackages();
       if (!r[0] && !r[1] && !r[2] && !r[3]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
       emails = r[0] ? r[0].emails.slice().sort() : [];

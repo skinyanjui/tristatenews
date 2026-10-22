@@ -35,12 +35,21 @@ test('Terms §7 matches the code: capped period at full price, shown first, unda
   assert.ok(t.includes('Last updated October 18, 2026'));
 });
 
-test('packages are "available by inquiry" with no price or contents; newsletter sponsorship not offered yet', () => {
+test('packages A–C ordered online (Terms §9), D by proposal, sponsored features coming soon; newsletter sponsorship not offered yet', () => {
   const t = text(legal);
-  assert.ok(text(ads).includes('Advertising packages: available by inquiry'));
+  assert.ok(text(ads).includes('Advertising packages: Packages A, B and C can be ordered online for 30 days'));
+  assert.ok(text(ads).includes('Package D is by proposal') && text(ads).includes('Sponsored features: coming soon'));
+  const pk = text(terms.slice(terms.indexOf('id="terms-packages"'), terms.indexOf('id="terms-ip"')));
+  for (const s of ['Package A:', 'Package B:', 'Package C:', 'at most two other businesses (one other on side ads)', 'Ads aren’t targeted', 'We don’t promise a number of views or clicks',
+    'at least 3 days ahead and no more than 90 days ahead', 'hold your spots for 7 days', '14 days after we send an invoice', 'Nothing runs until we’ve approved the ad and the order is paid',
+    'we email you an invoice', 'doesn’t renew by itself', 'a full 30 days from the day we start it', 'full refund before your ad starts', 'keeps the price and contents it was sold with', 'sponsored features are coming soon'])
+    assert.ok(pk.includes(s), s);
+  const P = require('../api/_packages.js');
+  assert.deepStrictEqual([P.LEAD_DAYS, P.AHEAD_DAYS, P.HOLD_DAYS, P.INVOICE_HOLD_DAYS], [3, 90, 7, 14], 'the Terms match the code');
+  assert.ok(t.includes('Advertising package orders: business, name, email, optional phone'), 'Privacy lists package orders');
   for (const p of Object.values(C.PACKAGES)) assert.ok(!t.includes(usd(p.cents)), 'no package price ' + usd(p.cents));
   for (const n of Object.values(C.NEWSLETTER)) if (n.cents) assert.ok(!t.includes(usd(n.cents)), 'no newsletter price');
-  assert.ok(!/Package [A-D]/.test(t), 'no package names or inclusions promised');
+  assert.ok(text(privacy).includes('for an advertising package, Stripe receives the package, its dates, the order reference and the email you ordered with'));
   assert.ok(text(ads).includes('Newsletter sponsorship: not offered yet'));
 });
 
@@ -83,7 +92,7 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
 test('Privacy: order records are described as stored, and the payment code never keeps card or contact details from Stripe', () => {
   const t = text(privacy);
   for (const s of ['Order records', 'We don’t store your name, email or card details from Stripe', 'An unpaid checkout is deleted after 30 days', 'have no automatic expiry',
-    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 18, 2026'])
+    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 21, 2026'])
     assert.ok(t.includes(s), s);
   for (const f of ['api/stripe-webhook.js', 'api/_orders.js', 'api/_checkout.js'])
     assert.ok(!/customer_details|customer_email|receipt_email|billing_details|\.card\b|payment_method_details/.test(read(f)), f + ' stores no card or contact data');

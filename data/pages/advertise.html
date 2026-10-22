@@ -88,7 +88,7 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
       <p class="m">Keep your post at the top of its board, with a “Featured · Paid” badge.</p>
       <div class="grid" id="featured" style="margin:12px 0 24px"></div>
       <h3>Packages</h3>
-      <p class="m">Monthly spots in the Sponsored card inside a board’s list, the sponsor line at the top of a board, and side ads on wide screens. We confirm exactly what’s included, in writing, before you pay.</p>
+      <p class="m">30-day spots in the ad between News stories, the Sponsored card inside a board’s list, the sponsor line at the top of a board, and side ads on wide screens. Each spot rotates among at most three businesses (two on side ads), with no targeting. Order A, B or C online: pick your start date, send your ad, then pay. Your ad runs only after we approve it and it’s paid.</p>
       <div class="grid" id="packages" style="margin:12px 0 24px"></div>
       <h3>Coming soon</h3>
       <p class="m">Not available to buy yet.</p>
@@ -145,9 +145,9 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
   function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   // What each package holds, in plain words. Prices and status come only from /api/catalog (api/_catalog.js).
   var PACKAGE_COPY = {
-    A: 'A turn in the Sponsored card on one board.',
-    B: 'A turn in the Sponsored card on two boards, plus a turn in one board’s sponsor line and a side ad on wide screens.',
-    C: 'The Sponsored card and the sponsor line on one board, all to yourself, plus a side ad on wide screens.',
+    A: 'The Sponsored card (300×250) on one board, plus that board’s sponsor line. 30 days.',
+    B: 'Your ad between News stories (728×90, 320×100 on phones), the Sponsored card on two boards and one sponsor line. 30 days.',
+    C: 'Your ad between News stories, the Sponsored card on all four boards, two sponsor lines and both side ads on wide screens (160×600 / 300×600). 30 days.',
     D: 'Several boards at once. Tell us what you have in mind and we’ll send a proposal.'
   };
   var FEATURED_ORDER = ['item', 'event', 'deal', 'job'];
@@ -179,7 +179,8 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
       var x = pk[k]; if (!x) return;
       opt('package', k, x.label);
       if (x.status === 'request_proposal') $('packages').appendChild(card(x.label, 'By proposal', '', 'By proposal', PACKAGE_COPY[k], ['Request a proposal', function () { ask('Section sponsorship', 'I’d like a proposal for ' + x.label + '.', k); }]));
-      else $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', x.purchasable ? 'Available' : 'Ask us', PACKAGE_COPY[k], ['Ask about ' + x.label, function () { ask('Section sponsorship', 'I’m interested in ' + x.label + '.', k); }]));
+      else if (x.purchasable) $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', 'Order online', PACKAGE_COPY[k], ['Order ' + x.label, function () { location.href = '/order.html?pkg=' + k; }]));
+      else $('packages').appendChild(card(x.label, money(x.cents), 'per ' + x.days + ' days', 'Ask us', PACKAGE_COPY[k], ['Ask about ' + x.label, function () { ask('Section sponsorship', 'I’m interested in ' + x.label + '.', k); }]));
     });
     // budget bands come from the catalog too (cut at the package prices)
     (cat.budgets || []).forEach(function (b) { if (b && b.key && b.label) opt('budget', b.key, b.label); });

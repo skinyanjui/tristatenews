@@ -39,6 +39,7 @@ form { padding:var(--card-pad); }
 #sizes .bav { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--border); font-size:13px; }
 #sizes details { font-size:14px; }
 #sizes details input { min-height:0; padding:4px 0; border:0; }
+.next { display:inline-flex; align-items:center; min-height:44px; margin-top:12px; padding:0 16px; border-radius:6px; background:var(--fg); color:var(--bg); font-weight:500; text-decoration:none; }
 </style>
 <script src="/adsizes.js"></script>
 </head>
@@ -103,6 +104,9 @@ form { padding:var(--card-pad); }
   function $(id) { return document.getElementById(id); }
   var token = new URLSearchParams(location.search).get('token') || '';
   if (token) { $('who').hidden = true; $('tokmsg').hidden = false; }
+  // Coming from a package order (/order.html?...): the link carries the reference only (never the email).
+  var qref = (new URLSearchParams(location.search).get('ref') || '').toUpperCase(), fromOrder = new URLSearchParams(location.search).get('order') === '1';
+  if (!token && /^AD-[A-Z0-9]{6,10}$/.test(qref)) $('ref').value = qref;
   var HINTS = { 'Call now': 'A U.S. phone number, like 812-555-0142.', 'Get directions': 'A Google Maps, Apple Maps, Bing Maps or OpenStreetMap link (https://).' };
   $('cta').addEventListener('change', function () {
     var v = $('cta').value; $('desthint').textContent = HINTS[v] || 'Your web page, starting with https://. No link shorteners or redirects.';
@@ -216,6 +220,8 @@ form { padding:var(--card-pad); }
       if (!x.ok) return fail(x.d.error || 'Couldn’t send that. Try again.');
       $('f').hidden = true; $('done').hidden = false;
       $('done').textContent = 'Thanks. Your ad (' + x.d.id + ') is waiting for review. It won’t appear on the site until we approve it.';
+      var sent = $('ref').value.trim().toUpperCase();
+      if (fromOrder && qref === sent) { var go = document.createElement('a'); go.className = 'next'; go.href = '/order.html?ref=' + encodeURIComponent(sent); go.textContent = 'Continue to payment'; $('done').appendChild(document.createTextNode(' ')); $('done').appendChild(go); }
     }).catch(function () { $('go').disabled = false; $('go').textContent = 'Send for review'; fail('Couldn’t send that. Check your connection and try again.'); });
   });
 })();

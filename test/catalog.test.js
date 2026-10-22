@@ -24,12 +24,17 @@ test('Featured prices in integer cents, with durations', () => {
   for (const k of ['obit', 'news', '', undefined, '__proto__', 'constructor', 'toString']) assert.strictEqual(C.featuredPrice(k), null, String(k));
 });
 
-test('Packages A–D: $249, $599, $1,199, $2,499 per 30 days; D is request-proposal; none purchasable online yet', () => {
+test('Packages A–D: $249, $599, $1,199, $2,499 per 30 days; D is request-proposal; A–C ordered online (ads Phase 6)', () => {
   const want = { A: 24900, B: 59900, C: 119900, D: 249900 };
   for (const [id, cents] of Object.entries(want)) { assert.strictEqual(C.PACKAGES[id].cents, cents, id); assert.strictEqual(C.PACKAGES[id].days, 30, id); }
   assert.strictEqual(C.PACKAGES.D.status, 'request_proposal');
   assert.deepStrictEqual(C.packageEligibility('D'), { ok: false, reason: 'request_proposal' });
-  for (const id of ['A', 'B', 'C']) assert.deepStrictEqual(C.packageEligibility(id), { ok: false, reason: 'inquiry_only' }, id);
+  for (const id of ['A', 'B', 'C']) { assert.deepStrictEqual(C.packageEligibility(id), { ok: true }, id); assert.strictEqual(C.PACKAGES[id].status, 'available', id); }
+  assert.deepStrictEqual(['A', 'B', 'C'].map(id => C.PACKAGES[id].contents), [
+    { boardCards: 1, sponsorLines: 1, newsCard: false, sideAds: false },
+    { boardCards: 2, sponsorLines: 1, newsCard: true, sideAds: false },
+    { boardCards: 4, sponsorLines: 2, newsCard: true, sideAds: true }]);
+  assert.ok(!('contents' in C.PACKAGES.D), 'D has no fixed contents: it is quoted');
   for (const id of ['E', '', '__proto__', 'constructor']) assert.deepStrictEqual(C.packageEligibility(id), { ok: false, reason: 'unknown_package' }, id);
 });
 
@@ -70,7 +75,8 @@ test('publicCatalog: availability flags', () => {
     assert.deepStrictEqual([on.featured[k].purchasable, on.featured[k].status], [true, 'available'], k);
     assert.deepStrictEqual([on.featured[k].cents, on.featured[k].days], [C.FEATURED[k].cents, C.FEATURED[k].days]);
   }
-  for (const cat of [on, off]) for (const g of ['packages', 'newsletter', 'addons']) for (const [k, v] of Object.entries(cat[g])) assert.strictEqual(v.purchasable, false, g + '.' + k);
+  for (const cat of [on, off]) for (const g of ['packages', 'newsletter', 'addons']) for (const [k, v] of Object.entries(cat[g])) assert.strictEqual(v.purchasable, g === 'packages' && ['A', 'B', 'C'].includes(k), g + '.' + k);
+  assert.strictEqual(off.addons.sponsoredFeature.status, 'not_available', 'the sponsored feature stays coming soon');
   assert.deepStrictEqual(on.newsletterGate, { minVerifiedSubscribers: 1500, gates: ['verified_subscribers', 'measured_deliverability', 'defined_inventory', 'approved'] });
 });
 

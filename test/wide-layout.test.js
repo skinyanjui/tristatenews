@@ -12,13 +12,13 @@ const css = html.slice(html.indexOf('/* ---------- wide screens'), html.lastInde
 const NOW = Date.parse('2026-10-21T18:00:00Z');
 const ON = { on: true, ads: [{ name: 'Ninebark Bakehouse', text: 'a' }, { name: 'Marrow Creek Orchard', text: 'b' }, { name: 'Quillfeather Books', text: 'c' }, { name: 'Tinmouth Bicycle Works', text: 'd' }] };
 
-test('railFill: vertical samples on both rails of the four boards only; never on News, Police & courts or Obituaries', () => {
-  for (const tab of ['jobs', 'deals', 'events', 'classifieds']) for (const side of ['left', 'right']) {
+test('railFill: vertical samples on both rails of the four boards and News; never on Obituaries', () => {
+  for (const tab of ['jobs', 'deals', 'events', 'classifieds', 'news']) for (const side of ['left', 'right']) {
     const f = A.railFill(tab, side, [], NOW, ON);
     assert.equal(f.type, 'sample', tab + ' ' + side); assert.ok(A.validSample(f.ad));
   }
   assert.notEqual(A.railFill('jobs', 'left', [], NOW, ON).ad.name, A.railFill('jobs', 'right', [], NOW, ON).ad.name);
-  for (const tab of ['news', 'obits', 'safety', 'all', 'institution', 'saved', 'submit', '', undefined, '__proto__'])
+  for (const tab of ['obits', 'safety', 'all', 'institution', 'saved', 'submit', '', undefined, '__proto__'])
     for (const side of ['left', 'right']) assert.equal(A.railFill(tab, side, [{ name: 'Real', url: 'https://real.test/' }], NOW, ON), null, String(tab));
   assert.equal(A.railFill('jobs', 'top', [], NOW, ON), null);
 });
@@ -41,7 +41,7 @@ test('wider page: one width token for nav, tabs and main; rails sized and placed
   assert.ok(css.includes('.rail-ad.rail-sky { min-height:min(600px, calc(100vh - 140px));'), 'skyscraper height, never taller than the screen');
   assert.ok(html.includes('.rail { display:none; }') && html.includes('body:not([data-ads]) .rail { display:none !important; }'));
   // the widest page plus both rails still fits each breakpoint
-  const steps = [[1360, 960, 160, 24], [1440, 1040, 160, 24], [1680, 1120, 240, 32], [1920, 1240, 300, 32], [2560, 1360, 300, 48]];
+  const steps = [[1360, 960, 160, 24], [1440, 1120, 120, 20], [1680, 1280, 160, 24], [1920, 1440, 160, 32], [2560, 1760, 300, 48]];
   for (const [vw, page, rail, gap] of steps) assert.ok(page + 2 * (rail + gap) <= vw, vw + 'px');
 });
 
@@ -51,4 +51,10 @@ test('no stretching: more columns instead, Breaking spans; card tokens kept', ()
   assert.ok(css.includes('.deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }'));
   assert.ok(css.includes('gap:var(--card-gap)'));
   assert.ok(html.includes('if (SPONSORS) UI.rails(state.cat);'), 'rails follow the tab');
+});
+
+test('width tokens in index.html match the fit table', () => {
+  const want = { 1440: [1120, 120, 20], 1680: [1280, 160, 24], 2560: [1760, 300, 48] };
+  for (const [vw, [p, r, g]] of Object.entries(want)) assert.ok(html.includes(`@media (min-width:${vw}px) { :root { --page-max:${p}px; --rail-w:${r}px; --rail-gap:${g}px; } }`), vw);
+  assert.ok(html.includes('@media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }'));
 });

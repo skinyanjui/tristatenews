@@ -76,7 +76,7 @@ test('dates are Chicago calendar dates; a campaign runs from its start to its en
 });
 
 test('inventory caps: 3 shares per board for the card and the sponsor line, 2 per side ad, checked day by day', () => {
-  assert.deepStrictEqual(P.CAPS, { 'card:jobs': 3, 'card:deals': 3, 'card:events': 3, 'card:classifieds': 3, 'line:jobs': 3, 'line:deals': 3, 'line:events': 3, 'line:classifieds': 3, 'rail:left': 2, 'rail:right': 2 });
+  assert.deepStrictEqual(P.CAPS, { 'card:jobs': 3, 'card:deals': 3, 'card:events': 3, 'card:classifieds': 3, 'card:news': 3, 'line:jobs': 3, 'line:deals': 3, 'line:events': 3, 'line:classifieds': 3, 'rail:left': 2, 'rail:right': 2 });
   const three = [camp('cp0000000001', ['card:jobs'], '2026-10-18', '2026-11-16'), camp('cp0000000002', ['card:jobs'], '2026-10-25', '2026-11-23'), camp('cp0000000003', ['card:jobs', 'line:jobs'], '2026-11-01', '2026-11-30')];
   assert.deepStrictEqual(P.overCap(three, ['card:jobs'], '2026-11-10', '2026-11-12'), { placement: 'card:jobs', day: '2026-11-10', booked: 3, cap: 3 });
   assert.strictEqual(P.overCap(three, ['card:jobs'], '2026-11-24', '2026-12-20'), null, 'two left by then');

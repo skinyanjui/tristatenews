@@ -98,15 +98,15 @@ test('real ads: labeled "Sponsored", rel="sponsored", https only; they replace t
   for (const n of boxes['rail-l'].children.concat(boxes['rail-r'].children)) assert.deepStrictEqual([n.tag, n.rel, tagOf(n)], ['a', 'sponsored noopener noreferrer', 'Sponsored']);
 });
 
-test('no ads on News/All, News, Police & courts or Obituaries', () => {
+test('no ads on Obituaries or Breaking; News has no sponsor line (only its in-feed card and side ads)', () => {
   // sponsor lines: only the four boards (drawBody skips obituaries) and Events
   const calls = [...html.matchAll(/UI\.sponsor\(([^)]*)\)/g)].map(m => m[1]);
   assert.deepStrictEqual(calls.sort(), ["'events', true", 'TABOF[kind], true']);
   assert.ok(html.includes("var spn = kind !== 'obit' && UI.sponsor(TABOF[kind], true);"));
   assert.ok(!/UI\.sponsor\('(news|all|safety|obits|institution)'/.test(html));
-  // side ads: hidden unless render() marks one of the four ad tabs (and never during a search)
+  // side ads: hidden unless render() marks one of the ad tabs (the four boards and News; never during a search)
   assert.ok(html.includes('body:not([data-ads]) .rail { display:none !important; }'));
-  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds'];"));
+  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news'];"));
   assert.ok(html.includes("document.body.toggleAttribute('data-ads', AD_TABS.indexOf(state.cat) >= 0 && !state.q.trim());"));
   const asides = [...html.matchAll(/<aside id="rail-[lr]"[^>]*>/g)].map(m => m[0]);
   assert.strictEqual(asides.length, 2);

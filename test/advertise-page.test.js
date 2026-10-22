@@ -152,7 +152,7 @@ test('inquiry form: posts to /api/advertise and shows the AD- reference; the pac
 
 test('plain words: untargeted, where ads never go, links to the upload page and the Advertising Policy; no ads or tracking on the page', () => {
   const t = text(page);
-  for (const s of ['Ads appear only on the Jobs, Deals, Events and Classifieds boards', 'There are never ads on News, Police & courts or Obituaries', 'Ads aren’t targeted',
+  for (const s of ['Ads appear on the Jobs, Deals, Events and Classifieds boards and in the News feed, never directly next to a Police & courts item', 'There are never ads on Obituaries', 'Ads aren’t targeted',
     'Everyone who opens a board sees the same ads', 'labeled “Sponsored,”', 'A person reviews every ad before it runs'])
     assert.ok(t.includes(s), s);
   assert.ok(page.includes('href="/creative.html"') && page.includes('href="/legal.html#advertising"'));

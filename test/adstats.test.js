@@ -61,7 +61,7 @@ const beacon = (e, pl, cid) => JSON.stringify({ e, cid: cid || CID, pl });
 test('events: only {e, cid, pl} with a known event, campaign id and placement; bots are skipped', () => {
   assert.deepStrictEqual(S.parseEvent(beacon('v', 'card:jobs')), { e: 'v', cid: CID, pl: 'card:jobs' });
   assert.deepStrictEqual(S.parseEvent({ e: 'c', cid: CID, pl: 'rail:right', who: 'x' }), { e: 'c', cid: CID, pl: 'rail:right' }, 'anything else is dropped');
-  for (const bad of ['', 'nope', '{"e":"x","cid":"cp0000000001","pl":"card:jobs"}', beacon('v', 'card:news'), beacon('v', 'card:jobs', 'cp1'), 'x'.repeat(400), null]) assert.strictEqual(S.parseEvent(bad), null, String(bad).slice(0, 40));
+  for (const bad of ['', 'nope', '{"e":"x","cid":"cp0000000001","pl":"card:jobs"}', beacon('v', 'card:obits'), beacon('v', 'card:jobs', 'cp1'), 'x'.repeat(400), null]) assert.strictEqual(S.parseEvent(bad), null, String(bad).slice(0, 40));
   assert.ok(S.isBot('Googlebot/2.1') && S.isBot('Mozilla/5.0 HeadlessChrome/141') && S.isBot('curl/8') && S.isBot(''));
   assert.ok(!S.isBot(UA) && !S.isBot('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'));
   const h = S.connHash('203.0.113.9', '2026-10-18');
@@ -70,7 +70,7 @@ test('events: only {e, cid, pl} with a known event, campaign id and placement; b
 });
 
 test('report: counts by day and placement, totals, CSV; no ratios or made-up figures', () => {
-  const r = S.report({ '2026-10-19|card:jobs|v': '5', '2026-10-18|card:jobs|v': '10', '2026-10-18|card:jobs|c': '2', '2026-10-18|rail:right|v': '4', 'junk': '9', '2026-10-18|card:news|v': '3' });
+  const r = S.report({ '2026-10-19|card:jobs|v': '5', '2026-10-18|card:jobs|v': '10', '2026-10-18|card:jobs|c': '2', '2026-10-18|rail:right|v': '4', 'junk': '9', '2026-10-18|card:obits|v': '3' });
   assert.deepStrictEqual(r.rows, [{ date: '2026-10-18', placement: 'card:jobs', views: 10, clicks: 2 }, { date: '2026-10-18', placement: 'rail:right', views: 4, clicks: 0 }, { date: '2026-10-19', placement: 'card:jobs', views: 5, clicks: 0 }]);
   assert.deepStrictEqual(r.totals, { views: 19, clicks: 2 });
   assert.deepStrictEqual(r.byPlacement['card:jobs'], { views: 15, clicks: 2 });

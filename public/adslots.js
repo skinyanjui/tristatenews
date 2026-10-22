@@ -1,8 +1,9 @@
 /* The in-listing ad card: which boards may carry it, where it goes, and what fills it. One rule, shared by the page
    (window.TSNAds) and the tests.
 
-   - Only the Jobs, Deals, Classifieds and Events boards carry it. News, Police & courts, Institutions,
-     Obituaries, Breaking cards and search results never do (fill() returns null for anything else).
+   - The Jobs, Deals, Classifieds and Events boards carry it, and the News feed carries in-feed cards (newsSlots: about
+     every 6th story, never next to a Police & courts item). Institutions, Obituaries, Breaking cards and search
+     results never do (fill() returns null for anything else).
    - One card per board view: after the 6th post, or after the last one on a shorter board; none on an empty board.
    - Only approved creatives fill it. The page reads /api/creative?live=1 (api/_creative.js), which lists only what an
      admin approved in admin.html, with a reason, for that placement; ads typed into sponsors.json are never shown.
@@ -21,7 +22,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   var BOARDS = { item: 'classifieds', deal: 'deals', event: 'events', job: 'jobs' }; // board kind -> sponsors.json key
-  var AD_TABS = ['events', 'jobs', 'deals', 'classifieds']; // the only tabs with any ad (side ads included)
+  var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news']; // the only tabs with any ad (side ads included); never Obituaries
+  var FEED = { news: 'news' }; // the News feed's in-feed card (see newsSlots); a feed, not a board
   var AFTER = 6;
   var DAY = 864e5;
   var TURN_MIN = 15;
@@ -76,15 +78,17 @@
     var i = dayNumber(now) + (Number(offset) || 0);
     return list[((i % list.length) + list.length) % list.length];
   }
-  var OFFSET = { classifieds: 0, deals: 2, events: 4, jobs: 6 };
+  var OFFSET = { classifieds: 0, deals: 2, events: 4, jobs: 6, news: 5 };
   // What fills the card on a board: { type: 'direct', ad } | { type: 'sample', ad } | { type: 'house' }, or null where
   // no ad may appear. A real ad always comes first; samples only stand in for an unsold spot.
   function fill(kind, cards, now, samples) {
-    if (!Object.prototype.hasOwnProperty.call(BOARDS, kind)) return null;
-    var v = cards && Object.prototype.hasOwnProperty.call(cards, BOARDS[kind]) ? cards[BOARDS[kind]] : null;
+    var own = Object.prototype.hasOwnProperty;
+    var key = own.call(BOARDS, kind) ? BOARDS[kind] : own.call(FEED, kind) ? FEED[kind] : null;
+    if (!key) return null;
+    var v = cards && own.call(cards, key) ? cards[key] : null;
     var ad = pick(v, now);
     if (ad) return { type: 'direct', ad: ad };
-    var sm = sample(samples, OFFSET[BOARDS[kind]], now);
+    var sm = sample(samples, OFFSET[key], now);
     if (sm) return { type: 'sample', ad: sm };
     return { type: 'house' }; // unsold, or a reserved network entry (no network is connected)
   }
@@ -102,10 +106,26 @@
     if (sm) return { type: 'sample', ad: sm };
     return side === 'right' ? { type: 'house' } : { type: 'none' };
   }
+  // Where the News feed's in-feed cards go: the indexes of the stories each card goes before. flags[i] is true when
+  // story i is a Police & courts item. A card goes about every `every` stories, only on a row boundary of a
+  // `cols`-column grid (the card spans the full row), and never next to a Police & courts item: none of the `cols`
+  // stories just before it or just after it may be one; otherwise it moves to the next safe boundary. Cards are at
+  // least `every` stories apart, never first (so never next to the Breaking card above the list), never last.
+  var NEWS_EVERY = 6, NEWS_EVERY_WIDE = 10;
+  function newsSlots(flags, every, cols) {
+    flags = Array.isArray(flags) ? flags : []; every = Math.max(2, Number(every) || NEWS_EVERY); cols = Math.max(1, Number(cols) || 1);
+    var out = [], n = flags.length, p = Math.ceil(every / cols) * cols;
+    while (p < n) {
+      var safe = true;
+      for (var i = Math.max(0, p - cols); i < Math.min(n, p + cols); i++) if (flags[i]) { safe = false; break; }
+      if (safe) { out.push(p); p += Math.ceil(every / cols) * cols; } else p += cols;
+    }
+    return out;
+  }
   // How many posts come before the card, or -1 for no card.
   function position(count) {
     count = Number(count) || 0;
     return count <= 0 ? -1 : Math.min(count, AFTER);
   }
-  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position, railFill: railFill, RAIL_OFFSET: RAIL_OFFSET };
+  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position, railFill: railFill, RAIL_OFFSET: RAIL_OFFSET, FEED: FEED, newsSlots: newsSlots, NEWS_EVERY: NEWS_EVERY, NEWS_EVERY_WIDE: NEWS_EVERY_WIDE };
 });

@@ -12,10 +12,11 @@ const sponsors = JSON.parse(raw);
 const NOW = Date.parse('2026-10-18T15:00:00Z');
 const ad = (n, extra) => Object.assign({ name: 'Advertiser ' + n, text: 'Text ' + n, url: 'https://ad' + n + '.test/' }, extra || {});
 
-test('only the four boards can carry the card; every no-ad section gets null', () => {
+test('the four boards and the News feed can carry the card; every no-ad section gets null', () => {
   assert.deepStrictEqual(A.BOARDS, { item: 'classifieds', deal: 'deals', event: 'events', job: 'jobs' });
-  assert.deepStrictEqual(A.AD_TABS, ['events', 'jobs', 'deals', 'classifieds']);
-  for (const k of ['obit', 'obits', 'news', 'all', 'safety', 'institution', 'breaking', 'saved', 'submit', '', undefined, '__proto__', 'constructor', 'toString'])
+  assert.deepStrictEqual(A.AD_TABS, ['events', 'jobs', 'deals', 'classifieds', 'news']);
+  assert.deepStrictEqual(A.fill('news', { news: ad(2) }, NOW), { type: 'direct', ad: ad(2) }, 'News: its in-feed card');
+  for (const k of ['obit', 'obits', 'all', 'safety', 'institution', 'breaking', 'saved', 'submit', '', undefined, '__proto__', 'constructor', 'toString'])
     assert.strictEqual(A.fill(k, { obits: ad(1), news: ad(2), safety: ad(3), breaking: ad(4) }, NOW), null, String(k));
 });
 
@@ -62,7 +63,7 @@ test('one card per board view: after the 6th post, at the end of a shorter board
   assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.adCard(kind); if (ac) list.appendChild(ac); } });"));
   assert.ok(html.includes("adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1);"));
   assert.ok(html.includes("if (++seen === adAt) { var ac = UI.adCard('event'); if (ac) g.appendChild(ac); }"));
-  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", 'kind'], 'placed in exactly two spots');
+  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", "'news'", 'kind'], 'placed in exactly three spots (boards, Events, the News feed card)');
   // drawBody also draws Obituaries; the module answers null there, so no card (checked above). Breaking and news
   // cards are drawn by other functions that never call adCard.
   const brk = html.slice(html.indexOf('function renderBreaking'), html.indexOf('function renderBreaking') + 4000);
@@ -89,7 +90,7 @@ test('sponsors.json: one card key per board, no key for a no-ad section; the pag
   assert.ok(html.includes('SPONSORS.__cards = d && d.cards ? d.cards : {};'));
   const head = html.slice(0, html.indexOf('</head>'));
   assert.ok(head.includes('<script src="/adslots.js"></script>'));
-  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds'];"), 'side-ad tabs match the module');
+  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news'];"), 'side-ad tabs match the module');
   assert.ok(JSON.parse(read('package.json')).scripts.lint.includes('public/adslots.js'));
 });
 

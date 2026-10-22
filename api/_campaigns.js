@@ -24,7 +24,9 @@ const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 
 const BOARDS = ['jobs', 'deals', 'events', 'classifieds'];
-const PLACEMENTS = BOARDS.map(b => 'card:' + b).concat(BOARDS.map(b => 'line:' + b), ['rail:left', 'rail:right']);
+// card:news is the in-feed card between News stories (never next to a Police & courts item; public/adslots.js
+// newsSlots). News has no sponsor line; Obituaries, Breaking and Police & courts have no placement at all.
+const PLACEMENTS = BOARDS.map(b => 'card:' + b).concat(['card:news'], BOARDS.map(b => 'line:' + b), ['rail:left', 'rail:right']);
 const CAPS = Object.fromEntries(PLACEMENTS.map(p => [p, p.startsWith('rail:') ? 2 : 3]));
 const STATUSES = ['active', 'paused', 'ended'];
 const MAX_DAYS = 366, AHEAD_DAYS = 366, AUDIT_KEEP = 1000, NOTE_MAX = 300, LIST_MAX = 200;
@@ -117,6 +119,7 @@ function plan(records, creatives, now, pub) {
   const t = today(now), byId = new Map(creatives.filter(Boolean).map(c => [c.id, c]));
   const out = { cards: {}, slots: {}, rails: { left: [], right: [] } };
   BOARDS.forEach(b => { out.cards[b] = []; out.slots[b] = []; });
+  out.cards.news = [];
   records.filter(c => runningOn(c, t)).sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.id < b.id ? -1 : 1)).forEach(c => {
     const cr = byId.get(c.creativeId);
     if (!cr || cr.status !== 'approved') return; // a withdrawn creative stops its campaigns

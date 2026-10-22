@@ -37,7 +37,9 @@ const HEADLINE = [3, 60], TEXT = [0, 140], REASON = [3, 300];
 const CTAS = ['Visit website', 'Call now', 'Get directions', 'Shop now', 'Learn more'];
 const CTA_DEST = { 'Visit website': 'url', 'Shop now': 'url', 'Learn more': 'url', 'Call now': 'tel', 'Get directions': 'map' };
 const BOARDS = ['jobs', 'deals', 'events', 'classifieds'];
-const PLACEMENTS = BOARDS.map(b => 'card:' + b).concat(BOARDS.map(b => 'line:' + b), ['rail:left', 'rail:right']);
+// card:news is the in-feed card between News stories (never next to a Police & courts item; public/adslots.js
+// newsSlots). News has no sponsor line; Obituaries, Breaking and Police & courts have no placement at all.
+const PLACEMENTS = BOARDS.map(b => 'card:' + b).concat(['card:news'], BOARDS.map(b => 'line:' + b), ['rail:left', 'rail:right']);
 const DAILY_PER_IP = 10, MAX_PER_REF = 5, PENDING_TTL = 60 * 86400, CLOSED_TTL = 365 * 86400, TOKEN_DAYS = 14, AUDIT_KEEP = 1000;
 const ID_RE = /^cr[a-z0-9]{10}$/;
 const AD_REF_RE = /^AD-[A-Z0-9]{6,10}$/, ORDER_RE = /^cs_(test|live)_[A-Za-z0-9]{10,200}$/;
@@ -190,6 +192,7 @@ const pub = c => ({ id: c.id, name: c.headline, text: c.text, cta: c.cta, url: c
 function livePlan(list) {
   const out = { cards: {}, slots: {}, rails: { left: [], right: [] } };
   BOARDS.forEach(b => { out.cards[b] = []; out.slots[b] = []; });
+  out.cards.news = [];
   list.filter(c => c && c.status === 'approved').sort((a, b) => (a.approvedAt < b.approvedAt ? -1 : 1)).forEach(c => (c.placements || []).forEach(p => {
     const [kind, where] = p.split(':');
     if (kind === 'card' && out.cards[where]) out.cards[where].push(pub(c));

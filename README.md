@@ -179,4 +179,4 @@ the location classifier; `decision` is `verified` only when every check passes a
 - Counties still without a home source: `node scripts/source-gaps.js` (`--base` for the live list only)
 
 Batches are off by default. A batch joins the live source list only when `EXPANDED_SOURCES_ENABLED=true` and
-`SOURCE_BATCHES` lists its id (for example `SOURCE_BATCHES=b1`); its sources are appended after the existing ones.
+`SOURCE_BATCHES` lists its id (for example `SOURCE_BATCHES=b1` or `SOURCE_BATCHES=b1,b2`); its sources are appended after the existing ones.

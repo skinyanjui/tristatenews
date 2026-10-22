@@ -1,0 +1,100 @@
+{
+  "sourceId": "wnoi",
+  "name": "WNOI Radio",
+  "site": "https://www.wnoi.com",
+  "feedUrl": "https://www.wnoi.com/feed/",
+  "checkedAt": "2026-10-22T22:17:22.282Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.wnoi.com/",
+      "title": "WNOI 103.9/99.3"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.wnoi.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "wnoi.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 5,
+      "of": 10,
+      "share": 50
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 48,
+    "runner": "box",
+    "fetchedUrl": "https://www.wnoi.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T04:21:30.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "il-clay",
+      "items": 4,
+      "examples": [
+        "LOUISVILLE FALL HARVEST FESTIVAL",
+        "SANTA SMILES APPLICATIONS"
+      ]
+    },
+    {
+      "countyId": "il-richland",
+      "items": 1,
+      "examples": [
+        "IECC BOARD MEETING"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

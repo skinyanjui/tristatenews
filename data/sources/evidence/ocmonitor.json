@@ -1,0 +1,113 @@
+{
+  "sourceId": "ocmonitor",
+  "name": "The Ohio County Monitor",
+  "site": "https://ocmonitor.com",
+  "feedUrl": "https://ocmonitor.com/feed/",
+  "checkedAt": "2026-10-22T22:17:23.127Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://ocmonitor.com/",
+      "title": "The Ohio County Monitor | Ohio County news 7 days a week, 365 days a year."
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://ocmonitor.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "ocmonitor.com": 12
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 3,
+      "of": 12,
+      "share": 25
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 12,
+    "accepted": 12,
+    "durationMs": 29,
+    "runner": "box",
+    "fetchedUrl": "https://ocmonitor.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T16:05:54.000Z",
+    "last30d": 12,
+    "undated": 0,
+    "inFeed": 12,
+    "cadence": "daily",
+    "medianGapDays": 0.04
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-ohio",
+      "items": 1,
+      "examples": [
+        "Ohio Co. Sheriff’s reports for Oct. 22, 2026"
+      ]
+    },
+    {
+      "countyId": "ky-caldwell",
+      "items": 1,
+      "examples": [
+        "KSP Post 2 asking public for help with Caldwell County cold case murder"
+      ]
+    },
+    {
+      "countyId": "ky-hopkins",
+      "items": 1,
+      "examples": [
+        "KSP Post 2 asking public for help with Caldwell County cold case murder"
+      ]
+    },
+    {
+      "countyId": "ky-daviess",
+      "items": 1,
+      "examples": [
+        "OCTC Spanish Club to host Colombian Culture presentation with Dr. Diana Rodriguez Quevedo"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

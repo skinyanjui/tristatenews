@@ -1,0 +1,108 @@
+{
+  "sourceId": "wfiw",
+  "name": "WFIW Radio",
+  "site": "https://www.wfiwradio.com",
+  "feedUrl": "https://www.wfiwradio.com/feed/",
+  "checkedAt": "2026-10-22T22:17:22.043Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.wfiwradio.com/",
+      "title": "WFIW FM / WFIW AM / WOKZ-FM"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.wfiwradio.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "wfiwradio.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 7,
+      "of": 10,
+      "share": 70
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 19,
+    "runner": "box",
+    "fetchedUrl": "https://www.wfiwradio.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T18:47:35.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "il-wayne",
+      "items": 6,
+      "examples": [
+        "John Henry Adams, 61, of Mill Shoals",
+        "THREE-VEHICLE CRASH IN WAYNE COUNTY SENDS JOHNSONVILLE WOMAN TO HOSPITAL"
+      ]
+    },
+    {
+      "countyId": "il-white",
+      "items": 2,
+      "examples": [
+        "John Henry Adams, 61, of Mill Shoals",
+        "WEEKLY WELLNESS PROGRAM TO BEGIN AT GROFF MEMORIAL LIBRARY"
+      ]
+    },
+    {
+      "countyId": "il-edwards",
+      "items": 1,
+      "examples": [
+        "WEEKLY WELLNESS PROGRAM TO BEGIN AT GROFF MEMORIAL LIBRARY"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

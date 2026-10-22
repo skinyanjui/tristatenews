@@ -13,6 +13,7 @@
 // Missouri is extended coverage: no scope or label here ever calls a Missouri county "Tri-State".
 'use strict';
 const path = require('path');
+const crypto = require('crypto');
 const LOC = require('./_location.js');
 const REG = require('./_sources.js');
 const TARGET = require(path.join(__dirname, '..', 'data', 'geography', 'target-counties.json'));
@@ -54,10 +55,21 @@ function parse(raw) {
   return { error: 'unknown scope' };
 }
 
+// Manual county overrides (admin Sources & Coverage, api/_coverage.js): key -> countyIds ([] = no county). Keyed by
+// the story link (or title), so a story keeps its override across refreshes. refreshAll copies the stored overrides
+// into the snapshot (snap.overrides); an override replaces the classifier for that story everywhere scopes are used.
+function overrideKey(item) { return 'o' + crypto.createHash('sha1').update(String((item && (item.link || item.title)) || '')).digest('hex').slice(0, 16); }
+
 // One classification per story, kept while the same snapshot is served (a warm function serves many requests).
 let memo = { at: null, map: new Map() };
+let ovr = null;
 function locOf(item, source, snapAt) {
   if (memo.at !== snapAt) memo = { at: snapAt, map: new Map() };
+  const o = ovr && ovr[overrideKey(item)];
+  if (Array.isArray(o)) {
+    const ids = o.filter(id => BY_ID.has(id));
+    return { ids, statewide: [], named: true, label: ids.length === 1 ? short(BY_ID.get(ids[0])) : null, override: true };
+  }
   const k = (item.sourceId || '') + '|' + (item.link || '') + '|' + (item.title || '');
   let v = memo.map.get(k);
   if (!v) {
@@ -108,10 +120,11 @@ function view(snap, scope, sources, opts) {
   scope = scope || parse('');
   opts = opts || {};
   if (!snap || !Array.isArray(snap.items)) return snap;
+  ovr = snap.overrides || null;
   const byId = new Map((sources || []).map(s => [s.id, s]));
-  if (scope.kind === 'tristate' && !opts.labels && !snap.items.some(i => BATCH.has(i.sourceId))) return snap;
+  if (scope.kind === 'tristate' && !opts.labels && !snap.items.some(i => BATCH.has(i.sourceId))) return stripOverrides(snap);
   const items = snap.items.filter(i => inScope(i, byId.get(i.sourceId), scope, snap.updatedAt));
-  const out = Object.assign({}, snap, { items });
+  const out = Object.assign({}, stripOverrides(snap), { items });
   if (opts.labels) {
     out.items = items.map(i => { const lab = locOf(i, byId.get(i.sourceId), snap.updatedAt).label; return lab ? Object.assign({}, i, { place: lab }) : i; });
     out.scope = { key: scope.key, kind: scope.kind, label: scope.label };
@@ -120,10 +133,14 @@ function view(snap, scope, sources, opts) {
   return out;
 }
 
+// The override map is admin data: it stays out of what readers get (their stories just land in the right county).
+function stripOverrides(snap) { if (!snap || !('overrides' in snap)) return snap; const o = Object.assign({}, snap); delete o.overrides; return o; }
+
 // Distinct local stories per county in the last 14 days (the D10 depth measure): stories the classifier places in the
 // county, counted once per title.
 function depth(snap, sources, now) {
   const byId = new Map((sources || []).map(s => [s.id, s]));
+  ovr = (snap && snap.overrides) || null;
   const since = (now || Date.now()) - DEPTH_DAYS * 864e5;
   const seen = new Map(COUNTIES.map(c => [c.id, new Set()]));
   for (const it of (snap && snap.items) || []) {
@@ -153,4 +170,4 @@ function pathOf(scope) {
   return null;
 }
 
-module.exports = { parse, view, inScope, depth, fromPath, pathOf, COUNTIES, CORE, STATES, SLUGS, DEPTH_MIN, DEPTH_DAYS, MAX_COUNTIES, MIN_CONF };
+module.exports = { overrideKey, locOf, homeOf, BY_ID, BATCH, parse, view, inScope, depth, fromPath, pathOf, COUNTIES, CORE, STATES, SLUGS, DEPTH_MIN, DEPTH_DAYS, MAX_COUNTIES, MIN_CONF };

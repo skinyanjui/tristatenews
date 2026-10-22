@@ -370,12 +370,12 @@ details summary { min-height:40px; display:flex; align-items:center; }
     });
     if (!rows.length) { var tr0 = mk('tr'); cell(tr0, 'Nothing needs attention.'); $('cvs').appendChild(tr0); }
     var cf = $('cvcf').value, pass = d.counties.filter(function (c) { return c.passesGate; }).length;
-    $('cvcn').textContent = pass + ' of ' + d.counties.length + ' pass the ' + d.gate.min + '-story gate (' + d.gate.days + ' days)' + (d.gate.measuredAt ? ' · measured ' + new Date(d.gate.measuredAt).toLocaleDateString() : '');
-    var h2 = mk('tr'); ['County', 'Tier', 'Stories 14d', 'Measured', 'Home sources'].forEach(function (x, i) { cell(h2, x, i === 3 ? 'wide' : '', 'th'); }); $('cvc').appendChild(h2);
+    $('cvcn').textContent = pass + ' of ' + d.counties.length + ' pass the ' + d.gate.min + '-story gate (' + d.gate.days + ' days) · gate from ' + (d.gate.source === 'rolling' ? 'the rolling 14-day record, updated ' + new Date(d.gate.at).toLocaleString() : d.gate.source === 'measured' ? 'coverage.json (no rolling record yet), measured ' + new Date(d.gate.at).toLocaleDateString() : 'nothing');
+    var h2 = mk('tr'); ['County', 'Tier', '14-day stories', 'In snapshot', 'Measured', 'Home sources'].forEach(function (x, i) { cell(h2, x, i === 3 || i === 4 ? 'wide' : '', 'th'); }); $('cvc').appendChild(h2);
     d.counties.filter(function (c) { return cf === 'all' || c.tier === cf || (cf === 'gap' && c.gap) || (cf === 'thin' && !c.passesGate); }).forEach(function (c) {
       var tr = mk('tr'); cell(tr, c.name + ', ' + c.state); cell(tr, c.tier);
-      var sc = cell(tr, c.stories14d == null ? '—' : String(c.stories14d)); if (!c.passesGate) sc.appendChild(mk('div', { 'class': 'm' }, 'below gate'));
-      cell(tr, c.measured14d == null ? '—' : String(c.measured14d), 'wide'); cell(tr, c.gap ? 'Gap: none' : c.homeSources.join(', '));
+      var sc = cell(tr, c.rolling14d == null ? '—' : String(c.rolling14d) + (c.rolling14d >= d.gate.cap ? '+' : '')); if (!c.passesGate) sc.appendChild(mk('div', { 'class': 'm' }, 'below gate'));
+      cell(tr, c.snapshotStories == null ? '—' : String(c.snapshotStories), 'wide'); cell(tr, c.measured14d == null ? '—' : String(c.measured14d), 'wide'); cell(tr, c.gap ? 'Gap: none' : c.homeSources.join(', '));
       $('cvc').appendChild(tr);
     });
     $('cvqh').textContent = 'Review queue (' + d.review.length + ')';

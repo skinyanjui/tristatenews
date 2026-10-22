@@ -191,3 +191,12 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 ### Needs review (ads on News)
 27. **Narrower promise:** the old §2 also said "we don't place ads next to stories about crimes, deaths or other tragedies". The code can only tell Police & courts items (official sources) apart, not crime or tragedy stories from news outlets, so that sentence was removed rather than kept as a promise we can't check. Confirm with Sam, or decide on a keyword rule before selling News ads.
 28. **Editorial separation:** ads now sit between news stories. Confirm the "Sponsored" label and card styling are distinct enough from news cards (FTC native-advertising guidance), and that package descriptions say "a share of the News card in rotation".
+
+## Ad sizes and size previews (Advertising Policy §1, §7; /advertise; the site's Advertise panel; /creative.html)
+- **§7 Sizes:** standard IAB units, laid out from the advertiser's image and words: News card 728×90 (≥768px) / 320×100 (phones); board cards 300×250; side ads 160×600, 300×600 at ≥2,560px. The sponsor line stays text. 970×250 (wider than the 960px News column), 120×600 (too narrow to read) and 320×50 (too short for a tappable button) aren't used.
+- **§7 Banners for a size (optional):** a finished banner per size, same file rules, exact shape (within 3%), at least 1× pixels; replaces image + words at that size; reviewed with the ad; deleted on reject/withdraw (`tsn:cr:img:<id>:<size>`).
+- **Upload page:** client-side previews of every size before sending, with warnings for heavy cropping (over 25% of the image cut) or low resolution (under 1× blurry, under 2× soft), and recommended pixel sizes (2×). The server re-checks every image (type, still, dimensions, shape).
+- **Advertise page and panel:** previews of every size with a made-up business ("Sample ad" label, not a link).
+
+### Needs review (ad sizes)
+29. **Finished banners and our label:** a banner fills the whole unit, with our "Sponsored" label laid over its top-left corner. Confirm in review that a banner doesn't imitate a news story or a Tri-State News label (§7 already forbids it) and that the overlay label stays legible.

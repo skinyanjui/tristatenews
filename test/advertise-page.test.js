@@ -87,9 +87,10 @@ async function render(checkoutConfigured, fetchOverride) {
     if (u === '/api/advertise') { posts.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ ok: true, ref: 'AD-TEST01AB' }) }; }
     throw new Error('unexpected fetch ' + u);
   });
-  new Function('document', 'fetch', script)(document, fetch);
+  const location = { href: '/advertise' };
+  new Function('document', 'fetch', 'location', script)(document, fetch, location);
   for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
-  return { nodes, posts };
+  return { nodes, posts, location };
 }
 const cardText = n => n.children.map(c => c.textContent.replace(/\s+/g, ' ').trim());
 const money = c => '$' + (c / 100).toLocaleString('en-US');
@@ -107,7 +108,7 @@ test('rate card: Featured prices and packages A–C from the catalog, D by propo
   assert.ok(feat.every(t => t.includes('Opening soon')), 'without checkout, Featured says it opens soon');
   const pk = cardText(nodes.packages);
   assert.strictEqual(pk.length, 4);
-  for (const k of ['A', 'B', 'C']) assert.ok(pk.some(t => t.startsWith(C.PACKAGES[k].label) && t.includes(money(C.PACKAGES[k].cents)) && t.includes('Ask us')), k);
+  for (const k of ['A', 'B', 'C']) assert.ok(pk.some(t => t.startsWith(C.PACKAGES[k].label) && t.includes(money(C.PACKAGES[k].cents)) && t.includes('Order online')), k);
   const d = pk.find(t => t.startsWith('Package D'));
   assert.ok(d.includes('By proposal') && !d.includes('$'), 'D: by proposal, no price');
   const soon = cardText(nodes.soon);
@@ -126,16 +127,20 @@ test('rate card: a catalog that fails to load shows a plain note, never a made-u
 });
 
 test('inquiry form: posts to /api/advertise and shows the AD- reference; the package buttons prefill it', async () => {
-  const { nodes, posts } = await render(false);
-  const askB = nodes.packages.children[1].children.find(c => c.tag === 'button');
-  askB.listeners.click();
-  assert.deepStrictEqual([nodes.interest.value, nodes.message.value], ['Section sponsorship', 'I’m interested in Package B.']);
+  const { nodes, posts, location } = await render(false);
+  const orderB = nodes.packages.children[1].children.find(c => c.tag === 'button');
+  assert.strictEqual(orderB.textContent, 'Order Package B');
+  orderB.listeners.click();
+  assert.strictEqual(location.href, '/order.html?pkg=B', 'A–C go to the online order page (ads Phase 6)');
+  const askD = nodes.packages.children[3].children.find(c => c.tag === 'button');
+  askD.listeners.click();
+  assert.deepStrictEqual([nodes.interest.value, nodes.message.value], ['Section sponsorship', 'I’d like a proposal for Package D.']);
   Object.assign(nodes.business, { value: 'Main Street Shop' }); Object.assign(nodes.name, { value: 'Pat' }); Object.assign(nodes.email, { value: 'pat@shop.test' });
   nodes.f.listeners.submit({ preventDefault() {} });
   for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
   assert.strictEqual(posts.length, 1);
   assert.deepStrictEqual(Object.keys(posts[0]).sort(), ['budget', 'business', 'email', 'interest', 'message', 'name', 'package', 'phone', 'website']);
-  assert.strictEqual(posts[0].package, 'B', 'the package button picks the package too');
+  assert.strictEqual(posts[0].package, 'D', 'the package button picks the package too');
   // ads PR 4.2: package and budget choices come from the catalog
   assert.deepStrictEqual(nodes.package.children.map(o => [o.value, o.textContent]), ['A', 'B', 'C', 'D'].map(k => [k, C.PACKAGES[k].label]));
   assert.deepStrictEqual(nodes.budget.children.map(o => [o.value, o.textContent]), C.budgetBands().map(b => [b.key, b.label]));

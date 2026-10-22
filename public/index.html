@@ -238,29 +238,40 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .tab { flex:none; min-height:var(--ctl); padding:0 12px; font-weight:500; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:8px; }
 .tab:hover { color:var(--foreground); }
 .tab[aria-selected="true"] { color:var(--foreground); border-bottom-color:var(--foreground); }
-/* geography scope (COUNTY_FILTERS_ENABLED): one compact button beside the tabs and a small sheet under the nav */
+/* geography scope (COUNTY_FILTERS_ENABLED): one button beside the tabs showing the current area, and a sheet under the nav */
 .nav-tabs { position:relative; }
 .tabs-row { display:flex; align-items:center; gap:8px; }
 .tabs-row .tabs { flex:1 1 auto; min-width:0; }
-.scope-btn { flex:none; display:inline-flex; align-items:center; gap:6px; min-height:28px; max-width:46vw; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); font-size:13px; font-weight:500; white-space:nowrap; }
+.scope-btn { flex:none; display:inline-flex; align-items:center; gap:4px; min-height:32px; max-width:46vw; padding:0 8px 0 10px; border:1px solid var(--border); border-radius:var(--radius-md); font-size:13px; font-weight:500; white-space:nowrap; }
 .scope-btn #scopeLbl { overflow:hidden; text-overflow:ellipsis; }
-.scope-btn .scope-k { color:var(--text-muted); font-weight:400; }
-@media (max-width:479px) { .scope-btn { max-width:38vw; } .scope-btn .scope-k { display:none; } }
+.scope-btn svg { flex:none; width:14px; height:14px; color:var(--text-muted); transition:transform var(--duration-fast) var(--ease); }
+.scope-btn[aria-expanded="true"] svg { transform:rotate(180deg); }
+@media (max-width:479px) { .scope-btn { max-width:40vw; } }
 .scope-btn:hover, .scope-btn[aria-expanded="true"] { background:var(--gray-100); }
-.scope-sheet { position:absolute; right:16px; top:calc(100% + 4px); z-index:30; width:min(360px, calc(100vw - 32px)); max-height:min(70vh, 560px); overflow:auto; background:var(--background); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:12px; display:grid; gap:12px; }
-.scope-sheet h3 { margin:0; font-size:12px; line-height:16px; font-weight:600; color:var(--text-muted); }
-.scope-opts { display:flex; flex-wrap:wrap; gap:6px; }
-.scope-opt { min-height:var(--ctl); padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; }
-.scope-opt[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
-.scope-note { margin:0; font-size:12px; line-height:16px; color:var(--text-muted); }
-.scope-sheet select { width:100%; min-height:var(--ctl); padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; }
-.scope-my { display:grid; gap:8px; }
-.scope-my details { border:1px solid var(--border); border-radius:var(--radius-md); padding:6px 10px; }
-.scope-my summary { cursor:pointer; font-weight:500; min-height:24px; }
-.scope-my .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:2px 12px; padding:6px 0 2px; }
-.scope-my label { display:flex; gap:6px; align-items:center; min-height:28px; }
-.scope-my .row { display:flex; gap:8px; align-items:center; justify-content:space-between; }
-.src .place { color:var(--foreground); }
+.scope-sheet { position:absolute; right:16px; top:calc(100% + 4px); z-index:30; width:min(360px, calc(100vw - 32px)); max-height:min(72vh, 600px); display:flex; flex-direction:column; background:var(--background); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
+.scope-sheet[hidden] { display:none; }
+.scope-body { overflow:auto; padding:8px; display:grid; gap:2px; }
+.scope-find { width:100%; min-height:var(--ctl); padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; margin-bottom:6px; }
+.scope-row { display:flex; align-items:center; gap:8px; width:100%; min-height:40px; padding:0 8px; border-radius:var(--radius-md); text-align:left; font-weight:500; }
+.scope-row:hover { background:var(--gray-100); }
+.scope-row[aria-pressed="true"] { background:var(--gray-100); }
+.scope-row[aria-pressed="true"]::after { content:"\2713"; margin-left:auto; color:var(--brand, var(--foreground)); }
+.scope-row small { color:var(--text-muted); font-weight:400; font-size:12px; }
+.scope-st { border-top:1px solid var(--border); }
+.scope-st summary { list-style:none; display:flex; align-items:center; gap:8px; min-height:40px; padding:0 8px; cursor:pointer; font-weight:500; border-radius:var(--radius-md); }
+.scope-st summary::-webkit-details-marker { display:none; }
+.scope-st summary::before { content:""; width:6px; height:6px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); transition:transform var(--duration-fast) var(--ease); color:var(--text-muted); }
+.scope-st[open] summary::before { transform:rotate(45deg); }
+.scope-st summary:hover { background:var(--gray-100); }
+.scope-st summary .n { margin-left:auto; color:var(--text-muted); font-weight:400; font-size:12px; }
+.scope-st .scope-row { padding-left:22px; }
+.scope-cty { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 8px; padding:0 0 6px 22px; }
+.scope-cty label { display:flex; gap:8px; align-items:center; min-height:36px; }
+.scope-cty input { width:18px; height:18px; accent-color:var(--foreground); }
+.scope-foot { display:flex; gap:8px; align-items:center; padding:8px; border-top:1px solid var(--border); background:var(--background); }
+.scope-foot .cl-go { flex:1; }
+.scope-none { padding:8px; margin:0; font-size:13px; color:var(--text-muted); }
+.src .place { color:var(--foreground); white-space:nowrap; }
 .src .place::before { content:"\00B7"; margin-right:8px; color:var(--text-muted); }
 .card.breaking { border-color:var(--red); background:var(--background); }
 .card.breaking a { display:block; padding:0; }
@@ -848,7 +859,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       </div>
     </div>
   </div>
-  <div class="nav-tabs"><div class="tabs-row"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"></div><button class="scope-btn" id="scopeBtn" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="scopeSheet"><span class="scope-k">Area</span><span id="scopeLbl">Tri-State</span></button></div>
+  <div class="nav-tabs"><div class="tabs-row"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"></div><button class="scope-btn" id="scopeBtn" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="scopeSheet" aria-label="Area: Tri-State"><span id="scopeLbl">Tri-State</span><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button></div>
     <div class="scope-sheet" id="scopeSheet" role="dialog" aria-label="Choose an area" hidden></div></div>
 </header>
 
@@ -1166,7 +1177,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
      page (/news/kentucky/henderson, REGIONAL_ROUTES_ENABLED) sets the scope from its path without changing the saved one. */
   var SC = { key: 'tristate', label: 'Tri-State', on: false, routes: false, geo: null, my: [], counties: null, info: null };
   try { SC.my = JSON.parse(localStorage.getItem('tsn.myCounties') || '[]').filter(function (x) { return typeof x === 'string'; }).slice(0, 12); } catch (e) {}
-  try { var sk = localStorage.getItem('tsn.scope'); if (sk && /^(tristate|all|state:[a-z]{2}|county:[a-z]{2}-[a-z-]+|counties:[a-z,-]+)$/.test(sk)) SC.key = sk; } catch (e) {}
+  try { var sk = localStorage.getItem('tsn.scope'); if (sk && /^(tristate|state:[a-z]{2}|county:[a-z]{2}-[a-z-]+|counties:[a-z,-]+)$/.test(sk)) SC.key = sk; /* a saved 'all' (All Regions, retired from the reader UI) falls back to Tri-State */ } catch (e) {}
   if (SC.key === 'counties' || /^counties:/.test(SC.key)) SC.key = SC.my.length ? 'counties:' + SC.my.slice().sort().join(',') : 'tristate';
   (function () { var g = RT && RT.geo && RT.geo(location.pathname); if (g) { SC.geo = g.path; SC.key = g.scope; state.cat = 'news'; } })();
   // Old links to the removed All tab and Liked page (#all, #liked, ?tab=all, ?tab=liked) open News; drop the old part.
@@ -3161,7 +3172,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       src.appendChild(av);
     }
     src.appendChild(el('b', null, it.source));
-    if (it.place && SC.on) src.appendChild(el('span', 'place', it.place)); // one locality label, only when the classifier is confident
+    if (it.place && SC.on && !/^county:/.test(SC.key)) src.appendChild(el('span', 'place', it.place)); // one locality label, only when the classifier is confident
     var w = el('time', 'when', shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); }
     src.appendChild(w);
     var sb = UI.heart({
@@ -3262,7 +3273,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     var moreEl = document.getElementById('more'); moreEl.textContent = '';
     var seenSrc = {}; all.forEach(function (i) { seenSrc[i.sourceId] = 1; });
     var n = Object.keys(seenSrc).length;
-    metaEl.textContent = (SC.on ? SC.label + ' · ' : '') + all.length + ' stor' + (all.length === 1 ? 'y' : 'ies') + ' from ' + n + ' source' + (n === 1 ? '' : 's') +
+    metaEl.textContent = all.length + ' stor' + (all.length === 1 ? 'y' : 'ies') + ' from ' + n + ' source' + (n === 1 ? '' : 's') +
       ' · Updated ' + new Date(state.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     if (!shown.length && !brk.length && SC.on && SC.key !== 'tristate' && !state.q.trim()) return scopeEmpty();
     if (!shown.length && !brk.length) {
@@ -3295,20 +3306,29 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   var STATE_NAMES = { 'in': 'Indiana', ky: 'Kentucky', il: 'Illinois', mo: 'Missouri' };
   function savedScope() {
     var k = 'tristate'; try { k = localStorage.getItem('tsn.scope') || 'tristate'; } catch (e) {}
+    if (k === 'all') k = 'tristate'; // All Regions is no longer offered to readers
     if (/^counties:/.test(k)) k = SC.my.length ? 'counties:' + SC.my.slice().sort().join(',') : 'tristate';
     return k;
   }
+  // The button's text is the current area, short: Tri-State, Kentucky, Daviess Co., KY, My counties (3).
+  function shortLabel(l) {
+    l = String(l || 'Tri-State');
+    if (l === 'My Counties' || /^counties:/.test(SC.key)) return 'My counties (' + SC.my.length + ')';
+    if (l === 'All Regions') return 'Tri-State';
+    return l.replace(/ County, /, ' Co., ');
+  }
+  function showLabel() { scopeLbl.textContent = SC.label; scopeBtn.setAttribute('aria-label', 'Area: ' + SC.label); }
   function scopeFrom(d) {
     SC.on = !!(d.features && d.features.scopes); SC.routes = !!(d.features && d.features.routes);
     SC.info = d.scope || null;
-    if (SC.info && SC.info.label) SC.label = SC.info.label === 'My Counties' ? 'My Counties (' + SC.my.length + ')' : SC.info.label;
-    scopeBtn.hidden = !SC.on; scopeLbl.textContent = SC.label;
+    if (SC.info && SC.info.label) SC.label = shortLabel(SC.info.label);
+    scopeBtn.hidden = !SC.on; showLabel();
     if (!SC.on) { SC.key = 'tristate'; SC.label = 'Tri-State'; }
   }
   function setScope(key, label) {
     closeScope();
     if (/^counties:/.test(key)) { if (!SC.my.length) key = 'tristate'; else key = 'counties:' + SC.my.slice().sort().join(','); }
-    SC.key = key; SC.label = label || SC.label; scopeLbl.textContent = SC.label;
+    SC.key = key; SC.label = label ? shortLabel(label) : SC.label; showLabel();
     try { localStorage.setItem('tsn.scope', key); } catch (e) {}
     // a state or county gets its own shareable page when those routes are on; any other choice goes back to "/"
     var gp = SC.routes && RT && RT.geoPath ? RT.geoPath(key) : null;
@@ -3326,65 +3346,84 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     stateBox(t, b, 'Show ' + next.label, function () { setScope(next.key, next.label); });
   }
   function closeScope() { scopeSheet.hidden = true; scopeBtn.setAttribute('aria-expanded', 'false'); }
-  function opt(key, label, note) {
-    var b = el('button', 'scope-opt', label); b.type = 'button'; b.setAttribute('aria-pressed', String(SC.key === key));
-    if (note) b.title = note;
+  // The sheet: Tri-State (the default), then each state as a collapsible group with "All of <state>" and its
+  // counties as checkboxes. One county checked = that county; several = My counties (up to 12, saved on this device).
+  // One Done and one Clear. A search box narrows the county lists. Each state is listed by its own name only.
+  function row(key, label, sub) {
+    var b = el('button', 'scope-row'); b.type = 'button'; b.setAttribute('aria-pressed', String(SC.key === key));
+    b.appendChild(document.createTextNode(label)); if (sub) b.appendChild(el('small', null, sub));
     b.addEventListener('click', function () { setScope(key, label); });
     return b;
   }
   function drawScope() {
     scopeSheet.textContent = '';
-    var a = el('div'); a.appendChild(el('h3', null, 'Area'));
-    var o = el('div', 'scope-opts');
-    o.appendChild(opt('tristate', 'Tri-State', 'The 30 core counties around Evansville in Indiana, Kentucky and Illinois'));
-    o.appendChild(opt('all', 'All Regions', 'Adds western Kentucky, southern Illinois and southeast Missouri'));
-    ['in', 'ky', 'il', 'mo'].forEach(function (s) { o.appendChild(opt('state:' + s, STATE_NAMES[s])); });
-    a.appendChild(o);
-    a.appendChild(el('p', 'scope-note', 'Tri-State is the 30 counties around Evansville. All Regions adds western Kentucky, southern Illinois and southeast Missouri.'));
-    scopeSheet.appendChild(a);
-    var list = SC.counties;
-    if (!list) { scopeSheet.appendChild(el('p', 'scope-note', 'Loading counties\u2026')); return; }
-    var c = el('div'); c.appendChild(el('h3', null, 'County'));
-    var sel = document.createElement('select'); sel.setAttribute('aria-label', 'Choose a county');
-    var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Choose a county'; sel.appendChild(o0);
+    var body = el('div', 'scope-body'), list = SC.counties;
+    var picked = /^county:/.test(SC.key) ? [SC.key.slice(7)] : /^counties:/.test(SC.key) ? SC.my.slice() : [];
+    var find = null;
+    if (list && list.length) { find = document.createElement('input'); find.type = 'search'; find.className = 'scope-find'; find.placeholder = 'Find a county'; find.setAttribute('aria-label', 'Find a county'); find.autocomplete = 'off'; body.appendChild(find); }
+    var tri = row('tristate', 'Tri-State', '30 counties around Evansville'); body.appendChild(tri);
+    var mine = null; // the saved My counties, one tap away after switching to another area
+    if (SC.my.length > 1 && !/^counties:/.test(SC.key)) { mine = row('counties:', 'My counties (' + SC.my.length + ')'); body.appendChild(mine); }
+    var groups = [];
     ['in', 'ky', 'il', 'mo'].forEach(function (s) {
-      var g = document.createElement('optgroup'); g.label = STATE_NAMES[s];
-      list.filter(function (x) { return x.state.toLowerCase() === s; }).forEach(function (x) {
-        var op = document.createElement('option'); op.value = x.id; op.textContent = x.fullName; if (SC.key === 'county:' + x.id) op.selected = true; g.appendChild(op);
-      });
-      sel.appendChild(g);
-    });
-    sel.addEventListener('change', function () { var x = list.filter(function (y) { return y.id === sel.value; })[0]; if (x) setScope('county:' + x.id, x.fullName + ', ' + x.state); });
-    c.appendChild(sel); scopeSheet.appendChild(c);
-    var m = el('div', 'scope-my'); m.appendChild(el('h3', null, 'My Counties'));
-    m.appendChild(el('p', 'scope-note', 'Pick one or several (up to 12). Saved on this device only; no sign-in.'));
-    var picked = SC.my.slice();
-    ['in', 'ky', 'il', 'mo'].forEach(function (s) {
-      var d = document.createElement('details'), rows = list.filter(function (x) { return x.state.toLowerCase() === s; });
-      if (rows.some(function (x) { return picked.indexOf(x.id) >= 0; })) d.open = true;
-      d.appendChild(el('summary', null, STATE_NAMES[s]));
-      var g = el('div', 'grid');
+      var d = document.createElement('details'); d.className = 'scope-st';
+      var rows = (list || []).filter(function (x) { return x.state.toLowerCase() === s; });
+      var sum = el('summary'); sum.appendChild(document.createTextNode(STATE_NAMES[s]));
+      var n = el('span', 'n'); sum.appendChild(n); d.appendChild(sum);
+      var whole = row('state:' + s, 'All of ' + STATE_NAMES[s]); d.appendChild(whole);
+      var g = el('div', 'scope-cty'), boxes = [];
       rows.forEach(function (x) {
         var l = document.createElement('label'), cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = x.id; cb.checked = picked.indexOf(x.id) >= 0;
-        cb.addEventListener('change', function () { if (cb.checked) { if (picked.length >= 12) { cb.checked = false; toast('Up to 12 counties'); return; } picked.push(x.id); } else picked = picked.filter(function (y) { return y !== x.id; }); go.disabled = !picked.length; go.textContent = 'Show my counties' + (picked.length ? ' (' + picked.length + ')' : ''); });
-        l.appendChild(cb); l.appendChild(document.createTextNode(x.name)); g.appendChild(l);
+        cb.addEventListener('change', function () {
+          if (cb.checked) { if (picked.length >= 12) { cb.checked = false; toast('Up to 12 counties'); return; } picked.push(x.id); }
+          else picked = picked.filter(function (y) { return y !== x.id; });
+          sync();
+        });
+        l.appendChild(cb); l.appendChild(document.createTextNode(x.name)); g.appendChild(l); boxes.push({ l: l, x: x });
       });
-      d.appendChild(g); m.appendChild(d);
+      d.appendChild(g);
+      if (rows.some(function (x) { return picked.indexOf(x.id) >= 0; }) || SC.key === 'state:' + s) d.open = true;
+      groups.push({ d: d, n: n, rows: rows, boxes: boxes, whole: whole });
+      body.appendChild(d);
     });
-    var row = el('div', 'row'), go = el('button', 'cl-go', 'Show my counties' + (picked.length ? ' (' + picked.length + ')' : '')); go.type = 'button'; go.disabled = !picked.length;
-    go.addEventListener('click', function () {
+    if (!list) body.appendChild(el('p', 'scope-none', 'Loading counties\u2026'));
+    var none = el('p', 'scope-none', 'No county by that name.'); none.hidden = true; body.appendChild(none);
+    scopeSheet.appendChild(body);
+    var foot = el('div', 'scope-foot'), done = el('button', 'cl-go'), clr = el('button', 'ghost', 'Clear');
+    done.type = 'button'; clr.type = 'button';
+    foot.appendChild(done); foot.appendChild(clr); scopeSheet.appendChild(foot);
+    function sync() {
+      groups.forEach(function (gr) { var k = gr.rows.filter(function (x) { return picked.indexOf(x.id) >= 0; }).length; gr.n.textContent = k ? k + ' selected' : ''; });
+      done.textContent = picked.length > 1 ? 'Show ' + picked.length + ' counties' : 'Done';
+      clr.disabled = !picked.length;
+    }
+    sync();
+    if (find) find.addEventListener('input', function () {
+      var q = find.value.trim().toLowerCase(), hits = 0;
+      groups.forEach(function (gr) {
+        var k = 0;
+        gr.boxes.forEach(function (b) { var on = !q || b.x.name.toLowerCase().indexOf(q) === 0 || b.x.fullName.toLowerCase().indexOf(q) >= 0; b.l.hidden = !on; if (on) k++; });
+        gr.d.hidden = !!q && !k; gr.whole.hidden = !!q; if (q && k) gr.d.open = true; hits += k;
+      });
+      tri.hidden = !!q; if (mine) mine.hidden = !!q; none.hidden = !q || hits > 0;
+    });
+    clr.addEventListener('click', function () { picked = []; scopeSheet.querySelectorAll('.scope-cty input').forEach(function (c) { c.checked = false; }); sync(); });
+    done.addEventListener('click', function () {
+      var before = /^county:/.test(SC.key) ? [SC.key.slice(7)] : /^counties:/.test(SC.key) ? SC.my.slice() : [];
+      var same = picked.length === before.length && picked.every(function (x) { return before.indexOf(x) >= 0; });
+      if (same && (picked.length || !/^(county|counties):/.test(SC.key))) return closeScope(); // nothing changed
+      if (!picked.length) return setScope('tristate', 'Tri-State');
+      if (picked.length === 1) { var x = list.filter(function (y) { return y.id === picked[0]; })[0]; return setScope('county:' + x.id, x.fullName + ', ' + x.state.toUpperCase()); }
       SC.my = picked.slice(0, 12); try { localStorage.setItem('tsn.myCounties', JSON.stringify(SC.my)); } catch (e) {}
-      setScope('counties:', 'My Counties (' + SC.my.length + ')');
+      setScope('counties:', 'My Counties');
     });
-    var clr = el('button', 'ghost', 'Clear'); clr.type = 'button';
-    clr.addEventListener('click', function () { SC.my = []; try { localStorage.removeItem('tsn.myCounties'); } catch (e) {} if (/^counties:/.test(SC.key)) setScope('tristate', 'Tri-State'); else drawScope(); });
-    row.appendChild(go); row.appendChild(clr); m.appendChild(row);
-    scopeSheet.appendChild(m);
   }
+  function focusCurrent() { var cur = scopeSheet.querySelector('.scope-row[aria-pressed="true"]') || scopeSheet.querySelector('.scope-row'); if (cur) cur.focus({ preventScroll: true }); }
   scopeBtn.addEventListener('click', function () {
     var open = scopeSheet.hidden; if (!open) return closeScope();
     scopeSheet.hidden = false; scopeBtn.setAttribute('aria-expanded', 'true'); drawScope();
-    if (!SC.counties) fetch('/api/counties').then(function (r) { return r.json(); }).then(function (d) { SC.counties = (d && d.counties) || []; if (!scopeSheet.hidden) drawScope(); }).catch(function () {});
+    focusCurrent();
+    if (!SC.counties) fetch('/api/counties').then(function (r) { return r.json(); }).then(function (d) { SC.counties = (d && d.counties) || []; if (!scopeSheet.hidden) { var had = scopeSheet.contains(document.activeElement); drawScope(); if (had) focusCurrent(); } }).catch(function () {});
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !scopeSheet.hidden) { closeScope(); scopeBtn.focus(); } });
   document.addEventListener('click', function (e) { if (!scopeSheet.hidden && !scopeSheet.contains(e.target) && !scopeBtn.contains(e.target)) closeScope(); });

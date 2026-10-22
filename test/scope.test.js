@@ -191,6 +191,32 @@ test('page: the scope control is hidden until the API reports features.scopes; a
   assert.ok(!/Missouri[^'"]*Tri-State/.test(html.match(/function drawScope[\s\S]*?\n  \}\n/)[0]));
 });
 
+test('area control: one button showing the current area, Tri-State as the only broad option, no All Regions for readers', () => {
+  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  // valid inline scripts (a stray // comment in a one-line try once broke the page)
+  for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) assert.doesNotThrow(() => new Function(m[1]));
+  const btn = html.match(/<button class="scope-btn"[\s\S]*?<\/button>/)[0];
+  assert.ok(!/scope-k|>Area</.test(btn), 'no separate "Area" prefix');
+  assert.match(btn, /aria-label="Area: Tri-State"/);
+  const ui = html.slice(html.indexOf('function shortLabel'), html.indexOf("scopeBtn.addEventListener('click'"));
+  assert.ok(!/All Regions'\)|'all'|All areas/.test(ui.replace("if (l === 'All Regions') return 'Tri-State';", '')), 'All Regions is not offered');
+  assert.ok(!/<h3|scope-note/.test(ui), 'no repeated headings or explanatory notes');
+  for (const s of ["row('tristate', 'Tri-State'", "'All of ' + STATE_NAMES[s]", "className = 'scope-st'", "'Find a county'", "el('button', 'cl-go')", "el('button', 'ghost', 'Clear')", "localStorage.setItem('tsn.myCounties'", "'My counties ('"]) assert.ok(ui.includes(s), s);
+  assert.equal((ui.match(/'Done'/g) || []).length, 1, 'one Done');
+  assert.ok(!/Missouri[^'"\n]*Tri-State|Tri-State[^'"\n]*Missouri/.test(ui), 'Missouri never labeled Tri-State');
+  // saved 'all' from before falls back to Tri-State; the API still accepts scope=all (admin and old links)
+  assert.match(html, /\/\^\(tristate\|state:\[a-z\]\{2\}\|county:/);
+  assert.equal(S.parse('all').key, 'all');
+  // no duplicate area labels: the meta line doesn't repeat it, and a single-county view drops the per-card county
+  assert.ok(!/metaEl\.textContent = \(SC\.on \? SC\.label/.test(html));
+  assert.match(html, /if \(it\.place && SC\.on && !\/\^county:\/\.test\(SC\.key\)\)/);
+  // label shortening
+  const shortLabel = new Function('SC', html.match(/function shortLabel\(l\) \{[\s\S]*?\n  \}/)[0] + '; return shortLabel;');
+  const f = shortLabel({ key: 'county:ky-daviess', my: [] });
+  assert.equal(f('Daviess County, KY'), 'Daviess Co., KY'); assert.equal(f('Kentucky'), 'Kentucky'); assert.equal(f('All Regions'), 'Tri-State');
+  assert.equal(shortLabel({ key: 'counties:a,b,c', my: ['a', 'b', 'c'] })('My Counties'), 'My counties (3)');
+});
+
 test('still exactly 8 functions', () => {
   const fns = fs.readdirSync(API).filter(f => f.endsWith('.js') && !f.startsWith('_'));
   assert.deepStrictEqual(fns.sort(), ['alerts.js', 'inbox.js', 'listings.js', 'news.js', 'newsletter.js', 'react.js', 'stripe-webhook.js', 'unsubscribe.js']);

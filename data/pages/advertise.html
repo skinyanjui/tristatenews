@@ -45,6 +45,10 @@ button:disabled { opacity:.6; cursor:default; }
 a { color:var(--accent); }
 footer { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; gap:16px; font-size:14px; }
 [hidden] { display:none !important; }
+/* the newsletter sponsor block preview (public/adsizes.js newsletterPreview) */
+.tsz-nl { display:grid; gap:2px; margin-top:12px; padding:12px 14px; border:1px solid var(--border); border-radius:8px; background:var(--bg); }
+.tsz-nl .spon-tag { color:var(--muted); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+.tsz-nl .ad-tx { color:var(--muted); font-size:14px; }
 /* ad size previews (public/adsizes.js lays out each size) */
 .tsz { background:var(--bg); color:var(--fg); border:1px dashed var(--border); border-radius:8px; }
 .tsz .spon-tag { color:var(--muted); font-weight:600; font-style:italic; letter-spacing:.04em; text-transform:uppercase; }
@@ -186,7 +190,11 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
     (cat.budgets || []).forEach(function (b) { if (b && b.key && b.label) opt('budget', b.key, b.label); });
     SOON.forEach(function (s) {
       var x = cat[s[0]] && cat[s[0]][s[1]]; if (!x || x.purchasable) return;
-      $('soon').appendChild(card(s[2], '', '', 'Coming soon', s[3], null));
+      // Newsletter sponsorship: not for sale until 1,500 confirmed subscribers (and the other gates); show the live count.
+      var g = cat.newsletterGate || {}, gate = s[0] === 'newsletter' && s[1] !== 'dedicated' && g.verifiedSubscribers != null && g.verifiedSubscribers < g.minVerifiedSubscribers;
+      var c = card(s[2], '', '', gate ? 'Coming soon — ' + g.verifiedSubscribers.toLocaleString('en-US') + ' of ' + g.minVerifiedSubscribers.toLocaleString('en-US') + ' subscribers' : 'Coming soon', s[3], null);
+      if (s[1] === 'single' && typeof window !== 'undefined' && window.TSNSizes && window.TSNSizes.newsletterPreview) c.appendChild(window.TSNSizes.newsletterPreview(document));
+      $('soon').appendChild(c);
     });
     $('rates-status').hidden = true; $('rate-card').hidden = false;
   }).catch(function () { $('rates-status').textContent = 'Rates couldn’t load right now. Send us a note below and we’ll reply with current rates.'; });

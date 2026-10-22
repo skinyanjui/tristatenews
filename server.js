@@ -106,6 +106,12 @@ function handleRedisCommand(cmd) {
     case 'SMEMBERS': {
       return { result: setStore.has(key) ? Array.from(setStore.get(key)) : [] };
     }
+    case 'SISMEMBER': {
+      return { result: setStore.has(key) && setStore.get(key).has(String(cmd[2])) ? 1 : 0 };
+    }
+    case 'ZCARD': {
+      return { result: zStore.has(key) ? zStore.get(key).size : 0 };
+    }
     case 'ZADD': {
       if (!zStore.has(key)) zStore.set(key, new Map());
       const z = zStore.get(key);

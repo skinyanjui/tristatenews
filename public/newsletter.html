@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Newsletter · Tri-State News</title>
+<meta name="description" content="Sign up for the Tri-State News weekly email: local headlines and events.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/legal.css">
+<style>
+.un-form { display:grid; gap:8px; max-width:440px; margin:16px 0 8px; }
+.un-form label { font-weight:600; font-size:15px; }
+.un-form input { min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--background); color:var(--foreground); font:inherit; }
+.un-form input:focus-visible { outline:2px solid var(--brand); outline-offset:1px; }
+.un-go { min-height:44px; padding:0 16px; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; font:600 15px/1 var(--font-sans); cursor:pointer; justify-self:start; }
+[data-theme="dark"] .un-go { color:#04222b; }
+.un-go[disabled] { opacity:.6; cursor:default; }
+.un-msg { min-height:24px; max-width:60ch; margin:8px 0 0; }
+.un-msg.ok { padding:12px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--background-subtle); }
+.un-msg.err { color:#c4262c; }
+[data-theme="dark"] .un-msg.err { color:#ff6369; }
+#main { min-height:calc(100vh - 170px); min-height:calc(100dvh - 170px); }
+.un-hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.nl-what { margin:8px 0 0; padding-left:20px; max-width:60ch; }
+.nl-what li { margin:4px 0; }
+</style>
+<script>try{var t=localStorage.getItem('tsn.theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="lg-top"><div class="lg-top-in"><a class="lg-brand" href="/">Tristate</a><a class="lg-back" href="/">Back to the news</a></div></header>
+<main id="main">
+<div id="signup">
+<h1>The Tri-State in your inbox</h1>
+<p class="lg-lede">One short email a week: the top local headlines and what’s coming up. Free, and you can leave anytime.</p>
+<ul class="nl-what"><li>We ask you to confirm by email before we send anything.</li><li>Every email has a one-click unsubscribe link.</li><li>We don’t sell or share your address (<a href="/legal.html#privacy">Privacy Policy</a>).</li></ul>
+<form class="un-form" id="nlForm" method="post" action="/api/subscribe" novalidate>
+  <label for="nlEmail">Email address</label>
+  <input id="nlEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="80" required placeholder="name@email.com" aria-describedby="nlMsg">
+  <div class="un-hp" aria-hidden="true"><label for="nlWebsite">Leave this empty</label><input id="nlWebsite" name="website" tabindex="-1" autocomplete="off"></div>
+  <button class="un-go" id="nlGo" type="submit">Subscribe</button>
+</form>
+<p class="un-msg" id="nlMsg" role="status" aria-live="polite"></p>
+<p class="lg-meta">By subscribing you agree to our <a href="/legal.html#terms-newsletter">Terms</a>. Already subscribed and want to stop? <a href="/unsubscribe.html">Unsubscribe</a>.</p>
+</div>
+<div id="confirm" hidden>
+<h1>Confirm your subscription</h1>
+<p class="lg-lede">One more tap and you’re on the list for our weekly email.</p>
+<div class="un-form"><button class="un-go" id="cfGo" type="button">Confirm my subscription</button></div>
+<p class="un-msg" id="cfMsg" role="status" aria-live="polite"></p>
+<p class="lg-meta">Didn’t sign up? Just close this page; without confirming you won’t get anything from us.</p>
+</div>
+</main>
+<footer class="lg-foot"><div class="lg-foot-in"><p><a href="/legal.html">Legal</a> · <a href="/legal.html#privacy">Privacy</a> · <a href="/unsubscribe.html">Unsubscribe</a></p></div></footer>
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  var RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, q = new URLSearchParams(location.search);
+  function say(el, text, kind) { el.textContent = text; el.className = 'un-msg' + (kind ? ' ' + kind : ''); }
+  function post(body) {
+    return fetch('/api/subscribe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }, function () { return { ok: false, d: {} }; }); });
+  }
+  // Opened from the confirmation email: confirm with a button press (mail scanners that open links don't press it).
+  var token = q.get('confirm') || '';
+  if (token) {
+    $('signup').hidden = true; $('confirm').hidden = false;
+    $('cfGo').addEventListener('click', function () {
+      $('cfGo').disabled = true; say($('cfMsg'), '');
+      post({ action: 'confirm', token: token }).then(function (o) {
+        if (!o.ok) { $('cfGo').disabled = false; say($('cfMsg'), (o.d && o.d.error) || 'Couldn’t confirm just now. Try again in a moment.', 'err'); return; }
+        $('cfGo').hidden = true; say($('cfMsg'), 'You’re subscribed. Look for our next weekly email. You can unsubscribe from any issue with one click.', 'ok');
+      }).catch(function () { $('cfGo').disabled = false; say($('cfMsg'), 'Couldn’t reach the server. Check your connection and try again.', 'err'); });
+    });
+    return;
+  }
+  $('nlForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('nlEmail').value.trim();
+    if (!RE.test(v)) { say($('nlMsg'), 'Enter a valid email address.', 'err'); $('nlEmail').setAttribute('aria-invalid', 'true'); $('nlEmail').focus(); return; }
+    $('nlEmail').removeAttribute('aria-invalid'); $('nlGo').disabled = true; say($('nlMsg'), '');
+    post({ email: v, website: $('nlWebsite').value || undefined }).then(function (o) {
+      $('nlGo').disabled = false;
+      if (!o.ok) { say($('nlMsg'), (o.d && o.d.error) || 'Couldn’t sign you up. Try again.', 'err'); return; }
+      $('nlForm').hidden = true; say($('nlMsg'), o.d.message || 'Thanks. Check your email to confirm.', 'ok');
+    }).catch(function () { $('nlGo').disabled = false; say($('nlMsg'), 'Couldn’t reach the server. Check your connection and try again.', 'err'); });
+  });
+})();
+</script>
+</body>
+</html>

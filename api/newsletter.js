@@ -10,7 +10,8 @@
 // The GitHub workflow .github/workflows/newsletter.yml only calls ?send=1 when the repo variable NEWSLETTER_ENABLED
 // is 'true' as well.
 //
-// List: the Redis set tsn:nl:subs (/api/subscribe, api/_subscribe.js). Each recipient gets their own email with their own
+// List: the confirmed (double opt-in) readers, the Redis set tsn:nl:confirmed (/api/subscribe, api/_subscribe.js).
+// Signups from before double opt-in (in tsn:nl:subs only) aren't mailed until they confirm. Each recipient gets their own email with their own
 // unsubscribe link (require('./unsubscribe.js').link) in the footer and in List-Unsubscribe / List-Unsubscribe-Post
 // (RFC 8058 one-click, handled by api/unsubscribe.js).
 // One issue per ISO week (Chicago time): recipients are recorded in tsn:nl:issue:<week>:sent as each batch of up to
@@ -84,7 +85,24 @@ function pick(news, listings, now) {
   return { headlines, events: events.filter(e => { const k = e.title.toLowerCase() + fmtDay(e.at); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, EVENTS) };
 }
 
-function render(issue, email) {
+// The newsletter sponsor slot (one block after the headlines). It carries a sponsor only once newsletter sponsorship
+// is on sale (api/_catalog.js NEWSLETTER: off until 1,500 verified subscribers and the other gates), so a real send
+// has none today. The admin preview may show a made-up sample, labeled "Sample ad".
+const SAMPLE_SPONSOR = Object.assign({ url: '' }, require('../public/adsizes.js').SAMPLE); // the same made-up business as the size previews
+function sponsorBlock(sp) {
+  if (!sp) return '';
+  const label = sp.sample ? 'Sample ad' : 'Sponsored';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 4px;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa"><tr><td style="padding:14px 16px">' +
+    '<div style="font:600 11px/16px -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#666">' + label + '</div>' +
+    '<div style="font-weight:600;font-size:16px;line-height:22px;margin-top:4px">' + esc(sp.name) + '</div>' +
+    '<div style="color:#444;font-size:14px;line-height:20px;margin-top:2px">' + esc(sp.text) + '</div>' +
+    (sp.url && !sp.sample ? '<div style="margin-top:8px"><a href="' + esc(safeUrl(sp.url)) + '" rel="sponsored" style="color:#0b6b86;font-weight:600;text-decoration:none">' + esc(sp.cta) + ' \u2192</a></div>' : '') +
+    (sp.sample ? '<div style="margin-top:8px;color:#666;font-size:13px">A sample, not a real business. Newsletter sponsorship is coming soon.</div>' : '') +
+    '</td></tr></table>';
+}
+
+function render(issue, email, opts) {
+  opts = opts || {};
   const u = unsub.link(email, site()), base = site(), postal = process.env.NEWSLETTER_POSTAL_ADDRESS || '';
   const a = (href, text, style) => '<a href="' + esc(href) + '" style="color:#0b6b86;text-decoration:none;' + (style || '') + '">' + esc(text) + '</a>';
   const h = issue.headlines.map(x => '<tr><td style="padding:10px 0;border-bottom:1px solid #ebebeb">' + a(x.link, x.title, 'font-weight:600;font-size:16px;line-height:22px') +
@@ -99,6 +117,7 @@ function render(issue, email) {
     '<div style="font-weight:600;font-size:20px;color:#0b6b86">' + a(base + '/', 'Tri-State News', 'color:#0b6b86') + '</div>' +
     '<div style="color:#666;font-size:13px;margin:4px 0 16px">Week of ' + esc(issue.weekOf) + '</div>' +
     (h ? '<h2 style="font-size:15px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.04em;color:#444">Top headlines</h2><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + h + '</table>' : '') +
+    sponsorBlock(opts.sponsor) +
     (ev ? '<h2 style="font-size:15px;margin:24px 0 4px;text-transform:uppercase;letter-spacing:.04em;color:#444">Coming up</h2><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + ev + '</table>' +
       '<p style="margin:12px 0 0">' + a(base + '/events', 'All events \u2192') + '</p>' : '') +
     '<p style="margin:24px 0 0">' + a(base + '/news', 'More local news \u2192') + '</p>' +
@@ -137,7 +156,7 @@ async function send(issue) {
   const [got] = await redis([['SET', lock, '1', 'NX', 'EX', '300']]);
   if (got !== 'OK') return { status: 409, body: { error: 'another send is running' } };
   try {
-    const [subs, done] = await redis([['SMEMBERS', 'tsn:nl:subs'], ['SMEMBERS', sentKey]]);
+    const [subs, done] = await redis([['SMEMBERS', 'tsn:nl:confirmed'], ['SMEMBERS', sentKey]]);
     const already = new Set(done || []), todo = (subs || []).filter(e => !already.has(e)).sort();
     let sent = 0;
     for (let i = 0; i < todo.length; i += BATCH) {
@@ -165,7 +184,7 @@ async function handler(req, res) {
     if (!wantSend) {
       const m = render(issue, 'preview@example.com');
       if (q.format === 'html') { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.status(200).send(m.html); }
-      let subscribers = null; try { if (URL_ && TOKEN) [subscribers] = await redis([['SCARD', 'tsn:nl:subs']]); } catch (e) { /* preview anyway */ }
+      let subscribers = null; try { if (URL_ && TOKEN) [subscribers] = await redis([['SCARD', 'tsn:nl:confirmed']]); } catch (e) { /* preview anyway */ }
       return res.status(200).json({ dryRun: true, week: issue.week, subject: issue.subject, headlines: issue.headlines.length, events: issue.events.length, subscribers, wouldSend: missingForSend().length === 0, missingForSend: missingForSend(), headers: m.headers, html: m.html, text: m.text });
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'sending needs POST' });
@@ -178,7 +197,25 @@ async function handler(req, res) {
     return res.status(502).json({ error: String(e && e.message || e).slice(0, 200) });
   }
 }
+// The admin's "compose issue" preview (/api/subscribe?preview=1, api/_subscribe.js): this week's digest with the
+// sponsor slot showing a labeled sample. Never sends.
+async function preview(now) {
+  let issue;
+  try { issue = await buildIssue(now); } catch (e) { return { ok: false, error: 'Couldn’t load this week’s stories: ' + String(e && e.message || e).slice(0, 120) }; }
+  const m = render(issue, 'preview@example.com', { sponsor: SAMPLE_SPONSOR });
+  return { ok: true, week: issue.week, subject: issue.subject, headlines: issue.headlines.length, events: issue.events.length, sponsorSlot: 'sample', html: m.html, headers: m.headers, missingForSend: missingForSend() };
+}
+// One test copy for the admin's own address (POST /api/subscribe {action:'test'}): no sponsor, marked [Test].
+async function testMessage(to, now) {
+  const issue = await buildIssue(now), m = render(issue, to);
+  return { from: process.env.NEWSLETTER_FROM, to: [to], subject: '[Test] ' + issue.subject, html: m.html, text: m.text, headers: m.headers };
+}
+
 module.exports = handler;
+module.exports.preview = preview;
+module.exports.testMessage = testMessage;
+module.exports.sponsorBlock = sponsorBlock;
+module.exports.SAMPLE_SPONSOR = SAMPLE_SPONSOR;
 module.exports.pick = pick;
 module.exports.render = render;
 module.exports.isoWeek = isoWeek;

@@ -238,6 +238,17 @@
     box.appendChild(line);
     return box;
   }
+  // The newsletter sponsor block (api/newsletter.js sponsorBlock), previewed with the made-up business and labeled
+  // "Sample ad". Newsletter sponsorship isn't for sale yet; this only shows what the slot looks like.
+  function newsletterPreview(doc) {
+    function el(t, c, x) { var n = doc.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; }
+    var box = el('div', 'tsz-nl ad-sample'); box.setAttribute('aria-label', 'Sample ad preview, newsletter sponsor block: ' + SAMPLE.name);
+    box.appendChild(el('span', 'spon-tag', 'Sample ad'));
+    box.appendChild(el('b', 'ad-nm', SAMPLE.name));
+    box.appendChild(el('span', 'ad-tx', SAMPLE.text));
+    box.appendChild(el('span', 'ad-tx ad-note', 'A sample, not a real business. One sponsor block per weekly email, after the headlines.'));
+    return box;
+  }
   // A "See ad sizes" button for a gallery box: collapsed by default (box hidden), aria-expanded and aria-controls kept
   // in step, the previews built the first time it opens. Returns the button; put it just before the box.
   function toggle(doc, box, id) {
@@ -254,7 +265,7 @@
     });
     return btn;
   }
-  return { SIZES: SIZES, SAMPLE: SAMPLE, gallery: gallery, toggle: toggle, ORDER: ORDER, NOT_USED: NOT_USED, WHERE: WHERE, NEWS_BAR_MIN: NEWS_BAR_MIN, RAIL_MIN: RAIL_MIN, RAIL_WIDE: RAIL_WIDE,
+  return { SIZES: SIZES, SAMPLE: SAMPLE, gallery: gallery, newsletterPreview: newsletterPreview, toggle: toggle, ORDER: ORDER, NOT_USED: NOT_USED, WHERE: WHERE, NEWS_BAR_MIN: NEWS_BAR_MIN, RAIL_MIN: RAIL_MIN, RAIL_WIDE: RAIL_WIDE,
     rulesFor: rulesFor, sizeFor: sizeFor, sizesFor: sizesFor, usedSizes: usedSizes, cover: cover, check: check, pick: pick, fullOk: fullOk, ratio: ratio,
     rules: rules, css: css, inject: inject, groupOf: groupOf, mark: mark, decorate: decorate, render: render, preview: preview, fit: fit, sampleImage: sampleImage, initials: initials };
 });

@@ -219,3 +219,14 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 33. **Holds:** we hold shares 7 days unpaid / 14 days invoiced, then may release them. Confirm this is acceptable to promise in the Terms.
 34. **Record retention:** package orders and their leads have no automatic expiry ("as long as tax and accounting rules require"). Confirm a concrete period (for example 7 years) if a fixed number is preferred.
 35. **Stripe customer_email:** the package checkout sends the order email to Stripe to prefill its page (Featured checkout sends none). Confirm that's fine under the Privacy §5 wording.
+
+## Newsletter double opt-in, admin preview and the sponsor gate (Terms §8, Privacy §2 table and §4, Advertising Policy §1)
+- **Terms §8:** nothing is sent until the reader confirms (email link + "Confirm" button; unconfirmed sign-ups expire after 7 days); every email has a one-click unsubscribe link and our postal address (placeholder).
+- **Privacy §2 table:** the newsletter row now covers confirmation status, the one-time confirmation code (stored only as a SHA-256 hash), the 7-day expiry of unconfirmed sign-ups, and a do-not-email record of unsubscribed addresses. **§4:** Resend also sends confirmation emails.
+- **Advertising §1:** newsletter sponsorship is offered only at 1,500 confirmed (double opt-in) subscribers and the other gates. The /advertise page and the site's Advertise panel show the live count ("coming soon — X of 1,500 subscribers"); the order flow refuses newsletter orders on the server.
+
+### Needs review (newsletter)
+36. **CAN-SPAM postal address (blocking for any send):** every commercial email needs a valid physical postal address. `NEWSLETTER_POSTAL_ADDRESS` is unset and Terms §8 shows `[MAILING ADDRESS]`. A P.O. box or registered commercial mail receiving agency is allowed. Issues can't be sent until it's set (api/newsletter.js missingForSend); confirmation emails include it when set.
+37. **Do-not-email record:** we keep unsubscribed addresses indefinitely (tsn:nl:unsubs) so they are never re-added by mistake. Confirm that's acceptable under the Privacy wording, or set a period.
+38. **Legacy sign-ups:** addresses that signed up before double opt-in are kept but no longer mailed until they confirm. Decide whether to send them one re-confirmation email (allowed: they asked for the newsletter) or delete them.
+39. **Sample sponsor block:** the admin preview and /advertise show a made-up business labeled "Sample ad". Real sends never carry a sample (api/newsletter.js: no sponsor unless one is sold).

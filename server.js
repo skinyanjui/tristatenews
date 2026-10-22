@@ -233,7 +233,7 @@ app.all('/api/listings', (req, res, next) => {
 });
 
 app.post('/api/adstats', express.text({ type: 'text/plain', limit: '2kb' })); // ad counts arrive by sendBeacon as text/plain
-app.all(['/api/advertise', '/api/creative', '/api/campaigns', '/api/adstats'], (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
+app.all(['/api/advertise', '/api/creative', '/api/campaigns', '/api/adstats', '/api/packages'], (req, res, next) => { // served by api/inbox.js (see vercel.json rewrites)
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 

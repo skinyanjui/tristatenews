@@ -72,6 +72,10 @@
       "destination": "/api/inbox?__route=campaigns"
     },
     {
+      "source": "/api/packages",
+      "destination": "/api/inbox?__route=packages"
+    },
+    {
       "source": "/api/adstats",
       "destination": "/api/inbox?__route=adstats"
     },

@@ -6,5 +6,6 @@
   <url><loc>https://tristatenewss.vercel.app/jobs</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://tristatenewss.vercel.app/deals</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
   <url><loc>https://tristatenewss.vercel.app/classifieds</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
-  <url><loc>https://tristatenewss.vercel.app/legal.html</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://tristatenewss.vercel.app/legal.html</loc><lastmod>2026-10-21</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://tristatenewss.vercel.app/newsletter</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
 </urlset>

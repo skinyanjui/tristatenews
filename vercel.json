@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/news.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "{public/index.html,data/pages/404.html}"
     },
     "api/alerts.js": {
       "maxDuration": 20
@@ -98,6 +99,18 @@
     {
       "source": "/advertise",
       "destination": "/api/inbox?__route=adpage"
+    },
+    {
+      "source": "/news/:state/:county",
+      "destination": "/api/news?__route=geopage&p=/news/:state/:county"
+    },
+    {
+      "source": "/news/:state",
+      "destination": "/api/news?__route=geopage&p=/news/:state"
+    },
+    {
+      "source": "/sitemap-regions.xml",
+      "destination": "/api/news?__route=geopage&sitemap=1"
     },
     {
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)",

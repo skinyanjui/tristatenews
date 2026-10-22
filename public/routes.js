@@ -55,5 +55,18 @@
     var rb = meta(doc, 'meta[name="robots"]', 'content', r.index ? null : { tag: 'meta', attrs: { name: 'robots' } });
     if (rb) { if (r.index) rb.parentNode.removeChild(rb); else rb.setAttribute('content', 'noindex'); }
   }
-  return { ORIGIN: ORIGIN, ROUTES: ROUTES, ALIASES: ALIASES, OLD_TABS: OLD_TABS, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
+  // County and state pages (/news/indiana, /news/indiana/dubois), served only while REGIONAL_ROUTES_ENABLED is on
+  // (api/_geopage.js sets their head server-side). geo() maps such a path to a scope key, geoPath() the other way;
+  // both are string rules only, and the server checks the county is one of ours. They open the News tab.
+  var STATE_SLUGS = { 'in': 'indiana', ky: 'kentucky', il: 'illinois', mo: 'missouri' };
+  function geo(path) {
+    var m = /^\/news\/([a-z]+)(?:\/([a-z-]+))?$/.exec(norm(path)); if (!m) return null;
+    for (var k in STATE_SLUGS) if (STATE_SLUGS[k] === m[1]) return { cat: 'news', path: norm(path), scope: m[2] ? 'county:' + k + '-' + m[2] : 'state:' + k };
+    return null;
+  }
+  function geoPath(scope) {
+    var m = /^(state|county):([a-z]{2})(?:-([a-z-]+))?$/.exec(String(scope || '')); if (!m || !STATE_SLUGS[m[2]]) return null;
+    return '/news/' + STATE_SLUGS[m[2]] + (m[1] === 'county' ? '/' + m[3] : '');
+  }
+  return { ORIGIN: ORIGIN, STATE_SLUGS: STATE_SLUGS, geo: geo, geoPath: geoPath, ROUTES: ROUTES, ALIASES: ALIASES, OLD_TABS: OLD_TABS, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
 });

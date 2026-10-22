@@ -76,7 +76,7 @@ test('no sample text except the labeled placeholder sample ads; placeholders onl
 test('Privacy matches the code: every browser-storage key is described; no cookies, analytics or ad-network code', () => {
   const keys = new Set([...html.matchAll(/localStorage\.(?:getItem|setItem)\('([^']+)'/g)].map(m => m[1])
     .concat([...html.matchAll(/(?:RECENT_KEY|NL_KEY) = '([^']+)'/g)].map(m => m[1]), [...html.matchAll(/key: '(tsn\.[A-Za-z]+)'/g)].map(m => m[1])));
-  const DESCRIBED = { 'tsn.theme': 'light or dark theme', wxLoc: 'chosen weather location', 'tsn.saved': 'liked stories', 'tsn.recent': 'recent searches',
+  const DESCRIBED = { 'tsn.theme': 'light or dark theme', wxLoc: 'chosen weather location', 'tsn.saved': 'liked stories', 'tsn.scope': 'the area you chose to read', 'tsn.myCounties': 'your list of counties', 'tsn.recent': 'recent searches',
     'tsn.nl': 'whether you’ve signed up for the newsletter', 'tsn.uid': 'A random browser ID', 'tsn.mine': 'posts you made from this browser', 'tsn.mineDeals': 'posts you made from this browser',
     'tsn.mineEvents': 'posts you made from this browser', 'tsn.mineJobs': 'posts you made from this browser', 'tsn.mineObits': 'posts you made from this browser' };
   assert.deepStrictEqual([...keys].sort(), Object.keys(DESCRIBED).sort(), 'a new browser-storage key needs a line in the Privacy Policy');
@@ -92,7 +92,7 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
 test('Privacy: order records are described as stored, and the payment code never keeps card or contact details from Stripe', () => {
   const t = text(privacy);
   for (const s of ['Order records', 'We don’t store your name, email or card details from Stripe', 'An unpaid checkout is deleted after 30 days', 'have no automatic expiry',
-    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 21, 2026'])
+    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 22, 2026'])
     assert.ok(t.includes(s), s);
   for (const f of ['api/stripe-webhook.js', 'api/_orders.js', 'api/_checkout.js'])
     assert.ok(!/customer_details|customer_email|receipt_email|billing_details|\.card\b|payment_method_details/.test(read(f)), f + ' stores no card or contact data');

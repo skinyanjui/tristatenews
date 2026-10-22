@@ -47,6 +47,12 @@ section { padding:var(--card-pad); }
 .cr { gap:var(--card-stack); }
 .cr label { min-height:40px; }
 details summary { min-height:40px; display:flex; align-items:center; }
+.cv { width:100%; border-collapse:collapse; font-size:12px; line-height:16px; }
+.cv th, .cv td { text-align:left; padding:6px 8px 6px 0; border-top:1px solid var(--border); vertical-align:top; }
+.cv th { color:var(--muted); font-weight:500; }
+.cvw { overflow-x:auto; }
+.st-ok { border-color:#30a46c; color:#30a46c; } .st-stale, .st-degraded { border-color:#f5a524; color:#b07800; } .st-failing { border-color:#e5484d; color:#e5484d; } .st-paused, .st-off, .st-not_fetched, .st-quiet { color:var(--muted); }
+@media (max-width:639px) { .cv .wide { display:none; } }
 </style>
 </head>
 <body>
@@ -81,6 +87,14 @@ details summary { min-height:40px; display:flex; align-items:center; }
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
     <section><h2 id="orh">Orders</h2><div id="ors"></div></section>
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
+    <section id="cov"><div class="row"><h2 id="cvh">Sources &amp; Coverage</h2><button class="ghost" id="cvr" type="button">Reload</button></div>
+      <p class="m">Read-only health and coverage from the stored feed state, plus the classifier review queue. A county override is written to the audit log and takes effect at the next refresh. No reader data is shown here.</p>
+      <h2>Flags and batches</h2><div id="cvf"></div>
+      <h2>Sources</h2><div class="row"><select id="cvsf" aria-label="Which sources to show"><option value="problem">Needs attention</option><option value="all">All</option></select><p class="m" id="cvsn"></p></div><div class="cvw"><table class="cv" id="cvs"></table></div>
+      <h2>Counties</h2><div class="row"><select id="cvcf" aria-label="Which counties to show"><option value="all">All 68</option><option value="core">Core</option><option value="extended">Extended</option><option value="gap">Gaps (no home source)</option><option value="thin">Below the gate</option></select><p class="m" id="cvcn"></p></div><div class="cvw"><table class="cv" id="cvc"></table></div>
+      <h2 id="cvqh">Review queue</h2><div id="cvq"></div>
+      <h2>Override log</h2><div id="cva"></div>
+    </section>
   </div>
 </main>
 <script>
@@ -333,11 +347,69 @@ details summary { min-height:40px; display:flex; align-items:center; }
       $('tko').textContent = d.token ? location.origin + '/creative.html?token=' + encodeURIComponent(d.token) + ' (works ' + d.days + ' days)' : 'Not available.';
     }).catch(function (er) { $('tko').textContent = er.message; });
   });
+  // Sources & Coverage (GET/POST /api/coverage, same admin key).
+  var cov = null;
+  function cell(tr, text, cls, tag) { var c = mk(tag || 'td', cls ? { 'class': cls } : {}, text); tr.appendChild(c); return c; }
+  function drawCoverage() {
+    var d = cov; ['cvf', 'cvs', 'cvc', 'cvq', 'cva'].forEach(function (id) { $(id).textContent = ''; });
+    if (!d) { empty($('cvf'), 'Not available.'); return; }
+    var f = d.flags || {};
+    line($('cvf'), Object.keys(f).map(function (k) { return k + ' ' + (f[k] ? 'on' : 'off'); }).join(' · '), 'Batches enabled: ' + ((d.batches.enabled || []).join(', ') || 'none') + (d.store ? '' : ' · no store: health shows not fetched') + (d.snapshotAt ? ' · snapshot ' + new Date(d.snapshotAt).toLocaleString() : ''));
+    (d.batches.files || []).forEach(function (b) { line($('cvf'), b.id + ': ' + b.sources + ' sources, ' + b.active + ' live', b.paused.length ? 'Paused: ' + b.paused.join(', ') : 'None paused'); });
+    var probs = d.sources.filter(function (s) { return s.status !== 'ok' && s.status !== 'off' && s.status !== 'quiet'; });
+    var rows = $('cvsf').value === 'all' ? d.sources : probs;
+    $('cvsn').textContent = d.sources.filter(function (s) { return s.status === 'ok'; }).length + ' ok · ' + d.sources.filter(function (s) { return s.status === 'quiet'; }).length + ' quiet (nothing local right now) · ' + probs.length + ' need attention · ' + d.sources.length + ' total';
+    var h = mk('tr'); ['Source', 'Status', 'Items', 'Newest', 'Cadence', 'Last fetch'].forEach(function (x, i) { cell(h, x, i > 3 ? 'wide' : '', 'th'); }); $('cvs').appendChild(h);
+    rows.forEach(function (s) {
+      var tr = mk('tr'); var n = cell(tr, s.name); n.appendChild(mk('div', { 'class': 'm' }, s.id + (s.batch ? ' · ' + s.batch : '') + (s.area ? ' · ' + s.area : '')));
+      var st = cell(tr, ''); st.appendChild(mk('span', { 'class': 'st st-' + s.status }, s.status.replace('_', ' ')));
+      if (s.error || s.disabled) st.appendChild(mk('div', { 'class': 'm' }, s.error || s.disabled));
+      cell(tr, String(s.items)); cell(tr, s.ageDays == null ? '—' : s.ageDays + ' d ago');
+      cell(tr, s.cadenceDays == null ? '—' : 'every ' + s.cadenceDays + ' d', 'wide'); cell(tr, s.lastTry ? new Date(s.lastTry).toLocaleString() + (s.fails ? ' · ' + s.fails + ' fails' : '') : '—', 'wide');
+      $('cvs').appendChild(tr);
+    });
+    if (!rows.length) { var tr0 = mk('tr'); cell(tr0, 'Nothing needs attention.'); $('cvs').appendChild(tr0); }
+    var cf = $('cvcf').value, pass = d.counties.filter(function (c) { return c.passesGate; }).length;
+    $('cvcn').textContent = pass + ' of ' + d.counties.length + ' pass the ' + d.gate.min + '-story gate (' + d.gate.days + ' days)' + (d.gate.measuredAt ? ' · measured ' + new Date(d.gate.measuredAt).toLocaleDateString() : '');
+    var h2 = mk('tr'); ['County', 'Tier', 'Stories 14d', 'Measured', 'Home sources'].forEach(function (x, i) { cell(h2, x, i === 3 ? 'wide' : '', 'th'); }); $('cvc').appendChild(h2);
+    d.counties.filter(function (c) { return cf === 'all' || c.tier === cf || (cf === 'gap' && c.gap) || (cf === 'thin' && !c.passesGate); }).forEach(function (c) {
+      var tr = mk('tr'); cell(tr, c.name + ', ' + c.state); cell(tr, c.tier);
+      var sc = cell(tr, c.stories14d == null ? '—' : String(c.stories14d)); if (!c.passesGate) sc.appendChild(mk('div', { 'class': 'm' }, 'below gate'));
+      cell(tr, c.measured14d == null ? '—' : String(c.measured14d), 'wide'); cell(tr, c.gap ? 'Gap: none' : c.homeSources.join(', '));
+      $('cvc').appendChild(tr);
+    });
+    $('cvqh').textContent = 'Review queue (' + d.review.length + ')';
+    if (!d.review.length) empty($('cvq'), 'Nothing waiting for review.');
+    d.review.forEach(function (r) {
+      var box = mk('div', { 'class': 'item cr' });
+      var a = mk('a', { href: r.link, target: '_blank', rel: 'noopener noreferrer' }, r.title); var b = mk('b'); b.appendChild(a); box.appendChild(b);
+      box.appendChild(mk('div', { 'class': 'm' }, r.source + ' · ' + (r.reason || 'needs review').replace(/_/g, ' ') + ' · suggested ' + (r.suggested.length ? r.suggested.join(', ') : 'none') + (r.unresolved.length ? ' · ambiguous: ' + r.unresolved.join(', ') : '') + (r.override ? ' · override: ' + (r.override.length ? r.override.join(', ') : 'no county') : '')));
+      var sel = mk('select', { 'aria-label': 'County for this story' }); sel.appendChild(mk('option', { value: '' }, 'Choose county…')); sel.appendChild(mk('option', { value: '-' }, 'No county (not local)'));
+      d.counties.forEach(function (c) { var o = mk('option', { value: c.id }, c.name + ', ' + c.state); if ((r.override || r.suggested)[0] === c.id) o.selected = true; sel.appendChild(o); });
+      var note = mk('input', { placeholder: 'Note (kept in the log)', maxlength: '200', 'aria-label': 'Override note' });
+      var go = mk('button', { type: 'button' }, 'Set county'), msg = mk('p', { 'class': 'm', role: 'status' });
+      var acts = mk('div', { 'class': 'acts' }); acts.appendChild(sel); acts.appendChild(go);
+      if (r.override) { var clr = mk('button', { type: 'button', 'class': 'ghost' }, 'Clear override'); acts.appendChild(clr); clr.addEventListener('click', function () { post('/api/coverage', { key: r.key, clear: true, title: r.title, note: note.value }).then(function () { loadCoverage(); }, function (e) { msg.textContent = e.message; }); }); }
+      box.appendChild(note); box.appendChild(acts); box.appendChild(msg);
+      go.addEventListener('click', function () {
+        if (!sel.value) { msg.textContent = 'Choose a county first.'; return; }
+        go.disabled = true;
+        post('/api/coverage', { key: r.key, title: r.title, countyIds: sel.value === '-' ? [] : [sel.value], note: note.value }).then(function (x) { msg.textContent = 'Saved. ' + x.note; loadCoverage(); }, function (e) { msg.textContent = e.message; go.disabled = false; });
+      });
+      $('cvq').appendChild(box);
+    });
+    if (!d.audit.length) empty($('cva'), 'No overrides yet.');
+    d.audit.forEach(function (x) { line($('cva'), x.action.replace(/_/g, ' ') + ' · ' + (x.title || x.key), new Date(x.at).toLocaleString() + ' · ' + (x.before ? (x.before.join(', ') || 'no county') : '—') + ' → ' + (x.after ? (x.after.join(', ') || 'no county') : 'cleared') + ' · ' + x.by + (x.note ? ' · ' + x.note : '')); });
+  }
+  function loadCoverage() { return get('/api/coverage').then(function (d) { cov = d; drawCoverage(); return d; }, function () { cov = null; drawCoverage(); return null; }); }
+  $('cvr').addEventListener('click', loadCoverage);
+  $('cvsf').addEventListener('change', drawCoverage);
+  $('cvcf').addEventListener('change', drawCoverage);
   $('key').addEventListener('submit', function (e) {
     e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
-    Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; })]).then(function (r) {
+    Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; }), loadCoverage()]).then(function (r) {
       loadCreatives(); loadCampaigns(); loadPackages();
-      if (!r[0] && !r[1] && !r[2] && !r[3]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
+      if (!r[0] && !r[1] && !r[2] && !r[3] && !r[4]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
       drawSubscribers(r[0]);
       drawLeads(r[1]);

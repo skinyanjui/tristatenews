@@ -32,6 +32,7 @@ Vercel's Hobby plan allows 12 functions per deployment, and every `api/*.js` fil
 | `/api/packages` | `api/inbox.js` | `api/_packages.js` |
 | `/api/alerts`, `/api/react`, `/api/newsletter`, `/api/stripe-webhook` | own file | own file |
 | `/api/locations` (admin) | `api/news.js` | `api/_locations.js` |
+| `/api/coverage` (admin) | `api/news.js` | `api/_coverage.js` |
 | any unknown path (last two rewrites) | `api/inbox.js` | `api/_notfound.js` |
 
 To add a path without a new function, put its handler in an `_`-prefixed file, add it to a host's `host({...})` table and add the rewrite; `test/api-routes.test.js` checks the map and the function count (at most 9).
@@ -200,3 +201,24 @@ Two server-side flags, both off by default (exactly `true` turns one on):
 The default view (no `?scope`, or Tri-State) is the existing feed. Expansion-batch sources only appear in it when a story
 names one of the 30 core counties; everything else from them is under All Regions, its state or its county.
 Missouri is never labeled Tri-State.
+
+## Sources & Coverage admin (county expansion step 4)
+
+The admin page (`/admin.html`, same `LISTINGS_ADMIN_KEY`) has a Sources & Coverage section backed by `/api/coverage`
+(hosted by `api/news.js`, no new function; 404 without the key). It shows:
+
+- Flags and batches: each flag on/off (never a variable's value), the enabled batches, and paused batch sources.
+- Source health from each source's stored record: status (ok, quiet = fetched fine but nothing local right now,
+  stale = nothing for 3x its own measured cadence and at least 2 days, failing, paused, off, not fetched), items,
+  newest story, cadence (batch evidence, else the median gap of its stored stories) and last fetch.
+- Counties: all 68 with tier, stories in the last 14 days in the current snapshot, the committed measurement
+  (`data/geography/coverage.json`), home sources and gaps.
+- Classifier review queue (ambiguous names first) with a manual county override. `POST /api/coverage
+  {key, countyIds, note}` (`[]` = no county, `{key, clear: true}` removes it) writes `tsn:loc:overrides` and an
+  entry in `tsn:loc:audit` (last 1000). Overrides apply at the next refresh and are never in the public response.
+
+Feed fix (2026-10-22): six BLOX papers (Messenger-Inquirer, Dubois County Herald, Washington Times-Herald,
+Vincennes Sun-Commercial, Princeton Daily Clarion, Mt. Carmel Register) used the unfiltered site-wide search feed,
+which AP wire copy filled, so every item was rejected as wire. They now use their local section feed, and the run
+report flags `all_wire` / `mostly_wire`. Batch 2: Ohio County Times-News paused (members-only); WFIW uses its
+local-news category feed, and name/age/hometown obituary titles stay out of news.

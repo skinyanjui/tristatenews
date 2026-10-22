@@ -61,8 +61,12 @@ function outOfArea(item) {
 }
 
 // Obituaries belong in the Obituaries tab, not the news feed (papers mix them into their main feeds).
+const OBIT_NAME_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,5}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?,\s*\d{1,3},\s+(?:of\s+)?[A-Z][A-Za-z.'\u2019 -]{1,40}$/;
 function looksLikeObit(item) {
   if (/\bobituar(?:y|ies)\b/i.test(item.title)) return true;
+  // A headline that is only a name, an age and a hometown ("John Henry Adams, 61, of Mill Shoals") is a death notice;
+  // a news story about a person says what happened ("..., 45, of Henderson, arrested").
+  if (OBIT_NAME_RE.test(String(item.title || '').trim())) return true;
   try { return /\/obituar/i.test(new URL(item.link).pathname); } catch (_) { return false; }
 }
 
@@ -462,7 +466,8 @@ async function tryUrl(source, url, prev) {
     const ical = /BEGIN:VCALENDAR/.test(xml);
     const parsed = ical ? parseIcal(xml, source) : parseFeed(xml, { ...source, fetchedUrl: url });
     const items = parsed.filter(it => passesFilters(it, source, viaGoogle));
-    return { items, error: items.length ? null : 'no items', httpStatus: r.status, received: parsed.length,
+    const wire = parsed.filter(it => isWire(it)).length; // counted so a feed flooded by wire copy shows up in source health
+    return { items, error: items.length ? null : 'no items', httpStatus: r.status, received: parsed.length, wire,
       feedLike: ical || /<(rss|feed|rdf:RDF|channel)\b/i.test(xml), url, etag: r.headers.get('etag') || '', lastModified: r.headers.get('last-modified') || '' };
   } catch (e) {
     return { items: [], error: String(e && e.message || e).slice(0, 80), errorCode: (e && (e.code || e.name)) || '', url };
@@ -480,7 +485,7 @@ async function loadSource(source, prev, now) {
   const blocked = Object.assign({}, (prev && prev.blocked) || {});
   Object.keys(blocked).forEach(h => { if (blocked[h] <= now) delete blocked[h]; });
   const open = urls.filter(u => !blocked[hostOf(u)]);
-  let last = { items: [], error: open.length ? 'no url' : 'cooling down after rate limit' };
+  let last = { items: [], error: open.length ? 'no url' : 'cooling down after rate limit' }, wireSeen = null;
   for (const url of open) {
     last = await tryUrl(source, url, prev);
     if (/^HTTP (429|403)$/.test(last.error || '')) {
@@ -491,7 +496,11 @@ async function loadSource(source, prev, now) {
       continue;
     }
     if (last.items.length || last.notModified) break;
+    if (last.wire && (!wireSeen || last.wire > wireSeen.wire)) wireSeen = { wire: last.wire, received: last.received };
   }
+  // Every endpoint came back empty: keep the wire count from the one that was all wire copy, so the run report says
+  // all_wire instead of looking like a quiet feed (the Google News fallback has no wire count of its own).
+  if (wireSeen && !last.items.length && !last.notModified && !(last.wire >= wireSeen.wire)) last = Object.assign({}, last, wireSeen);
   return { source, ...last, blocked, blockCount: last.blockCount || (Object.keys(blocked).length ? (prev && prev.blockCount) || 0 : 0) };
 }
 
@@ -568,6 +577,7 @@ function logoFor(url) {
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const stored = () => !!(URL_ && TOKEN);
+const OVERRIDES_KEY = 'tsn:loc:overrides';
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
@@ -659,6 +669,14 @@ function adapterResult(r, ctx) {
     itemsReceived: received, itemsAccepted: accepted, itemsRejected: received - accepted,
     rejectionReasons: received > accepted ? { not_eligible: received - accepted } : {}, warnings: [],
   };
+  // Wire copy (AP and the like) is rejected on purpose; when it is most of what a feed returns, the feed URL is the
+  // problem (an unfiltered site-wide BLOX search feed, 2026-10-22), so it is reported as its own reason and warning.
+  const wire = Math.min(Number(r.wire) || 0, received - accepted);
+  if (wire > 0) {
+    out.rejectionReasons = { wire };
+    if (received - accepted - wire > 0) out.rejectionReasons.not_eligible = received - accepted - wire;
+    if (wire * 2 >= received) out.warnings.push(accepted ? 'mostly_wire' : 'all_wire');
+  }
   if (at > 0) out.warnings.push('fallback_endpoint');
   if (r.error && r.error !== 'no items') out.detail = String(r.error).slice(0, 120); // private: tsn:runs only
   return out;
@@ -667,6 +685,7 @@ function adapterResult(r, ctx) {
 // The public sources[] carries no error text (plan 6.1: error detail is admin-only; it stays in tsn:src:<id> and
 // tsn:runs:<runId>). Snapshots stored before PR 1.3 still have an error field, so it is also dropped when served.
 function publicSnapshot(snap) {
+  if (snap && 'overrides' in snap) { snap = Object.assign({}, snap); delete snap.overrides; } // admin data, see refreshAll
   if (!snap || !Array.isArray(snap.sources) || !snap.sources.some(s => s && 'error' in s)) return snap;
   return Object.assign({}, snap, { sources: snap.sources.map(s => { const o = Object.assign({}, s); delete o.error; return o; }) });
 }
@@ -688,14 +707,19 @@ async function refreshAll(opts) {
   const now = Date.now();
   let targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
   let persist = stored();
-  let prevStates = {};
+  let prevStates = {}, overridesRaw = [];
   const store = { requests: 0, commands: 0 }; // billed Upstash commands this run, reported by /api/refresh
   if (persist) {
     // If the store is unreachable (bad or rotated token, outage) keep going without it rather than failing the page.
     try {
       // One MGET (one billed command) instead of one GET per source. Same values: a missing key is null either way.
-      store.requests++; store.commands++;
-      const vals = await mget(SOURCES.map(s => srcKey(s.id)));
+      // The same request also reads the admin's manual county overrides (HGETALL, one more command, no extra trip).
+      store.requests++; store.commands += 2;
+      const keys = SOURCES.map(s => srcKey(s.id));
+      const out = await redis([['MGET'].concat(keys), ['HGETALL', OVERRIDES_KEY]]);
+      const vals = out && out[0] && out[0].result;
+      if (!Array.isArray(vals) || vals.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
+      overridesRaw = (out[1] && out[1].result) || [];
       SOURCES.forEach((s, i) => { prevStates[s.id] = parse(vals[i]); });
     } catch (e) { persist = false; }
   }
@@ -728,6 +752,15 @@ async function refreshAll(opts) {
   // sources not fetched this round (fast tier) still need a record
   SOURCES.forEach(s => { if (!states[s.id]) states[s.id] = { items: [], error: null, lastOk: null }; });
   const snap = buildSnapshot(states, now);
+  // Manual county overrides from the admin (api/_coverage.js), carried in the snapshot for api/_scope.js. Only the
+  // story keys that are in this snapshot; readers never get the map (publicSnapshot/_scope strip it).
+  if (overridesRaw.length) {
+    try {
+      const flat = overridesRaw, keys = new Set(snap.items.map(i => require('./_scope.js').overrideKey(i)));
+      const m = {}; for (let i = 0; i + 1 < flat.length; i += 2) if (keys.has(flat[i])) { try { const v = JSON.parse(flat[i + 1]); if (Array.isArray(v.countyIds)) m[flat[i]] = v.countyIds; } catch (_) { /* skip */ } }
+      if (Object.keys(m).length) snap.overrides = m;
+    } catch (_) { /* overrides are optional */ }
+  }
   const results = fetched.map(r => adapterResult(r, { runId }));
   const statusCounts = {};
   results.forEach(x => { statusCounts[x.status] = (statusCounts[x.status] || 0) + 1; });
@@ -779,7 +812,7 @@ async function run(req, res) {
   }
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900, max-age=120');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(200).send(JSON.stringify(scoped(publicSnapshot(snap), scope, filters)));
+  res.status(200).send(JSON.stringify(publicSnapshot(scoped(snap, scope, filters))));
 }
 
 // Scope filters (plan PR 6.1, api/_scope.js), behind COUNTY_FILTERS_ENABLED. Off: ?scope is ignored and the response is
@@ -798,13 +831,15 @@ function scoped(snap, scope, filters) {
 // with its own CRON_SECRET check, lives in api/_refresh.js. /api/counties and /api/regions (rewritten to
 // ?__route=counties / ?__route=regions) are the read-only geography API in api/_geoapi.js, which never touches Redis.
 // /api/locations (?__route=locations) is the admin-only county-classification report in api/_locations.js.
+// /api/coverage (?__route=coverage) is the admin Sources & Coverage report and override endpoint in api/_coverage.js.
 // Every other request is the news handler above.
 module.exports = require('./_dispatch.js').host({
   refresh: () => require('./_refresh.js'),
   counties: () => require('./_geoapi.js').counties,
   regions: () => require('./_geoapi.js').regions,
   locations: () => require('./_locations.js'),
-  geopage: () => require('./_geopage.js')
+  geopage: () => require('./_geopage.js'),
+  coverage: () => require('./_coverage.js')
 }, handler);
 module.exports.parseFeed = parseFeed;
 module.exports.readSnapshot = readSnapshot;

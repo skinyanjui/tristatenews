@@ -75,6 +75,17 @@ function handleRedisCommand(cmd) {
     case 'HGETALL': {
       return { result: [...(hashStore.get(key) || new Map())].flat() };
     }
+    case 'HSET': { // field/value pairs (admin county overrides)
+      const h = hashStore.get(key) || new Map(); hashStore.set(key, h);
+      let n = 0; for (let i = 2; i + 1 < cmd.length; i += 2) { if (!h.has(String(cmd[i]))) n++; h.set(String(cmd[i]), String(cmd[i + 1])); }
+      return { result: n };
+    }
+    case 'HGET': {
+      const h = hashStore.get(key); return { result: h && h.has(String(cmd[2])) ? h.get(String(cmd[2])) : null };
+    }
+    case 'HDEL': {
+      const h = hashStore.get(key); let n = 0; for (const f of cmd.slice(2)) if (h && h.delete(String(f))) n++; return { result: n };
+    }
     case 'PERSIST': { // no expiries in this dev store
       return { result: 0 };
     }
@@ -231,6 +242,9 @@ app.all('/api/refresh', (req, res, next) => { // served by api/news.js (see verc
 });
 
 app.all(['/api/counties', '/api/regions'], (req, res, next) => { // served by api/news.js (see vercel.json rewrites)
+  Promise.resolve(newsHandler(req, res)).catch(next);
+});
+app.all('/api/coverage', (req, res, next) => { // admin Sources & Coverage, served by api/news.js (see vercel.json rewrites)
   Promise.resolve(newsHandler(req, res)).catch(next);
 });
 app.all('/api/locations', (req, res, next) => { // admin county-classification report, served by api/news.js (see vercel.json rewrites)

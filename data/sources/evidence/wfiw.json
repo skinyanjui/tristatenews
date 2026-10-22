@@ -2,8 +2,8 @@
   "sourceId": "wfiw",
   "name": "WFIW Radio",
   "site": "https://www.wfiwradio.com",
-  "feedUrl": "https://www.wfiwradio.com/feed/",
-  "checkedAt": "2026-10-22T22:17:22.043Z",
+  "feedUrl": "https://www.wfiwradio.com/category/local-news/feed/",
+  "checkedAt": "2026-10-22T22:46:05.878Z",
   "method": "scripts/verify-source.js",
   "checks": {
     "site": {
@@ -38,9 +38,9 @@
       ]
     },
     "geography": {
-      "located": 7,
+      "located": 6,
       "of": 10,
-      "share": 70
+      "share": 60
     }
   },
   "observed": {
@@ -48,12 +48,12 @@
     "error": null,
     "received": 10,
     "accepted": 10,
-    "durationMs": 19,
+    "durationMs": 16,
     "runner": "box",
-    "fetchedUrl": "https://www.wfiwradio.com/feed/"
+    "fetchedUrl": "https://www.wfiwradio.com/category/local-news/feed/"
   },
   "activity": {
-    "latest": "2026-10-22T18:47:35.000Z",
+    "latest": "2026-10-22T17:00:46.000Z",
     "last30d": 10,
     "undated": 0,
     "inFeed": 10,
@@ -63,22 +63,21 @@
   "coverageEvidence": [
     {
       "countyId": "il-wayne",
-      "items": 6,
+      "items": 5,
       "examples": [
-        "John Henry Adams, 61, of Mill Shoals",
-        "THREE-VEHICLE CRASH IN WAYNE COUNTY SENDS JOHNSONVILLE WOMAN TO HOSPITAL"
-      ]
-    },
-    {
-      "countyId": "il-white",
-      "items": 2,
-      "examples": [
-        "John Henry Adams, 61, of Mill Shoals",
-        "WEEKLY WELLNESS PROGRAM TO BEGIN AT GROFF MEMORIAL LIBRARY"
+        "THREE-VEHICLE CRASH IN WAYNE COUNTY SENDS JOHNSONVILLE WOMAN TO HOSPITAL",
+        "VETERANS DAY PARADE SET FOR NOVEMBER 7TH"
       ]
     },
     {
       "countyId": "il-edwards",
+      "items": 1,
+      "examples": [
+        "WEEKLY WELLNESS PROGRAM TO BEGIN AT GROFF MEMORIAL LIBRARY"
+      ]
+    },
+    {
+      "countyId": "il-white",
       "items": 1,
       "examples": [
         "WEEKLY WELLNESS PROGRAM TO BEGIN AT GROFF MEMORIAL LIBRARY"

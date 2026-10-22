@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const D = require('../scripts/sources-diff.js');
-const FIX = require('./fixtures/sources-ba8b34a.json');
+const FIX = require('./fixtures/source-url-fixes.js').current; // ba8b34a plus documented URL fixes
 
 // sources[] exactly as buildSnapshot() in api/news.js lists it at ba8b34a, health fields included.
 const snapshotSources = () => FIX.active.map(s => ({ logo: D.logoFor(s.url), id: s.id, name: s.name, area: s.area || '', kind: s.kind || 'news', ok: true, count: 3, lastOk: '2026-10-18T14:19:40.683Z', stale: false }));

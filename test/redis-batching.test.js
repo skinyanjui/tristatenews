@@ -5,6 +5,7 @@
 //   news refresh, tier all, empty store:  before 60 GET + 60 SET + 1 = 121   after 1 MGET + 60 SET + 1 = 62
 //   news refresh, tier fast, right after: before 60 GET + 13 SET + 1 = 74    after 1 MGET + 13 SET + 1 = 15
 //   PR 1.3 adds one SET per run (the tsn:runs:<runId> record): all 63, fast 16, still 2 round trips
+//   2026-10-22 adds HGETALL tsn:loc:overrides to the read request: all 64, fast 17, still 2 round trips
 //     (13 of the 15 fast sources are due; Courier & Press and the Gleaner poll every 30 minutes)
 //   alerts, snapshot still fresh:         before 17 (3 + 14 GET)             after 2 (MGET + HGETALL)
 //   alerts refresh, A active alerts:      before 17 + 1 + 3 + 12 + 2A        after 2 + 1 + 3 + 12 + A + 1
@@ -86,9 +87,11 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     assert.equal(count(store.log, 'MGET'), 1);
     assert.equal(count(store.log, 'GET'), 0, 'no per-source GET');
     assert.equal(count(store.log, 'SET'), N + 2, 'one SET per fetched source, the snapshot and the run record');
-    assert.equal(store.log.commands.length, N + 3);
+    // 2026-10-22: the read request also carries HGETALL tsn:loc:overrides (admin county overrides): +1 command, same trips.
+    assert.equal(count(store.log, 'HGETALL'), 1);
+    assert.equal(store.log.commands.length, N + 4);
     assert.equal(all.report.length, N);
-    assert.deepEqual(all.store, { requests: 2, commands: N + 3 }, 'refreshAll reports what it sent');
+    assert.deepEqual(all.store, { requests: 2, commands: N + 4 }, 'refreshAll reports what it sent');
     // Same keys and TTLs as before: tsn:src:<id> for 14 days, the snapshot for 2 days.
     for (const s of news.SOURCES) assert.equal(store.ttl.get('tsn:src:' + s.id), 14 * 86400, s.id);
     assert.equal(store.ttl.get('tsn:news:snapshot'), 2 * 86400);
@@ -101,8 +104,8 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     const F = fast.report.length;
     assert.ok(F > 0 && F <= 15, 'fast sources fetched: ' + F);
     assert.deepEqual([store.log.requests, count(store.log, 'MGET'), count(store.log, 'GET'), count(store.log, 'SET')], [2, 1, 0, F + 2]);
-    assert.deepEqual(fast.store, { requests: 2, commands: F + 3 });
-    assert.equal(F + 3, 16, '13 due fast sources + MGET + snapshot + run record');
+    assert.deepEqual(fast.store, { requests: 2, commands: F + 4 });
+    assert.equal(F + 4, 17, '13 due fast sources + MGET + HGETALL + snapshot + run record');
     console.log('# measured news commands per run: all=' + (N + 3) + ' (PR 1.2: ' + (N + 2) + '), fast=' + store.log.commands.length + ' (PR 1.2: ' + (F + 2) + ')');
   } finally { restore(); }
 });
@@ -225,7 +228,7 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    assert.deepEqual(res.body.store, { requests: 2, commands: N + 3 });
+    assert.deepEqual(res.body.store, { requests: 2, commands: N + 4 });
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
     for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'notModified', 'failing', 'statuses']) assert.ok(k in res.body, k);
   } finally { restore(); }

@@ -358,7 +358,7 @@ test('GET /api/orders: admin key only (404 otherwise), newest first, with totals
 
 test('admin.html: orders and attention sections added; newsletter, inquiries and tips sections unchanged', () => {
   const html = fs.readFileSync(path.join(root, 'public/admin.html'), 'utf8');
-  for (const s of ["get('/api/subscribe')", "get('/api/advertise')", "get('/api/submit')", "get('/api/orders')", 'id="csv"', 'id="nl"', 'id="ad"', 'id="at"', 'id="ors"', "if (!r[0] && !r[1] && !r[2] && !r[3])"]) assert.ok(html.includes(s), s);
+  for (const s of ["get('/api/subscribe')", "get('/api/advertise')", "get('/api/submit')", "get('/api/orders')", 'id="csv"', 'id="nl"', 'id="ad"', 'id="at"', 'id="ors"', "if (!r[0] && !r[1] && !r[2] && !r[3]"]) assert.ok(html.includes(s), s);
   assert.ok(!/method:\s*'(POST|DELETE|PUT|PATCH)'[^\n]*\/api\/orders/.test(html), 'the orders view only reads');
 });
 

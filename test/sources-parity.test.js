@@ -11,7 +11,8 @@ const { execFileSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const news = require('../api/news.js');
 const reg = require('../api/_sources.js');
-const FIX = require('./fixtures/sources-ba8b34a.json');
+const FIXES = require('./fixtures/source-url-fixes.js'); // documented intentional URL changes since ba8b34a
+const FIX = FIXES.current;
 
 const FLAGS = ['id', 'name', 'area', 'url', 'altUrls', 'kind', 'geo', 'strictGeo', 'geoTerms', 'maxAgeDays', 'everyMin', 'parser', 'funeralHome', 'disabled'];
 
@@ -84,7 +85,7 @@ for (const rev of ['ba8b34a', '3b6c403']) {
   const dir = oldApi(rev);
   test('same SOURCES and DISABLED_SOURCES as news.js at ' + rev, { skip: dir ? false : rev + ' not in this clone' }, () => {
     const old = require(path.join(dir, 'api/news.js'));
-    assert.strictEqual(JSON.stringify(news.SOURCES), JSON.stringify(old.SOURCES));
-    assert.strictEqual(JSON.stringify(news.DISABLED_SOURCES), JSON.stringify(old.DISABLED_SOURCES));
+    assert.strictEqual(JSON.stringify(news.SOURCES), JSON.stringify(FIXES.fix(old.SOURCES)));
+    assert.strictEqual(JSON.stringify(news.DISABLED_SOURCES), JSON.stringify(FIXES.fix(old.DISABLED_SOURCES)));
   });
 }

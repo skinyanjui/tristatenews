@@ -8,7 +8,8 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const BASE = require('./fixtures/sources-ba8b34a.json');
+const FIXES = require('./fixtures/source-url-fixes.js'); // documented intentional URL changes since ba8b34a
+const BASE = FIXES.current;
 
 function load(dir, extra) {
   const env = Object.assign({}, process.env);
@@ -86,6 +87,7 @@ function oldApi(rev) {
 const OLD = oldApi('ba8b34a');
 test('every case matches the old news.js at ba8b34a', { skip: OLD ? false : 'ba8b34a not in this clone' }, () => {
   for (const [k, v] of Object.entries(Object.assign({ unset: undefined }, CASES))) {
-    assert.strictEqual(J(load(ROOT, v)), J(load(OLD, v)), k);
+    const old = load(OLD, v);
+    assert.strictEqual(J(load(ROOT, v)), J({ s: FIXES.fix(old.s), d: FIXES.fix(old.d) }), k);
   }
 });

@@ -115,8 +115,11 @@ test('catch-all rewrites are last and go to the notfound route', () => {
 });
 
 test('unknown paths are 404s', () => {
-  for (const p of ['/404test', '/foo/bar', '/zzz.html', '/events/extra', '/news/x', '/wp-login.php', '/.env'])
+  for (const p of ['/404test', '/foo/bar', '/zzz.html', '/events/extra', '/wp-login.php', '/.env'])
     assert.equal(route(p).status, 404, p);
+  // /news/<state>[/<county>] goes to the county-page handler, which answers 404 itself for anything that isn't one of
+  // our states or counties, and for every path while REGIONAL_ROUTES_ENABLED is off (test/scope.test.js).
+  for (const p of ['/news/x', '/news/x/y']) assert.match(route(p).fn, /__route=geopage/, p);
   assert.match(route('/api/nope').fn, /api=1/);
   assert.doesNotMatch(route('/nope').fn, /api=1/);
 });

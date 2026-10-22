@@ -111,6 +111,6 @@ test('every absolute host a page fetches is in connect-src', () => {
 test('sitemap lists /newsletter and the legal page with its current date', () => {
   const sm = fs.readFileSync(path.join(root, 'public/sitemap.xml'), 'utf8');
   assert.ok(sm.includes('<loc>https://tristatenewss.vercel.app/newsletter</loc>'));
-  assert.ok(/legal\.html<\/loc><lastmod>2026-10-21</.test(sm));
+  assert.ok(/legal\.html<\/loc><lastmod>2026-10-22</.test(sm));
   assert.ok(fs.readFileSync(path.join(root, 'public/newsletter.html'), 'utf8').includes('rel="canonical" href="https://tristatenewss.vercel.app/newsletter"'));
 });

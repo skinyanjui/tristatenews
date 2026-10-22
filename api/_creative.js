@@ -1,10 +1,12 @@
 // Advertiser creatives: upload, admin review, and the approved ads the page shows.
-//   POST /api/creative  {ref, email | token, headline, text, cta, dest, image}   an advertiser submits a creative
+//   POST /api/creative  {ref, email | token, headline, text, cta, dest, image, sizes?}   an advertiser submits a creative.
+//        sizes (optional): { '728x90': dataUrl, ... } a whole-unit banner for any IAB size we use (public/adsizes.js),
+//        the same shape as the unit and at least its pixel size; without one, that size is built from image + words.
 //        -> { ok, id, status: 'pending' }. Access needs one of: an advertising inquiry reference (AD-...) with the
 //        email used on that inquiry, a paid order (the Stripe checkout id, cs_...), or a signed upload token the admin
 //        issued for a reference. Nobody can upload anonymously.
 //   GET  /api/creative?live=1                        the approved creatives, by placement (public; cached briefly)
-//   GET  /api/creative?img=<id>                      an approved creative's image (public); pending or rejected
+//   GET  /api/creative?img=<id>[&size=728x90]        an approved creative's image, or its banner for a size (public); pending or rejected
 //                                                    images only with x-admin-key
 //   GET  /api/creative       with x-admin-key       every creative (newest 100), the pending queue and the audit log
 //   POST /api/creative  {action:'approve', id, reason, placements[]} | {action:'reject', id, reason} |
@@ -20,6 +22,7 @@
 // most MAX_IMAGE_BYTES, kept as a data URL beside its record.
 //   tsn:cr:<id>        record (pending: 60-day TTL; approved: no TTL; rejected/withdrawn: record kept 1 year, image deleted)
 //   tsn:cr:img:<id>    the image (same TTL as the record; deleted on reject or withdraw)
+//   tsn:cr:img:<id>:<size>  a whole-unit banner for that size (same TTL and deletion as the image)
 //   tsn:cr:index       sorted set of every creative by time; tsn:cr:pending  the review queue
 //   tsn:cr:live        set of approved, placed creative ids
 //   tsn:cr:audit       list of review actions (newest first, last 1000; no TTL)
@@ -28,6 +31,8 @@ const crypto = require('crypto');
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const { same } = require('./_safe.js');
+const SZ = require('../public/adsizes.js');
+const BANNER_SIZES = SZ.usedSizes(); // the IAB sizes a creative can carry its own banner for
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 // Upload tokens are HMACs keyed by CREATIVE_TOKEN_SECRET, else derived from the admin key (so rotating it voids them).
 const TOKEN_KEY = process.env.CREATIVE_TOKEN_SECRET || (ADMIN ? crypto.createHmac('sha256', ADMIN).update('tsn-creative-token').digest('hex') : '');
@@ -90,7 +95,9 @@ function destination(raw, cta) {
 }
 
 // A still image as a data URL -> { type, bytes, w, h } or { error }. JPEG, PNG or WebP; no animation.
-function image(dataUrl) {
+// min: { w, h } overrides the minimum size (a banner for a size is checked against that size instead).
+function image(dataUrl, min) {
+  const minW = min ? min.w : MIN_W, minH = min ? min.h : MIN_H;
   const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(String(dataUrl || ''));
   if (!m) return { error: 'Upload a JPEG, PNG or WebP image.' };
   if (m[2].length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4) return { error: 'The image must be ' + (MAX_IMAGE_BYTES / 1024) + ' KB or smaller.' };
@@ -122,7 +129,7 @@ function image(dataUrl) {
     if (b.includes(Buffer.from('ANIM'))) return { error: 'Animated images aren’t allowed.' };
   }
   if (!dim || !dim.w || !dim.h) return { error: 'That image is empty or damaged.' };
-  if (dim.w < MIN_W || dim.h < MIN_H) return { error: 'The image must be at least ' + MIN_W + '×' + MIN_H + ' pixels.' };
+  if (dim.w < minW || dim.h < minH) return { error: 'The image must be at least ' + minW + '×' + minH + ' pixels.' };
   if (dim.w > MAX_SIDE || dim.h > MAX_SIDE) return { error: 'The image can be at most ' + MAX_SIDE + ' pixels on a side.' };
   return { type: m[1], bytes: b.length, w: dim.w, h: dim.h };
 }
@@ -139,7 +146,28 @@ function validate(b) {
   if (d.error) return { error: d.error, field: 'dest' };
   const im = image(b.image);
   if (im.error) return { error: im.error, field: 'image' };
-  return { headline, text, cta: b.cta, dest: d.dest, destType: d.destType, image: { type: im.type, bytes: im.bytes, w: im.w, h: im.h } };
+  const sz = banners(b.sizes);
+  if (sz.error) return sz;
+  const out = { headline, text, cta: b.cta, dest: d.dest, destType: d.destType, image: { type: im.type, bytes: im.bytes, w: im.w, h: im.h } };
+  if (Object.keys(sz.sizes).length) out.sizes = sz.sizes;
+  return out;
+}
+
+// Optional whole-unit banners, one per IAB size -> { sizes: { '728x90': {type, bytes, w, h} } } or { error, field }.
+// Each is a still image like the main one, at least the unit's pixel size and within 3% of its shape.
+function banners(raw) {
+  const sizes = {};
+  if (raw == null || raw === '') return { sizes };
+  if (typeof raw !== 'object' || Array.isArray(raw)) return { error: 'Those banner images aren’t in the right form.', field: 'sizes' };
+  for (const [k, v] of Object.entries(raw)) {
+    if (v == null || v === '') continue;
+    if (!BANNER_SIZES.includes(k)) return { error: 'We don’t run ' + String(k).slice(0, 20) + ' ads.', field: 'sizes' };
+    const z = SZ.SIZES[k], im = image(v, { w: z.w, h: z.h });
+    if (im.error) return { error: k + ' banner: ' + im.error, field: 'size:' + k };
+    if (!SZ.fullOk(im.w, im.h, k)) return { error: k + ' banner: it must be the same shape as the ad, ' + z.w + '×' + z.h + ' or ' + z.w * 2 + '×' + z.h * 2 + ' pixels.', field: 'size:' + k };
+    sizes[k] = { type: im.type, bytes: im.bytes, w: im.w, h: im.h };
+  }
+  return { sizes };
 }
 
 // Signed upload tokens: <ref>.<expiry base36>.<hmac>.
@@ -164,7 +192,7 @@ async function pipeline(commands) {
   return out;
 }
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (_) { return null; } };
-const K = { rec: id => 'tsn:cr:' + id, img: id => 'tsn:cr:img:' + id, index: 'tsn:cr:index', pending: 'tsn:cr:pending', live: 'tsn:cr:live', audit: 'tsn:cr:audit', rl: ip => 'tsn:cr:rl:' + ip, ref: r => 'tsn:cr:ref:' + r };
+const K = { rec: id => 'tsn:cr:' + id, img: id => 'tsn:cr:img:' + id, imgSize: (id, k) => 'tsn:cr:img:' + id + ':' + k, index: 'tsn:cr:index', pending: 'tsn:cr:pending', live: 'tsn:cr:live', audit: 'tsn:cr:audit', rl: ip => 'tsn:cr:rl:' + ip, ref: r => 'tsn:cr:ref:' + r };
 
 // Who may upload: -> { ref, refType } or null.
 async function access(b, now) {
@@ -188,7 +216,9 @@ async function access(b, now) {
 }
 
 // The public shape of an approved creative.
-const pub = c => ({ id: c.id, name: c.headline, text: c.text, cta: c.cta, url: c.dest, destType: c.destType, img: '/api/creative?img=' + c.id, w: c.image.w, h: c.image.h });
+const pub = c => Object.assign({ id: c.id, name: c.headline, text: c.text, cta: c.cta, url: c.dest, destType: c.destType, img: '/api/creative?img=' + c.id, w: c.image.w, h: c.image.h },
+  c.sizes && Object.keys(c.sizes).length ? { sizes: Object.keys(c.sizes).filter(k => BANNER_SIZES.includes(k)) } : {});
+const sizeKeys = c => Object.keys((c && c.sizes) || {}).filter(k => BANNER_SIZES.includes(k));
 function livePlan(list) {
   const out = { cards: {}, slots: {}, rails: { left: [], right: [] } };
   BOARDS.forEach(b => { out.cards[b] = []; out.slots[b] = []; });
@@ -218,9 +248,9 @@ async function handler(req, res) {
         return send(200, Object.assign({ configured: true }, livePlan(recs.map(parse))), 'public, max-age=60, s-maxage=60');
       }
       if (q.img) {
-        const id = String(q.img);
-        if (!ID_RE.test(id)) return send(404, { error: 'not found' });
-        const g = await pipeline([['GET', K.rec(id)], ['GET', K.img(id)]]);
+        const id = String(q.img), size = q.size == null ? '' : String(q.size);
+        if (!ID_RE.test(id) || (size && !BANNER_SIZES.includes(size))) return send(404, { error: 'not found' });
+        const g = await pipeline([['GET', K.rec(id)], ['GET', size ? K.imgSize(id, size) : K.img(id)]]);
         const c = parse(g[0] && g[0].result), data = g[1] && g[1].result;
         if (!c || !data || (c.status !== 'approved' && !admin)) return send(404, { error: 'not found' });
         const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(data);
@@ -269,8 +299,8 @@ async function handler(req, res) {
       if (to === 'approved') Object.assign(rec, { approvedAt: at, placements });
       else rec.placements = [];
       const cmds = [['LPUSH', K.audit, JSON.stringify(entry)], ['LTRIM', K.audit, '0', String(AUDIT_KEEP - 1)]]; // the audit entry is written first
-      if (to === 'approved') cmds.push(['SET', K.rec(c.id), JSON.stringify(rec)], ['PERSIST', K.img(c.id)], ['SADD', K.live, c.id], ['ZREM', K.pending, c.id]);
-      else cmds.push(['SET', K.rec(c.id), JSON.stringify(rec), 'EX', String(CLOSED_TTL)], ['DEL', K.img(c.id)], ['SREM', K.live, c.id], ['ZREM', K.pending, c.id], ['SREM', K.ref(c.ref), c.id]);
+      if (to === 'approved') cmds.push(['SET', K.rec(c.id), JSON.stringify(rec)], ['PERSIST', K.img(c.id)], ...sizeKeys(c).map(k => ['PERSIST', K.imgSize(c.id, k)]), ['SADD', K.live, c.id], ['ZREM', K.pending, c.id]);
+      else cmds.push(['SET', K.rec(c.id), JSON.stringify(rec), 'EX', String(CLOSED_TTL)], ['DEL', K.img(c.id)], ...sizeKeys(c).map(k => ['DEL', K.imgSize(c.id, k)]), ['SREM', K.live, c.id], ['ZREM', K.pending, c.id], ['SREM', K.ref(c.ref), c.id]);
       await pipeline(cmds);
       return send(200, { ok: true, id: c.id, status: to });
     }
@@ -288,6 +318,7 @@ async function handler(req, res) {
     const rec = Object.assign({ id, ref: who.ref, refType: who.refType, status: 'pending', at: new Date(now).toISOString(), placements: [], history: [] }, v);
     await pipeline([
       ['SET', K.img(id), String(b.image), 'EX', String(PENDING_TTL)],
+      ...sizeKeys(v).map(k => ['SET', K.imgSize(id, k), String(b.sizes[k]), 'EX', String(PENDING_TTL)]),
       ['SET', K.rec(id), JSON.stringify(rec), 'EX', String(PENDING_TTL)],
       ['ZADD', K.index, String(now), id], ['ZADD', K.pending, String(now), id],
       ['SADD', K.ref(who.ref), id], ['EXPIRE', K.ref(who.ref), String(CLOSED_TTL)]
@@ -299,4 +330,4 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-Object.assign(module.exports, { validate, destination, image, tokenFor, tokenRef, livePlan, pub, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });
+Object.assign(module.exports, { validate, destination, image, banners, BANNER_SIZES, tokenFor, tokenRef, livePlan, pub, CTAS, PLACEMENTS, MAX_IMAGE_BYTES });

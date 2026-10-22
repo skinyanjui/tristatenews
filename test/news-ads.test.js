@@ -67,7 +67,8 @@ test('page wiring: News only, no search, Breaking first and ad-free, full-row ad
   const n = html.slice(html.indexOf('newsAd: function'), html.indexOf('adCard: function'));
   assert.match(n, /f\.type === 'house'\) return null/);
   assert.match(n, /UI\.adCard\('news'\)/);
-  assert.match(html, /\.list > \.ad-card\.ad-feed \{ max-width:none; \}/);
+  assert.ok(!html.includes('.list > .ad-card.ad-feed { max-width:none; }'), 'the feed card is a sized unit now (public/adsizes.js)');
+  assert.match(html, /return UI\.sized\(sa, place\);/);
 });
 
 test('policy text: News ads, never next to Police & courts, none on Obituaries', () => {

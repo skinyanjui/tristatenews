@@ -26,6 +26,7 @@
 <script src="/routes.js"></script>
 <script src="/featured.js"></script>
 <script src="/adslots.js"></script>
+<script src="/adsizes.js"></script>
 <script src="/flowers.js"></script>
 <script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -773,8 +774,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
    card still applies, and absent on Obituaries (body[data-ads] and TSNAds.railFill); News has them too. Lists gain columns
    rather than stretching; text keeps its line-length caps. */
 :root { --page-max:960px; --rail-w:160px; --rail-gap:24px; --news-max:960px; }
-@media (min-width:1440px) { :root { --page-max:1120px; --rail-w:120px; --rail-gap:20px; } } /* 120x600 skyscrapers */
-@media (min-width:1680px) { :root { --page-max:1280px; --rail-w:160px; --rail-gap:24px; } } /* 160x600 */
+@media (min-width:1440px) { :root { --page-max:1056px; } } /* 160x600 side ads: 1056 + 2 × (160 + 24) = 1424. 120x600 is too narrow for a readable headline */
+@media (min-width:1680px) { :root { --page-max:1280px; } } /* 160x600 */
 @media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }
 @media (min-width:2560px) { :root { --page-max:1760px; --rail-w:300px; --rail-gap:48px; } } /* 300x600 */
 .nav-in, .nav-tabs, main { max-width:var(--page-max); }
@@ -797,7 +798,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 @media (min-width:1920px) {
   .deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }
 }
-.list > .ad-card.ad-feed { max-width:none; }
 </style>
 </head>
 <body>
@@ -884,6 +884,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   /* ---------- components: one place for the pieces every board and form reuses ---------- */
   var SPONSORS = null, PAY = { configured: false, prices: {} };
+  if (window.TSNSizes) TSNSizes.inject(document); // ad units at IAB sizes (public/adsizes.js): News 728x90 / 320x100, boards 300x250, side ads 160x600 / 300x600
   // Ad counts (api/_adstats.js): a booked campaign's ad (it carries cid and pl) sends one "seen" when at least half of
   // it is on screen, once per page load, and one "click" per click. The beacon holds only the campaign and the spot:
   // no cookie, no ID, no page, nothing about the reader. Samples and our own house units are never counted.
@@ -966,12 +967,12 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
       // business, price or number, and opens the advertising inquiry form.
       railAd: function (ad) {
-        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News'); h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return h; }
+        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News'); h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return UI.sized(h, 'rail:left'); }
         if (!window.TSNAds || !TSNAds.validAd(ad)) return null;
         var a = UI.adLink('rail-ad', ad);
         if (!ad.img) a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
         if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
-        return a;
+        return UI.sized(a, 'rail:left', ad);
       },
       // Side ads (public/adslots.js railFill): tall, vertical units in the margins on wide screens, only on the board tabs
       // (Events, Jobs, Deals, Classifieds). News (with Police & courts) and Obituaries get none: railFill answers null.
@@ -983,7 +984,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
           if (!f || f.type === 'none') return;
           var list = [];
           if (f.type === 'direct') list = f.ads.map(function (x) { return UI.railAd(x); }).filter(Boolean); // the top spot takes turns
-          else if (f.type === 'sample') { var sm = f.ad, sa = UI.sampleAd('rail-ad rail-sky', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [sa]; }
+          else if (f.type === 'sample') { var sm = f.ad, sa = UI.sampleAd('rail-ad rail-sky', sm); sa.appendChild(bizAvatar(sm.name, '')); sa.appendChild(el('b', null, sm.name)); if (sm.text) sa.appendChild(el('span', 'rail-tx', sm.text)); sa.appendChild(el('span', 'rail-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here')); list = [UI.sized(sa, 'rail:left')]; }
           else list = [UI.railAd(null)];
           list.forEach(function (x) { box.appendChild(x); });
         });
@@ -1059,26 +1060,30 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         return c;
       },
       adCard: function (kind) {
+        var place = kind === 'news' ? 'card:news' : 'card:' + kind;
         var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
         if (!f) return null;
         if (f.type === 'sample') {
           var sa = UI.sampleAd('ad-card', f.ad); sa.appendChild(el('b', null, f.ad.name));
           if (f.ad.text) sa.appendChild(el('span', 'ad-tx', f.ad.text));
           sa.appendChild(el('span', 'ad-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here'));
-          return sa;
+          return UI.sized(sa, place);
         }
         if (f.type === 'direct') {
           var ad = f.ad, a = UI.adLink('ad-card', ad);
           a.appendChild(el('b', null, ad.name));
           if (ad.text) a.appendChild(el('span', 'ad-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
-          return a;
+          return UI.sized(a, place, ad);
         }
         var h = el('button', 'ad-card ad-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here'));
         h.appendChild(el('span', 'ad-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more'));
         h.addEventListener('click', openAd);
-        return h;
+        return UI.sized(h, place);
       },
+      // Size an ad for its placement (public/adsizes.js: the unit follows the screen width; an approved ad's own
+      // banner for a size, when it has one, replaces the image-and-words layout at that size).
+      sized: function (node, place, ad) { return window.TSNSizes && node ? TSNSizes.decorate(document, node, place, ad) : node; },
       notice: function (text) {
         var n = el('div', 'notice'); n.setAttribute('role', 'status'); n.appendChild(el('span', null, text));
         var x = UI.button('\u00d7', null, function () { n.remove(); }); x.setAttribute('aria-label', 'Dismiss'); n.appendChild(x);
@@ -2732,6 +2737,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     }).catch(function () {});
     if (PAY.configured) rt.appendChild(el('p', 'cl-note', 'To feature a post, publish it on its board, then tap “Feature” on your post.'));
     snEl.appendChild(rt);
+    // What the ads look like: every IAB size we use, previewed with a made-up sample business (public/adsizes.js).
+    // Readers reach advertising here (/advertise redirects to #advertise while ADS_PAGE is off), so the previews are here too.
+    if (window.TSNSizes) {
+      var sz = el('div', 'sn-sec'); sz.appendChild(el('h2', null, 'Ad sizes and where they run'));
+      sz.appendChild(el('p', 'cl-note', 'Standard sizes, built from your picture, headline, short text and button, or a finished banner you send. These use a made-up business.'));
+      var gal = TSNSizes.gallery(document, el('div', 'sn-sizes')); sz.appendChild(gal); snEl.appendChild(sz);
+      requestAnimationFrame(function () { TSNSizes.fit(gal); });
+    }
     var f = el('form', 'cl-form'); f.noValidate = true;
     var F = {}, els = {};
     els.business = input('text', 'business', 80, 'Your business name'); F.business = field('Business', els.business, { req: true });

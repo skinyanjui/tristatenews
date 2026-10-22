@@ -41,7 +41,7 @@ test('wider page: one width token for nav, tabs and main; rails sized and placed
   assert.ok(css.includes('.rail-ad.rail-sky { min-height:min(600px, calc(100vh - 140px));'), 'skyscraper height, never taller than the screen');
   assert.ok(html.includes('.rail { display:none; }') && html.includes('body:not([data-ads]) .rail { display:none !important; }'));
   // the widest page plus both rails still fits each breakpoint
-  const steps = [[1360, 960, 160, 24], [1440, 1120, 120, 20], [1680, 1280, 160, 24], [1920, 1440, 160, 32], [2560, 1760, 300, 48]];
+  const steps = [[1360, 960, 160, 24], [1440, 1056, 160, 24], [1680, 1280, 160, 24], [1920, 1440, 160, 32], [2560, 1760, 300, 48]];
   for (const [vw, page, rail, gap] of steps) assert.ok(page + 2 * (rail + gap) <= vw, vw + 'px');
 });
 
@@ -55,7 +55,9 @@ test('no stretching: more columns on Obituaries and the boards, News one column,
 });
 
 test('width tokens in index.html match the fit table', () => {
-  const want = { 1440: [1120, 120, 20], 1680: [1280, 160, 24], 2560: [1760, 300, 48] };
-  for (const [vw, [p, r, g]] of Object.entries(want)) assert.ok(html.includes(`@media (min-width:${vw}px) { :root { --page-max:${p}px; --rail-w:${r}px; --rail-gap:${g}px; } }`), vw);
+  assert.ok(html.includes('@media (min-width:1440px) { :root { --page-max:1056px; } }'), '1440: 160x600 side ads, not 120x600');
+  assert.ok(html.includes('@media (min-width:1680px) { :root { --page-max:1280px; } }'));
+  assert.ok(html.includes('@media (min-width:2560px) { :root { --page-max:1760px; --rail-w:300px; --rail-gap:48px; } }'));
+  assert.ok(!/--rail-w:120px/.test(html), 'no 120px side ads');
   assert.ok(html.includes('@media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }'));
 });

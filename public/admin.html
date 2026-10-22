@@ -96,6 +96,13 @@ details summary { min-height:40px; display:flex; align-items:center; }
     var d = mk('div', { class: 'item cr' });
     d.appendChild(mk('b', null, c.headline));
     crImage(c, d);
+    // Whole-unit banners the advertiser sent for particular sizes (public/adsizes.js): approve or reject them with the creative.
+    Object.keys(c.sizes || {}).forEach(function (k) {
+      var z = c.sizes[k], f = mk('figure', { class: 'm' }); f.appendChild(mk('figcaption', null, 'Banner ' + k + ' · ' + z.type.toUpperCase() + ' ' + z.w + '×' + z.h + ' · ' + Math.round(z.bytes / 1024) + ' KB')); d.appendChild(f);
+      fetch('/api/creative?img=' + encodeURIComponent(c.id) + '&size=' + encodeURIComponent(k), { headers: { 'x-admin-key': key }, cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+        var u = URL.createObjectURL(b); crUrls.push(u); var im = mk('img', { src: u, alt: 'Banner ' + k + ': ' + c.headline }); im.style.maxWidth = '100%'; f.insertBefore(im, f.firstChild);
+      }).catch(function () { f.appendChild(mk('p', { class: 'm' }, 'Banner unavailable.')); });
+    });
     d.appendChild(mk('div', null, c.text || '(no text)'));
     d.appendChild(mk('div', { class: 'm' }, 'Button: ' + c.cta + ' → ' + c.dest + ' (' + c.destType + ')'));
     d.appendChild(mk('div', { class: 'm' }, 'Ref ' + c.ref + ' (' + c.refType + ') · ' + c.image.type.toUpperCase() + ' ' + c.image.w + '×' + c.image.h + ' · ' + Math.round(c.image.bytes / 1024) + ' KB · ' + new Date(c.at).toLocaleString() + ' · ' + c.id + (c.placements && c.placements.length ? ' · runs: ' + c.placements.join(', ') : '')));

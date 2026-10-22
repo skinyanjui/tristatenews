@@ -309,3 +309,48 @@ test('ads PR 4.2: an inquiry marked spam in the lead inbox can no longer be used
   s.kv.set('tsn:lead:' + INQ.ref, JSON.stringify({ ref: INQ.ref, status: 'lost', notes: [], history: [] }));
   assert.strictEqual((await call('POST', { body: good() })).status, 200, 'any other status still can');
 }));
+
+test('ad sizes: optional finished banners per IAB size are checked, stored beside the image, reviewed and deleted with it', () => withStore(ENV, async ({ s, call, C }) => {
+  seedInquiry(s);
+  assert.deepStrictEqual(C.BANNER_SIZES, ['728x90', '300x250', '320x100', '160x600', '300x600']);
+  // the server's checks: a size we run, a still image, at least 1x, the same shape (within 3%)
+  assert.deepStrictEqual(C.banners(undefined), { sizes: {} });
+  assert.deepStrictEqual(Object.keys(C.banners({ '728x90': url('png', png(1456, 180)), '300x250': url('jpeg', jpeg(300, 250)), '320x100': '' }).sizes), ['728x90', '300x250']);
+  for (const [k, img, re] of [['970x250', url('png', png(970, 250)), /don’t run 970x250/], ['120x600', url('png', png(120, 600)), /don’t run/], ['728x90', url('png', png(700, 87)), /at least 728×90/],
+    ['728x90', url('png', png(728, 120)), /same shape/], ['300x250', url('png', png(600, 300)), /same shape/], ['160x600', url('png', png(160, 600, { animated: true })), /Animated/], ['300x600', 'data:image/gif;base64,R0lGOD', /JPEG, PNG or WebP/]])
+    assert.match(C.banners({ [k]: img }).error, re, k);
+  assert.strictEqual(C.banners(['x']).field, 'sizes');
+  assert.strictEqual(C.validate(good({ sizes: { '728x90': url('png', png(728, 100)) } })).field, 'size:728x90');
+  const v = C.validate(good({ sizes: { '728x90': url('png', png(1456, 180)) } }));
+  assert.deepStrictEqual(v.sizes, { '728x90': { type: 'png', bytes: png(1456, 180).length, w: 1456, h: 180 } });
+  assert.ok(!('sizes' in C.validate(good())), 'no banners, no sizes field');
+  // upload -> pending (banner only with the admin key) -> approved (public, listed in pub) -> withdrawn (deleted)
+  const r = await call('POST', { body: good({ sizes: { '728x90': url('png', png(1456, 180)), '300x250': url('png', png(600, 500)) } }) });
+  assert.strictEqual(r.status, 200); const id = r.json.id;
+  assert.ok(s.kv.has('tsn:cr:img:' + id + ':728x90') && s.kv.has('tsn:cr:img:' + id + ':300x250') && s.exp.has('tsn:cr:img:' + id + ':728x90'));
+  assert.strictEqual((await call('GET', { query: { img: id, size: '728x90' } })).status, 404, 'pending: not public');
+  const adm = await call('GET', { query: { img: id, size: '728x90' }, admin: true });
+  assert.ok(adm.status === 200 && adm.body.equals(png(1456, 180)));
+  for (const size of ['970x250', '../x', '320x50']) assert.strictEqual((await call('GET', { query: { img: id, size }, admin: true })).status, 404, size);
+  assert.strictEqual((await call('GET', { query: { img: id, size: '320x100' }, admin: true })).status, 404, 'no banner sent for that size');
+  await call('POST', { body: { action: 'approve', id, reason: 'Checked all sizes', placements: ['card:news', 'card:jobs'] }, admin: true });
+  assert.ok(!s.exp.has('tsn:cr:img:' + id + ':728x90'), 'kept while approved');
+  const pubImg = await call('GET', { query: { img: id, size: '300x250' } });
+  assert.deepStrictEqual([pubImg.status, pubImg.headers['cache-control']], [200, 'public, max-age=300, s-maxage=3600']);
+  const live = await call('GET', { query: { live: '1' } });
+  assert.deepStrictEqual(live.json.cards.news[0].sizes, ['728x90', '300x250']);
+  await call('POST', { body: { action: 'withdraw', id, reason: 'Campaign over' }, admin: true });
+  assert.ok(!s.kv.has('tsn:cr:img:' + id + ':728x90') && !s.kv.has('tsn:cr:img:' + id + ':300x250'), 'deleted with the creative');
+}));
+
+test('upload page: live previews in every size, crop and resolution warnings, optional banner per size; admin sees banners', () => {
+  const page = read('public/creative.html'), admin = read('public/admin.html');
+  assert.ok(page.includes('<script src="/adsizes.js"></script>') && page.includes('S.inject(document)'));
+  assert.ok(page.includes('S.usedSizes().forEach') && page.includes('S.preview(document, k, ad)') && page.includes('S.check(dims.w, dims.h, k, false)') && page.includes('S.check(bn.w, bn.h, k, true)'));
+  assert.ok(page.includes("['headline', 'text'].forEach(function (id) { $(id).addEventListener('input', previews); });"), 'previews follow the words as they are typed');
+  assert.ok(page.includes('if (!S.fullOk(w, h, k)) return fail('), 'a banner of the wrong shape is refused before sending');
+  assert.ok(page.includes('body.sizes[k] = banners[k].data'));
+  assert.ok(page.includes('How your ad will look') && page.includes('We review all of them before anything runs.'));
+  assert.ok(!/fetch\((?!'\/api\/creative')/.test(page), 'nothing leaves the browser but the upload itself');
+  assert.ok(admin.includes("'&size=' + encodeURIComponent(k)") && admin.includes("{ headers: { 'x-admin-key': key }, cache: 'no-store' }"));
+});

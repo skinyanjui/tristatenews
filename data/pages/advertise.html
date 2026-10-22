@@ -43,6 +43,12 @@ button:disabled { opacity:.6; cursor:default; }
 a { color:var(--accent); }
 footer { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; gap:16px; font-size:14px; }
 [hidden] { display:none !important; }
+/* ad size previews (public/adsizes.js lays out each size) */
+.tsz { background:var(--bg); color:var(--fg); border:1px dashed var(--border); border-radius:8px; }
+.tsz .spon-tag { color:var(--muted); font-weight:600; font-style:italic; letter-spacing:.04em; text-transform:uppercase; }
+.tsz .ad-tx, .tsz-prev figcaption, .tsz-line { color:var(--muted); }
+.tsz-prev figcaption b { color:var(--fg); }
+.tsz .rail-cta { display:inline-block; border-radius:6px; background:var(--fg); color:var(--bg); font-weight:500; }
 </style>
 </head>
 <body>
@@ -60,10 +66,16 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
       <li>Ads appear on the Jobs, Deals, Events and Classifieds boards and in the News feed, never directly next to a Police &amp; courts item. There are never ads on Obituaries.</li>
       <li>Ads aren’t targeted. Everyone who opens a board sees the same ads, taking equal turns through the day. We don’t use cookies or anything about the reader to pick an ad.</li>
       <li>Every ad is labeled “Sponsored,” and a Featured post is labeled “Featured · Paid.”</li>
-      <li>An ad is one still image with a short headline and text, or words alone. No pop-ups, video, sound or ads that follow you down the page.</li>
+      <li>An ad is one still image with a short headline and text, or words alone, in standard sizes (below). You can also send a finished banner for a size. No pop-ups, video, sound or ads that follow you down the page.</li>
       <li>A person reviews every ad before it runs.</li>
       <li>Ads never change what news we show or how we report it.</li>
     </ul>
+  </section>
+
+  <section aria-labelledby="sizes">
+    <h2 id="sizes">Ad sizes and where they run</h2>
+    <p class="m" style="margin-bottom:16px">We use standard ad sizes, so a banner you already have may fit. Each ad is built from your picture, headline, short text and button, laid out for the size; or send a finished banner for a size. These previews use a made-up business.</p>
+    <div id="size-previews"></div>
   </section>
 
   <section aria-labelledby="rates">
@@ -84,7 +96,7 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
 
   <section aria-labelledby="ad-how">
     <h2 id="ad-how">Sending your ad</h2>
-    <p>Once we’ve agreed on a spot, send your image and words with the upload form. You’ll need the reference number you get when you send the form below. The <a href="/creative.html">upload page</a> explains the image size, word limits and which links are allowed, and our <a href="/legal.html#advertising">Advertising Policy</a> covers what we accept.</p>
+    <p>Once we’ve agreed on a spot, send your image and words with the upload form. You’ll need the reference number you get when you send the form below. The <a href="/creative.html">upload page</a> explains the image size, word limits and which links are allowed, and shows your ad in every size before you send it, and our <a href="/legal.html#advertising">Advertising Policy</a> covers what we accept.</p>
   </section>
 
   <section aria-labelledby="contact">
@@ -194,6 +206,16 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
         $('f').hidden = true; $('ref').textContent = o.d.ref || 'Received'; $('done').hidden = false; $('done').scrollIntoView();
       }).catch(function () { $('go').disabled = false; $('go').textContent = 'Send inquiry'; fail('Couldn’t send that. Check your connection and try again.'); });
   });
+})();
+</script>
+<script src="/adsizes.js"></script>
+<script>
+// Ad size previews (public/adsizes.js): every size we use, shown with a made-up business.
+(function () {
+  var box = document.getElementById('size-previews');
+  if (!window.TSNSizes || !box) return;
+  TSNSizes.inject(document); TSNSizes.gallery(document, box); TSNSizes.fit(box);
+  window.addEventListener('resize', function () { TSNSizes.fit(box); });
 })();
 </script>
 </body>

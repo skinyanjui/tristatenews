@@ -28,7 +28,19 @@ a { color:inherit; }
 :root { --card-pad:16px; }
 @media (max-width:639px) { :root { --card-pad:12px; } }
 form { padding:var(--card-pad); }
+/* previews (public/adsizes.js lays out each size) */
+#sizes { display:grid; gap:20px; }
+#sizes .one { display:grid; gap:8px; padding-top:16px; border-top:1px solid var(--border); }
+#sizes .one:first-child { border-top:0; padding-top:0; }
+#sizes .tsz { background:var(--bg); color:var(--fg); border:1px solid var(--border); border-radius:8px; }
+#sizes .spon-tag { color:var(--muted); font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+#sizes .ad-tx { color:var(--muted); }
+#sizes .rail-cta { display:inline-block; border-radius:6px; background:var(--fg); color:var(--bg); font-weight:500; }
+#sizes .bav { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--border); font-size:13px; }
+#sizes details { font-size:14px; }
+#sizes details input { min-height:0; padding:4px 0; border:0; }
 </style>
+<script src="/adsizes.js"></script>
 </head>
 <body>
 <main>
@@ -47,7 +59,7 @@ form { padding:var(--card-pad); }
     </div>
     <p id="tokmsg" hidden>You’re using an upload link from Tri-State News.</p>
     <label>Image
-      <span class="hint">A still JPEG, PNG or WebP, at least 300×150 pixels and at most 300 KB. No animation.</span>
+      <span class="hint">A still JPEG, PNG or WebP, at least 300×150 pixels and at most 300 KB. No animation. Each ad size crops it to a different shape, so keep the important part near the middle; you’ll see a preview of each size below.</span>
       <input id="img" type="file" accept="image/jpeg,image/png,image/webp" required>
     </label>
     <img id="pv" alt="Your image" hidden>
@@ -68,6 +80,11 @@ form { padding:var(--card-pad); }
       <span class="hint" id="desthint">Your web page, starting with https://. No link shorteners or redirects.</span>
       <input id="dest" maxlength="400" required inputmode="url">
     </label>
+    <section id="pvsec" aria-labelledby="pvh" hidden>
+      <h2 id="pvh" style="margin:0;font-size:18px;line-height:28px">How your ad will look</h2>
+      <p class="hint">Your ad runs in each of these standard sizes, depending on where it’s placed and the reader’s screen. Your image is cropped to fill each picture area; check that nothing important is cut off. For a size, you can instead send a finished banner of exactly that shape. We review all of them before anything runs.</p>
+      <div id="sizes"></div>
+    </section>
     <p class="err" id="err" role="alert" hidden></p>
     <button id="go" type="submit">Send for review</button>
   </form>
@@ -75,7 +92,8 @@ form { padding:var(--card-pad); }
 </main>
 <script>
 (function () {
-  var MAX = 300 * 1024, image = '';
+  var MAX = 300 * 1024, image = '', dims = null, banners = {}, S = window.TSNSizes;
+  if (S) S.inject(document);
   function $(id) { return document.getElementById(id); }
   var token = new URLSearchParams(location.search).get('token') || '';
   if (token) { $('who').hidden = true; $('tokmsg').hidden = false; }
@@ -91,13 +109,71 @@ form { padding:var(--card-pad); }
     if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) return fail('Upload a JPEG, PNG or WebP image.');
     if (f.size > MAX) return fail('The image must be 300 KB or smaller.');
     var r = new FileReader();
-    r.onload = function () { image = String(r.result); $('pv').src = image; $('pv').hidden = false; };
+    r.onload = function () {
+      var data = String(r.result), probe = new Image();
+      probe.onload = function () { image = data; dims = { w: probe.naturalWidth, h: probe.naturalHeight }; $('pv').src = image; $('pv').hidden = false; previews(); };
+      probe.onerror = function () { fail('That image couldn’t be read.'); };
+      probe.src = data;
+    };
     r.readAsDataURL(f);
   });
+  // Live previews in every size the ad can run in (public/adsizes.js), with warnings when the picture is cut off a lot
+  // or has too few pixels for a size, and an optional finished banner per size. All of it stays in the browser until sent.
+  function warnList(c) {
+    if (!c) return null;
+    if (!c.warnings.length) { var ok = document.createElement('p'); ok.className = 'tsz-ok'; ok.textContent = 'Looks good at this size.'; return ok; }
+    var ul = document.createElement('ul'); ul.className = 'tsz-warn' + (c.level === 'bad' ? ' bad' : '');
+    c.warnings.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+    return ul;
+  }
+  function previews() {
+    if (!S || !image || !dims) { $('pvsec').hidden = true; return; }
+    var box = $('sizes'); box.textContent = ''; $('pvsec').hidden = false;
+    var ad = { name: $('headline').value.trim() || 'Your headline', text: $('text').value.trim(), cta: $('cta').value, img: image, full: {} };
+    Object.keys(banners).forEach(function (k) { ad.full[k] = banners[k].data; });
+    S.usedSizes().forEach(function (k) {
+      var z = S.SIZES[k], one = document.createElement('div'); one.className = 'one';
+      one.appendChild(S.preview(document, k, ad));
+      var bn = banners[k];
+      one.appendChild(warnList(bn ? S.check(bn.w, bn.h, k, true) : S.check(dims.w, dims.h, k, false)));
+      var hint = document.createElement('p'); hint.className = 'hint';
+      hint.textContent = bn ? 'Using your ' + bn.w + '×' + bn.h + ' banner for this size.' : 'Picture area ' + z.img[0] + '×' + z.img[1] + '; best image ' + z.img[0] * 2 + '×' + z.img[1] * 2 + ' pixels or larger in that shape.';
+      one.appendChild(hint);
+      var det = document.createElement('details'), sum = document.createElement('summary');
+      sum.textContent = bn ? 'Change or remove the ' + k + ' banner' : 'Send a finished ' + k + ' banner instead (optional)'; det.appendChild(sum);
+      var lab = document.createElement('label'); lab.className = 'hint'; lab.textContent = 'Exactly ' + z.w + '×' + z.h + ' or ' + z.w * 2 + '×' + z.h * 2 + ' pixels (best), JPEG, PNG or WebP, 300 KB at most. It replaces the picture and words at this size, so put your name and message in it.';
+      var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp'; inp.setAttribute('aria-label', z.name + ' ' + k + ' banner'); lab.appendChild(inp); det.appendChild(lab);
+      inp.addEventListener('change', function () { banner(k, inp.files[0]); });
+      if (bn) { var rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'Remove this banner'; rm.addEventListener('click', function () { delete banners[k]; previews(); }); det.appendChild(rm); }
+      one.appendChild(det);
+      box.appendChild(one);
+    });
+    S.fit(box);
+  }
+  function banner(k, f) {
+    $('err').hidden = true; if (!f) return;
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) return fail(k + ' banner: upload a JPEG, PNG or WebP image.');
+    if (f.size > MAX) return fail(k + ' banner: the image must be 300 KB or smaller.');
+    var r = new FileReader();
+    r.onload = function () {
+      var data = String(r.result), probe = new Image();
+      probe.onload = function () {
+        var w = probe.naturalWidth, h = probe.naturalHeight, z = S.SIZES[k];
+        if (!S.fullOk(w, h, k)) return fail(k + ' banner: it must be the same shape as the ad, ' + z.w + '×' + z.h + ' or ' + z.w * 2 + '×' + z.h * 2 + ' pixels (yours is ' + w + '×' + h + ').');
+        banners[k] = { data: data, w: w, h: h }; previews();
+      };
+      probe.src = data;
+    };
+    r.readAsDataURL(f);
+  }
+  ['headline', 'text'].forEach(function (id) { $(id).addEventListener('input', previews); });
+  $('cta').addEventListener('change', previews);
+  window.addEventListener('resize', function () { if (S) S.fit($('sizes')); });
   $('f').addEventListener('submit', function (e) {
     e.preventDefault(); $('err').hidden = true;
     if (!image) return fail('Add an image.');
     var body = { headline: $('headline').value, text: $('text').value, cta: $('cta').value, dest: $('dest').value, image: image };
+    var bk = Object.keys(banners); if (bk.length) { body.sizes = {}; bk.forEach(function (k) { body.sizes[k] = banners[k].data; }); }
     if (token) body.token = token; else { body.ref = $('ref').value.trim(); body.email = $('email').value.trim(); }
     $('go').disabled = true; $('go').textContent = 'Sending…';
     fetch('/api/creative', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) {

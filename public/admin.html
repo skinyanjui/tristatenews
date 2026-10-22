@@ -26,6 +26,11 @@ section { border:1px solid var(--border); border-radius:8px; padding:16px; backg
 .err { color:#e5484d; }
 [hidden] { display:none !important; }
 .cr { display:grid; gap:8px; }
+.nlc { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:4px 0 8px; }
+@media (max-width:600px) { .nlc { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+.nlc div { border:1px solid var(--border); border-radius:6px; padding:8px 10px; background:var(--bg); }
+.nlc b { display:block; font-size:20px; line-height:28px; }
+#niframe { width:100%; height:720px; border:1px solid var(--border); border-radius:6px; background:#fafafa; }
 .cr img { max-width:100%; max-height:220px; border:1px solid var(--border); border-radius:6px; background:var(--bg); justify-self:start; }
 .cr fieldset { display:flex; flex-wrap:wrap; gap:4px 12px; margin:0; padding:8px; border:1px solid var(--border); border-radius:6px; }
 .cr label { display:inline-flex; gap:4px; align-items:center; font-size:12px; }
@@ -50,7 +55,13 @@ details summary { min-height:40px; display:flex; align-items:center; }
   <form id="key"><input id="k" type="password" placeholder="Admin key (LISTINGS_ADMIN_KEY)" aria-label="Admin key" autocomplete="off"><button type="submit">Load</button></form>
   <p class="err" id="err" role="alert" hidden></p>
   <div id="out" hidden>
-    <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV</button></div><div id="nl"></div></section>
+    <section><div class="row"><h2 id="nlh">Newsletter subscribers</h2><button class="ghost" id="csv" type="button">Download CSV (verified)</button></div>
+      <div class="nlc" id="nlc"></div><p class="m" id="nlp"></p><div id="nl"></div></section>
+    <section><div class="row"><h2 id="nih">Compose issue</h2><button class="ghost" id="nipv" type="button">Preview this week’s issue</button></div>
+      <p class="m">A preview of the weekly digest (top News stories and events) with the sponsor slot, shown here with a made-up “Sample ad”. Nothing is sent from here: the weekly send stays manual (see README). A test copy goes only to the one address you type.</p>
+      <p class="m" id="nimeta" role="status"></p><iframe id="niframe" title="Newsletter issue preview" sandbox="" hidden></iframe>
+      <form id="nit" class="cr"><input id="nito" type="email" placeholder="Send one test copy to (your address)" aria-label="Test copy address" maxlength="80"><button type="submit" class="ghost">Send test copy</button></form>
+      <p class="m" id="nitmsg" role="status"></p></section>
     <section><div class="row"><h2 id="adh">Advertising inquiries</h2><select id="adf" aria-label="Which inquiries to show"></select></div><p class="m">Status and notes are for us only: changing them never emails the advertiser. Reply from your own inbox.</p><div id="ad"></div></section>
     <section><div class="row"><h2 id="poh">Package orders</h2><select id="pof" aria-label="Which package orders to show"><option value="open">Needs action</option><option value="all">All</option></select></div>
       <p class="m" id="pocard"></p><div id="po"></div></section>
@@ -180,6 +191,31 @@ details summary { min-height:40px; display:flex; align-items:center; }
   }
   function loadLeads() { return get('/api/advertise').then(drawLeads).catch(function () { drawLeads(null); }); }
   $('adf').addEventListener('change', function () { drawLeads(leads); });
+  // Newsletter (api/_subscribe.js): double opt-in counts, provider status, the verified list and its CSV.
+  function drawSubscribers(d) {
+    emails = d ? d.emails.slice().sort() : [];
+    var c = (d && d.counts) || {}; $('nlc').textContent = '';
+    [['Pending', c.pending], ['Verified', c.verified], ['Unconfirmed (before double opt-in)', c.legacy], ['Unsubscribed', c.unsubscribed]].forEach(function (x) {
+      var b = mk('div'); b.appendChild(mk('b', null, x[1] == null ? '–' : String(x[1]))); b.appendChild(mk('span', { class: 'm' }, x[0])); $('nlc').appendChild(b);
+    });
+    var pv = d && d.provider, g = d && d.gate;
+    $('nlp').textContent = !d ? 'Not available.' : (pv.confirmReady ? 'Confirmation emails: on (' + pv.name + ').' : 'Confirmation emails: OFF, missing ' + pv.missing.filter(function (m) { return m === 'RESEND_API_KEY' || m === 'NEWSLETTER_FROM'; }).join(' and ') + '. Signups are saved as pending; nobody is confirmed until it’s set up.') +
+      (pv.issueReady ? ' Sending issues: possible (manual only).' : ' Sending issues: off, missing ' + pv.missing.join(', ') + '.') + (g ? ' Newsletter sponsorship gate: ' + g.verified.toLocaleString('en-US') + ' of ' + g.min.toLocaleString('en-US') + ' verified.' : '');
+    $('nlh').textContent = 'Newsletter subscribers (' + emails.length + ' verified)'; $('nl').textContent = '';
+    if (emails.length) emails.forEach(function (x) { line($('nl'), x, ''); }); else empty($('nl'), d ? 'No verified subscribers yet.' : 'Not available.');
+  }
+  $('nipv').addEventListener('click', function () {
+    $('nimeta').textContent = 'Building the preview…';
+    get('/api/subscribe?preview=1').then(function (d) {
+      if (!d.ok) { $('nimeta').textContent = d.error || 'Couldn’t build the preview.'; return; }
+      $('nimeta').textContent = 'Week ' + d.week + ' · “' + d.subject + '” · ' + d.headlines + ' headlines, ' + d.events + ' events · sponsor slot: sample (newsletter sponsorship isn’t for sale yet)' + (d.missingForSend.length ? ' · sending needs ' + d.missingForSend.join(', ') : '');
+      $('niframe').srcdoc = d.html; $('niframe').hidden = false;
+    }).catch(function (e) { $('nimeta').textContent = e.message; });
+  });
+  $('nit').addEventListener('submit', function (e) {
+    e.preventDefault(); $('nitmsg').textContent = '';
+    post('/api/subscribe', { action: 'test', to: $('nito').value.trim() }).then(function (d) { $('nitmsg').textContent = 'Test copy sent to ' + d.sentTo + '.'; }).catch(function (er) { $('nitmsg').textContent = er.message; });
+  });
   // Package orders (api/_packages.js): invoice by hand when card payment isn't set up, mark paid, activate, cancel.
   var poData = null;
   function poCard(o) {
@@ -303,9 +339,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
       loadCreatives(); loadCampaigns(); loadPackages();
       if (!r[0] && !r[1] && !r[2] && !r[3]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
-      emails = r[0] ? r[0].emails.slice().sort() : [];
-      $('nlh').textContent = 'Newsletter subscribers (' + emails.length + ')'; $('nl').textContent = '';
-      if (emails.length) emails.forEach(function (x) { line($('nl'), x, ''); }); else empty($('nl'), r[0] ? 'No subscribers yet.' : 'Not available.');
+      drawSubscribers(r[0]);
       drawLeads(r[1]);
       var tips = r[2] ? r[2].items : []; $('tph').textContent = 'News tips (' + tips.length + ')'; $('tp').textContent = '';
       // Orders (read-only; GET /api/orders). Amounts are integer cents.
@@ -326,8 +360,8 @@ details summary { min-height:40px; display:flex; align-items:center; }
     });
   });
   $('csv').addEventListener('click', function () {
-    var blob = new Blob(['email\n' + emails.join('\n') + '\n'], { type: 'text/csv' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'subscribers.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    var blob = new Blob(['email\n' + emails.map(function (x) { return /^[=+\-@\t\r]/.test(x) ? "'" + x : x; }).join('\n') + '\n'], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'subscribers-verified.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   });
 })();
 </script>

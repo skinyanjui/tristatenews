@@ -847,7 +847,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   <div class="more" id="more"></div>
   <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
   <div class="legal-foot">
-    <div class="legal-links"><a class="legal-link" href="/legal.html">Legal</a><button type="button" class="legal-link" id="adOpen">Advertise</button><button type="button" class="legal-link" id="snOpen">Submit news</button><a class="legal-link" href="/unsubscribe.html">Unsubscribe</a></div>
+    <div class="legal-links"><a class="legal-link" href="/legal.html">Legal</a><a class="legal-link" href="/newsletter">Newsletter</a><button type="button" class="legal-link" id="adOpen">Advertise</button><button type="button" class="legal-link" id="snOpen">Submit news</button><a class="legal-link" href="/unsubscribe.html">Unsubscribe</a></div>
     <p>© 2026 Tri-State News. Headlines link to the original publisher, who owns the story. An arrest or charge is an accusation, not a conviction.</p>
   </div>
 </main>
@@ -2689,7 +2689,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function renderNewsletter() {
     nlEl.textContent = '';
     nlEl.appendChild(el('h2', null, 'The Tri-State in your inbox'));
-    nlEl.appendChild(el('p', null, 'Top local stories, events and jobs in one short email. Free, and you can leave anytime.'));
+    nlEl.appendChild(el('p', null, 'Top local stories, events and jobs in one short email. Free, and you can leave anytime. We’ll ask you to confirm by email.'));
     var f = el('form'); f.noValidate = true;
     var em = el('input'); em.type = 'email'; em.name = 'email'; em.placeholder = 'name@email.com'; em.autocomplete = 'email'; em.setAttribute('aria-label', 'Email address'); em.maxLength = 80;
     var hp = el('input'); hp.type = 'text'; hp.name = 'website'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.className = 'sn-hp'; hp.setAttribute('aria-hidden', 'true');
@@ -2706,7 +2706,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
           go.disabled = false; go.textContent = 'Subscribe';
           if (!o.ok || !o.d.ok) { msg.textContent = (o.d && o.d.error) || 'Couldn’t sign you up. Try again.'; return; }
           try { localStorage.setItem(NL_KEY, '1'); } catch (e) {}
-          nlEl.textContent = ''; nlEl.appendChild(el('h2', null, 'You’re on the list')); var p = el('p', null, 'Thanks for subscribing.'); p.setAttribute('role', 'status'); nlEl.appendChild(p);
+          // Double opt-in: nothing is sent until the reader taps the link in the confirmation email (api/_subscribe.js).
+          nlEl.textContent = ''; nlEl.appendChild(el('h2', null, o.d.emailSent ? 'Check your email' : 'Almost there')); var p = el('p', null, o.d.message || 'Check your email to confirm.'); p.setAttribute('role', 'status'); nlEl.appendChild(p);
         }).catch(function () { go.disabled = false; go.textContent = 'Subscribe'; msg.textContent = 'Couldn’t sign you up. Check your connection and try again.'; });
     });
   }
@@ -2732,7 +2733,14 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       if (!pr[k[0]]) return;
       var li = el('li'); li.appendChild(el('span', null, k[1] + ' · ' + pr[k[0]].days + ' days at the top of its list')); li.appendChild(el('b', null, money(pr[k[0]].cents))); ul.appendChild(li);
     });
-    [['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']].forEach(function (k) { var li = el('li'); li.appendChild(el('span', null, k[0] + ' · ' + k[1])); li.appendChild(el('b', null, k[2])); ul.appendChild(li); });
+    [['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']].forEach(function (k) {
+      var li = el('li'), sp = el('span', null, k[0] + ' · ' + k[1]); li.appendChild(sp); li.appendChild(el('b', null, k[2])); ul.appendChild(li);
+      // Not for sale until 1,500 confirmed subscribers (api/_catalog.js newsletter gate); the live count comes from the catalog.
+      fetch('/api/catalog').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (c) {
+        var g = c.newsletterGate || {}; if (g.verifiedSubscribers == null) return;
+        sp.appendChild(el('span', 'nl-gate', ' (' + Number(g.verifiedSubscribers).toLocaleString('en-US') + ' of ' + Number(g.minVerifiedSubscribers).toLocaleString('en-US') + ' subscribers)'));
+      }).catch(function () {});
+    });
     rt.appendChild(ul);
     // A link to the full rates page, only when it's switched on (/advertise answers 200; off, it redirects back here).
     var full = el('p', 'cl-note'); full.hidden = true; rt.appendChild(full);

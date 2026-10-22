@@ -222,3 +222,15 @@ Vincennes Sun-Commercial, Princeton Daily Clarion, Mt. Carmel Register) used the
 which AP wire copy filled, so every item was rejected as wire. They now use their local section feed, and the run
 report flags `all_wire` / `mostly_wire`. Batch 2: Ohio County Times-News paused (members-only); WFIW uses its
 local-news category feed, and name/age/hometown obituary titles stay out of news.
+
+## County page index gate: rolling 14-day record (county expansion step 5)
+
+County pages and `/sitemap-regions.xml` index a county only with at least 5 distinct local stories in 14 days. The
+count comes from `tsn:geo:depth` (`api/_depthrec.js`), which every refresh updates from all the stories it kept
+before the public 240-story cap (the public feed and the default view are unchanged). Each county keeps at most 40
+newest story ids (10-hex title hash + hour), entries older than 14 days drop out, and the key expires after 14 days.
+Cost per refresh: +1 GET in the existing read request and +1 SET in the existing write request (2 commands, no extra
+round trips); a failed read skips the write so history is never overwritten. Pages read the record with one GET,
+cached 5 minutes per instance; when it is missing, empty or unreadable they use `data/geography/coverage.json`.
+The admin Sources & Coverage table shows the rolling 14-day count, the in-snapshot count, the committed measurement,
+and which source the gate is using.

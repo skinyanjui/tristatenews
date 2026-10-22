@@ -38,10 +38,11 @@
       "everyMin": 60,
       "name": "Dubois County Herald",
       "area": "Jasper",
-      "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25",
+      "url": "https://www.duboiscountyherald.com/search/?f=rss&t=article&c=news/local&l=50&s=start_time&sd=desc",
       "altUrls": [
         "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
-      ]
+      ],
+      "note": "2026-10-22: section-filtered (was https://www.duboiscountyherald.com/search/?f=rss&t=article&l=25). The unfiltered BLOX search feed is the newest 25 articles site-wide, and AP wire copy filled all or most of them, so the wire filter correctly rejected everything and the source showed nothing."
     },
     {
       "seq": 10,
@@ -49,11 +50,12 @@
       "everyMin": 60,
       "name": "Washington Times-Herald",
       "area": "Washington, Ind.",
-      "url": "https://www.washtimesherald.com/search/?f=rss&t=article&l=25",
+      "url": "https://www.washtimesherald.com/search/?f=rss&t=article&c[]=news/local*&l=50&s=start_time&sd=desc",
       "altUrls": [
         "https://news.google.com/rss/search?q=site%3Awashtimesherald.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
         "https://washtimesherald.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
-      ]
+      ],
+      "note": "2026-10-22: section-filtered (was https://www.washtimesherald.com/search/?f=rss&t=article&l=25). The unfiltered BLOX search feed is the newest 25 articles site-wide, and AP wire copy filled all or most of them, so the wire filter correctly rejected everything and the source showed nothing."
     },
     {
       "seq": 11,
@@ -69,11 +71,12 @@
       "everyMin": 60,
       "name": "Vincennes Sun-Commercial",
       "area": "Vincennes",
-      "url": "https://www.suncommercial.com/search/?f=rss&t=article&l=25",
+      "url": "https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=50&s=start_time&sd=desc",
       "altUrls": [
         "https://news.google.com/rss/search?q=site%3Asuncommercial.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en",
         "https://www.suncommercial.com/search/?f=rss&t=article&c=news&l=25&s=start_time&sd=desc"
-      ]
+      ],
+      "note": "2026-10-22: section-filtered (was https://www.suncommercial.com/search/?f=rss&t=article&l=25). The unfiltered BLOX search feed is the newest 25 articles site-wide, and AP wire copy filled all or most of them, so the wire filter correctly rejected everything and the source showed nothing."
     },
     {
       "seq": 17,
@@ -81,10 +84,11 @@
       "everyMin": 60,
       "name": "Princeton Daily Clarion",
       "area": "Princeton, Ind.",
-      "url": "https://www.pdclarion.com/search/?f=rss&t=article&l=25",
+      "url": "https://www.pdclarion.com/search/?f=rss&t=article&c[]=news/local*&l=50&s=start_time&sd=desc",
       "altUrls": [
         "https://news.google.com/rss/search?q=site%3Apdclarion.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
-      ]
+      ],
+      "note": "2026-10-22: section-filtered (was https://www.pdclarion.com/search/?f=rss&t=article&l=25). The unfiltered BLOX search feed is the newest 25 articles site-wide, and AP wire copy filled all or most of them, so the wire filter correctly rejected everything and the source showed nothing."
     },
     {
       "seq": 25,

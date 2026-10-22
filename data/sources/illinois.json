@@ -51,10 +51,11 @@
       "everyMin": 60,
       "name": "Daily Republican-Register",
       "area": "Mt. Carmel",
-      "url": "https://www.hometownregister.com/search/?f=rss&t=article&l=25",
+      "url": "https://www.hometownregister.com/search/?f=rss&t=article&c[]=news/local*&l=50&s=start_time&sd=desc",
       "altUrls": [
         "https://news.google.com/rss/search?q=site%3Ahometownregister.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
-      ]
+      ],
+      "note": "2026-10-22: section-filtered (was https://www.hometownregister.com/search/?f=rss&t=article&l=25). The unfiltered BLOX search feed is the newest 25 articles site-wide, and AP wire copy filled all or most of them, so the wire filter correctly rejected everything and the source showed nothing."
     },
     {
       "seq": 61,

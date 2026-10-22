@@ -772,7 +772,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
    between them. Rails are fixed (they stay put while the list scrolls), hidden below 1360px, where the in-listing
    card still applies, and absent on Obituaries (body[data-ads] and TSNAds.railFill); News has them too. Lists gain columns
    rather than stretching; text keeps its line-length caps. */
-:root { --page-max:960px; --rail-w:160px; --rail-gap:24px; }
+:root { --page-max:960px; --rail-w:160px; --rail-gap:24px; --news-max:960px; }
 @media (min-width:1440px) { :root { --page-max:1120px; --rail-w:120px; --rail-gap:20px; } } /* 120x600 skyscrapers */
 @media (min-width:1680px) { :root { --page-max:1280px; --rail-w:160px; --rail-gap:24px; } } /* 160x600 */
 @media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }
@@ -787,7 +787,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 }
 @media (min-width:1440px) {
   .list { grid-template-columns:1fr 1fr; gap:var(--card-gap); align-items:stretch; }
-  .list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; } /* Breaking and the in-feed ad span the row */
+  .list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; } /* Breaking spans the row */
+  /* News stays one story per row at every width. The column is capped at --news-max and centered in the wider page,
+     so a headline and its two-line summary keep a readable line length; the side ads stay at the page edges. */
+  .list.news-one { grid-template-columns:1fr; max-width:var(--news-max); margin-left:auto; margin-right:auto; }
   .evx-day { grid-template-columns:1fr 1fr; }
   .evx-day > h3, .evx-day > :not(.evr) { grid-column:1 / -1; }
 }
@@ -1605,6 +1608,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 
   function skeletons() {
     listEl.textContent = '';
+    listEl.classList.toggle('news-one', state.cat === 'news'); // News loads as one column too
     listEl.setAttribute('aria-busy', 'true');
     for (var i = 0; i < 8; i++) {
       var c = el('div', 'sk-card');
@@ -3117,7 +3121,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     ROUTE_SYNCED = true;
     RT.apply(document, r);
   }
-  if (window.matchMedia) { var wideMq = matchMedia('(min-width:1440px)'); if (wideMq.addEventListener) wideMq.addEventListener('change', function () { if (state.cat === 'news') render(); }); } // the in-feed ad follows the column count
   window.addEventListener('popstate', function () {
     var r = RT && RT.byPath(location.pathname);
     state.cat = r ? r.cat : 'news';
@@ -3180,12 +3183,12 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     listEl.setAttribute('aria-busy', 'false');
     mapLogos();
     brk.forEach(function (b) { var it = b.item || alertItem(b); storyKeys(it).forEach(function (k) { breakCards[k] = 1; }); listEl.appendChild(makeCard(it, true, b)); });
-    // In-feed ads on News (public/adslots.js newsSlots): about every 6th story (every 10th in two columns, so at
-    // most one per screen), a full-row card, never next to a Police & courts item; none in search or beside Breaking.
+    // In-feed ads on News (public/adslots.js newsSlots): News is one story per row at every width; a card about
+    // every 6th story, never next to a Police & courts item; none in search or beside Breaking.
+    listEl.classList.toggle('news-one', state.cat === 'news');
     var slots = {};
     if (state.cat === 'news' && !state.q.trim() && window.TSNAds) {
-      var cols = window.matchMedia && matchMedia('(min-width:1440px)').matches ? 2 : 1;
-      TSNAds.newsSlots(shown.map(function (it) { var k = kindOf(it.sourceId); return k === 'police' || k === 'courts'; }), cols > 1 ? TSNAds.NEWS_EVERY_WIDE : TSNAds.NEWS_EVERY, cols).forEach(function (i) { slots[i] = 1; });
+      TSNAds.newsSlots(shown.map(function (it) { var k = kindOf(it.sourceId); return k === 'police' || k === 'courts'; }), TSNAds.NEWS_EVERY).forEach(function (i) { slots[i] = 1; });
     }
     shown.forEach(function (it, i) {
       if (slots[i]) { var ac = UI.newsAd(); if (ac) listEl.appendChild(ac); }

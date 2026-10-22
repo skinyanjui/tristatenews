@@ -74,6 +74,6 @@ test('News merges Police & courts items in feed order; their cards keep no photo
   assert.ok(mk.includes("safe = kd === 'police' || kd === 'courts'") && mk.includes("var pic = safe ? '' : it.image;"), 'no photos, decided by source kind on every tab');
   assert.ok(mk.includes("if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));"));
   assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news'];"), 'News carries ads now (not Obituaries)');
-  assert.ok(html.includes("return k === 'police' || k === 'courts'; }), cols > 1 ? TSNAds.NEWS_EVERY_WIDE : TSNAds.NEWS_EVERY, cols)"), 'the in-feed card knows which stories are Police & courts');
+  assert.ok(html.includes("return k === 'police' || k === 'courts'; }), TSNAds.NEWS_EVERY)"), 'the in-feed card knows which stories are Police & courts');
   assert.ok(html.includes("(state.cat === 'news')) ? [top] : []; // at most ONE Breaking item"), 'one Breaking item');
 });

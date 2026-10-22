@@ -34,7 +34,7 @@ test('railFill: real ads first (two at most), then samples, then the house unit 
 });
 
 test('wider page: one width token for nav, tabs and main; rails sized and placed from it; hidden under 1360px', () => {
-  assert.ok(css.includes(':root { --page-max:960px; --rail-w:160px; --rail-gap:24px; }'));
+  assert.ok(css.includes(':root { --page-max:960px; --rail-w:160px; --rail-gap:24px; --news-max:960px; }'));
   for (const w of ['1440', '1680', '1920', '2560']) assert.ok(css.includes('@media (min-width:' + w + 'px) { :root { --page-max:'), w);
   assert.ok(css.includes('.nav-in, .nav-tabs, main { max-width:var(--page-max); }'));
   assert.ok(css.includes('.rail-l { left:calc(50% - var(--page-max) / 2 - var(--rail-gap) - var(--rail-w)); }'));
@@ -45,8 +45,9 @@ test('wider page: one width token for nav, tabs and main; rails sized and placed
   for (const [vw, page, rail, gap] of steps) assert.ok(page + 2 * (rail + gap) <= vw, vw + 'px');
 });
 
-test('no stretching: more columns instead, Breaking spans; card tokens kept', () => {
+test('no stretching: more columns on Obituaries and the boards, News one column, Breaking spans; card tokens kept', () => {
   assert.ok(css.includes('.list { grid-template-columns:1fr 1fr; gap:var(--card-gap);'));
+  assert.ok(css.includes('.list.news-one { grid-template-columns:1fr;'), 'but News stays one story per row');
   assert.ok(css.includes('.list > .card.breaking, .list > :not(.card) { grid-column:1 / -1; }'), 'still one Breaking card, full width');
   assert.ok(css.includes('.deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }'));
   assert.ok(css.includes('gap:var(--card-gap)'));

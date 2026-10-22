@@ -22,7 +22,7 @@ test('no sponsor line on News/All; Events keeps its sponsor line and side ads (h
   assert.ok(!('news' in sponsors.slots));
   assert.ok('events' in sponsors.slots && Array.isArray(sponsors.rails.left) && Array.isArray(sponsors.rails.right));
   assert.ok(html.includes("UI.sponsor('events', true)"), 'Events sponsor line, with a house unit when open');
-  assert.ok(/var AD_TABS = \['events', 'jobs', 'deals', 'classifieds'\]/.test(html), 'side ads on Events');
+  assert.ok(/var AD_TABS = \['events', 'jobs', 'deals', 'classifieds', 'news'\]/.test(html), 'side ads on Events');
 });
 
 test('news cards have no web-address line; tabs have no counts', () => {

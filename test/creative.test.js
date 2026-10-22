@@ -192,7 +192,7 @@ test('admin review: key required, reason required, placements from the fixed lis
   assert.strictEqual((await call('POST', { body: { action: 'approve', id: id1, reason: 'ok', placements: ['card:jobs'] }, headers: { 'x-admin-key': 'nope' } })).status, 404);
   const list = await call('GET', { admin: true });
   assert.deepStrictEqual([list.json.pending.length, list.json.items.length, list.json.audit.length], [2, 2, 0]);
-  assert.ok(list.json.placements.includes('card:jobs') && list.json.placements.includes('rail:right') && !list.json.placements.some(p => /news|obit|safety|police|all|breaking/.test(p)));
+  assert.ok(list.json.placements.includes('card:jobs') && list.json.placements.includes('rail:right') && list.json.placements.includes('card:news') && !list.json.placements.some(p => /line:news|obit|safety|police|all|breaking/.test(p)));
   for (const body of [{ action: 'approve', id: id1, placements: ['card:jobs'] }, { action: 'approve', id: id1, reason: '  ', placements: ['card:jobs'] }, { action: 'reject', id: id2, reason: 'x' }])
     assert.deepStrictEqual([(await call('POST', { body, admin: true })).json.field], ['reason'], JSON.stringify(body));
   for (const placements of [undefined, [], ['card:obits'], ['line:news'], ['rail:top'], ['card:jobs', 'card:safety']])

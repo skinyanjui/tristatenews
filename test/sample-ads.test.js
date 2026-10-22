@@ -25,12 +25,13 @@ test('sponsors.json: one switch, made-up businesses with a name and a line only,
   assert.ok(Object.values(sponsors.slots).concat(Object.values(sponsors.cards), sponsors.rails.left, sponsors.rails.right).every(v => v === null), 'real ad spots stay empty here');
 });
 
-test('the module: a real ad always wins, samples only when the switch is on, never outside the four boards', () => {
+test('the module: a real ad always wins, samples only when the switch is on, never outside the four boards and News', () => {
   assert.deepStrictEqual(A.fill('job', { jobs: real }, NOW, ON), { type: 'direct', ad: real }, 'approved ads first');
   assert.strictEqual(A.fill('job', {}, NOW, ON).type, 'sample');
   for (const off of [undefined, null, {}, { on: false, ads: ON.ads }, { on: 'yes', ads: ON.ads }, { on: true }, { on: true, ads: [] }, { on: true, ads: [{ name: 'X', url: 'https://evil.test/' }] }, { on: true, ads: [{ name: 'x'.repeat(41) }] }])
     assert.deepStrictEqual(A.fill('job', {}, NOW, off), { type: 'house' }, JSON.stringify(off));
-  for (const k of ['obit', 'news', 'all', 'safety', 'institution', 'breaking', 'saved']) assert.strictEqual(A.fill(k, {}, NOW, ON), null, k);
+  for (const k of ['obit', 'all', 'safety', 'institution', 'breaking', 'saved']) assert.strictEqual(A.fill(k, {}, NOW, ON), null, k);
+  assert.strictEqual(A.fill('news', {}, NOW, ON).type, 'sample', 'the News in-feed card can show a sample');
   const a = A.sample(ON, 0, NOW), b = A.sample(ON, 1, NOW);
   assert.notStrictEqual(a.name, b.name, 'offsets keep two spots from showing the same sample');
   assert.strictEqual(A.sample(ON, 0, NOW).name, A.sample(ON, 0, NOW + 3600e3).name, 'same sample all day for everyone');
@@ -75,7 +76,7 @@ test('sample ads on the page: labeled "Sample ad", say they are not a real busin
   assert.deepStrictEqual([left.tag, left.href, tagOf(left)], ['a', '/advertise', 'Sample ad'], 'an unsold left margin shows a vertical sample too');
   assert.match(left.className, /rail-sky/); assert.match(boxes['rail-r'].children[0].className, /rail-sky/);
   assert.notStrictEqual(left.children.find(c => c.tag === 'b').textContent, boxes['rail-r'].children[0].children.find(c => c.tag === 'b').textContent, 'different samples left and right');
-  for (const tab of ['news', 'obits', 'safety', 'institution', 'saved', 'submit', '']) {
+  for (const tab of ['obits', 'safety', 'institution', 'saved', 'submit', '']) {
     UI.rails(tab);
     assert.deepStrictEqual([boxes['rail-l'].children.length, boxes['rail-r'].children.length], [0, 0], 'no side ads on ' + (tab || 'search/none'));
   }

@@ -63,7 +63,7 @@ test('old All and Liked links redirect to News at /: vercel redirects, hash and 
   assert.ok(html.includes('toggleSaved(it)') && html.includes("fetch('/api/react'"), 'hearts and shared counts stay');
 });
 
-test('News merges Police & courts items in feed order; their cards keep no photos and the not-convicted note; no ads on News', () => {
+test('News merges Police & courts items in feed order; their cards keep no photos and the not-convicted note; News ads never next to them', () => {
   const src = html.slice(html.indexOf('function inCat('), html.indexOf('function filtered('));
   const kinds = { n: 'news', p: 'police', c: 'courts', e: 'events', o: 'obits', i: 'institution' };
   const inCat = new Function('kindOf', src + '; return inCat;')(id => kinds[id]);
@@ -73,6 +73,7 @@ test('News merges Police & courts items in feed order; their cards keep no photo
   const mk = html.slice(html.indexOf('function makeCard('), html.indexOf('function makeCard(') + 3000);
   assert.ok(mk.includes("safe = kd === 'police' || kd === 'courts'") && mk.includes("var pic = safe ? '' : it.image;"), 'no photos, decided by source kind on every tab');
   assert.ok(mk.includes("if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));"));
-  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds'];"), 'no ads on News');
+  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news'];"), 'News carries ads now (not Obituaries)');
+  assert.ok(html.includes("return k === 'police' || k === 'courts'; }), cols > 1 ? TSNAds.NEWS_EVERY_WIDE : TSNAds.NEWS_EVERY, cols)"), 'the in-feed card knows which stories are Police & courts');
   assert.ok(html.includes("(state.cat === 'news')) ? [top] : []; // at most ONE Breaking item"), 'one Breaking item');
 });

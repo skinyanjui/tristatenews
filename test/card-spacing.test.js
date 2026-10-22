@@ -32,7 +32,7 @@ test('spacing only: the block sets no colours or fonts, and the card rules are u
   assert.ok(!/(^|[;{\s])(color|background|font(-family|-size|-weight)?|border-color)\s*:/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'no colour or font changes');
   assert.ok(html.includes("var pic = safe ? '' : it.image;"), 'no photos on police items');
   assert.ok(html.includes("'Charged or arrested, not convicted.'"));
-  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds'];"));
+  assert.ok(html.includes("var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news'];"));
   assert.ok(html.includes('// at most ONE Breaking item'));
 });
 

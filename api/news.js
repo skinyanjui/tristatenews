@@ -756,6 +756,19 @@ async function handler(req, res) {
 }
 
 async function run(req, res) {
+  const filters = FLAGS.on('COUNTY_FILTERS_ENABLED');
+  let scope = null;
+  if (filters) {
+    const S = require('./_scope.js');
+    const raw = req.query && req.query.scope;
+    scope = S.parse(Array.isArray(raw) ? raw[0] : raw);
+    if (scope.error) { res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=300'); return res.status(400).json({ error: scope.error }); }
+    if (raw != null && String(raw) !== scope.key && scope.key !== 'tristate') {
+      res.setHeader('Cache-Control', 'public, s-maxage=86400, max-age=3600');
+      res.setHeader('Location', '/api/news?scope=' + encodeURIComponent(scope.key).replace(/%3A/g, ':').replace(/%2C/g, ','));
+      return res.status(308).end();
+    }
+  }
   let snap = await readSnapshot();
   if (!snap || Date.now() - Date.parse(snap.updatedAt) > SNAP_MAX_AGE) {
     // No fresh snapshot (cron not set up yet, or it stopped): refresh now. A short lock keeps a burst of
@@ -766,7 +779,19 @@ async function run(req, res) {
   }
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900, max-age=120');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(200).send(JSON.stringify(publicSnapshot(snap)));
+  res.status(200).send(JSON.stringify(scoped(publicSnapshot(snap), scope, filters)));
+}
+
+// Scope filters (plan PR 6.1, api/_scope.js), behind COUNTY_FILTERS_ENABLED. Off: ?scope is ignored and the response is
+// the snapshot as before. On: ?scope selects a view, the response says which (scope{}) and carries a place label per
+// story, and features{} tells the page to show its scope control. The CDN caches per full URL, so each canonical
+// ?scope= value is its own cache entry; a non-canonical spelling (state:KY, counties:b,a) redirects to the canonical one.
+// Either way the no-scope view keeps expansion-batch sources out unless a story names a core county (plan D8).
+function scoped(snap, scope, filters) {
+  const S = require('./_scope.js');
+  if (!filters) return S.view(snap, S.parse(''), SOURCES);
+  const v = S.view(snap, scope, SOURCES, { labels: true });
+  return Object.assign({}, v, { features: { scopes: true, routes: FLAGS.on('REGIONAL_ROUTES_ENABLED') } });
 }
 
 // /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
@@ -778,7 +803,8 @@ module.exports = require('./_dispatch.js').host({
   refresh: () => require('./_refresh.js'),
   counties: () => require('./_geoapi.js').counties,
   regions: () => require('./_geoapi.js').regions,
-  locations: () => require('./_locations.js')
+  locations: () => require('./_locations.js'),
+  geopage: () => require('./_geopage.js')
 }, handler);
 module.exports.parseFeed = parseFeed;
 module.exports.readSnapshot = readSnapshot;

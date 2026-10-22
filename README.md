@@ -31,8 +31,11 @@ Vercel's Hobby plan allows 12 functions per deployment, and every `api/*.js` fil
 | `/api/advertise` | `api/inbox.js` | `api/_advertise.js` |
 | `/api/packages` | `api/inbox.js` | `api/_packages.js` |
 | `/api/alerts`, `/api/react`, `/api/newsletter`, `/api/stripe-webhook` | own file | own file |
+| any unknown path (last two rewrites) | `api/inbox.js` | `api/_notfound.js` |
 
 To add a path without a new function, put its handler in an `_`-prefixed file, add it to a host's `host({...})` table and add the rewrite; `test/api-routes.test.js` checks the map and the function count (at most 9).
+
+**Not found.** Vercel serves files and functions first, then rewrites in order. The last two rewrites send anything unmatched to `api/_notfound.js`: HTTP 404 with `data/pages/404.html` (noindex, no ads, links to every section and a search box that opens `/?q=`), or JSON `{"error":"not found"}` under `/api/`. Keep them last. Tab paths, the 308 redirects for retired paths, and clean page paths (`/legal`, `/privacy`, `/order`, ... rewritten to their `.html` file) all match earlier. `npm run dev` does the same. `test/not-found.test.js` covers it.
 
 ## Add feeds without editing code
 

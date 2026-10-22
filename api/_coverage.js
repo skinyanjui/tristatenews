@@ -16,6 +16,7 @@ const FLAGS = require('./_flags.js');
 const REG = require('./_sources.js');
 const LOC = require('./_location.js');
 const S = require('./_scope.js');
+const DREC = require('./_depthrec.js');
 
 const OVR = 'tsn:loc:overrides', AUDIT = 'tsn:loc:audit';
 const DAY = 864e5;
@@ -64,13 +65,14 @@ async function report(now) {
   for (const s of news.SOURCES) if (!S.BATCH.has(s.id)) list.push([s, { active: true }]);
   for (const s of news.DISABLED_SOURCES) if (!S.BATCH.has(s.id)) list.push([s, { active: false, disabled: s.disabled }]);
   for (const b of REG.BATCHES) for (const s of b.sources) list.push([s, { active: active.has(s.id), batch: b.batch, disabled: s.disabled || null, counties: s.counties }]);
-  let states = [], snap = null, ovr = [], audit = [], storeOk = false;
+  let rolling = null, states = [], snap = null, ovr = [], audit = [], storeOk = false;
   if (news.stored()) {
     try {
-      const out = await news.redis([['MGET'].concat(list.map(([s]) => 'tsn:src:' + s.id)), ['GET', 'tsn:news:snapshot'], ['HGETALL', OVR], ['LRANGE', AUDIT, '0', '49']]);
+      const out = await news.redis([['MGET'].concat(list.map(([s]) => 'tsn:src:' + s.id)), ['GET', 'tsn:news:snapshot'], ['HGETALL', OVR], ['LRANGE', AUDIT, '0', '49'], ['GET', DREC.KEY]]);
       states = (out[0] && out[0].result) || []; snap = parse(out[1] && out[1].result);
       const flat = (out[2] && out[2].result) || []; for (let i = 0; i + 1 < flat.length; i += 2) { const v = parse(flat[i + 1]); if (v) ovr.push(Object.assign({ key: flat[i] }, v)); }
       audit = ((out[3] && out[3].result) || []).map(parse).filter(Boolean);
+      rolling = out[4] && !out[4].error ? out[4].result : null;
       storeOk = true;
     } catch (_) { storeOk = false; }
   }
@@ -81,6 +83,7 @@ async function report(now) {
   const allSources = news.SOURCES.concat(REG.BATCHES.flatMap(b => b.sources).filter(s => !active.has(s.id)));
   const depthNow = snap ? S.depth(snap, allSources, now) : null;
   const cov = COV();
+  const g = DREC.gate(rolling, now), roll = DREC.counts(rolling, now);
   const homes = {};
   const add = (c, n) => { const a = homes[c] = homes[c] || []; if (!a.includes(n)) a.push(n); };
   const local = s => !s.kind || ['news', 'police', 'courts', 'institution'].includes(s.kind); // not events or obituaries
@@ -88,8 +91,9 @@ async function report(now) {
   for (const s of news.SOURCES) { if (S.BATCH.has(s.id) || !local(s) || s.funeralHome) continue; let c = []; try { const r = LOC.sourceCoverage(s); c = r.statewide ? [] : r.countyIds; } catch (_) { c = []; } if (c.length === 1) add(c[0], s.name); }
   const counties = S.COUNTIES.map(c => {
     const stories = depthNow ? depthNow[c.id] : null, measured = cov && cov.depth ? cov.depth[c.id] : null;
-    return { id: c.id, name: c.fullName, state: c.state.toUpperCase(), tier: c.core ? 'core' : 'extended', homeSources: homes[c.id] || [], stories14d: stories, measured14d: measured,
-      passesGate: (stories != null ? stories : measured || 0) >= S.DEPTH_MIN, gap: !(homes[c.id] || []).length };
+    const rolling14d = roll ? roll[c.id] : null;
+    return { id: c.id, name: c.fullName, state: c.state.toUpperCase(), tier: c.core ? 'core' : 'extended', homeSources: homes[c.id] || [], snapshotStories: stories, rolling14d, measured14d: measured,
+      gateCount: g.depth[c.id] || 0, passesGate: (g.depth[c.id] || 0) >= g.min, gap: !(homes[c.id] || []).length };
   });
 
   // Review queue: stories the classifier could not place with confidence (ambiguous names, dateline only, review flags),
@@ -113,7 +117,7 @@ async function report(now) {
   return {
     ok: true, at: new Date(now).toISOString(), store: storeOk, snapshotAt: snap ? snap.updatedAt : null,
     flags: FLAGS.all(), batches: { enabled: batchOn, files: REG.BATCHES.map(b => ({ id: b.batch, sources: b.sources.length, active: b.sources.filter(s => active.has(s.id)).length, paused: b.sources.filter(s => s.disabled).map(s => s.id) })) },
-    gate: { min: S.DEPTH_MIN, days: S.DEPTH_DAYS, measuredAt: cov ? cov.measuredAt : null },
+    gate: { min: g.min, days: S.DEPTH_DAYS, source: g.source, at: g.at, measuredAt: cov ? cov.measuredAt : null, cap: DREC.CAP },
     sources, counties, review, overrides: ovr, audit,
   };
 }

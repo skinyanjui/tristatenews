@@ -508,7 +508,7 @@ function normKey(item) {
   return item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function combine(results, now) {
+function combine(results, now, pool) {
   const seen = new Set();
   const all = [];
   const events = [];
@@ -556,6 +556,7 @@ function combine(results, now) {
   // Police and court releases have their own cap: they post a few times a month, so in one shared cap a
   // busy news day pushed a sheriff's post from three weeks ago out of the snapshot while it was still in its window.
   safety.sort(byDate);
+  if (pool) pool.push(...all, ...safety); // every news story before the public cap (api/_depthrec.js)
   const feed = all.sort(byDate).slice(0, MAX_ITEMS).concat(safety.slice(0, MAX_SAFETY)).sort(byDate);
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
   // Repeat events (weekly yoga, a run of shows) share one picture: any dated copy that has an image lends it to the rest.
@@ -578,6 +579,7 @@ const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const stored = () => !!(URL_ && TOKEN);
 const OVERRIDES_KEY = 'tsn:loc:overrides';
+const DEPTH = () => require('./_depthrec.js');
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
@@ -690,9 +692,9 @@ function publicSnapshot(snap) {
   return Object.assign({}, snap, { sources: snap.sources.map(s => { const o = Object.assign({}, s); delete o.error; return o; }) });
 }
 
-function buildSnapshot(states, now) {
+function buildSnapshot(states, now, pool) {
   const results = SOURCES.map(src => ({ source: src, items: (states[src.id] && states[src.id].items) || [] }));
-  const items = combine(results, now);
+  const items = combine(results, now, pool);
   const sources = SOURCES.map(src => {
     const st = states[src.id] || { items: [] };
     return { logo: logoFor(src.url), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
@@ -707,19 +709,21 @@ async function refreshAll(opts) {
   const now = Date.now();
   let targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
   let persist = stored();
-  let prevStates = {}, overridesRaw = [];
+  let overridesAll = null, prevStates = {}, overridesRaw = [], depthPrev = null, depthRead = false;
   const store = { requests: 0, commands: 0 }; // billed Upstash commands this run, reported by /api/refresh
   if (persist) {
     // If the store is unreachable (bad or rotated token, outage) keep going without it rather than failing the page.
     try {
       // One MGET (one billed command) instead of one GET per source. Same values: a missing key is null either way.
-      // The same request also reads the admin's manual county overrides (HGETALL, one more command, no extra trip).
-      store.requests++; store.commands += 2;
+      // The same request also reads the admin's manual county overrides (HGETALL) and the rolling county depth record
+      // (GET tsn:geo:depth, api/_depthrec.js): two more commands, no extra trip.
+      store.requests++; store.commands += 3;
       const keys = SOURCES.map(s => srcKey(s.id));
-      const out = await redis([['MGET'].concat(keys), ['HGETALL', OVERRIDES_KEY]]);
+      const out = await redis([['MGET'].concat(keys), ['HGETALL', OVERRIDES_KEY], ['GET', DEPTH().KEY]]);
       const vals = out && out[0] && out[0].result;
       if (!Array.isArray(vals) || vals.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
       overridesRaw = (out[1] && out[1].result) || [];
+      if (out[2] && !out[2].error) { depthPrev = out[2].result || null; depthRead = true; }
       SOURCES.forEach((s, i) => { prevStates[s.id] = parse(vals[i]); });
     } catch (e) { persist = false; }
   }
@@ -751,14 +755,17 @@ async function refreshAll(opts) {
   }
   // sources not fetched this round (fast tier) still need a record
   SOURCES.forEach(s => { if (!states[s.id]) states[s.id] = { items: [], error: null, lastOk: null }; });
-  const snap = buildSnapshot(states, now);
+  const pool = [];
+  const snap = buildSnapshot(states, now, pool);
   // Manual county overrides from the admin (api/_coverage.js), carried in the snapshot for api/_scope.js. Only the
   // story keys that are in this snapshot; readers never get the map (publicSnapshot/_scope strip it).
   if (overridesRaw.length) {
     try {
       const flat = overridesRaw, keys = new Set(snap.items.map(i => require('./_scope.js').overrideKey(i)));
-      const m = {}; for (let i = 0; i + 1 < flat.length; i += 2) if (keys.has(flat[i])) { try { const v = JSON.parse(flat[i + 1]); if (Array.isArray(v.countyIds)) m[flat[i]] = v.countyIds; } catch (_) { /* skip */ } }
+      const all = {}; for (let i = 0; i + 1 < flat.length; i += 2) { try { const v = JSON.parse(flat[i + 1]); if (Array.isArray(v.countyIds)) all[flat[i]] = v.countyIds; } catch (_) { /* skip */ } }
+      const m = {}; for (const k of Object.keys(all)) if (keys.has(k)) m[k] = all[k];
       if (Object.keys(m).length) snap.overrides = m;
+      overridesAll = all;
     } catch (_) { /* overrides are optional */ }
   }
   const results = fetched.map(r => adapterResult(r, { runId }));
@@ -774,6 +781,9 @@ async function refreshAll(opts) {
     cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
     // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
     if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
+    // Rolling county depth record: this run's stories (before the public cap) merged into the last 14 days. Only
+    // when the read succeeded, so a failed read never overwrites two weeks of history with one run.
+    if (depthRead) { try { cmds.push(['SET', DEPTH().KEY, JSON.stringify(DEPTH().update(depthPrev, pool, SOURCES.concat(DISABLED_SOURCES), now, overridesAll)), 'EX', String(DEPTH().TTL)]); } catch (e) { console.error('depth record failed', e && e.message); } }
     store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }

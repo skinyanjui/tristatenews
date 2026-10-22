@@ -1,0 +1,130 @@
+{
+  "sourceId": "spencerco",
+  "name": "Spencer County Online",
+  "site": "https://spencercountyonline.com",
+  "feedUrl": "https://spencercountyonline.com/feed/",
+  "checkedAt": "2026-10-22T22:17:25.065Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://spencercountyonline.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://spencercountyonline.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "spencercountyonline.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 8,
+      "of": 10,
+      "share": 80
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 81,
+    "runner": "box",
+    "fetchedUrl": "https://spencercountyonline.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T14:55:58.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "in-dubois",
+      "items": 3,
+      "examples": [
+        "Paxton Beckham Luttrell",
+        "Lucille T. Lubbehusen, 90, Dale"
+      ]
+    },
+    {
+      "countyId": "in-spencer",
+      "items": 3,
+      "examples": [
+        "Herman Mills, 75, St. Meinrad",
+        "Joy A. Kendall, 94, Dale"
+      ]
+    },
+    {
+      "countyId": "in-vanderburgh",
+      "items": 2,
+      "examples": [
+        "Joy A. Kendall, 94, Dale",
+        "George B. Hasenour, 79, Dubois"
+      ]
+    },
+    {
+      "countyId": "ky-henderson",
+      "items": 1,
+      "examples": [
+        "Kathleen A. Martin, 83, Henderson, Kentucky"
+      ]
+    },
+    {
+      "countyId": "in-warrick",
+      "items": 1,
+      "examples": [
+        "Dixie L. Miller, 89, Rockport"
+      ]
+    },
+    {
+      "countyId": "in-perry",
+      "items": 1,
+      "examples": [
+        "Elizabeth J. Kessens, Siberia"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

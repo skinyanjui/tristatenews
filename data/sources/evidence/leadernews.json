@@ -1,0 +1,136 @@
+{
+  "sourceId": "leadernews",
+  "name": "Leader-News",
+  "site": "https://ky-leadernews.com",
+  "feedUrl": "https://ky-leadernews.com/feed/",
+  "checkedAt": "2026-10-22T22:19:02.265Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://ky-leadernews.com/",
+      "title": "Leader-News | Local news for all of Muhlenberg County, Kentucky"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://ky-leadernews.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "ky-leadernews.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 9,
+      "of": 10,
+      "share": 90
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 858,
+    "runner": "box",
+    "fetchedUrl": "https://ky-leadernews.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T19:19:18.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0.02
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-muhlenberg",
+      "items": 8,
+      "examples": [
+        "Marie Chapman",
+        "Jarrod Allan Whirley"
+      ]
+    },
+    {
+      "countyId": "ky-hopkins",
+      "items": 2,
+      "examples": [
+        "Clifford “Tippy” Earl Strader",
+        "Sandra Louise Dobbs"
+      ]
+    },
+    {
+      "countyId": "ky-hickman",
+      "items": 1,
+      "examples": [
+        "Jimmie Dee Gossett Wilcox"
+      ]
+    },
+    {
+      "countyId": "ky-mclean",
+      "items": 1,
+      "examples": [
+        "Clifford “Tippy” Earl Strader"
+      ]
+    },
+    {
+      "countyId": "ky-webster",
+      "items": 1,
+      "examples": [
+        "Judy Ann Drake Brown"
+      ]
+    },
+    {
+      "countyId": "ky-daviess",
+      "items": 1,
+      "examples": [
+        "Sandra Louise Dobbs"
+      ]
+    },
+    {
+      "countyId": "ky-caldwell",
+      "items": 1,
+      "examples": [
+        "Sandra Louise Dobbs"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

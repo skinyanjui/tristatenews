@@ -1,0 +1,116 @@
+{
+  "sourceId": "poseynews",
+  "name": "The Posey County News",
+  "site": "https://www.theposeycountynews.com",
+  "feedUrl": "https://www.theposeycountynews.com/blog-feed.xml",
+  "checkedAt": "2026-10-22T22:17:24.475Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.theposeycountynews.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.theposeycountynews.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "theposeycountynews.com": 20
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 11,
+      "of": 20,
+      "share": 55
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 20,
+    "accepted": 20,
+    "durationMs": 36,
+    "runner": "box",
+    "fetchedUrl": "https://www.theposeycountynews.com/blog-feed.xml"
+  },
+  "activity": {
+    "latest": "2026-10-20T21:33:36.000Z",
+    "last30d": 20,
+    "undated": 0,
+    "inFeed": 20,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "in-posey",
+      "items": 9,
+      "examples": [
+        "2026-274",
+        "Frances Sue Terrell"
+      ]
+    },
+    {
+      "countyId": "in-gibson",
+      "items": 2,
+      "examples": [
+        "Donald Lee Conklin",
+        "North Posey, Mount Vernon girls run strong sectional"
+      ]
+    },
+    {
+      "countyId": "in-vanderburgh",
+      "items": 2,
+      "examples": [
+        "Linda C. Morris",
+        "Mary Mae Schmitt"
+      ]
+    },
+    {
+      "countyId": "in-perry",
+      "items": 1,
+      "examples": [
+        "Mary Mae Schmitt"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

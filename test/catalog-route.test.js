@@ -55,10 +55,11 @@ test('GET /api/catalog: same answer from listings.js (Vercel rewrite and local p
       const local = await call(mod('listings'), { method: 'GET', url: '/api/catalog' });
       assert.strictEqual(direct.code, 200);
       assert.deepStrictEqual(vercel.body, direct.body); assert.deepStrictEqual(local.body, direct.body);
-      assert.deepStrictEqual(direct.body, JSON.parse(JSON.stringify(C.publicCatalog(!!env.STRIPE_SECRET_KEY))));
+      assert.deepStrictEqual(direct.body, JSON.parse(JSON.stringify(C.publicCatalog(!!env.STRIPE_SECRET_KEY, 0))), 'with the live newsletter count (ads Phase 7)');
+      assert.strictEqual(direct.body.newsletterGate.verifiedSubscribers, 0);
       assert.match(direct.headers['cache-control'], /public/);
       assert.strictEqual((await call(mod('listings'), { method: 'POST', url: '/api/catalog', body: { cents: 1 } })).code, 405);
-      assert.deepStrictEqual(w.log, [], 'no store commands');
+      assert.ok(w.log.every(c => JSON.stringify(c) === JSON.stringify(['SCARD', 'tsn:nl:confirmed'])), 'read-only: only the confirmed-subscriber count');
     });
   }
 });

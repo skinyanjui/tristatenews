@@ -69,6 +69,7 @@ function fakeStore(seed) {
       case 'SADD': { const s = sets.get(k) || new Set(); sets.set(k, s); let n = 0; a.forEach(m => { if (!s.has(m)) { s.add(m); n++; } }); return { result: n }; }
       case 'SREM': { const s = sets.get(k) || new Set(); let n = 0; a.forEach(m => { if (s.delete(m)) n++; }); return { result: n }; }
       case 'SMEMBERS': return { result: [...(sets.get(k) || [])] };
+      case 'SCARD': return { result: (sets.get(k) || new Set()).size };
       case 'LPUSH': { const l = lists.get(k) || []; a.forEach(x => l.unshift(x)); lists.set(k, l); return { result: l.length }; }
       case 'LTRIM': return { result: 'OK' };
       case 'LRANGE': return { result: (lists.get(k) || []).slice(Number(a[0]), Number(a[1]) + 1) };
@@ -127,7 +128,7 @@ async function compare(route, reqSpec, env, withStore) {
     } finally { process.env = saved; if (store) store.srv.close(); }
   }
   // refs and timestamps are random per call; everything else must match
-  const norm = o => JSON.parse(JSON.stringify(o).replace(/"(TSN|AD)-[A-Z0-9]+"/g, '"REF"'));
+  const norm = o => JSON.parse(JSON.stringify(o).replace(/"(TSN|AD)-[A-Z0-9]+"/g, '"REF"').replace(/tsn:nl:pend:[0-9a-f]{64}/g, 'tsn:nl:pend:HASH'));
   assert.deepEqual(norm(out[1]), norm(out[0]), route + ' via vercel rewrite: ' + JSON.stringify(reqSpec));
   assert.deepEqual(norm(out[2]), norm(out[0]), route + ' via local path: ' + JSON.stringify(reqSpec));
   return out[0];
@@ -156,10 +157,14 @@ test('/api/subscribe: same signup, admin list and errors via unsubscribe.js', as
   assert.equal((await compare('subscribe', { method: 'GET' }, { LISTINGS_ADMIN_KEY: KEY }, true)).code, 404);
   assert.equal((await compare('subscribe', { method: 'GET', headers: { 'x-admin-key': 'wrong' } }, { LISTINGS_ADMIN_KEY: KEY }, true)).code, 404);
   const list = await compare('subscribe', { method: 'GET', headers: { 'x-admin-key': KEY } }, { LISTINGS_ADMIN_KEY: KEY }, true);
-  assert.deepEqual(list.body, { count: 1, emails: ['reader@example.com'] });
+  // ads Phase 7: double opt-in. The seeded reader signed up before confirmation existed: unconfirmed ("legacy").
+  assert.deepEqual([list.body.count, list.body.emails, list.body.counts], [0, [], { pending: 0, verified: 0, legacy: 1, unsubscribed: 0 }]);
+  assert.equal(list.body.provider.confirmReady, false);
   assert.equal((await compare('subscribe', { method: 'POST', body: { email: 'bad' } }, {}, true)).code, 400);
   const ok = await compare('subscribe', { method: 'POST', body: { email: 'New@Example.com' } }, {}, true);
-  assert.equal(ok.code, 200); assert.ok(ok.store.sets.find(([k]) => k === 'tsn:nl:subs')[1].includes('new@example.com'));
+  assert.equal(ok.code, 200); assert.equal(ok.body.pending, true);
+  assert.ok(!ok.store.sets.find(([k]) => k === 'tsn:nl:subs')[1].includes('new@example.com'), 'not on the list until confirmed');
+  assert.ok(ok.store.kv.some(([k, v]) => k.startsWith('tsn:nl:pend:') && v === 'new@example.com'), 'saved as pending');
   assert.equal((await compare('subscribe', { method: 'DELETE' }, {}, true)).code, 405);
 });
 

@@ -17,7 +17,7 @@ const NEWS = {
 const LISTINGS = { items: [{ title: 'Fall market', date: new Date(NOW + 3 * 864e5).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }), time: '09:00', place: 'Park', town: 'Henderson, KY' }] };
 
 function setup(env) {
-  const store = { 'tsn:nl:subs': new Set(['a@example.com', 'b@example.com']) }, calls = { resend: [] };
+  const store = { 'tsn:nl:confirmed': new Set(['a@example.com', 'b@example.com']), 'tsn:nl:subs': new Set(['a@example.com', 'b@example.com', 'legacy@example.com']) }, calls = { resend: [] };
   Object.assign(process.env, { KV_REST_API_URL: 'https://kv.test', KV_REST_API_TOKEN: 't', CRON_SECRET: 'cron-secret', SITE_URL: 'https://site.test' }, env || {});
   global.fetch = async (url, opt) => {
     url = String(url);

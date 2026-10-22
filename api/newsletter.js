@@ -57,12 +57,40 @@ function chicagoMs(date, time) {
 const fmtDay = t => new Date(t).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: TZ });
 const fmtTime = t => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
 
+// Crime and police-report stories stay out of the digest (they keep their context on the site, not in an inbox).
+// Conservative on purpose: whole words/phrases in the title only. Add terms with NEWSLETTER_EXCLUDE_TERMS
+// (comma-separated, e.g. "fatal crash,overdose"); the defaults always apply.
+const EXCLUDE_TERMS = ['police report', 'police reports', 'arrest', 'arrests', 'arrested', 'charged', 'indicted',
+  'sentence', 'sentenced', 'sentences', 'sentencing', 'shooting', 'shootings', 'homicide', 'homicides',
+  'murder', 'murders', 'murdered', 'stabbing'];
+// Items from police/court sources, items the feed marks as arrests, and any crime category.
+// Phrases that contain a term but aren't crime news (a murder-mystery dinner theater, say).
+const ALLOW_PHRASES = /\bmurder[-\s]+myster(?:y|ies)\b/i;
+const EXCLUDE_KINDS = ['police', 'courts'];
+const EXCLUDE_CATS = /^(?:police|courts?|crime|police\s*&\s*courts|public safety)$/i;
+const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+function excludeRe(extra) {
+  const terms = EXCLUDE_TERMS.concat(String(extra || '').split(',').map(t => t.trim().toLowerCase()).filter(t => t && t.length <= 60)).slice(0, 80);
+  return new RegExp('(?:^|[^a-z0-9])(?:' + terms.map(reEsc).join('|') + ')(?![a-z0-9])', 'i');
+}
+// Why an item is kept out of the digest, or '' when it may be picked.
+function excluded(i, kind, re) {
+  if (EXCLUDE_KINDS.includes(kind)) return 'police-courts';
+  if ('arrest' in i && i.arrest !== undefined && i.arrest !== null) return 'police-courts';
+  if (i.cat && EXCLUDE_CATS.test(String(i.cat).trim())) return 'category';
+  const title = String(i.title || '');
+  if ((re || excludeRe()).test(title.replace(ALLOW_PHRASES, ' '))) return 'keyword';
+  return '';
+}
+
 // news: the /api/news body; listings: the /api/listings?kind=event body (or null).
-function pick(news, listings, now) {
+function pick(news, listings, now, opts) {
+  const re = excludeRe(((opts && opts.excludeTerms) != null ? opts.excludeTerms : process.env.NEWSLETTER_EXCLUDE_TERMS));
   const kind = {}; (news.sources || []).forEach(s => { kind[s.id] = s.kind || 'news'; });
   const weekAgo = now - 7 * 864e5, per = {}, headlines = [];
-  // News sources only: no Police & courts items (arrests need their "not convicted" context on the site), no obituaries.
-  const stories = (news.items || []).filter(i => !i.isEvent && !i.isObit && (kind[i.sourceId] || 'news') === 'news' && safeUrl(i.link))
+  // News sources only: no Police & courts items (arrests need their "not convicted" context on the site), no obituaries,
+  // no crime/police-report stories (see EXCLUDE_TERMS); the next stories backfill.
+  const stories = (news.items || []).filter(i => !i.isEvent && !i.isObit && (kind[i.sourceId] || 'news') === 'news' && !excluded(i, kind[i.sourceId] || 'news', re) && safeUrl(i.link))
     .filter(i => { const t = Date.parse(i.published); return t > weekAgo && t <= now + 36e5; })
     .sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
   for (const i of stories) {
@@ -221,3 +249,6 @@ module.exports.render = render;
 module.exports.isoWeek = isoWeek;
 module.exports.chicagoMs = chicagoMs;
 module.exports.missingForSend = missingForSend;
+module.exports.EXCLUDE_TERMS = EXCLUDE_TERMS;
+module.exports.excluded = excluded;
+module.exports.excludeRe = excludeRe;

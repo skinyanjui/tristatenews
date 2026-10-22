@@ -182,3 +182,12 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 ### Needs review (obituary action row)
 25. **Tree affiliate:** `TREE_AFFILIATE_ID` and `tree.affiliateUrl` exist but are empty. Turning them on makes "Plant a tree" a paid link, so Privacy §3 and Advertising §8 ("the only affiliate link we may use is Send flowers") must be updated first.
 26. **Naming One Tree Planted:** the policy says "a nonprofit's page" without naming it, like the florist. Confirm that's fine, and that linking a charity's donation page needs no agreement with it.
+
+## Ads on News (Advertising Policy short version, §1 and §2; /advertise "How our ads work")
+- **§1:** new "Sponsored cards in News": a card between News stories, about every 6th story (every 10th in two columns, so at most about one per screen), on its own row, never directly before or after a Police & courts item (it moves to the next safe spot), never first or next to Breaking, never in search. Samples follow the same rule.
+- **§2:** News (with Police & courts items) now has sponsored cards and side ads, no sponsor line. Still no ads on Institutions, Obituaries, breaking-news alerts or search results. Caps add three shares for the News card (`card:news`).
+- **Short version:** "kept off news, Police & courts and obituaries" becomes "never placed right next to a Police & courts item, and kept off obituaries".
+
+### Needs review (ads on News)
+27. **Narrower promise:** the old §2 also said "we don't place ads next to stories about crimes, deaths or other tragedies". The code can only tell Police & courts items (official sources) apart, not crime or tragedy stories from news outlets, so that sentence was removed rather than kept as a promise we can't check. Confirm with Sam, or decide on a keyword rule before selling News ads.
+28. **Editorial separation:** ads now sit between news stories. Confirm the "Sponsored" label and card styling are distinct enough from news cards (FTC native-advertising guidance), and that package descriptions say "a share of the News card in rotation".

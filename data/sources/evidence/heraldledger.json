@@ -1,0 +1,151 @@
+{
+  "sourceId": "heraldledger",
+  "name": "The Herald Ledger",
+  "site": "https://www.heraldledger.com",
+  "feedUrl": "https://www.heraldledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+  "checkedAt": "2026-10-22T22:03:27.019Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.heraldledger.com/",
+      "title": "heraldledger.com"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.heraldledger.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "heraldledger.com": 30
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 19,
+      "of": 30,
+      "share": 63
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 30,
+    "durationMs": 94,
+    "runner": "box",
+    "fetchedUrl": "https://www.heraldledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc"
+  },
+  "activity": {
+    "latest": "2026-10-22T00:56:00.000Z",
+    "last30d": 30,
+    "undated": 0,
+    "inFeed": 30,
+    "cadence": "daily",
+    "medianGapDays": 0.05
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-lyon",
+      "items": 8,
+      "examples": [
+        "Lyon County FBLA donates one ton of dog food to Crittenden County Animal Shelter",
+        "Lyon County School District prepares for beloved Veterans Day luncheon and musical program"
+      ]
+    },
+    {
+      "countyId": "ky-caldwell",
+      "items": 4,
+      "examples": [
+        "Lyon, Caldwell County schools receive 2025-26 report card",
+        "Caldwell County Board of Education to hold Monday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-mccracken",
+      "items": 2,
+      "examples": [
+        "McCracken County Board of Education to hold Thursday meeting",
+        "Housing Authority of Paducah to hold special Thursday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-fulton",
+      "items": 1,
+      "examples": [
+        "Fulton County Board of Education to hold Thursday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-crittenden",
+      "items": 1,
+      "examples": [
+        "Lyon County FBLA donates one ton of dog food to Crittenden County Animal Shelter"
+      ]
+    },
+    {
+      "countyId": "ky-livingston",
+      "items": 1,
+      "examples": [
+        "Livingston County receives thousands for emergency management, library educational resource"
+      ]
+    },
+    {
+      "countyId": "ky-graves",
+      "items": 1,
+      "examples": [
+        "Mayfield Board of Education to hold Monday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-marshall",
+      "items": 1,
+      "examples": [
+        "Marshall County Board of Education to hold Thursday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-calloway",
+      "items": 1,
+      "examples": [
+        "Calloway County Board of Education to hold Thursday meeting"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

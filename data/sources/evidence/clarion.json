@@ -1,0 +1,114 @@
+{
+  "sourceId": "clarion",
+  "name": "The Hancock Clarion",
+  "site": "https://www.hancockclarion.com",
+  "feedUrl": "https://www.hancockclarion.com/feed/",
+  "checkedAt": "2026-10-22T22:03:29.205Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.hancockclarion.com/",
+      "title": "Home - The Hancock Clarion Hometown Newspaper"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.hancockclarion.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "hancockclarion.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 9,
+      "of": 10,
+      "share": 90
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 706,
+    "runner": "box",
+    "fetchedUrl": "https://www.hancockclarion.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-16T16:38:40.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-hancock",
+      "items": 8,
+      "examples": [
+        "Hornets can’t withstand McLean County’s late comeback in devastating loss",
+        "Lady Hornets lose in straight sets against Owensboro"
+      ]
+    },
+    {
+      "countyId": "ky-mclean",
+      "items": 1,
+      "examples": [
+        "Hornets can’t withstand McLean County’s late comeback in devastating loss"
+      ]
+    },
+    {
+      "countyId": "ky-daviess",
+      "items": 1,
+      "examples": [
+        "Lady Hornets lose in straight sets against Owensboro"
+      ]
+    },
+    {
+      "countyId": "in-vanderburgh",
+      "items": 1,
+      "examples": [
+        "Living Lands & Waters cleans up Ohio River"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

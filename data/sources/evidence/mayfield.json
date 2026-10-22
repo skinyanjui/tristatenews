@@ -1,0 +1,115 @@
+{
+  "sourceId": "mayfield",
+  "name": "Mayfield Messenger",
+  "site": "https://www.mayfield-messenger.com",
+  "feedUrl": "https://www.mayfield-messenger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+  "checkedAt": "2026-10-22T22:03:27.706Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.mayfield-messenger.com/",
+      "title": "mayfield-messenger.com"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://www.mayfield-messenger.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "mayfield-messenger.com": 29
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 13,
+      "of": 29,
+      "share": 45
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 29,
+    "durationMs": 15,
+    "runner": "box",
+    "fetchedUrl": "https://www.mayfield-messenger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc"
+  },
+  "activity": {
+    "latest": "2026-10-22T20:21:00.000Z",
+    "last30d": 29,
+    "undated": 0,
+    "inFeed": 29,
+    "cadence": "daily",
+    "medianGapDays": 0.05
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-graves",
+      "items": 8,
+      "examples": [
+        "Students hear from accounting, rail industry professionals through Power in Partnership program",
+        "Hickory road widening, resurfacing completed; Project aimed at meeting 'industrial standards'"
+      ]
+    },
+    {
+      "countyId": "ky-mccracken",
+      "items": 3,
+      "examples": [
+        "General Matter provides updates at community open house",
+        "McCracken County Board of Education to hold Thursday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-fulton",
+      "items": 1,
+      "examples": [
+        "Fulton County Board of Education to hold Thursday meeting"
+      ]
+    },
+    {
+      "countyId": "ky-caldwell",
+      "items": 1,
+      "examples": [
+        "State police requesting public information on Caldwell murder"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

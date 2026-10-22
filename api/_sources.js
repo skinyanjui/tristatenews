@@ -31,6 +31,7 @@ const FILES = [
 // Each entry carries registry-only fields (batch, site, counties, review); its evidence is data/sources/evidence/<id>.json.
 const BATCHES = [
   require('../data/sources/batches/batch-1.json'),
+  require('../data/sources/batches/batch-2.json'),
 ];
 const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review'];
 

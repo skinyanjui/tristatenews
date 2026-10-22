@@ -93,6 +93,10 @@
       "destination": "/api/news?__route=locations"
     },
     {
+      "source": "/api/coverage",
+      "destination": "/api/news?__route=coverage"
+    },
+    {
       "source": "/newsletter",
       "destination": "/newsletter.html"
     },

@@ -44,7 +44,9 @@ test('vercel.json: every old /api path is a function or a rewrite to the host th
     assert.deepEqual(vercel.rewrites.filter(r => r.source === '/api/' + p).map(r => r.destination), ['/api/' + h + '?__route=' + p], p);
     assert.ok(!fns.includes(p), p + ' is not a function of its own');
   }
-  const apiRw = vercel.rewrites.filter(r => r.source.startsWith('/api/'));
+  // The not-found catch-all (/api/:path* -> notfound, test/not-found.test.js) only answers 404 for paths nothing else serves.
+  const apiRw = vercel.rewrites.filter(r => r.source.startsWith('/api/') && r.source !== '/api/:path*');
+  assert.deepEqual(vercel.rewrites.filter(r => r.source === '/api/:path*').map(r => r.destination), ['/api/inbox?__route=notfound&api=1']);
   assert.deepEqual(apiRw.map(r => r.source).sort(), Object.keys(MOVED).concat(Object.keys(ADDED)).map(p => '/api/' + p).sort());
 });
 

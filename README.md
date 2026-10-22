@@ -180,3 +180,23 @@ the location classifier; `decision` is `verified` only when every check passes a
 
 Batches are off by default. A batch joins the live source list only when `EXPANDED_SOURCES_ENABLED=true` and
 `SOURCE_BATCHES` lists its id (for example `SOURCE_BATCHES=b1` or `SOURCE_BATCHES=b1,b2`); its sources are appended after the existing ones.
+
+## Geography scopes and county pages (county expansion step 3)
+
+Two server-side flags, both off by default (exactly `true` turns one on):
+
+- `COUNTY_FILTERS_ENABLED`: `/api/news?scope=` filters (`tristate`, `all`, `state:ky`, `county:ky-henderson`,
+  `counties:a,b`, up to 12). Stories are matched to counties by the step 1 classifier (`api/_location.js`); a story that
+  names no place counts for its batch source's verified home county. Each canonical scope is its own CDN cache entry;
+  other spellings redirect (308) to the canonical one, unknown scopes get a 400. The page shows an **Area** button
+  beside the tabs (Tri-State, All Regions, a state, a county, or My Counties saved in this browser), a locality label on
+  stories the classifier is confident about, and an honest empty state. With the flag off, `?scope` is ignored.
+- `REGIONAL_ROUTES_ENABLED`: shareable pages `/news/<state>` and `/news/<state>/<county>` (for example
+  `/news/indiana/dubois`) and `/sitemap-regions.xml`. Off, those paths are the 404 page, as before. County pages with
+  fewer than 5 distinct local stories in 14 days are served `noindex` and left out of the regional sitemap; the counts
+  come from `data/geography/coverage.json`, written by
+  `EXPANDED_SOURCES_ENABLED=true SOURCE_BATCHES=b1,b2 node scripts/build-sitemap.js --measure` (run with the env -u rules).
+
+The default view (no `?scope`, or Tri-State) is the existing feed. Expansion-batch sources only appear in it when a story
+names one of the 30 core counties; everything else from them is under All Regions, its state or its county.
+Missouri is never labeled Tri-State.

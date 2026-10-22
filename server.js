@@ -281,6 +281,14 @@ app.get(/.*/, (req, res, next) => {
   return res.redirect(308, RT.ALIASES[p] + (qs >= 0 ? req.originalUrl.slice(qs) : ''));
 });
 
+// County and state pages and their sitemap (api/_geopage.js behind REGIONAL_ROUTES_ENABLED; vercel.json rewrites
+// them to /api/news?__route=geopage). Flag off they get the 404 page, as before.
+const geoPageHandler = require('./api/_geopage.js');
+app.get(['/news/:state', '/news/:state/:county', '/sitemap-regions.xml'], (req, res) => {
+  const r = Object.create(req, { query: { value: req.path === '/sitemap-regions.xml' ? { sitemap: '1' } : { p: req.path } } });
+  return geoPageHandler(r, res);
+});
+
 // Serve static frontend files from /public
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir, { extensions: ['html'] }));

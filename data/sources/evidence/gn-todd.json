@@ -1,0 +1,83 @@
+{
+  "sourceId": "gn-todd",
+  "name": "Todd County, Ky. (Google News)",
+  "site": "https://news.google.com",
+  "feedUrl": "https://news.google.com/rss/search?q=%28intitle%3AElkton%20OR%20intitle%3AGuthrie%20OR%20intitle%3A%22Todd%20County%22%20OR%20intitle%3ATrenton%29%20%28site%3Awhopam.com%20OR%20site%3Awkdzradio.com%20OR%20site%3Akentuckynewera.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T14:07:46.092Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 7
+      },
+      "ownSiteShare": 100,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 7,
+      "of": 7,
+      "share": 100
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 7,
+    "durationMs": 637,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=%28intitle%3AElkton%20OR%20intitle%3AGuthrie%20OR%20intitle%3A%22Todd%20County%22%20OR%20intitle%3ATrenton%29%20%28site%3Awhopam.com%20OR%20site%3Awkdzradio.com%20OR%20site%3Akentuckynewera.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-23T03:25:19.000Z",
+    "last30d": 6,
+    "undated": 0,
+    "inFeed": 7,
+    "cadence": "weekly",
+    "medianGapDays": 2.31
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-todd",
+      "items": 7,
+      "examples": [
+        "State Approves $8 Million To Replace Trenton Wastewater Treatment Plant",
+        "Todd County Central High School – Career & Technical Fair"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-23; licensing to be confirmed by Sam",
+    "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_towns fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_towns",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-23; licensing to be confirmed by Sam"
+}

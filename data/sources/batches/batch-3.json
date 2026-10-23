@@ -55,20 +55,29 @@
     },
     {
       "seq": 86,
-      "id": "whoptodd",
-      "name": "WHOP Radio (Todd County)",
+      "id": "gn-todd",
+      "name": "Todd County, Ky. (Google News)",
       "area": "Elkton, Ky.",
-      "site": "https://whopam.com",
+      "site": "https://news.google.com",
       "counties": [
         "ky-todd"
       ],
-      "everyMin": 60,
-      "url": "https://whopam.com/category/todd-county-news/feed/",
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AElkton%20OR%20intitle%3AGuthrie%20OR%20intitle%3A%22Todd%20County%22%20OR%20intitle%3ATrenton%29%20%28site%3Awhopam.com%20OR%20site%3Awkdzradio.com%20OR%20site%3Akentuckynewera.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "todd county",
+        "elkton",
+        "guthrie",
+        "trenton",
+        "todd central"
+      ],
       "batch": "b3",
+      "fallback": "google_news_towns",
       "review": {
         "approved": true,
-        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
-        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-23; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
         "licensing": {
           "paywall": null,
           "summaryOk": null,
@@ -76,7 +85,7 @@
           "use": "headline, short feed summary and link only; no images (project default)"
         }
       },
-      "note": "2026-10-22: the station's \"Todd County News\" category. WHOP is in Hopkinsville (Christian County, already covered) and tags some Christian County stories here too; the classifier evidence shows which items are Todd County."
+      "note": "Fallback (Google News, town search), ship60: replaces whoptodd (WHOP's Todd County News category feed, https://whopam.com/category/todd-county-news/feed/), which never fetched in production (ok=false, no lastOk). whopam.com is behind Cloudflare: the feed answers 200 RSS from the box, but a request from another datacenter network got Cloudflare's \"Performing security verification\" JavaScript challenge on 2026-10-23, which a feed reader can't pass, so the Vercel fetch fails. The category also carried mostly Christian County and Clarksville stories (1 of 10 in Todd County). The search matches headlines only (intitle:) from WHOP, WKDZ and the Kentucky New Era (all in Hopkinsville/Cadiz; their own feeds are blocked, mixed with obituaries, or rate-limited) and items are kept only when the headline names one of geoTerms. A bare \"Trenton\" is accepted because only these three Pennyrile newsrooms are searched (Trenton, Ky. is in Todd County)."
     },
     {
       "seq": 87,

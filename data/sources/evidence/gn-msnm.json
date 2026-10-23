@@ -1,0 +1,90 @@
+{
+  "sourceId": "gn-msnm",
+  "name": "Mississippi and New Madrid counties, Mo. (Google News)",
+  "site": "https://news.google.com",
+  "feedUrl": "https://news.google.com/rss/search?q=%28intitle%3A%22East%20Prairie%22%20OR%20intitle%3ACharleston%20OR%20intitle%3A%22New%20Madrid%22%20OR%20intitle%3A%22Mississippi%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:12:54.969Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 3
+      },
+      "ownSiteShare": 100,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 3,
+      "of": 3,
+      "share": 100
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 3,
+    "accepted": 3,
+    "durationMs": 885,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=%28intitle%3A%22East%20Prairie%22%20OR%20intitle%3ACharleston%20OR%20intitle%3A%22New%20Madrid%22%20OR%20intitle%3A%22Mississippi%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-23T00:00:00.000Z",
+    "last30d": 3,
+    "undated": 0,
+    "inFeed": 3,
+    "cadence": "weekly",
+    "medianGapDays": 4.46
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "mo-mississippi",
+      "items": 2,
+      "examples": [
+        "Charleston man dies in car crash",
+        "Residents call for stability as Mississippi County sheriff race nears"
+      ]
+    },
+    {
+      "countyId": "mo-new-madrid",
+      "items": 1,
+      "examples": [
+        "New Madrid County teen charged as adult in Lilbourn, Mo. man’s death"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_towns fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_towns",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

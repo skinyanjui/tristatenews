@@ -1,0 +1,90 @@
+{
+  "sourceId": "pressdisp",
+  "name": "Pike County Press-Dispatch",
+  "site": "https://www.suncommercial.com",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fpress_dispatch%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:26.513Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.suncommercial.com/",
+      "title": "suncommercial.com | Indiana's First Newspaper"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 13
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 3,
+      "of": 13,
+      "share": 23
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 13,
+    "accepted": 13,
+    "durationMs": 808,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fpress_dispatch%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-22T05:00:00.000Z",
+    "last30d": 13,
+    "undated": 0,
+    "inFeed": 13,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "in-pike",
+      "items": 2,
+      "examples": [
+        "Winslow council sets Halloween trick-or-treat hours - Approves Community Center funding",
+        "The questions Pike County residents are asking and the answers it deserves"
+      ]
+    },
+    {
+      "countyId": "in-knox",
+      "items": 1,
+      "examples": [
+        "MESSMER REPORT - Vincennes Sun-Commercial"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

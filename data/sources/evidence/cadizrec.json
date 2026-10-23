@@ -1,0 +1,89 @@
+{
+  "sourceId": "cadizrec",
+  "name": "The Cadiz Record",
+  "site": "https://www.kentuckynewera.com",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Akentuckynewera.com%2Fcadiz_record%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:42.082Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.kentuckynewera.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 9
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 1,
+      "of": 9,
+      "share": 11
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 9,
+    "accepted": 9,
+    "durationMs": 820,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Akentuckynewera.com%2Fcadiz_record%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-19T19:50:00.000Z",
+    "last30d": 9,
+    "undated": 0,
+    "inFeed": 9,
+    "cadence": "daily",
+    "medianGapDays": 1.15
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-trigg",
+      "items": 1,
+      "examples": [
+        "Trigg, Christian county report 70 measles cases"
+      ]
+    },
+    {
+      "countyId": "ky-christian",
+      "items": 1,
+      "examples": [
+        "Trigg, Christian county report 70 measles cases"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

@@ -1,0 +1,100 @@
+{
+  "sourceId": "whoptodd",
+  "name": "WHOP Radio (Todd County)",
+  "site": "https://whopam.com",
+  "feedUrl": "https://whopam.com/category/todd-county-news/feed/",
+  "checkedAt": "2026-10-23T04:11:06.985Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://whopam.com/",
+      "title": "WHOP AM Home - WHOP Radio – Hopkinsville, KY"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://whopam.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "whopam.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 7,
+      "of": 10,
+      "share": 70
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 765,
+    "runner": "box",
+    "fetchedUrl": "https://whopam.com/category/todd-county-news/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T15:29:50.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0.12
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-christian",
+      "items": 6,
+      "examples": [
+        "Oak Grove welcomes friends and family for Halloween in the Grove",
+        "HCC invites community to Fall Fest on Thursday"
+      ]
+    },
+    {
+      "countyId": "ky-todd",
+      "items": 1,
+      "examples": [
+        "Trenton to receive $8 million to replace wastewater treatment plant"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

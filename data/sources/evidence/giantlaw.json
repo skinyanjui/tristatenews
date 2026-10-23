@@ -1,0 +1,83 @@
+{
+  "sourceId": "giantlaw",
+  "name": "Giant FM Lawrence County",
+  "site": "https://www.giant.fm",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Agiant.fm%2Flawrence-county%2Fnews%2Flocal-news%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:36.844Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.giant.fm/",
+      "title": "GIANT fm"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 6
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 2,
+      "of": 6,
+      "share": 33
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 30,
+    "accepted": 6,
+    "durationMs": 948,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Agiant.fm%2Flawrence-county%2Fnews%2Flocal-news%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-20T01:20:45.000Z",
+    "last30d": 6,
+    "undated": 0,
+    "inFeed": 6,
+    "cadence": "daily",
+    "medianGapDays": 0.44
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "il-lawrence",
+      "items": 2,
+      "examples": [
+        "Bridgeport PD holding active shooter drill Thursday at school",
+        "Lawrenceville approves water system contract changes and new ordinances"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

@@ -1,0 +1,101 @@
+{
+  "sourceId": "loogtimes",
+  "name": "The Loogootee Times",
+  "site": "https://loogooteetimes.com",
+  "feedUrl": "https://loogooteetimes.com/feed/",
+  "checkedAt": "2026-10-23T04:11:02.590Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://loogooteetimes.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://loogooteetimes.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "loogooteetimes.com": 10
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 9,
+      "of": 10,
+      "share": 90
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 10,
+    "accepted": 10,
+    "durationMs": 38,
+    "runner": "box",
+    "fetchedUrl": "https://loogooteetimes.com/feed/"
+  },
+  "activity": {
+    "latest": "2026-10-22T23:15:04.000Z",
+    "last30d": 10,
+    "undated": 0,
+    "inFeed": 10,
+    "cadence": "daily",
+    "medianGapDays": 0.08
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "in-martin",
+      "items": 9,
+      "examples": [
+        "PHOTO GALLERY: BMX Bike Show at The Loogootee City Park",
+        "Loogootee Issues Precautionary Boil Water Order for Walnut Street Residents"
+      ]
+    },
+    {
+      "countyId": "in-dubois",
+      "items": 2,
+      "examples": [
+        "Tuesday, Oct. 20, 2026: Shoals adopts 2027 town budget; INDOT alerts drivers to upcoming U.S. 231 cl",
+        "The Lion Weekly Newsletter #19"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

@@ -1,0 +1,82 @@
+{
+  "sourceId": "mcleannews",
+  "name": "McLean County News",
+  "site": "https://www.messenger-inquirer.com",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fmclean_county%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:16.143Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.messenger-inquirer.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 5
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 1,
+      "of": 5,
+      "share": 20
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 5,
+    "accepted": 5,
+    "durationMs": 805,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fmclean_county%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-22T05:15:00.000Z",
+    "last30d": 5,
+    "undated": 0,
+    "inFeed": 5,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-mclean",
+      "items": 1,
+      "examples": [
+        "Incumbent Boyken, challengers Kassinger, Zuehl vie for Livermore mayor"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

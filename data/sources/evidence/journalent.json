@@ -1,0 +1,104 @@
+{
+  "sourceId": "journalent",
+  "name": "The Journal-Enterprise",
+  "site": "https://www.the-messenger.com",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fjournal_enterprise%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:21.323Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.the-messenger.com/",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 28
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 7,
+      "of": 28,
+      "share": 25
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 28,
+    "accepted": 28,
+    "durationMs": 821,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fjournal_enterprise%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-22T05:00:00.000Z",
+    "last30d": 28,
+    "undated": 0,
+    "inFeed": 28,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-webster",
+      "items": 4,
+      "examples": [
+        "Webster County Animal Shelter Dog of the Week",
+        "WEBSTER COUNTY DISTRICT COURT"
+      ]
+    },
+    {
+      "countyId": "ky-christian",
+      "items": 1,
+      "examples": [
+        "Band takes third in Hopkinsville"
+      ]
+    },
+    {
+      "countyId": "il-franklin",
+      "items": 1,
+      "examples": [
+        "Franklin County craft distillery honored for top whiskey tour in North America"
+      ]
+    },
+    {
+      "countyId": "ky-hopkins",
+      "items": 1,
+      "examples": [
+        "Meredith Kelley named Miss Hopkins County Fair"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

@@ -49,15 +49,45 @@ function inRegion(item, extra) {
   return strong.some(t => hay.includes(t)) || (extra || []).some(t => hay.includes(t));
 }
 
-// A story from a local outlet that names another state ("An 81-year-old Mississippi man...") and no place
-// in our region is network or wire copy (Gray and Nexstar stations share stories across markets).
+// A story from a local outlet that names another state or country and no place in our region is network or wire
+// copy: Gray and Nexstar stations share stories across markets ("An 81-year-old Mississippi man...", "Three people
+// found shot to death inside an Oregon home", "the killing of his dentist in Mexico"). The 2026-10-22 audit found
+// three gaps in the first version, which only knew "<State> man/woman/officials..." and "in/near/from <State>":
+//   - a state used as an adjective before a place or an event ("an Oregon home", "Oregon elementary school shooting");
+//   - an AP-style "City, State" place ("in Gladstone, Oregon", "Nashville, Tenn.");
+//   - other countries ("in Mexico", "Mexican authorities").
+// A story is only dropped when none of this region's places (REGION_TERMS, inRegion) and none of its teams and
+// schools (LOCAL_TEAMS) appear, so "Evansville man arrested in Florida" or "Reitz falls to Ohio power" stay.
+// Indiana, Kentucky and Illinois are never "other" states; place names that are also towns here (Holland, Ireland,
+// Brazil, Peru, Lebanon, Scotland in Indiana; Cuba and Vienna in Illinois) are not in the country list.
 const OTHER_STATES = 'alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|iowa|kansas|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|west virginia|wisconsin|wyoming';
+const STATE_ABBRS = 'Ala|Ariz|Ark|Calif|Colo|Conn|Del|Fla|Ga|Kan|La|Md|Mass|Mich|Minn|Miss|Mo|Mont|Neb|Nev|N\\.H|N\\.J|N\\.M|N\\.Y|N\\.C|N\\.D|Okla|Ore|Pa|R\\.I|S\\.C|S\\.D|Tenn|Vt|Va|W\\.Va|Wis|Wyo';
+const COUNTRIES = 'mexico|canada|china|russia|ukraine|israel|gaza|west bank|iran|iraq|syria|afghanistan|pakistan|japan|north korea|south korea|taiwan|philippines|vietnam|thailand|venezuela|colombia|haiti|guatemala|honduras|el salvador|nicaragua|argentina|chile|england|britain|united kingdom|france|germany|italy|spain|sweden|norway|australia|new zealand|nigeria|kenya|south africa|egypt|saudi arabia|turkey';
+const DEMONYMS = 'mexican|canadian|chinese|russian|ukrainian|israeli|palestinian|iranian|iraqi|syrian|afghan|pakistani|japanese|north korean|south korean|taiwanese|filipino|venezuelan|colombian|haitian|guatemalan|honduran|salvadoran|british|french|german|italian|spanish|australian|nigerian|egyptian|saudi';
+const PEOPLE = 'man|woman|men|women|teen|teens|teenager|boy|girl|child|children|toddler|infant|baby|couple|family|mother|father|mom|dad|resident|residents|deputy|deputies|officer|officers|police|sheriff|trooper|troopers|officials|authorities|lawmakers?|governor|judge|jury|students?|teacher|nurse|doctor|dentist|suspect|inmate|driver|pilot|soldier|veteran|priest|pastor|lawmaker|senator|prosecutors?|department|highway patrol|state police|attorney general';
+const PLACES_EVENTS = 'home|homes|house|apartment|residence|neighborhood|town|city|community|hospital|prison|jail|church|school|schools|elementary|middle school|high school|campus|mall|store|restaurant|bar|hotel|highway|interstate|airport|beach|pond|lake|shooting|stabbing|killing|murder|crash|wreck|fire|wildfire|explosion|flood|flooding|tornado|hurricane|standoff|manhunt|massacre';
+// a state's next word that makes it a name of something else: the Ohio River, Ohio County (Ky.), Ohio Valley, Ohio State...
+const NOT_PLACE = '(?! (?:river|valley|county|township|twp\\b|state|conference|avenue|ave\\b|street|st\\b|road|turnpike|tech|wesleyan|university|college|titans|vols|volunteers|valley authority))';
 const OUT_OF_AREA_RE = new RegExp(
-  '\\b(?:' + OTHER_STATES + ')\\s+(?:man|woman|men|women|teen|teens|boy|girl|child|children|toddler|infant|couple|family|mother|father|resident|residents|deputy|deputies|officer|officers|police|sheriff|trooper|troopers|officials|authorities|lawmakers?|governor|judge|jury|school|students?)\\b' +
-  '|\\b(?:in|near|outside|from) (?:rural |northern |southern |eastern |western |central )?(?:' + OTHER_STATES + ')\\b(?! river| valley| county| state university)', 'i');
+  '\\b(?:' + OTHER_STATES + ')\\s+(?:' + PEOPLE + ')\\b' +
+  '|\\b(?:in|near|outside|from|across) (?:rural |northern |southern |eastern |western |central |north |south |east |west |upstate |downstate )?(?:' + OTHER_STATES + ')\\b' + NOT_PLACE +
+  '|\\b(?:' + OTHER_STATES + ')' + NOT_PLACE + '(?: [a-z]+){0,2} (?:' + PLACES_EVENTS + ')\\b' +
+  '|\\b(?:in|near|outside|from|across|to) (?:northern |southern |eastern |western |central |north |south |east |west )?(?:' + COUNTRIES + ')\\b' +
+  '|\\b(?:' + DEMONYMS + ') (?:' + PEOPLE + '|government|military|army|navy|forces|troops|president|prime minister|cartel|border)\\b', 'i');
+// "Gladstone, Oregon", "Nashville, Tenn." (the city part capitalised, so this one is case-sensitive)
+const TITLE_STATES = OTHER_STATES.split('|').map(x => x.replace(/\b[a-z]/g, c => c.toUpperCase())).join('|');
+const CITY_STATE_RE = new RegExp('\\b[A-Z][a-z]+(?:[ .-][A-Z][a-z]+)*, (?:' + TITLE_STATES + ')\\b(?! (?:River|Valley|County|Township|State))|\\b[A-Z][a-z]+(?:[ .-][A-Z][a-z]+)*, (?:' + STATE_ABBRS + ')\\.');
+// Local teams, schools and leagues that headlines name without a town ("Aces fall at Ohio Valley foe", "Otters drop
+// series in Washington, Pa.", "Screaming Eagles host Missouri S&T"): a story naming one is local whatever else it names.
+const LOCAL_TEAMS_RE = /\b(?:purple aces|screaming eagles|otters|thunderbolts|castle knights|harrison warriors|north huskies|memorial tigers|central bears|boonville pioneers|apollo eagles|owensboro catholic|daviess county panthers|gliac)\b/i; // (towns and schools such as Evansville, USI, Reitz, Mater Dei are REGION_TERMS already)
+// Towns here whose names other states share, so REGION_TERMS only lists them with ", Ind." / ", Ky." / ", Ill.".
+// Named bare (capitalised, with no other state after a comma) they still count as local for this check: "Henderson
+// family returns from Mexico mission trip" stays, "Henderson, Nev. casino opens" does not.
+const LOCAL_TOWNS_RE = /\b(?:Henderson|Newburgh|Mount Vernon|Mt\. Vernon|Princeton|Jasper|Madisonville|Morganfield|Carmi|Albion|Mount Carmel|Grayville|Paducah|Tell City|Rockport|Huntingburg|Lynnville|Darmstadt|Elberfeld)\b(?!, (?!Ind\b|Indiana\b|Ky\b|Kentucky\b|Ill\b|Illinois\b)[A-Z])/;
 function outOfArea(item) {
   const hay = item.title + ' ' + item.summary;
-  return OUT_OF_AREA_RE.test(hay) && !inRegion(item);
+  if (!OUT_OF_AREA_RE.test(hay) && !CITY_STATE_RE.test(hay)) return false;
+  return !inRegion(item) && !LOCAL_TEAMS_RE.test(hay) && !LOCAL_TOWNS_RE.test(hay);
 }
 
 // Obituaries belong in the Obituaries tab, not the news feed (papers mix them into their main feeds).
@@ -1072,6 +1102,7 @@ module.exports.STATUSES = STATUSES;
 module.exports.RUN_TTL = RUN_TTL;
 module.exports.publicSnapshot = publicSnapshot;
 module.exports.looksLikeObit = looksLikeObit;
+module.exports.outOfArea = outOfArea;
 module.exports.titleWords = titleWords;
 module.exports.sameStory = sameStory;
 module.exports.retryAfterMs = retryAfterMs;

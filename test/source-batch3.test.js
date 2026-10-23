@@ -81,3 +81,13 @@ test('validate: localSection and fallback rules', () => {
   assert.equal(probs({ ...ok, localSection: undefined, fallback: 'google' }).length, 1);
   assert.equal(probs({ ...base, url: 'https://example.com/feed/', fallback: 'google_news_towns' }).length, 1, 'fallback labels Google urls only');
 });
+
+test('ship60: Todd County uses the gn-todd town fallback (whopam.com answers a Cloudflare challenge to datacenter fetches)', () => {
+  const ids = b3.sources.map(s => s.id);
+  assert.ok(!ids.includes('whoptodd') && !b3.sources.some(s => /whopam\.com\/category/.test(s.url)));
+  const t = b3.sources.find(s => s.id === 'gn-todd');
+  assert.deepEqual(t.counties, ['ky-todd']);
+  assert.equal(t.fallback, 'google_news_towns');
+  assert.equal(t.seq, 86, 'takes whoptodd\'s place, so seq stays continuous');
+  assert.match(new URL(t.url).searchParams.get('q'), /site:whopam\.com/);
+});

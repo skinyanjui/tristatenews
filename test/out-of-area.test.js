@@ -86,3 +86,42 @@ test('only news kinds use the check; obituaries and events are not touched by it
   const ob = it('Jane Doe', 'Jane Doe, 80, of Lakeland, Florida, died Oct. 1 in Nashville, Tenn.');
   assert.equal(passesFilters(ob, { id: 'ob-x', kind: 'obits' }, false), true);
 });
+
+// ship60: misses reported after ship59 (14 News, Gray network copy)
+test('landmarks and national parks elsewhere, "heads to <State>" and "<State>\'s" are out of area', () => {
+  const cases = [
+    ['Grand Canyon adds new dog to help reduce wildlife interactions with visitors', 'The Grand Canyon created a new program to reduce animal interactions with the introduction of their newest employee, Blue, the Catahoula dog.'],
+    ['Trump heads to Iowa Thursday with new farm aid package', 'President Donald Trump is rolling out a new $8 billion farming package to provide one-time relief payments to farmers facing rising fertilizer and diesel costs.'],
+    ['Newborn safely surrendered to Safe Haven Baby Box that has been used 3 times since it was installed', 'A newborn was safely surrendered to the Safe Haven Baby Box at Knoxville Fire Station 17 \u2014 the third surrender since Tennessee\'s first box was installed in 2023.'],
+    ['Bison gores tourist', 'It happened Tuesday near Old Faithful in Yellowstone.'],
+    ['Rockfall closes road', 'Crews cleared a rockfall in Yosemite on Monday.'],
+    ['Hiker rescued after fall', 'Rangers at Zion National Park reached the hiker overnight.'],
+    ['Visitors flock to Great Smoky Mountains for fall colors', ''],
+    ['Ukulele group brings island vibes to popular vacation area', 'Ukes by the Sea performs throughout South Carolina\u2019s Grand Strand.'],
+  ];
+  for (const [t, s] of cases) {
+    assert.equal(outOfArea(it(t, s)), true, t);
+    assert.equal(passesFilters(it(t, s), WFIE, false), false, t);
+  }
+});
+
+test('local parks, forests, rivers, teams and shared town names stay local', () => {
+  const keep = [
+    ['Mammoth Cave National Park adds new cave tour', ''],
+    ['Kentucky\'s Mammoth Cave National Park sets visitor record', ''],
+    ['Indiana Dunes National Park beach reopens', ''],
+    ['Shawnee National Forest trail closes for repairs', ''],
+    ['Hoosier National Forest seeks input on Sigler Creek project', ''],
+    ['Land Between the Lakes elk viewing opens', ''],
+    ['Ohio River expected to crest Friday', ''],
+    ['Evansville family visits Grand Canyon on wish trip', ''],          // a local place named: stays
+    ['Henderson woman heads to Texas for national title', ''],            // shared town name, bare
+    ['Purple Aces travel to Missouri State', ''],                         // a local team (and "Missouri State")
+    ['Zion Lutheran Church hosts fall festival', ''],                     // "Zion" alone is a church here
+    ['Commissioner visits Ohio County schools', ''],                      // Ohio County, Ky.
+    ['Tennessee Valley Authority plans Paradise upgrade', ''],
+  ];
+  for (const [t, s] of keep) assert.equal(outOfArea(it(t, s)), false, t);
+  // a southeast Missouri batch source's own towns still count (ship58)
+  assert.equal(outOfArea(it('Missouri\'s new law affects Sikeston schools', ''), ['sikeston']), false);
+});

@@ -23,8 +23,9 @@ test('Events: no fixed card height or row heights; 40px foot and buttons', () =>
   assert.ok(css.includes('.ev-go, .evt-foot .ev-go { min-height:var(--card-tap); }'));
 });
 
-test('tap targets: Report, Send flowers, ad buttons and links are at least 40px', () => {
-  for (const r of ['.cl-link { min-height:var(--card-tap);', '.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; min-height:var(--card-tap); }', '.rail-ad .rail-cta { min-height:var(--card-tap);', '.cl-links a { min-height:var(--card-tap); }'])
+test('tap targets: Report, ad buttons and links are at least 40px; the compact obituary row keeps 32px (ship59)', () => {
+  assert.ok(css.includes('.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; gap:4px; min-height:32px;'), 'obituary links 32px tall');
+  for (const r of ['.cl-link { min-height:var(--card-tap);', '.rail-ad .rail-cta { min-height:var(--card-tap);', '.cl-links a { min-height:var(--card-tap); }'])
     assert.ok(css.includes(r), r);
 });
 

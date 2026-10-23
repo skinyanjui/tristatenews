@@ -14,6 +14,17 @@
       ],
       "everyMin": 30,
       "url": "https://www.paducahsun.com/search/?f=rss&t=article&c=news/local&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Apaducahsun.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "paducah",
+        "mccracken",
+        "lone oak",
+        "reidland",
+        "west paducah"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -25,7 +36,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 66,
@@ -38,6 +50,17 @@
       ],
       "everyMin": 60,
       "url": "https://www.murrayledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Amurrayledger.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "murray",
+        "calloway",
+        "hazel, ky",
+        "kirksey",
+        "almo"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -49,7 +72,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 67,
@@ -62,6 +86,19 @@
       ],
       "everyMin": 60,
       "url": "https://www.kentuckynewera.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Akentuckynewera.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "hopkinsville",
+        "christian county",
+        "oak grove",
+        "fort campbell",
+        "pembroke",
+        "crofton",
+        "lafayette, ky"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -73,7 +110,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 68,
@@ -86,6 +124,16 @@
       ],
       "everyMin": 120,
       "url": "https://www.heraldledger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Aheraldledger.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "eddyville",
+        "lyon county",
+        "kuttawa",
+        "lake barkley"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -97,7 +145,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 69,
@@ -110,6 +159,17 @@
       ],
       "everyMin": 120,
       "url": "https://www.tribunecourier.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Atribunecourier.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "benton, ky",
+        "marshall county",
+        "calvert city",
+        "hardin, ky",
+        "kentucky lake"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -121,7 +181,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 70,
@@ -134,6 +195,17 @@
       ],
       "everyMin": 60,
       "url": "https://www.mayfield-messenger.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Amayfield-messenger.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "mayfield",
+        "graves county",
+        "wingo",
+        "fancy farm",
+        "sedalia, ky"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -145,7 +217,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 71,
@@ -158,6 +231,16 @@
       ],
       "everyMin": 120,
       "url": "https://www.timesleader.net/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Atimesleader.net%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "princeton",
+        "caldwell county",
+        "fredonia, ky",
+        "dawson springs"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -169,7 +252,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 72,
@@ -182,6 +266,16 @@
       ],
       "everyMin": 120,
       "url": "https://www.metropolisplanet.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc",
+      "altUrls": [
+        "https://news.google.com/rss/search?q=site%3Ametropolisplanet.com%20when%3A3d&hl=en-US&gl=US&ceid=US:en"
+      ],
+      "rateGroup": "paxton",
+      "geoTerms": [
+        "metropolis",
+        "massac",
+        "brookport",
+        "joppa"
+      ],
       "batch": "b1",
       "review": {
         "approved": true,
@@ -193,7 +287,8 @@
           "imagesOk": false,
           "use": "headline, short feed summary and link only; no images (project default)"
         }
-      }
+      },
+      "note": "2026-10-22 audit: never loaded from Vercel (lastOk null; HTTP 429 from the audit machine too). Paxton Media papers share servers, so they are one rate group (api/news.js RATE_GROUPS: 4 s apart, at most 3 per run, Retry-After honored) and fall back to Google News site: search, checked with curl on 2026-10-22 (paducahsun.com 89 items, murrayledger.com 62). geoTerms keep the fallback's stories that name this paper's own towns (the Google News feed is geo-filtered like every news fallback)."
     },
     {
       "seq": 73,

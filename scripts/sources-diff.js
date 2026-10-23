@@ -15,7 +15,8 @@ const path = require('path');
 const FIELDS = ['id', 'name', 'area', 'kind', 'logo'];
 const SITE = (process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/+$/, '');
 
-// Same as logoFor() in api/news.js.
+// logoFor() as api/news.js had it at ba8b34a (the snapshot this check compares against). Since ship56 news.js
+// self-hosts twelve icons (LOGOS) and reads a Google News URL's site: domain; this historical check keeps the old rule.
 function logoFor(url) {
   try { return 'https://www.google.com/s2/favicons?sz=128&domain=' + new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
 }

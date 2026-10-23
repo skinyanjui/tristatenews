@@ -1,0 +1,124 @@
+{
+  "sourceId": "crittpress",
+  "name": "The Crittenden Press",
+  "site": "https://crittendenpress.blogspot.com",
+  "feedUrl": "https://crittendenpress.blogspot.com/feeds/posts/default",
+  "checkedAt": "2026-10-23T04:10:57.346Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://crittendenpress.blogspot.com/",
+      "title": "BREAKING NEWS"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": true,
+      "checked": "https://crittendenpress.blogspot.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "crittendenpress.blogspot.com": 24
+      },
+      "ownSiteShare": 100,
+      "via": "direct",
+      "sample": [
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        },
+        {
+          "status": 200,
+          "sameSite": true
+        }
+      ]
+    },
+    "geography": {
+      "located": 14,
+      "of": 24,
+      "share": 58
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 25,
+    "accepted": 24,
+    "durationMs": 83,
+    "runner": "box",
+    "fetchedUrl": "https://crittendenpress.blogspot.com/feeds/posts/default"
+  },
+  "activity": {
+    "latest": "2026-10-22T15:38:22.747Z",
+    "last30d": 24,
+    "undated": 0,
+    "inFeed": 24,
+    "cadence": "daily",
+    "medianGapDays": 0.57
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "ky-crittenden",
+      "items": 10,
+      "examples": [
+        "Lady Rocket district dynasty continues",
+        "SEPTEMBER | Weather Almanac"
+      ]
+    },
+    {
+      "countyId": "ky-lyon",
+      "items": 5,
+      "examples": [
+        "Lady Rocket district dynasty continues",
+        "Lyon County Sheriff's Report"
+      ]
+    },
+    {
+      "countyId": "ky-trigg",
+      "items": 3,
+      "examples": [
+        "Lady Rocket district dynasty continues",
+        "Lady Rockets continue making history"
+      ]
+    },
+    {
+      "countyId": "ky-livingston",
+      "items": 2,
+      "examples": [
+        "Livingston considering road closures near quarry",
+        "Accident investigation on US 60 in Livingston"
+      ]
+    },
+    {
+      "countyId": "il-perry",
+      "items": 1,
+      "examples": [
+        "Livingston considering road closures near quarry"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

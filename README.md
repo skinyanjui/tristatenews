@@ -184,7 +184,23 @@ the location classifier; `decision` is `verified` only when every check passes a
 - Counties still without a home source: `node scripts/source-gaps.js` (`--base` for the live list only)
 
 Batches are off by default. A batch joins the live source list only when `EXPANDED_SOURCES_ENABLED=true` and
-`SOURCE_BATCHES` lists its id (for example `SOURCE_BATCHES=b1` or `SOURCE_BATCHES=b1,b2`); its sources are appended after the existing ones.
+`SOURCE_BATCHES` lists its id (for example `SOURCE_BATCHES=b1` or `SOURCE_BATCHES=b1,b2,b3`); its sources are appended after the existing ones.
+
+Batch 3 (`b3`) covers counties where no working local feed exists, so most of its entries are Google News searches
+carrying a `fallback` label (stripped from the live registry like the other batch-only fields):
+
+- `google_news_site`: a search held to one publisher's local section path (for example
+  `site:messenger-inquirer.com/mclean_county/news`), used when the section's own RSS is rate-limited (BLOX 429), stale
+  or missing. With `localSection: true` the headline geo filter is skipped, because county weeklies rarely repeat the
+  town name; the wire, obituary and out-of-area filters still apply.
+- `google_news_towns`: a search for the county's towns in headlines (`intitle:`, at most 4) from at most 4 established
+  local newsrooms, `-obituary when:14d`. Items are kept only when the headline names one of the entry's `geoTerms`.
+  Google ignores `when:` once a query has more than about 5 `site:` or 8 `OR` terms, so the queries stay that small.
+
+All batch 3 Google searches share the `gnews` rate group (`api/news.js` `RATE_GROUPS`: 1.5 s apart, at most 5 per
+refresh run, oldest first). news.google.com/robots.txt disallows `/rss/search`; `verify-source.js` records that as a
+`google_news_robots` warning on a labeled fallback (the base registry already uses Google News searches for some
+outlets) and still fails any unlabeled feed that robots.txt disallows.
 
 ## Geography scopes and county pages (county expansion step 3)
 
@@ -204,7 +220,7 @@ Two server-side flags, both off by default (exactly `true` turns one on):
   `/news/indiana/dubois`) and `/sitemap-regions.xml`. Off, those paths are the 404 page, as before. County pages with
   fewer than 5 distinct local stories in 14 days are served `noindex` and left out of the regional sitemap; the counts
   come from `data/geography/coverage.json`, written by
-  `EXPANDED_SOURCES_ENABLED=true SOURCE_BATCHES=b1,b2 node scripts/build-sitemap.js --measure` (run with the env -u rules).
+  `EXPANDED_SOURCES_ENABLED=true SOURCE_BATCHES=b1,b2,b3 node scripts/build-sitemap.js --measure` (run with the env -u rules).
 
 The default view (no `?scope`, or Tri-State) is the existing feed. Expansion-batch sources only appear in it when a story
 names one of the 30 core counties; everything else from them is under its state or its county.

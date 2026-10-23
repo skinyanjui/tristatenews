@@ -1,0 +1,789 @@
+{
+  "file": "batches/batch-3.json",
+  "batch": "b3",
+  "description": "County expansion batch 3: home sources for counties still without one after batches 1 and 2, core Tri-State counties first, then western Kentucky, southern Illinois and southeast Missouri (Missouri is never Tri-State). Off unless EXPANDED_SOURCES_ENABLED=true and SOURCE_BATCHES lists b3 (api/_sources.js). Entries with `fallback` are Google News searches, labeled google_news_site (a publisher's own local section, used when its RSS is rate-limited or missing) or google_news_towns (the county's towns, used only where no working local feed exists); they share the gnews rate group (api/news.js RATE_GROUPS). Each entry's evidence record is data/sources/evidence/<id>.json (scripts/verify-source.js).",
+  "sources": [
+    {
+      "seq": 84,
+      "id": "crittpress",
+      "name": "The Crittenden Press",
+      "area": "Marion, Ky.",
+      "site": "https://crittendenpress.blogspot.com",
+      "counties": [
+        "ky-crittenden",
+        "ky-livingston"
+      ],
+      "everyMin": 60,
+      "url": "https://crittendenpress.blogspot.com/feeds/posts/default",
+      "batch": "b3",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "The Crittenden Press (Marion) posts its news on its Blogger site; the paper covers Crittenden and Livingston counties (verify-source 2026-10-22: 10 of 24 items located in Crittenden, 2 in Livingston, 5 Lyon, 3 Trigg)."
+    },
+    {
+      "seq": 85,
+      "id": "loogtimes",
+      "name": "The Loogootee Times",
+      "area": "Loogootee",
+      "site": "https://loogooteetimes.com",
+      "counties": [
+        "in-martin"
+      ],
+      "everyMin": 60,
+      "url": "https://loogooteetimes.com/feed/",
+      "batch": "b3",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      }
+    },
+    {
+      "seq": 86,
+      "id": "whoptodd",
+      "name": "WHOP Radio (Todd County)",
+      "area": "Elkton, Ky.",
+      "site": "https://whopam.com",
+      "counties": [
+        "ky-todd"
+      ],
+      "everyMin": 60,
+      "url": "https://whopam.com/category/todd-county-news/feed/",
+      "batch": "b3",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "2026-10-22: the station's \"Todd County News\" category. WHOP is in Hopkinsville (Christian County, already covered) and tags some Christian County stories here too; the classifier evidence shows which items are Todd County."
+    },
+    {
+      "seq": 87,
+      "id": "mcleannews",
+      "name": "McLean County News",
+      "area": "Calhoun, Ky.",
+      "site": "https://www.messenger-inquirer.com",
+      "counties": [
+        "ky-mclean"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fmclean_county%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "localSection": true,
+      "geoTerms": [
+        "mclean county",
+        "calhoun",
+        "livermore",
+        "island, ky",
+        "sacramento, ky"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): McLean County News is a Messenger-Inquirer weekly published as its /mclean_county/ section. The section RSS (/search/?f=rss&c=mclean_county) answered HTTP 429 from the box on 2026-10-22 (BLOX rate limit), so this is the Google News search limited to the section's /news/ path (no obituaries, no wire)."
+    },
+    {
+      "seq": 88,
+      "id": "journalent",
+      "name": "The Journal-Enterprise",
+      "area": "Providence, Ky.",
+      "site": "https://www.the-messenger.com",
+      "counties": [
+        "ky-webster"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fjournal_enterprise%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "localSection": true,
+      "geoTerms": [
+        "webster county",
+        "providence, ky",
+        "dixon",
+        "sebree",
+        "clay, ky",
+        "slaughters",
+        "wheatcroft"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): the Journal-Enterprise (Webster County weekly) is published as The Messenger's /journal_enterprise/ section; the section RSS answered HTTP 429 (BLOX rate limit) on 2026-10-22."
+    },
+    {
+      "seq": 89,
+      "id": "pressdisp",
+      "name": "Pike County Press-Dispatch",
+      "area": "Petersburg, Ind.",
+      "site": "https://www.suncommercial.com",
+      "counties": [
+        "in-pike"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fpress_dispatch%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "localSection": true,
+      "geoTerms": [
+        "pike county",
+        "petersburg",
+        "winslow",
+        "spurgeon",
+        "otwell"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): the Press-Dispatch (Pike County weekly) is published as the Sun-Commercial's /press_dispatch/ section; the section RSS answered HTTP 429 (BLOX rate limit) on 2026-10-22."
+    },
+    {
+      "seq": 90,
+      "id": "perrynews",
+      "name": "Perry County News",
+      "area": "Tell City",
+      "site": "https://www.duboiscountyherald.com",
+      "counties": [
+        "in-perry"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fperry_county_news%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "localSection": true,
+      "geoTerms": [
+        "perry county",
+        "tell city",
+        "cannelton",
+        "troy, ind",
+        "leopold",
+        "perry central"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): the Perry County News is published as the Dubois County Herald's /perry_county_news/ section. Its section RSS answered 200 on 2026-10-22 but returns stale items first (newest 2026-07-02), so the Google News search limited to the section's /news/ path is used."
+    },
+    {
+      "seq": 91,
+      "id": "giantlaw",
+      "name": "Giant FM Lawrence County",
+      "area": "Lawrenceville, Ill.",
+      "site": "https://www.giant.fm",
+      "counties": [
+        "il-lawrence"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Agiant.fm%2Flawrence-county%2Fnews%2Flocal-news%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "lawrence county, ill",
+        "lawrence and richland",
+        "lawrenceville",
+        "bridgeport",
+        "sumner",
+        "st. francisville",
+        "red hill"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): Giant FM (WAKO) Lawrence County local news has no RSS (feed URLs 404 on 2026-10-22; robots.txt asks Crawl-delay 8), so the Google News search limited to its local-news path is used (obituaries are a separate path). Google does not hold the search to that path strictly (Giant FM's other markets in Indiana and Illinois come back too), so unlike the other section fallbacks this one keeps the headline geo filter."
+    },
+    {
+      "seq": 92,
+      "id": "cadizrec",
+      "name": "The Cadiz Record",
+      "area": "Cadiz",
+      "site": "https://www.kentuckynewera.com",
+      "counties": [
+        "ky-trigg"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=site%3Akentuckynewera.com%2Fcadiz_record%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "localSection": true,
+      "geoTerms": [
+        "trigg county",
+        "cadiz",
+        "lake barkley",
+        "canton, ky"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_site",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, site section): the Cadiz Record (Trigg County weekly) is published as the Kentucky New Era's /cadiz_record/ section; the section RSS answered HTTP 429 (BLOX rate limit) on 2026-10-22."
+    },
+    {
+      "seq": 93,
+      "id": "gn-edwards",
+      "name": "Edwards County, Ill. (Google News)",
+      "area": "Albion, Ill.",
+      "site": "https://news.google.com",
+      "counties": [
+        "il-edwards"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AAlbion%20OR%20intitle%3A%22West%20Salem%22%20OR%20intitle%3A%22Bone%20Gap%22%20OR%20intitle%3A%22Edwards%20County%22%29%20%28site%3Awfiwradio.com%20OR%20site%3A14news.com%20OR%20site%3Awsiltv.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "edwards county",
+        "west salem",
+        "bone gap",
+        "albion, ill",
+        "albion man",
+        "albion woman",
+        "albion police",
+        "albion city"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Edwards County (the Navigator & Journal-Register site answers 403 behind Cloudflare and Google News has no items from it). The search matches headlines only (intitle:) from established local newsrooms (wfiwradio.com, 14news.com, wsiltv.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 94,
+      "id": "gn-hamilton",
+      "name": "Hamilton County, Ill. (Google News)",
+      "area": "McLeansboro",
+      "site": "https://news.google.com",
+      "counties": [
+        "il-hamilton"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AMcLeansboro%20OR%20intitle%3A%22Hamilton%20County%22%20OR%20intitle%3ADahlgren%29%20%28site%3Awfiwradio.com%20OR%20site%3Awsiltv.com%20OR%20site%3Akfvs12.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "mcleansboro",
+        "dahlgren",
+        "hamilton county"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Hamilton County (the McLeansboro Times-Leader closed in 2018). The search matches headlines only (intitle:) from established local newsrooms (wfiwradio.com, wsiltv.com, kfvs12.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 95,
+      "id": "gn-saline",
+      "name": "Saline County, Ill. (Google News)",
+      "area": "Harrisburg, Ill.",
+      "site": "https://news.google.com",
+      "counties": [
+        "il-saline"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AHarrisburg%20OR%20intitle%3AEldorado%20OR%20intitle%3A%22Carrier%20Mills%22%20OR%20intitle%3A%22Saline%20County%22%29%20%28site%3Awsiltv.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awpsdlocal6.com%20OR%20site%3Awfiwradio.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "saline county",
+        "harrisburg",
+        "eldorado",
+        "carrier mills",
+        "galatia",
+        "stonefort",
+        "southeastern illinois college"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Saline County (dailyregister.com answers 410 Gone; WEBQ's Local News feed is regional syndicated copy). The search matches headlines only (intitle:) from established local newsrooms (wsiltv.com, kfvs12.com, wpsdlocal6.com, wfiwradio.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 96,
+      "id": "gn-unionky",
+      "name": "Union County, Ky. (Google News)",
+      "area": "Morganfield",
+      "site": "https://news.google.com",
+      "counties": [
+        "ky-union"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AMorganfield%20OR%20intitle%3ASturgis%20OR%20intitle%3AUniontown%20OR%20intitle%3A%22Union%20County%22%29%20%28site%3A14news.com%20OR%20site%3Atristatehomepage.com%20OR%20site%3Awevv.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "morganfield",
+        "sturgis",
+        "uniontown",
+        "union county"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Union County, Ky. (the Union County Advocate publishes only a newsmemory e-edition). The search matches headlines only (intitle:) from established local newsrooms (14news.com, tristatehomepage.com, wevv.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 97,
+      "id": "gn-perryil",
+      "name": "Perry County, Ill. (Google News)",
+      "area": "Pinckneyville",
+      "site": "https://news.google.com",
+      "counties": [
+        "il-perry"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3APinckneyville%20OR%20intitle%3A%22Du%20Quoin%22%20OR%20intitle%3ADuQuoin%20OR%20intitle%3A%22Perry%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Awsiltv.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "pinckneyville",
+        "du quoin",
+        "duquoin",
+        "tamaroa",
+        "perry county, ill"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Perry County, Ill. (the Du Quoin Torch feed was last updated 2026-07-16). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, wsiltv.com, wpsdlocal6.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 98,
+      "id": "gn-johnson",
+      "name": "Johnson County, Ill. (Google News)",
+      "area": "Vienna, Ill.",
+      "site": "https://news.google.com",
+      "counties": [
+        "il-johnson"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AVienna%20OR%20intitle%3AGoreville%20OR%20intitle%3A%22Johnson%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Awsiltv.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "vienna",
+        "goreville",
+        "new burnside",
+        "johnson county"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Johnson County, Ill.. The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, wsiltv.com, wpsdlocal6.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 99,
+      "id": "gn-fultonhick",
+      "name": "Fulton and Hickman counties, Ky. (Google News)",
+      "area": "Hickman, Ky.",
+      "site": "https://news.google.com",
+      "counties": [
+        "ky-fulton",
+        "ky-hickman"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3A%22Fulton%20County%22%20OR%20intitle%3A%22Hickman%20County%22%20OR%20intitle%3A%22South%20Fulton%22%20OR%20intitle%3AHickman%29%20%28site%3Awpsdlocal6.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awestkentuckystar.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "fulton county",
+        "hickman county",
+        "south fulton",
+        "fulton, ky",
+        "hickman, ky",
+        "clinton, ky"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Fulton or Hickman County, Ky. (The Current at thecurrent.press mixes obituaries into its only feed and has subscriber-only articles). The search matches headlines only (intitle:) from established local newsrooms (wpsdlocal6.com, kfvs12.com, westkentuckystar.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 100,
+      "id": "gn-carlballard",
+      "name": "Carlisle County, Ky. (Google News)",
+      "area": "Bardwell",
+      "site": "https://news.google.com",
+      "counties": [
+        "ky-carlisle"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3AWickliffe%20OR%20intitle%3A%22Ballard%20County%22%20OR%20intitle%3A%22Carlisle%20County%22%20OR%20intitle%3ABardwell%29%20%28site%3Awpsdlocal6.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awestkentuckystar.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "wickliffe",
+        "ballard county",
+        "carlisle county",
+        "bardwell",
+        "la center",
+        "kevil"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Carlisle or Ballard County, Ky. (the Advance Yeoman and Carlisle County News appear only as e-editions at ky-news.com). The search also covers Ballard County, but on 2026-10-22 only Carlisle County items came back, so only ky-carlisle is claimed; Ballard County stays without a home source. The search matches headlines only (intitle:) from established local newsrooms (wpsdlocal6.com, kfvs12.com, westkentuckystar.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 101,
+      "id": "gn-perrymo",
+      "name": "Perry County, Mo. (Google News)",
+      "area": "Perryville, Mo.",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-perry"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3APerryville%20OR%20intitle%3A%22Perry%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "perryville",
+        "altenburg",
+        "frohna",
+        "perry county, mo"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Perry County, Mo. (the Republic-Monitor marks its local stories premium/subscriber-only). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, kait8.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 102,
+      "id": "gn-carterripley",
+      "name": "Ripley County, Mo. (Google News)",
+      "area": "Doniphan",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-ripley"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3ADoniphan%20OR%20intitle%3A%22Ripley%20County%22%20OR%20intitle%3A%22Carter%20County%22%20OR%20intitle%3A%22Van%20Buren%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "van buren, mo",
+        "ellsinore",
+        "grandin",
+        "carter county",
+        "doniphan",
+        "naylor",
+        "ripley county",
+        "current river"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Carter or Ripley County, Mo. (the Prospect-News marks its stories subscriber-only; the Current Local has no website). The search also covers Carter County, but on 2026-10-22 only a Ripley County item came back, so only mo-ripley is claimed; Carter County stays without a home source. Thin: about one item a week. The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, kait8.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 103,
+      "id": "gn-butler",
+      "name": "Butler County, Mo. (Google News)",
+      "area": "Poplar Bluff",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-butler"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3A%22Poplar%20Bluff%22%20OR%20intitle%3ANeelyville%20OR%20intitle%3A%22Butler%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "poplar bluff",
+        "neelyville",
+        "qulin",
+        "butler county",
+        "three rivers college",
+        "wappapello"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Butler County, Mo. (the Daily American Republic marks its stories subscriber-only; KWOC's local news feed posts one daily roundup titled only with the date). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, kait8.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 104,
+      "id": "gn-stoddard",
+      "name": "Stoddard County, Mo. (Google News)",
+      "area": "Dexter, Mo.",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-stoddard"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3ADexter%20OR%20intitle%3ABloomfield%20OR%20intitle%3APuxico%20OR%20intitle%3A%22Stoddard%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "dexter",
+        "bloomfield, mo",
+        "puxico",
+        "bernie, mo",
+        "advance, mo",
+        "stoddard county",
+        "mingo"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Stoddard County, Mo. (the Daily Statesman has no feed and Google News has no items from it). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, kait8.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 105,
+      "id": "gn-scott",
+      "name": "Scott County, Mo. (Google News)",
+      "area": "Sikeston",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-scott"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3ASikeston%20OR%20intitle%3A%22Scott%20City%22%20OR%20intitle%3AChaffee%20OR%20intitle%3A%22Scott%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "sikeston",
+        "scott city",
+        "chaffee",
+        "oran, mo",
+        "benton, mo",
+        "scott county"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Scott County, Mo. (the Standard-Democrat marks its stories subscriber-only). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, kait8.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    },
+    {
+      "seq": 106,
+      "id": "gn-msnm",
+      "name": "Mississippi and New Madrid counties, Mo. (Google News)",
+      "area": "Charleston, Mo.",
+      "site": "https://news.google.com",
+      "counties": [
+        "mo-mississippi",
+        "mo-new-madrid"
+      ],
+      "everyMin": 120,
+      "url": "https://news.google.com/rss/search?q=%28intitle%3A%22East%20Prairie%22%20OR%20intitle%3ACharleston%20OR%20intitle%3A%22New%20Madrid%22%20OR%20intitle%3A%22Mississippi%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+      "rateGroup": "gnews",
+      "geoTerms": [
+        "charleston, mo",
+        "charleston man",
+        "charleston woman",
+        "charleston police",
+        "east prairie",
+        "mississippi county",
+        "new madrid",
+        "portageville",
+        "lilbourn",
+        "gideon, mo",
+        "marston, mo",
+        "risco"
+      ],
+      "batch": "b3",
+      "fallback": "google_news_towns",
+      "review": {
+        "approved": true,
+        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+        "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+        "licensing": {
+          "paywall": null,
+          "summaryOk": null,
+          "imagesOk": false,
+          "use": "headline, short feed summary and link only; no images (project default)"
+        }
+      },
+      "note": "Fallback (Google News, town search): no working local feed was found for Mississippi or New Madrid County, Mo. (the Standard-Democrat and the Enterprise-Courier mark their stories subscriber-only). Jonesboro's KAIT is left out because its \"Mississippi County\" is Mississippi County, Ark. (Blytheville); for the Cape Girardeau and Paducah newsrooms searched here it is the Missouri county. A bare \"Charleston\" is not enough (Charleston, Ill.). The search matches headlines only (intitle:) from established local newsrooms (kfvs12.com, kbsi23.com, wpsdlocal6.com; their own feeds keep only core Tri-State stories, or are not in the registry) and items are kept only when the headline names one of geoTerms. An open Google News town search was tried first and rejected: most of its hits were job, real-estate and directory pages."
+    }
+  ]
+}

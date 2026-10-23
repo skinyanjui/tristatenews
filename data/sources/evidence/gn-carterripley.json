@@ -1,0 +1,82 @@
+{
+  "sourceId": "gn-carterripley",
+  "name": "Ripley County, Mo. (Google News)",
+  "site": "https://news.google.com",
+  "feedUrl": "https://news.google.com/rss/search?q=%28intitle%3ADoniphan%20OR%20intitle%3A%22Ripley%20County%22%20OR%20intitle%3A%22Carter%20County%22%20OR%20intitle%3A%22Van%20Buren%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:13:11.682Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en",
+      "title": null
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 1
+      },
+      "ownSiteShare": 100,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 1,
+      "of": 1,
+      "share": 100
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 1,
+    "accepted": 1,
+    "durationMs": 833,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=%28intitle%3ADoniphan%20OR%20intitle%3A%22Ripley%20County%22%20OR%20intitle%3A%22Carter%20County%22%20OR%20intitle%3A%22Van%20Buren%22%29%20%28site%3Akfvs12.com%20OR%20site%3Akbsi23.com%20OR%20site%3Akait8.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-13T07:00:00.000Z",
+    "last30d": 1,
+    "undated": 0,
+    "inFeed": 1,
+    "cadence": "unknown",
+    "medianGapDays": null
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "mo-ripley",
+      "items": 1,
+      "examples": [
+        "Midday Interview: Ripley County Toys for Tots"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "query scoped to the county's towns; headline geo filter (geoTerms); no single publisher",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_towns fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_towns",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

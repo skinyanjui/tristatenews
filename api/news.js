@@ -84,16 +84,22 @@ const LOCAL_TEAMS_RE = /\b(?:purple aces|screaming eagles|otters|thunderbolts|ca
 // Named bare (capitalised, with no other state after a comma) they still count as local for this check: "Henderson
 // family returns from Mexico mission trip" stays, "Henderson, Nev. casino opens" does not.
 const LOCAL_TOWNS_RE = /\b(?:Henderson|Newburgh|Mount Vernon|Mt\. Vernon|Princeton|Jasper|Madisonville|Morganfield|Carmi|Albion|Mount Carmel|Grayville|Paducah|Tell City|Rockport|Huntingburg|Lynnville|Darmstadt|Elberfeld)\b(?!, (?!Ind\b|Indiana\b|Ky\b|Kentucky\b|Ill\b|Illinois\b)[A-Z])/;
-function outOfArea(item) {
+// extra: the source's own geoTerms, so a southeast Missouri or Purchase-area source's "Sikeston, Mo." or "Missouri man"
+// story about its own towns is not mistaken for network copy (REGION_TERMS lists only the core Tri-State places).
+function outOfArea(item, extra) {
   const hay = item.title + ' ' + item.summary;
   if (!OUT_OF_AREA_RE.test(hay) && !CITY_STATE_RE.test(hay)) return false;
-  return !inRegion(item) && !LOCAL_TEAMS_RE.test(hay) && !LOCAL_TOWNS_RE.test(hay);
+  return !inRegion(item, extra) && !LOCAL_TEAMS_RE.test(hay) && !LOCAL_TOWNS_RE.test(hay);
 }
 
 // Obituaries belong in the Obituaries tab, not the news feed (papers mix them into their main feeds).
 const OBIT_NAME_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,5}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?,\s*\d{1,3},\s+(?:of\s+)?[A-Z][A-Za-z.'\u2019 -]{1,40}$/;
+// Radio stations' notices put the age another way: "Patricia Ann Dial, age 79 of McLeansboro", "Betty Lamb (82) of
+// Olney", "Nancy I. Stevens (77) of Olney, formerly of Effingham", "Mary Lou (Rogers) Elliston, 88, McLeansboro,".
+const OBIT_AGE_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,6}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?(?:,\s*age\s+\d{1,3},?|\s+\(\d{1,3}\)|,\s*\d{1,3},?)\s+(?:of\s+)?[A-Z][A-Za-z.'\u2019 -]{1,40}(?:,\s*formerly of [A-Z][A-Za-z.,'\u2019 -]{1,60})?,?$/;
 function looksLikeObit(item) {
   if (/\bobituar(?:y|ies)\b/i.test(item.title)) return true;
+  if (OBIT_AGE_RE.test(String(item.title || '').trim())) return true;
   // A headline that is only a name, an age and a hometown ("John Henry Adams, 61, of Mill Shoals") is a death notice;
   // a news story about a person says what happened ("..., 45, of Henderson, arrested").
   if (OBIT_NAME_RE.test(String(item.title || '').trim())) return true;
@@ -143,10 +149,14 @@ function passesFilters(it, source, viaGoogle) {
   const news = !source.kind || source.kind === 'news' || source.kind === 'police' || source.kind === 'courts' || source.kind === 'institution';
   if (viaGoogle === undefined) viaGoogle = isGoogleNews(it.link || '');
   if (isWire(it)) return false;
-  // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too.
+  // Google News site feeds include the paper's wire, syndicated and shopping stories, so they are geo-filtered too,
+  // except a search limited to one publisher's local section path (localSection, batch 3: "site:messenger-inquirer.com/
+  // mclean_county/news"), where a county weekly's headlines rarely repeat the town ("Frizzell eyeing 4 more years as
+  // sheriff") and the path already keeps out the paper's other sections (the statewide stories a weekly reprints in
+  // its news section still come through, as in print); wire, obituary and out-of-area checks still apply.
   if (source.strictGeo) { if (!inTriState(it, source.strictGeo)) return false; }
-  else if ((source.geo || (viaGoogle && news)) && !inRegion(it, source.geoTerms)) return false;
-  return !news || (!looksLikeObit(it) && !outOfArea(it) && !STANDING_RE.test(it.title.trim()));
+  else if ((source.geo || (viaGoogle && news && !source.localSection)) && !inRegion(it, source.geoTerms)) return false;
+  return !news || (!looksLikeObit(it) && !outOfArea(it, source.geoTerms) && !STANDING_RE.test(it.title.trim()));
 }
 
 // ---------- Police & courts policy ----------
@@ -800,7 +810,10 @@ const KEEP_ITEMS = 80;                  // stories kept per source
 // by IP across all of them. Paxton Media's western Kentucky and southern Illinois BLOX papers (batch 1) never loaded
 // from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the audit machine too). They are fetched 4 seconds apart,
 // at most 3 per run, and each has a Google News site: fallback.
-const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 } };
+// Batch 3's Google News fallbacks (rateGroup gnews: publisher sections whose RSS answers 429, and town searches for
+// counties with no working feed) are one queue too, 1.5 s apart and at most 5 per run, oldest first, so a full run never
+// adds more than a handful of Google requests (on top of the 600 ms Google queue) and stays inside the 30 s limit.
+const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 }, gnews: { gapMs: 1500, perRun: 5 } };
 const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'gleaner', 'kfvs', 'wthi', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
 
 async function redis(commands) {

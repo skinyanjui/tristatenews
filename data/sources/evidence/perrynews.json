@@ -1,0 +1,90 @@
+{
+  "sourceId": "perrynews",
+  "name": "Perry County News",
+  "site": "https://www.duboiscountyherald.com",
+  "feedUrl": "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fperry_county_news%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
+  "checkedAt": "2026-10-23T04:11:31.677Z",
+  "method": "scripts/verify-source.js",
+  "checks": {
+    "site": {
+      "status": 200,
+      "finalUrl": "https://www.duboiscountyherald.com/",
+      "title": "duboiscountyherald.com"
+    },
+    "robots": {
+      "status": 200,
+      "allowsFeed": false,
+      "checked": "https://news.google.com/robots.txt"
+    },
+    "links": {
+      "hosts": {
+        "news.google.com": 26
+      },
+      "ownSiteShare": 0,
+      "via": "google_news"
+    },
+    "geography": {
+      "located": 9,
+      "of": 26,
+      "share": 35
+    }
+  },
+  "observed": {
+    "status": 200,
+    "error": null,
+    "received": 26,
+    "accepted": 26,
+    "durationMs": 844,
+    "runner": "box",
+    "fetchedUrl": "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fperry_county_news%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en"
+  },
+  "activity": {
+    "latest": "2026-10-22T05:00:00.000Z",
+    "last30d": 26,
+    "undated": 0,
+    "inFeed": 26,
+    "cadence": "daily",
+    "medianGapDays": 0
+  },
+  "coverageEvidence": [
+    {
+      "countyId": "in-perry",
+      "items": 8,
+      "examples": [
+        "Tell City commits funding to Perry County Council on Aging",
+        "247 Restoration brings restoration, remodeling services to Tell City"
+      ]
+    },
+    {
+      "countyId": "in-dubois",
+      "items": 1,
+      "examples": [
+        "For the Record - Dubois County Herald"
+      ]
+    }
+  ],
+  "review": {
+    "approved": true,
+    "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
+    "checkedSteps": "publisher identity and local section path; Google News items link through news.google.com",
+    "licensing": {
+      "paywall": null,
+      "summaryOk": null,
+      "imagesOk": false,
+      "use": "headline, short feed summary and link only; no images (project default)"
+    }
+  },
+  "warnings": [
+    "google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled google_news_site fallback"
+  ],
+  "licensing": {
+    "paywall": null,
+    "summaryOk": null,
+    "imagesOk": false,
+    "use": "headline, short feed summary and link only; no images (project default)"
+  },
+  "decision": "verified",
+  "reasons": [],
+  "fallback": "google_news_site",
+  "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam"
+}

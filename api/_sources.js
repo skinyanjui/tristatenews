@@ -32,8 +32,9 @@ const FILES = [
 const BATCHES = [
   require('../data/sources/batches/batch-1.json'),
   require('../data/sources/batches/batch-2.json'),
+  require('../data/sources/batches/batch-3.json'),
 ];
-const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review'];
+const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review', 'fallback'];
 
 const KINDS = ['institution', 'courts', 'police', 'events', 'obits'];
 const STRICT = ['ind', 'ky', 'ill'];
@@ -56,6 +57,9 @@ function validate(files) {
       if (s.kind !== undefined && !KINDS.includes(s.kind)) problems.push(where + ': unknown kind ' + s.kind);
       if (s.strictGeo !== undefined && !STRICT.includes(s.strictGeo)) problems.push(where + ': unknown strictGeo ' + s.strictGeo);
       if (s.geoTerms !== undefined && (!Array.isArray(s.geoTerms) || s.geoTerms.some(t => typeof t !== 'string'))) problems.push(where + ': geoTerms must be strings');
+      // localSection skips the Google News geo filter, so it is only for a Google News search limited to one site path
+      if (s.localSection !== undefined && (s.localSection !== true || !/^https:\/\/news\.google\.com\/rss\/search\?q=site%3A[a-z0-9.-]+%2F[a-z0-9_%-]+/i.test(s.url || ''))) problems.push(where + ': localSection needs a Google News site:host/path search');
+      if (s.fallback !== undefined && (!['google_news_site', 'google_news_towns'].includes(s.fallback) || !/^https:\/\/news\.google\.com\//.test(s.url || ''))) problems.push(where + ': fallback must label a Google News url (google_news_site or google_news_towns)');
     }
   }
   return problems;

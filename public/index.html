@@ -225,6 +225,14 @@ main:focus { outline:none; }
 
 /* page */
 main { max-width:960px; margin:0 auto; padding:16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); } /* no fixed bottom bar any more, so no space reserved for one */
+/* Sticky footer: the page is at least one screen tall and main takes the spare height, so on a short page (an empty board,
+   one alert) .legal-foot sits at the bottom of the screen; on a long page it follows the content. Never position:fixed. */
+body { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+body > main { flex:1 0 auto; width:100%; display:flex; flex-direction:column; }
+.foot-push { flex:1 0 0; } /* soaks up the spare height above .legal-foot, so the footer keeps its 32px top margin */
+/* Flex children's margins don't collapse. A board tab (#list hidden) used to end on .cl's 16px bottom margin folded
+   into the footer's 32px; drop it there so long boards keep exactly the spacing they had. */
+body > main:has(> #list[hidden]) > .cl { margin-bottom:0; }
 .head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px; }
 h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing:-.015em; }
 .meta { color:var(--text-muted); font-size:12px; line-height:16px; margin-top:4px; }
@@ -866,6 +874,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   <div id="list" class="list" aria-busy="true"></div>
   <div class="more" id="more"></div>
   <section id="nl" class="nl" hidden aria-label="Newsletter"></section>
+  <div class="foot-push" aria-hidden="true"></div>
   <div class="legal-foot">
     <div class="legal-links"><a class="legal-link" href="/legal.html">Legal</a><a class="legal-link" href="/newsletter">Newsletter</a><button type="button" class="legal-link" id="adOpen">Advertise</button><button type="button" class="legal-link" id="snOpen">Submit news</button><a class="legal-link" href="/unsubscribe.html">Unsubscribe</a></div>
     <p>© 2026 Tri-State News. Headlines link to the original publisher, who owns the story. An arrest or charge is an accusation, not a conviction.</p>

@@ -73,7 +73,14 @@ async function verify(src, opts) {
     const u = new URL(src.url);
     rec.checks.robots = { status: r.status, allowsFeed: r.status === 200 ? robotsAllows(r.body, u.pathname + u.search) : true, checked: feedHost + '/robots.txt' };
   } catch (e) { rec.checks.robots = { error: String(e.code || e.message).slice(0, 60), allowsFeed: null }; }
-  if (rec.checks.robots.allowsFeed === false) fail.push('robots_disallows_feed');
+  // news.google.com/robots.txt disallows /rss/search for every crawler. A Google News search is only ever a labeled batch
+  // fallback (`fallback`: google_news_site or google_news_towns), used where the publisher's own feed is rate-limited or
+  // missing, as the base registry already does (courier, gleaner, the BLOX altUrls); the record keeps the robots result
+  // and a warning so the person approving the batch sees it, instead of the check failing the source.
+  if (rec.checks.robots.allowsFeed === false) {
+    if (src.fallback && isGoogle(src.url)) rec.warnings = ['google_news_robots: news.google.com/robots.txt disallows /rss/search; labeled ' + src.fallback + ' fallback'];
+    else fail.push('robots_disallows_feed');
+  }
   // 7: fetch and parse with the project's code
   const t0 = Date.now();
   const r = await news.loadSource(src, null, now);
@@ -117,6 +124,7 @@ async function verify(src, opts) {
   if (rv.approved !== true) fail.push('awaiting_review');
   rec.decision = fail.length ? 'researching' : 'verified';
   rec.reasons = fail;
+  if (src.fallback) rec.fallback = src.fallback;
   rec.reviewer = rv.reviewer || null;
   return rec;
 }

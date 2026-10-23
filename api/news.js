@@ -67,7 +67,32 @@ function looksLikeObit(item) {
   // A headline that is only a name, an age and a hometown ("John Henry Adams, 61, of Mill Shoals") is a death notice;
   // a news story about a person says what happened ("..., 45, of Henderson, arrested").
   if (OBIT_NAME_RE.test(String(item.title || '').trim())) return true;
+  if (nameOnlyObit(item)) return true;
   try { return /\/obituar/i.test(new URL(item.link).pathname); } catch (_) { return false; }
+}
+
+// A headline that is only a person's name ("Paxton Beckham Luttrell", Spencer County Online, 2026-10-22) over a summary
+// that says the person died is a death notice as well. To keep news out, all of these must hold: the title is 2 to 6
+// capitalised name words (initials, a "nickname", a (maiden name) and Jr/Sr/II/III/IV allowed) with no ordinary
+// headline word in it; the summary mentions passed away, funeral, visitation or obituary; and the summary opens with
+// the title itself followed by what a death notice puts after a name (a comma, an age, "of", "passed", "died"...).
+// So "Remembering Coach Bob Jones", "Henderson County Fair" or "Evansville Otters will hold a visitation..." stay news.
+const NAME_WORD = '(?:[A-Z][A-Za-z\'\u2019-]*\\.?|["\u201c][A-Z][A-Za-z.\'\u2019 -]*["\u201d]|\\([A-Z][A-Za-z.\'\u2019 -]*\\))';
+const NAME_ONLY_RE = new RegExp('^' + NAME_WORD + '(?:,?\\s+(?:' + NAME_WORD + '|Jr\\.?|Sr\\.?|II|III|IV))' + '{1,5}$');
+const DEATH_WORDS_RE = /\b(?:passed away|funeral|visitation|obituar(?:y|ies))\b/i;
+const AFTER_NAME_RE = /^\s*(?:,|\(|\d|(?:age|aged|of|passed|died|was born|infant)\b)/;
+const HEADLINE_WORDS = new Set(('remembering remembered remember honoring honored honors honor mourns mourning mourn tribute memorial dies died dead ' +
+  'killed death funeral funerals services service visitation obituary obituaries celebrates celebration life legacy community county city ' +
+  'school schools police sheriff fire family coach mayor council board church day fair festival week update news the a an of for and in on at to ' +
+  'with new local high university center park street road team club year hall').split(' '));
+function nameOnlyObit(item) {
+  const title = String(item.title || '').trim(), summary = String(item.summary || '').trim();
+  if (!title || title.length > 70 || !NAME_ONLY_RE.test(title) || !DEATH_WORDS_RE.test(summary)) return false;
+  const words = title.replace(/["\u201c\u201d(),]/g, ' ').split(/\s+/).filter(Boolean).map(w => w.toLowerCase().replace(/\.$/, ''));
+  if (words.length < 2 || words.some(w => w.length > 1 && HEADLINE_WORDS.has(w))) return false; // (an initial "A." is not the word "a")
+  const norm = x => x.toLowerCase().replace(/[\u201c\u201d]/g, '"').replace(/\u2019/g, "'").replace(/\s+/g, ' ');
+  const t = norm(title), sm = norm(summary);
+  return sm.startsWith(t) && AFTER_NAME_RE.test(sm.slice(t.length));
 }
 
 // BLOX CMS (and CNHI) outlets mix wire and syndicated copy into their main feeds: AP under /ap/, and
@@ -106,6 +131,9 @@ const ARREST_RE = /\b(?:arrest(?:s|ed)?|charged|charges?|indicted|indictment|acc
 // ("Convicted killer back in jail on new charges" is still an arrest: only a verdict or sentence counts.)
 const OUTCOME_RE = /\b(?:sentenced|sentencing|(?:is|was|were|been|be) convicted|convicted (?:of|in|on)|found guilty|pleads? guilty|pleaded guilty|guilty (?:plea|verdict)|acquitted)\b/i;
 const ARREST_MAX_DAYS = 14;
+// Every police and court item leaves News after 14 days at most (audit 2026-10-22: U.S. Attorney and FBI releases sat
+// in the feed for 59 days on their sources' 60- and 90-day windows). A shorter source window still applies.
+const SAFETY_MAX_DAYS = 14;
 
 // Returns a police or court item as it should appear (a copy with the arrest flag and no image), or null to
 // leave it out; other items pass through unchanged. Runs in combine(), so stored stories follow it too.
@@ -115,7 +143,8 @@ function safetyView(it, source) {
   if (JUVENILE_RE.test(it.title + ' ' + (it.summary || ''))) return null;
   const arrest = ARREST_RE.test(it.title) && !OUTCOME_RE.test(it.title);
   const out = { ...it, image: '', arrest };
-  if (arrest) out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, ARREST_MAX_DAYS);
+  out.maxAgeDays = Math.min(it.maxAgeDays || MAX_AGE_DAYS, SAFETY_MAX_DAYS);
+  if (arrest) out.maxAgeDays = Math.min(out.maxAgeDays, ARREST_MAX_DAYS);
   return out;
 }
 
@@ -460,7 +489,7 @@ async function tryUrl(source, url, prev) {
     if (isGoogleNews(url)) await googleTurn();
     const r = await safeFetch(url, { headers, signal: AbortSignal.timeout(10000) });
     if (r.status === 304) return { items: [], notModified: true, error: null, httpStatus: 304, url };
-    if (!r.ok) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url };
+    if (!r.ok) return { items: [], error: 'HTTP ' + r.status, httpStatus: r.status, url, retryAfterMs: retryAfterMs(r.headers.get('retry-after'), Date.now()) };
     const xml = await readCapped(r, CAP.feed);
     const viaGoogle = isGoogleNews(url);
     const ical = /BEGIN:VCALENDAR/.test(xml);
@@ -474,25 +503,46 @@ async function tryUrl(source, url, prev) {
   }
 }
 
+// Retry-After on a 429 (or 503): seconds ("120") or an HTTP date. Returns milliseconds from now, or null when the
+// header is missing or unreadable.
+function retryAfterMs(v, now) {
+  if (v == null || v === '') return null;
+  const t = String(v).trim();
+  if (/^\d+$/.test(t)) return Number(t) * 1000;
+  const at = Date.parse(t);
+  return Number.isFinite(at) ? Math.max(0, at - (now || Date.now())) : null;
+}
+// How long a host that refused us is left alone. A Retry-After is honored as asked, but never less than 10 minutes
+// (a run every 10 minutes would otherwise just hit it again) and never more than 24 hours. Without one: 30 minutes,
+// doubling with each consecutive block, up to 6 hours (as before).
+const BLOCK_MIN_MS = 10 * 6e4, BLOCK_MAX_MS = 24 * 36e5;
+function cooldownMs(res, fails) {
+  if (Number.isFinite(res.retryAfterMs) && res.retryAfterMs !== null) return Math.min(BLOCK_MAX_MS, Math.max(BLOCK_MIN_MS, res.retryAfterMs));
+  return Math.min(6 * 36e5, 30 * 6e4 * Math.pow(2, fails - 1));
+}
+
 // Tries the URL that worked last time first, then the main URL and any altUrls, and keeps the first
 // one that returns stories (or confirms nothing changed).
 // A host that answered 429/403 is left alone until its cooldown ends (prev.blocked: { host: untilMs }); the
 // Google News fallback is used meanwhile. After the cooldown the publisher's own feed is tried first again.
-async function loadSource(source, prev, now) {
+// opts.directOff: the source's rate group was refused earlier in this run (refreshAll), so only its Google News
+// fallback is tried and the publisher is not asked again until the next run.
+async function loadSource(source, prev, now, opts) {
   now = now || Date.now();
   let urls = [source.url].concat(source.altUrls || []);
   if (prev && prev.url && urls.includes(prev.url) && !isGoogleNews(prev.url)) urls.splice(urls.indexOf(prev.url), 1), urls.unshift(prev.url);
   const blocked = Object.assign({}, (prev && prev.blocked) || {});
   Object.keys(blocked).forEach(h => { if (blocked[h] <= now) delete blocked[h]; });
-  const open = urls.filter(u => !blocked[hostOf(u)]);
-  let last = { items: [], error: open.length ? 'no url' : 'cooling down after rate limit' }, wireSeen = null;
+  const open = urls.filter(u => !blocked[hostOf(u)] && !(opts && opts.directOff && !isGoogleNews(u)));
+  let last = { items: [], error: open.length ? 'no url' : 'cooling down after rate limit' }, wireSeen = null, refused = false;
   for (const url of open) {
     last = await tryUrl(source, url, prev);
     if (/^HTTP (429|403)$/.test(last.error || '')) {
-      // back off: 30 min, doubling with each consecutive block, up to 6 hours
+      // back off (cooldownMs): the publisher's Retry-After when it sends one, else 30 min doubling up to 6 hours
       const fails = ((prev && prev.blockCount) || 0) + 1;
-      blocked[hostOf(url)] = now + Math.min(6 * 36e5, 30 * 6e4 * Math.pow(2, fails - 1));
+      blocked[hostOf(url)] = now + cooldownMs(last, fails);
       last.blockCount = fails;
+      refused = true;
       continue;
     }
     if (last.items.length || last.notModified) break;
@@ -501,11 +551,49 @@ async function loadSource(source, prev, now) {
   // Every endpoint came back empty: keep the wire count from the one that was all wire copy, so the run report says
   // all_wire instead of looking like a quiet feed (the Google News fallback has no wire count of its own).
   if (wireSeen && !last.items.length && !last.notModified && !(last.wire >= wireSeen.wire)) last = Object.assign({}, last, wireSeen);
-  return { source, ...last, blocked, blockCount: last.blockCount || (Object.keys(blocked).length ? (prev && prev.blockCount) || 0 : 0) };
+  if (source.kind === 'events' && last.items.length) { try { await sizeImages(last.items, prev); } catch (_) { /* pictures are optional */ } }
+  return { source, ...last, refused, blocked, blockCount: last.blockCount || (Object.keys(blocked).length ? (prev && prev.blockCount) || 0 : 0) };
 }
 
 function normKey(item) {
   return item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Near-identical headlines from different sources are one story: an FBI field office and the U.S. Attorney post the
+// same press release ("Ex COO of ..." / "Ex-COO of ... $400K" / "... $400,000"), and sister papers repost each other's
+// copy with "(copy)" on the end. Titles are compared as word sets after folding hyphens, "$400K" / "$400,000" and
+// small words; two count as the same story when 80% of all their words are shared (Jaccard), or when 90% of the
+// shorter one's words are in the longer and the shorter has at least 6 words. Different outlets writing up the same
+// event in their own words ("Pickle Plex opens at Ben Hawes Park" / "Pickleball facility opens at Ben Hawes State
+// Park") stay separate. The first copy wins, so registry order decides, as it already does for exact duplicates.
+const DUP_STOP = new Set('a an and are as at be by for from has have in into is it its of on or over that the this to was were will with after'.split(' '));
+function titleWords(title) {
+  const t = String(title || '').toLowerCase().replace(/\(copy\)/g, ' ')
+    .replace(/(\d),(?=\d{3}\b)/g, '$1').replace(/\b(\d+(?:\.\d+)?)k\b/g, (m, n) => String(Math.round(parseFloat(n) * 1000)))
+    .replace(/[\u2018\u2019']s\b/g, '').replace(/[^a-z0-9]+/g, ' ');
+  return new Set(t.split(' ').filter(w => w && !DUP_STOP.has(w)));
+}
+function sameStory(a, b) {
+  const small = a.size <= b.size ? a : b, big = small === a ? b : a;
+  if (small.size < 4) return false;
+  let shared = 0; small.forEach(w => { if (big.has(w)) shared++; });
+  return shared / (a.size + b.size - shared) >= 0.8 || (small.size >= 6 && shared / small.size >= 0.9);
+}
+// Remembers the words of every kept story, indexed by word, so each new story is compared only with stories that
+// share a word with it.
+function nearIndex() {
+  const kept = [], byWord = new Map();
+  return {
+    dupOf(words, sourceId) {
+      const seen = new Set();
+      for (const w of words) for (const i of byWord.get(w) || []) {
+        if (seen.has(i)) continue; seen.add(i);
+        if (kept[i].sourceId !== sourceId && sameStory(words, kept[i].words)) return kept[i];
+      }
+      return null;
+    },
+    add(words, sourceId) { const i = kept.push({ words, sourceId }) - 1; words.forEach(w => { if (!byWord.has(w)) byWord.set(w, []); byWord.get(w).push(i); }); },
+  };
 }
 
 function combine(results, now, pool) {
@@ -515,6 +603,7 @@ function combine(results, now, pool) {
   const obits = [];
   const safety = [];
   const obitAt = new Map();
+  const near = nearIndex();
   // Funeral homes go first, so when a paper and a funeral home list the same person the funeral home's card wins.
   results = results.slice().sort((a, b) => (b.source && b.source.funeralHome ? 1 : 0) - (a.source && a.source.funeralHome ? 1 : 0));
   for (const r of results) {
@@ -548,6 +637,9 @@ function combine(results, now, pool) {
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
       if (seen.has(key) || seen.has(it.link)) continue;
+      const words = titleWords(it.title);
+      if (near.dupOf(words, it.sourceId)) continue;
+      near.add(words, it.sourceId);
       seen.add(key); seen.add(it.link);
       (r.source && (r.source.kind === 'police' || r.source.kind === 'courts') ? safety : all).push(it);
     }
@@ -561,14 +653,103 @@ function combine(results, now, pool) {
   events.sort((a, b) => Date.parse(a.published) - Date.parse(b.published));
   // Repeat events (weekly yoga, a run of shows) share one picture: any dated copy that has an image lends it to the rest.
   const pics = {};
-  events.forEach(e => { const k = e.sourceId + '|' + normKey(e); if (e.image && !pics[k]) pics[k] = e.image; });
-  events.forEach(e => { if (!e.image) e.image = pics[e.sourceId + '|' + normKey(e)] || ''; });
+  // (Only a picture a card may show is lent: one known to be over IMG_MAX_BYTES is not.)
+  events.forEach(e => { const k = e.sourceId + '|' + normKey(e); if (cardImage(e) && !pics[k]) pics[k] = e; });
+  events.forEach(e => { const p = pics[e.sourceId + '|' + normKey(e)]; if (!e.image && p) { e.image = p.image; if (p.imageBytes !== undefined) e.imageBytes = p.imageBytes; } });
   obits.sort((a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0));
-  return feed.concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => ({ id: it.sourceId + '-' + i, ...it }));
+  return feed.concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => {
+    const out = { id: it.sourceId + '-' + i, ...it };
+    if (out.image) out.image = cardImage(out);
+    delete out.imageBytes;
+    return out;
+  });
 }
 
-function logoFor(url) {
-  try { return 'https://www.google.com/s2/favicons?sz=128&domain=' + new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
+// ---------- Picture weight (audit 2026-10-22: home 4.8 MB, Events 19 MB) ----------
+// Cards show pictures at most about 640 px wide, so where the publisher's image service can make a smaller copy the
+// link asks for one: Gray TV's Arc resizer (gtv-cdn.com, width=640, any height dropped so nothing is cropped),
+// WordPress VIP / Photon uploads with a ?w= over 640, Townsquare Media (w=640, q=75) and BLOX (resize=W,H over
+// 640 wide, scaled down). Checked with curl on 2026-10-22: a 1280 px Gray picture went from 134 KB to 48 KB, a
+// WordPress VIP PNG from 776 KB to 110 KB and a Townsquare JPEG from 461 KB to 52 KB. Anything else is left alone.
+const IMG_WIDTH = 640;
+function smallerImage(u) {
+  if (!u) return u;
+  let url; try { url = new URL(u); } catch (_) { return u; }
+  const q = url.searchParams, host = url.hostname;
+  if (/\.gtv-cdn\.com$/.test(host) && url.pathname.startsWith('/resizer/')) {
+    const w = +q.get('width');
+    if (w && w <= IMG_WIDTH) return u;
+    q.set('width', String(IMG_WIDTH)); q.delete('height');
+  } else if (host === 'townsquare.media') {
+    if (q.has('w')) return u;
+    q.set('w', String(IMG_WIDTH)); q.set('q', '75');
+  } else if (/\/wp-content\/uploads\//.test(url.pathname) && q.has('w')) {
+    if (!(+q.get('w') > IMG_WIDTH)) return u;
+    q.set('w', String(IMG_WIDTH));
+  } else if (/\.townnews\.com$/.test(host) && q.has('resize')) {
+    const m = String(q.get('resize')).match(/^(\d+),(\d+)$/);
+    if (!m || +m[1] <= IMG_WIDTH) return u;
+    q.set('resize', IMG_WIDTH + ',' + Math.round(+m[2] * IMG_WIDTH / +m[1]));
+  } else return u;
+  return url.href;
+}
+
+// Event pictures come straight from venue and tourism sites, some of them print-size files (a 15.6 MB Victory
+// Theatre JPEG). Each new picture URL gets one HEAD request; the size is kept on the stored item, so a picture is
+// checked once, not every run. Over IMG_MAX_BYTES the card shows its date tile instead. At most IMG_CHECKS new
+// pictures per source per run, IMG_PARALLEL at a time with a 3 s timeout, so a refresh never waits long on them.
+const IMG_MAX_BYTES = 1024 * 1024, IMG_CHECKS = 10, IMG_PARALLEL = 3;
+async function sizeImages(items, prev) {
+  const known = new Map();
+  ((prev && prev.items) || []).forEach(i => { if (i.image && Number.isFinite(i.imageBytes)) known.set(i.image, i.imageBytes); });
+  const todo = [];
+  for (const it of items) {
+    if (!it.image) continue;
+    if (known.has(it.image)) { it.imageBytes = known.get(it.image); continue; }
+    if (!todo.includes(it.image) && todo.length < IMG_CHECKS) todo.push(it.image);
+  }
+  const got = new Map();
+  for (let i = 0; i < todo.length; i += IMG_PARALLEL) {
+    await Promise.all(todo.slice(i, i + IMG_PARALLEL).map(async u => {
+      let n = -1; // unknown: no Content-Length, or the HEAD failed; the picture is kept
+      try {
+        const r = await safeFetch(smallerImage(u), { method: 'HEAD', headers: { 'user-agent': USER_AGENT, accept: 'image/*' }, signal: AbortSignal.timeout(3000) });
+        const len = Number(r.headers.get('content-length'));
+        if (r.ok && len > 0) n = len;
+      } catch (_) { /* keep the picture */ }
+      got.set(u, n);
+    }));
+  }
+  items.forEach(it => { if (it.image && got.has(it.image)) it.imageBytes = got.get(it.image); });
+  return items;
+}
+// The picture a card should load: the smaller variant, or none when the file is known to be too big.
+function cardImage(it) {
+  if (!it.image) return it.image;
+  if (it.imageBytes > IMG_MAX_BYTES) return '';
+  return smallerImage(it.image);
+}
+
+// Source icons. Most come from Google's favicon service for the publisher's domain. The audit (2026-10-22) found ten
+// that 404 there and two that showed the Google News icon (sources fetched through news.google.com), so those are
+// self-hosted under public/logos: the publisher's own icon where it has a square one, else a plain lettermark
+// (marked "lettermark" below) until Sam has artwork from the publisher. A Google News URL's site: domain, and the
+// registrable domain of a feed subdomain (obits.glennfuneralhome.com, app.ticketmaster.com), are used otherwise.
+const LOGOS = {
+  courier: '/logos/courier.png', gleaner: '/logos/gleaner.png', 'ob-glenn': '/logos/glenn.png', 'ev-tm': '/logos/ticketmaster.png',
+  ocmonitor: '/logos/ocmonitor.png',
+  dcherald: '/logos/dcherald.svg', 'ob-dcherald': '/logos/dcherald.svg', pdclarion: '/logos/pdclarion.svg', 'ob-pdclarion': '/logos/pdclarion.svg', // lettermark
+  'ob-ziemer': '/logos/ziemer.svg', 'ob-koehler': '/logos/koehler.svg', poseynews: '/logos/poseynews.svg', // lettermark
+};
+function logoFor(src) {
+  if (src && typeof src === 'object') { if (LOGOS[src.id]) return LOGOS[src.id]; src = src.url; }
+  try {
+    const u = new URL(src);
+    let host = u.hostname.replace(/^www\./, '');
+    if (isGoogleNews(u.href)) { const m = (u.searchParams.get('q') || '').match(/site:([a-z0-9.-]+)/i); if (m) host = m[1].replace(/^www\./, ''); }
+    else if (/^(?:obits|app|feeds?|rss|news|m)\./.test(host) && host.split('.').length > 2) host = host.replace(/^[^.]+\./, '');
+    return 'https://www.google.com/s2/favicons?sz=128&domain=' + host;
+  } catch (e) { return ''; }
 }
 
 // ---------- storage (Upstash Redis) ----------
@@ -585,6 +766,11 @@ const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refresh
 const KEEP_ITEMS = 80;                  // stories kept per source
 // Fast tier (every 10 min): sources that post often and tolerate polling. BLOX papers (Messenger-Inquirer,
 // The Messenger, Sun-Commercial, WPSD) rate-limit by IP, so they moved to the half-hourly full run.
+// Rate groups (registry field rateGroup): papers of one publisher served from shared infrastructure, which rate-limits
+// by IP across all of them. Paxton Media's western Kentucky and southern Illinois BLOX papers (batch 1) never loaded
+// from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the audit machine too). They are fetched 4 seconds apart,
+// at most 3 per run, and each has a Google News site: fallback.
+const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 } };
 const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'gleaner', 'kfvs', 'wthi', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
 
 async function redis(commands) {
@@ -697,7 +883,7 @@ function buildSnapshot(states, now, pool) {
   const items = combine(results, now, pool);
   const sources = SOURCES.map(src => {
     const st = states[src.id] || { items: [] };
-    return { logo: logoFor(src.url), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
+    return { logo: logoFor(src), id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', ok: st.items.length > 0 || (!st.error && !!st.lastOk), count: items.filter(i => i.sourceId === src.id).length, lastOk: st.lastOk || null, stale: !!st.error && st.items.length > 0 };
   });
   return { updatedAt: new Date(now).toISOString(), sources, items };
 }
@@ -730,18 +916,30 @@ async function refreshAll(opts) {
   // Respect each source's minimum polling interval (everyMin): skip it if it was tried recently.
   targets = targets.filter(s => { const p = prevStates[s.id]; return !s.everyMin || !p || !p.lastTry || now - Date.parse(p.lastTry) >= s.everyMin * 6e4 - 30e3; });
   // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the
-  // news and obituary feeds of one paper share a host.
-  const byHost = {};
-  targets.forEach(s => { let h = ''; try { h = new URL(s.url).hostname; } catch (_) { /* ignore */ } (byHost[h] = byHost[h] || []).push(s); });
+  // news and obituary feeds of one paper share a host. Sources with the same rateGroup (several papers of one
+  // publisher on shared servers) are one queue as well, with that group's gap and at most perRun of them per run
+  // (the ones tried longest ago first; the rest wait for the next run and keep their stories).
+  const groups = {};
+  const byLastTry = (a, b) => (Date.parse((prevStates[a.id] || {}).lastTry) || 0) - (Date.parse((prevStates[b.id] || {}).lastTry) || 0);
+  targets.forEach(s => { const k = s.rateGroup && RATE_GROUPS[s.rateGroup] ? 'group:' + s.rateGroup : 'host:' + hostOf(s.url); (groups[k] = groups[k] || []).push(s); });
+  for (const k of Object.keys(groups)) {
+    const g = k.startsWith('group:') && RATE_GROUPS[k.slice(6)];
+    if (g) groups[k] = groups[k].sort(byLastTry).slice(0, g.perRun);
+  }
+  targets = [].concat(...Object.values(groups));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const tier = opts.tier === 'fast' ? 'fast' : 'all';
   const runId = newRunId(now, tier);
-  const fetched = (await Promise.all(Object.values(byHost).map(async group => {
+  const fetched = (await Promise.all(Object.entries(groups).map(async ([k, group]) => {
+    const g = k.startsWith('group:') ? RATE_GROUPS[k.slice(6)] : null;
     const out = [];
+    let refused = false;
     for (let i = 0; i < group.length; i++) {
-      if (i) await sleep(900);
+      if (i) await sleep(g ? g.gapMs : 900);
       const t = Date.now();
-      const r = await loadSource(group[i], prevStates[group[i].id], now);
+      // once one paper of a rate group says 429/403, its sisters go straight to their Google News fallback this run
+      const r = await loadSource(group[i], prevStates[group[i].id], now, { directOff: !!(g && refused) });
+      if (g && r.refused) refused = true;
       r.attemptedAt = new Date(t).toISOString(); r.durationMs = Date.now() - t;
       out.push(r);
     }
@@ -873,3 +1071,14 @@ module.exports.statusOf = statusOf;
 module.exports.STATUSES = STATUSES;
 module.exports.RUN_TTL = RUN_TTL;
 module.exports.publicSnapshot = publicSnapshot;
+module.exports.looksLikeObit = looksLikeObit;
+module.exports.titleWords = titleWords;
+module.exports.sameStory = sameStory;
+module.exports.retryAfterMs = retryAfterMs;
+module.exports.cooldownMs = cooldownMs;
+module.exports.RATE_GROUPS = RATE_GROUPS;
+module.exports.SAFETY_MAX_DAYS = SAFETY_MAX_DAYS;
+module.exports.smallerImage = smallerImage;
+module.exports.sizeImages = sizeImages;
+module.exports.IMG_MAX_BYTES = IMG_MAX_BYTES;
+module.exports.logoFor = logoFor;

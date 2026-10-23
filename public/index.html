@@ -198,7 +198,7 @@ main:focus { outline:none; }
 .notice button { flex:none; width:32px; height:32px; font-size:18px; border-radius:var(--radius-md); }
 .rates { display:grid; gap:4px; margin:0; padding:0; list-style:none; }
 .rates li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); }
-.rates li b { font-family:var(--font-mono); font-weight:500; }
+.rates li b { font-weight:500; font-variant-numeric:tabular-nums; } /* not the mono face: its wide comma cell read as "$1 ,199" */
 
 /* weather alerts */
 .alerts { display:grid; gap:8px; margin-bottom:12px; }
@@ -613,7 +613,8 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evx-filters .cl-chips { position:relative; min-width:0; }
 .evx-pick { position:relative; display:inline-flex; align-items:center; gap:6px; }
 .evx-pick svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-.evx-pick input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; border:0; padding:0; }
+.evx-pickw { position:relative; display:inline-flex; flex:none; }
+.evx-pickw input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; border:0; padding:0; }
 .evx .spon { margin:0; }
 .evx-sec { display:grid; gap:10px; min-width:0; }
 .evx-sh { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; }
@@ -801,6 +802,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .card:has(.cf .ob-acts) { display:flex; flex-direction:column; }
 .card:has(.cf .ob-acts) > .cf { margin-top:auto; }
 .card .cf .ob-acts { flex:1 1 auto; margin-right:auto; white-space:normal; }
+.card .cf.cf-ob { justify-content:flex-end; }
+.card .cf.cf-ob > .ob-acts { order:2; flex:1 0 100%; margin:0; padding:0 0 4px; }
 @media (max-width:374px) { .ob-acts { flex-direction:column; align-items:flex-start; } .card .cf .ob-acts { flex-basis:100%; } }
 /* in-listing Sponsored card, sponsor lines and side ads */
 .ad-card { padding:var(--card-pad); gap:var(--card-stack); }
@@ -870,7 +873,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     <div class="bn bn-break" id="bnBreak" hidden></div>
   </div>
   <div class="alerts" id="alerts" aria-live="polite"></div>
-  <h1 class="sr-only">Tristate news</h1>
+  <h1 class="sr-only">Tri-State News</h1>
 
   <section id="cl" class="cl" hidden aria-label="Classifieds"></section>
   <section id="dl" class="cl" hidden aria-label="Deals"></section>
@@ -989,7 +992,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       adLink: function (cls, ad) {
         var a = el('a', cls); a.href = ad.url; a.rel = 'sponsored noopener noreferrer';
         if (/^https:/i.test(ad.url)) a.target = '_blank';
-        a.setAttribute('aria-label', 'Sponsored: ' + ad.name);
+        // No aria-label: the link is named by what it shows ("Sponsored", the name, the words), so the spoken name and
+        // the visible text match (axe label-content-name-mismatch, audit 2026-10-22).
         a.appendChild(el('span', 'spon-tag', 'Sponsored'));
         if (ad.img) { var im = el('img', 'ad-img'); im.src = ad.img; im.alt = ad.name; im.loading = 'lazy'; im.decoding = 'async'; if (ad.w && ad.h) { im.width = ad.w; im.height = ad.h; } a.appendChild(im); }
         if (typeof adCount === 'function') adCount(a, ad); // count a booked campaign's ad (see adCount)
@@ -999,7 +1003,6 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // "Sample ad" so it can't pass for a real advertiser, linking only to our /advertise page.
       sampleAd: function (cls, ad) {
         var a = el('a', cls + ' ad-sample'); a.href = '/advertise';
-        a.setAttribute('aria-label', 'Sample ad: ' + ad.name + ', not a real business. Advertise with Tri-State News.');
         a.appendChild(el('span', 'spon-tag', 'Sample ad'));
         return a;
       },
@@ -1008,7 +1011,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
       // business, price or number, and opens the advertising inquiry form.
       railAd: function (ad) {
-        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News'); h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return UI.sized(h, 'rail:left'); }
+        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return UI.sized(h, 'rail:left'); }
         if (!window.TSNAds || !TSNAds.validAd(ad)) return null;
         var a = UI.adLink('rail-ad', ad);
         if (!ad.img) a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
@@ -1083,8 +1086,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
         }
         if (!houseAd) return null;
         var sm = window.TSNAds ? UI.sample((TSNAds.OFFSET[slot] || 0) + 1) : null;
-        if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (sm.text) s2.appendChild(el('span', null, sm.text)); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
-        var h = el('button', 'spon spon-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
+        if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (sm.text) s2.appendChild(el('span', null, sm.text)); s2.appendChild(el('span', 'sr-only', 'A sample, not a real business.')); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
+        var h = el('button', 'spon spon-house'); h.type = 'button';
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with Tri-State News.')); h.appendChild(el('b', null, 'Learn more'));
         h.addEventListener('click', openAd);
         return h;
@@ -1116,7 +1119,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
           if (ad.text) a.appendChild(el('span', 'ad-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
           return UI.sized(a, place, ad);
         }
-        var h = el('button', 'ad-card ad-house'); h.type = 'button'; h.setAttribute('aria-label', 'Advertise with Tri-State News');
+        var h = el('button', 'ad-card ad-house'); h.type = 'button';
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here'));
         h.appendChild(el('span', 'ad-tx', 'Advertise with Tri-State News.')); h.appendChild(el('span', 'rail-cta', 'Learn more'));
         h.addEventListener('click', openAd);
@@ -1481,6 +1484,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       wxBtn.setAttribute('aria-label', Math.round(cur.temperature_2m) + '°F ' + shortName(wxLoc.name) + '. Weather in ' + wxLoc.name + '. Change location');
       wxBtn.textContent = '';
       wxBtn.appendChild(el('span', 'wx-temp', Math.round(cur.temperature_2m) + '°F'));
+      wxBtn.appendChild(document.createTextNode(' ')); // so the visible text reads "72°F Evansville", as the label starts
       wxBtn.appendChild(el('span', 'wx-cond', shortName(wxLoc.name)));
 
       wxPop.textContent = '';
@@ -2040,6 +2044,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     return f;
   }
   // Whole dollars when there are no cents: 1900 -> "$19", 119900 -> "$1,199", 1950 -> "$19.50".
+  var SHOW_SUBSCRIBERS_AT = 100; // the Advertise newsletter line shows "N of 1,500 subscribers" from this many on
   function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
   function actions(it, kind, b, foot) {
@@ -2399,7 +2404,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   function evxPic(it, cls) {
     var pic = el('div', cls), src = photoSrc(it) || it.image || '';
     if (!src) { pic.appendChild(evxTile(it)); return pic; }
-    var im = el('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (it.image) im.referrerPolicy = 'no-referrer';
+    var im = el('img'); picLoading(im); if (it.image) im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = ''; im.src = src;
     var badge = evxBadge(it);
     im.addEventListener('error', function () { im.remove(); badge.remove(); pic.appendChild(evxTile(it)); });
     pic.appendChild(im); pic.appendChild(badge);
@@ -2504,8 +2509,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       var d = window.prompt('Show events on (YYYY-MM-DD)', picked ? cur.slice(2) : inDays(0));
       if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) evxSet(b, 'when', 'd:' + d);
     });
-    pk.appendChild(inp);
-    row.appendChild(pk);
+    // The hidden date input sits next to the button, not inside it (a control inside a button: axe nested-interactive).
+    var pw = el('span', 'evx-pickw'); pw.appendChild(pk); pw.appendChild(inp);
+    row.appendChild(pw);
     requestAnimationFrame(function () { var on = row.querySelector('[aria-pressed="true"]'); if (on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - 16; }); // keep the chosen chip in view
     return row;
   }
@@ -2559,6 +2565,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
   }
   function renderEvents() {
     var b = boards.event, root = b.el;
+    leadPic = true;
     root.textContent = ''; root.classList.add('evx');
     root.appendChild(el('h2', 'sr-only', 'Upcoming events'));
     root.appendChild(evxHeader(b));
@@ -2784,7 +2791,8 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
       var li = el('li'), sp = el('span', null, k[0] + ' · ' + k[1]); li.appendChild(sp); li.appendChild(el('b', null, k[2])); ul.appendChild(li);
       // Not for sale until 1,500 confirmed subscribers (api/_catalog.js newsletter gate); the live count comes from the catalog.
       fetch('/api/catalog').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (c) {
-        var g = c.newsletterGate || {}; if (g.verifiedSubscribers == null) return;
+        // The count stays hidden until there are SHOW_SUBSCRIBERS_AT confirmed subscribers ("0 of 1,500" read badly, audit 2026-10-22).
+        var g = c.newsletterGate || {}; if (g.verifiedSubscribers == null || g.verifiedSubscribers < SHOW_SUBSCRIBERS_AT) return;
         sp.appendChild(el('span', 'nl-gate', ' (' + Number(g.verifiedSubscribers).toLocaleString('en-US') + ' of ' + Number(g.minVerifiedSubscribers).toLocaleString('en-US') + ' subscribers)'));
       }).catch(function () {});
     });
@@ -3142,6 +3150,13 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     if (day(t + 864e5) === day(Date.now())) return 'Yesterday';
     return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: z });
   }
+  // The first picture of a list is usually the largest thing on screen (LCP): it loads at once with high priority;
+  // every later one waits until it is near the screen. renderList and renderEvents set leadPic before building cards.
+  var leadPic = false;
+  function picLoading(im) {
+    if (!leadPic) { im.loading = 'lazy'; return; }
+    leadPic = false; im.loading = 'eager'; im.setAttribute('fetchpriority', 'high');
+  }
   function makeCard(it, big, bk) {
     var card = el('article', big ? 'card breaking' : 'card');
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
@@ -3183,7 +3198,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     // Option B (ad-card style): picture flush left on desktop / on top on phones; source row, headline and a short
     // description; a bottom row with where the link goes plus the heart and share.
     if (pic) {
-      var im = el('img', 'th'); im.src = pic; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.referrerPolicy = 'no-referrer';
+      var im = el('img', 'th'); picLoading(im); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = ''; im.src = pic;
       im.addEventListener('error', function () { im.remove(); a.classList.add('noimg'); });
       a.appendChild(im);
     } else a.classList.add('noimg');
@@ -3191,8 +3206,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     a.appendChild(body);
     card.appendChild(a);
     var foot = el('div', 'cf');
-    var fl = kd === 'obits' ? flowersLink(it, 'span') : null; if (fl) foot.appendChild(fl); // outside the card's link
     foot.appendChild(actRow(sb, it));
+    // Obituaries: the heart and share first, then Send flowers / Plant a tree / Donate as the card's last row at every
+    // width (outside the card's link). Before, the links came first and on phones the heart and share wrapped under them.
+    var fl = kd === 'obits' ? flowersLink(it, 'div') : null; if (fl) { foot.classList.add('cf-ob'); foot.appendChild(fl); }
     card.appendChild(foot);
     if (big) {
       var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true });
@@ -3283,6 +3300,7 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
     listEl.textContent = '';
     listEl.setAttribute('aria-busy', 'false');
     mapLogos();
+    leadPic = true;
     brk.forEach(function (b) { var it = b.item || alertItem(b); storyKeys(it).forEach(function (k) { breakCards[k] = 1; }); listEl.appendChild(makeCard(it, true, b)); });
     // In-feed ads on News (public/adslots.js newsSlots): News is one story per row at every width; a card about
     // every 6th story, never next to a Police & courts item; none in search or beside Breaking.

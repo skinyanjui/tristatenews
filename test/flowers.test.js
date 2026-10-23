@@ -117,7 +117,9 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   assert.ok(fn.includes('return p.children.length ? p : null;'), 'no empty row');
   assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');
   assert.ok(!/<img|ad-card|spon|Sponsored|Advertise/.test(fn), 'not an ad unit');
-  assert.ok(html.includes("var fl = kd === 'obits' ? flowersLink(it, 'span') : null; if (fl) foot.appendChild(fl);"), 'feed cards: only obituaries, in the footer, not inside the card link');
+  assert.ok(html.includes("var fl = kd === 'obits' ? flowersLink(it, 'div') : null; if (fl) { foot.classList.add('cf-ob'); foot.appendChild(fl); }"), 'feed cards: only obituaries, in the footer, not inside the card link');
+  const mk = html.slice(html.indexOf('function makeCard('), html.indexOf('var brkTimer'));
+  assert.ok(mk.indexOf('foot.appendChild(actRow(sb, it));') < mk.indexOf("flowersLink(it, 'div')"), 'heart and share first, the flowers row last (audit 2026-10-22: it sat above them on phones)');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
   assert.ok(ob.includes('flowersLink(it)'), 'posted obituaries too');
   assert.strictEqual((html.match(/flowersLink\(/g) || []).length, 3, 'defined once, used on the two obituary cards only');
@@ -171,6 +173,7 @@ test('action row: one row at the bottom of the card, wraps and stacks, 40px targ
   const css = html.slice(html.indexOf('/* Obituary action row'), html.indexOf('/* in-listing Sponsored card'));
   assert.ok(css.includes('.ob { display:flex; flex-direction:column; }') && css.includes('.ob > .ob-acts { margin-top:auto;'), 'pinned to the bottom');
   assert.ok(css.includes('.card:has(.cf .ob-acts) > .cf { margin-top:auto; }'), 'feed obituary cards too');
+  assert.ok(css.includes('.card .cf.cf-ob > .ob-acts { order:2; flex:1 0 100%;'), 'feed obituary cards: the row is a full-width last row at every width');
   assert.ok(css.includes('flex-wrap:wrap') && css.includes('@media (max-width:374px) { .ob-acts { flex-direction:column;'), 'wraps, stacks on narrow phones');
   assert.ok(css.includes('var(--card-pad)') && css.includes('var(--card-stack)'), 'shared tokens');
   assert.ok(html.includes('.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; min-height:var(--card-tap); }'), '40px targets');

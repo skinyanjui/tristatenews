@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>Order an ad package · Tri-State News</title>
 <style>
 :root { --bg:#fff; --fg:#111; --muted:#666; --border:#e2e2e2; --card:#fafafa; --ok:#1a7f37; --err:#e5484d; color-scheme:light; }
@@ -31,7 +32,7 @@ legend { padding:0; margin-bottom:4px; font-weight:500; }
 .f { display:grid; gap:4px; font-weight:500; }
 .two { display:grid; gap:12px; grid-template-columns:1fr 1fr; } @media (max-width:639px) { .two { grid-template-columns:1fr; } }
 input:not([type=radio]):not([type=checkbox]) { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font:inherit; font-weight:400; width:100%; }
-input[type=checkbox] { width:20px; height:20px; }
+input[type=checkbox], input[type=radio] { width:20px; height:20px; flex:none; margin:2px 0 0; }
 button { min-height:44px; padding:0 16px; border:0; border-radius:6px; background:var(--fg); color:var(--bg); font:inherit; font-weight:500; cursor:pointer; justify-self:start; }
 button[disabled] { opacity:.5; cursor:default; }
 .m { color:var(--muted); font-size:14px; line-height:20px; }
@@ -39,7 +40,7 @@ button[disabled] { opacity:.5; cursor:default; }
 .err { color:var(--err); }
 .ref { font:600 20px/28px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .next { display:inline-flex; align-items:center; min-height:44px; padding:0 16px; border-radius:6px; background:var(--fg); color:var(--bg); font-weight:500; text-decoration:none; justify-self:start; }
-.soon { opacity:.75; }
+.soon { color:var(--muted); } /* was opacity .75 over the muted grey: under 4.5:1 contrast */
 .hp { position:absolute; left:-9999px; }
 [hidden] { display:none !important; }
 </style>

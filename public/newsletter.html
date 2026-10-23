@@ -8,6 +8,15 @@
 <meta name="description" content="Sign up for the Tri-State News weekly email: local headlines and events.">
 <link rel="canonical" href="https://tristatenewss.vercel.app/newsletter">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tri-State News">
+<meta property="og:title" content="Newsletter · Tri-State News">
+<meta property="og:description" content="Sign up for the Tri-State News weekly email: local headlines and events.">
+<meta property="og:url" content="https://tristatenewss.vercel.app/newsletter">
+<meta property="og:image" content="https://tristatenewss.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
@@ -35,8 +44,8 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="lg-top"><div class="lg-top-in"><a class="lg-brand" href="/">Tristate</a><a class="lg-back" href="/">Back to the news</a></div></header>
 <main id="main">
+<h1 id="nlH">The Tri-State in your inbox</h1>
 <div id="signup">
-<h1>The Tri-State in your inbox</h1>
 <p class="lg-lede">One short email a week: the top local headlines and what’s coming up. Free, and you can leave anytime.</p>
 <ul class="nl-what"><li>We ask you to confirm by email before we send anything.</li><li>Every email has a one-click unsubscribe link.</li><li>We don’t sell or share your address (<a href="/legal.html#privacy">Privacy Policy</a>).</li></ul>
 <form class="un-form" id="nlForm" method="post" action="/api/subscribe" novalidate>
@@ -49,7 +58,6 @@
 <p class="lg-meta">By subscribing you agree to our <a href="/legal.html#terms-newsletter">Terms</a>. Already subscribed and want to stop? <a href="/unsubscribe.html">Unsubscribe</a>.</p>
 </div>
 <div id="confirm" hidden>
-<h1>Confirm your subscription</h1>
 <p class="lg-lede">One more tap and you’re on the list for our weekly email.</p>
 <div class="un-form"><button class="un-go" id="cfGo" type="button">Confirm my subscription</button></div>
 <p class="un-msg" id="cfMsg" role="status" aria-live="polite"></p>
@@ -70,7 +78,7 @@
   // Opened from the confirmation email: confirm with a button press (mail scanners that open links don't press it).
   var token = q.get('confirm') || '';
   if (token) {
-    $('signup').hidden = true; $('confirm').hidden = false;
+    $('signup').hidden = true; $('confirm').hidden = false; $('nlH').textContent = 'Confirm your subscription'; // one h1 per page
     $('cfGo').addEventListener('click', function () {
       $('cfGo').disabled = true; say($('cfMsg'), '');
       post({ action: 'confirm', token: token }).then(function (o) {

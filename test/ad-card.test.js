@@ -118,13 +118,16 @@ test('the card: house unit "Advertise with us" (no business, price or number) op
   const p = pageCard(sponsors.cards);
   for (const kind of Object.keys(A.BOARDS)) {
     const h = p.UI.adCard(kind);
-    assert.deepStrictEqual([h.tag, tagOf(h), h.attrs['aria-label']], ['button', 'Advertise with us', 'Advertise with Tri-State News'], kind);
+    // named by its visible text, no aria-label (axe label-content-name-mismatch, audit 2026-10-22)
+    assert.deepStrictEqual([h.tag, tagOf(h), h.attrs['aria-label']], ['button', 'Advertise with us', undefined], kind);
+    assert.ok(h.textContent.includes('Advertise with Tri-State News'), kind);
     assert.ok(!/sponsored|\$|\d/i.test(h.textContent), h.textContent);
     h.listeners.click();
   }
   assert.strictEqual(p.opened(), 4);
   assert.strictEqual(p.UI.adCard('obit'), null);
   const d = pageCard({ jobs: ad(1, { cta: 'Shop now' }) }).UI.adCard('job');
-  assert.deepStrictEqual([d.tag, d.href, d.rel, d.target, tagOf(d), d.attrs['aria-label']], ['a', 'https://ad1.test/', 'sponsored noopener noreferrer', '_blank', 'Sponsored', 'Sponsored: Advertiser 1']);
+  assert.deepStrictEqual([d.tag, d.href, d.rel, d.target, tagOf(d), d.attrs['aria-label']], ['a', 'https://ad1.test/', 'sponsored noopener noreferrer', '_blank', 'Sponsored', undefined]);
+  assert.ok(d.textContent.includes('Sponsored') && d.textContent.includes('Advertiser 1'), 'the visible text names it');
   assert.ok(d.textContent.includes('Shop now'));
 });

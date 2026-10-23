@@ -72,7 +72,7 @@ test('open spots: one house unit labeled "Advertise with us", no business, price
   const { UI, boxes, opened } = pageUI(sp);
   for (const slot of ['jobs', 'deals', 'events', 'classifieds']) {
     const h = UI.sponsor(slot, true);
-    assert.deepStrictEqual([h.tag, tagOf(h), h.attrs['aria-label']], ['button', 'Advertise with us', 'Advertise with Tri-State News'], slot);
+    assert.deepStrictEqual([h.tag, tagOf(h), h.attrs['aria-label']], ['button', 'Advertise with us', undefined], slot); // named by its visible text
     assert.ok(!/sponsored|\$|\d/i.test(h.textContent), slot + ': ' + h.textContent);
     assert.ok(/Tri-State News/.test(h.textContent));
     h.listeners.click();

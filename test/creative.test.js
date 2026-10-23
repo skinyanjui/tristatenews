@@ -277,7 +277,7 @@ test('the page fills ads only from approved creatives; images are still, lazy an
   const UI = new Function('el', 'return {' + html.slice(s, e).replace(/,\s*$/, '') + '};')((t, c, x) => { const n = node(t, c); if (x != null) n.text = x; return n; });
   const web = UI.adLink('ad-card', { name: 'Fall sale', url: 'https://shop.test/', img: '/api/creative?img=cr0123456789', w: 600, h: 300 });
   const im = web.children.find(c => c.tag === 'img');
-  assert.deepStrictEqual([web.rel, web.target, web.attrs['aria-label'], web.children[0].text, im.src, im.alt, im.loading, im.width, im.height], ['sponsored noopener noreferrer', '_blank', 'Sponsored: Fall sale', 'Sponsored', '/api/creative?img=cr0123456789', 'Fall sale', 'lazy', 600, 300]);
+  assert.deepStrictEqual([web.rel, web.target, web.attrs['aria-label'], web.children[0].text, im.src, im.alt, im.loading, im.width, im.height], ['sponsored noopener noreferrer', '_blank', undefined, 'Sponsored', '/api/creative?img=cr0123456789', 'Fall sale', 'lazy', 600, 300]); // named by "Sponsored" and the image's alt
   const tel = UI.adLink('spon', { name: 'Call us', url: 'tel:+18125550142' });
   assert.deepStrictEqual([tel.href, tel.rel, tel.target, tel.children.length], ['tel:+18125550142', 'sponsored noopener noreferrer', undefined, 1]);
   const code = html.slice(s, html.indexOf('      // The one heart used everywhere.')) + html.slice(html.indexOf('      sponsor: function (slot, houseAd) {'), html.indexOf('      notice: function (text) {'));

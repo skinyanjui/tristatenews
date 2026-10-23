@@ -67,7 +67,9 @@ test('sample ads on the page: labeled "Sample ad", say they are not a real busin
   for (const n of spots) {
     assert.deepStrictEqual([n.tag, n.href, tagOf(n), n.rel, n.target], ['a', '/advertise', 'Sample ad', undefined, undefined], n.className);
     assert.match(n.className, /ad-sample/);
-    assert.match(n.attrs['aria-label'], /^Sample ad: .+, not a real business\. Advertise with Tri-State News\.$/);
+    // named by what it shows (no aria-label, axe label-content-name-mismatch); every sample says it is not a real business
+    assert.strictEqual(n.attrs['aria-label'], undefined, n.className);
+    assert.ok(n.textContent.includes('not a real business'), n.className + ': ' + n.textContent);
     assert.ok(names.some(x => n.textContent.includes(x)) && n.textContent.includes('Advertise here'));
     assert.ok(!/Sponsored/.test(n.textContent), 'never labeled as a real sponsor');
   }

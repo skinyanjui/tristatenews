@@ -112,14 +112,14 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   const html = read('public/index.html');
   assert.ok(html.includes('<script src="/flowers.js"></script>'));
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
-  assert.ok(fn.includes("['Send flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', F.treeFor(it, FLOWERS)], ['Donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
-  assert.ok(fn.includes("a.rel = f.paid ? F.REL_PAID : f.rel;") && fn.includes("if (f.paid) w.appendChild(el('span', 'ob-paid', F.LABEL_PAID));"), '"paid link" only when paid');
+  assert.ok(fn.includes("['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
+  assert.ok(fn.includes("a.rel = f.paid ? F.REL_PAID : f.rel;") && fn.includes("if (f.paid) { w.appendChild(el('span', 'ob-paid', F.LABEL_PAID));"), '"paid link" only when paid');
   assert.ok(fn.includes('return p.children.length ? p : null;'), 'no empty row');
   assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');
   assert.ok(!/<img|ad-card|spon|Sponsored|Advertise/.test(fn), 'not an ad unit');
   assert.ok(html.includes("var fl = kd === 'obits' ? flowersLink(it, 'div') : null; if (fl) { foot.classList.add('cf-ob'); foot.appendChild(fl); }"), 'feed cards: only obituaries, in the footer, not inside the card link');
   const mk = html.slice(html.indexOf('function makeCard('), html.indexOf('var brkTimer'));
-  assert.ok(mk.indexOf('foot.appendChild(actRow(sb, it));') < mk.indexOf("flowersLink(it, 'div')"), 'heart and share first, the flowers row last (audit 2026-10-22: it sat above them on phones)');
+  assert.ok(mk.indexOf("flowersLink(it, 'div')") < mk.indexOf('foot.appendChild(actRow(sb, it));'), 'ship59: links then heart and share in one row, in reading and focus order');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
   assert.ok(ob.includes('flowersLink(it)'), 'posted obituaries too');
   assert.strictEqual((html.match(/flowersLink\(/g) || []).length, 3, 'defined once, used on the two obituary cards only');
@@ -168,16 +168,36 @@ test('Donate: a home donateUrl, or the obituary asks for donations; never an inv
     assert.ok(!F.asksDonations(t), t);
 });
 
-test('action row: one row at the bottom of the card, wraps and stacks, 40px targets, shared tokens; no ads on obituaries', () => {
+test('action row (ship59): links, heart and share in ONE row at the bottom of the card at every width, never wrapping', () => {
   const html = read('public/index.html');
   const css = html.slice(html.indexOf('/* Obituary action row'), html.indexOf('/* in-listing Sponsored card'));
   assert.ok(css.includes('.ob { display:flex; flex-direction:column; }') && css.includes('.ob > .ob-acts { margin-top:auto;'), 'pinned to the bottom');
-  assert.ok(css.includes('.card:has(.cf .ob-acts) > .cf { margin-top:auto; }'), 'feed obituary cards too');
-  assert.ok(css.includes('.card .cf.cf-ob > .ob-acts { order:2; flex:1 0 100%;'), 'feed obituary cards: the row is a full-width last row at every width');
-  assert.ok(css.includes('flex-wrap:wrap') && css.includes('@media (max-width:374px) { .ob-acts { flex-direction:column;'), 'wraps, stacks on narrow phones');
+  assert.ok(css.includes('.card:has(.cf-ob) > .cf { margin-top:auto; }'), 'feed obituary cards too');
+  assert.ok(css.includes('.ob-acts { display:flex; flex-wrap:nowrap;') && css.includes('.card .cf.cf-ob { flex-wrap:nowrap;'), 'one line: neither the links nor the row wrap');
+  assert.ok(!/order:2|flex:1 0 100%|flex-direction:column; align-items:flex-start/.test(css), 'no second row (ship56) and no stacking on narrow phones');
+  assert.ok(css.includes('.card .cf.cf-ob > .ob-acts { flex:1 1 0;') && css.includes('.card .cf.cf-ob > .acts { flex:none;'), 'links take the space the reactions leave');
+  assert.ok(css.includes('container:obacts / inline-size') && /@container obacts \(min-width:\d+px\)/.test(css), 'labels follow the row\'s own width');
+  assert.ok(css.includes('.ob-flw .ob-long { display:none; }'), 'short labels by default (narrowest), the full label with room');
+  assert.ok(css.includes('.card .cf.cf-ob .like, .card .cf.cf-ob .share { min-width:32px; height:32px;'), 'icon reactions, 32px targets (>= 24px)');
+  assert.ok(css.includes('.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; gap:4px; min-height:32px;'), 'link targets 32px tall');
   assert.ok(css.includes('var(--card-pad)') && css.includes('var(--card-stack)'), 'shared tokens');
-  assert.ok(html.includes('.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; min-height:var(--card-tap); }'), '40px targets');
+  const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
+  // one label displayed at a time and no aria-label, so the accessible name is the visible text (axe label-in-name)
+  assert.ok(fn.includes("a.appendChild(el('span', 'ob-long', x[0])); a.appendChild(el('span', 'ob-short', x[1]));") && !/setAttribute\('aria-label'/.test(fn));
+  assert.ok(fn.includes('a.appendChild(svg(OB_ICON[x[2]]))'), 'icon (aria-hidden, from svg())');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
   assert.ok(ob.indexOf('flowersLink(it)') > ob.indexOf("actions(it, 'obit', b, foot)"), 'the row is the last thing in the card');
   assert.ok(!/UI\.sponsor\('obits'|UI\.adCard\('obit/.test(html), 'still no ads on Obituaries');
+});
+
+test('link targets: Florist One funeral flowers and One Tree Planted memorial trees; affiliate switch unchanged', () => {
+  const cfg = JSON.parse(read('data/flowers.json'));
+  assert.strictEqual(cfg.fallbackUrl, 'https://www.floristone.com/funeral-flowers/');
+  assert.strictEqual(cfg.tree.fallbackUrl, 'https://onetreeplanted.org/products/gift-trees-in-memory');
+  const F = require('../public/flowers.js');
+  const it = { title: 'A', source: 'Nobody Known' };
+  assert.deepStrictEqual(F.linkFor(it, { homes: {}, affiliate: null, fallbackUrl: cfg.fallbackUrl }), { href: cfg.fallbackUrl, paid: false, rel: F.REL_FALLBACK });
+  const aff = 'https://www.floristone.com/index.cfm?AffiliateID=123&source_id=aff';
+  assert.deepStrictEqual(F.linkFor(it, { homes: {}, affiliate: aff, fallbackUrl: cfg.fallbackUrl }), { href: aff, paid: true, rel: F.REL_PAID });
+  assert.deepStrictEqual(F.treeFor(it, { tree: { homes: {}, affiliate: null, fallbackUrl: cfg.tree.fallbackUrl } }), { href: cfg.tree.fallbackUrl, paid: false, rel: F.REL_FALLBACK });
 });

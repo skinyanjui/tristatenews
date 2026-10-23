@@ -181,40 +181,42 @@ test('coverage.json is a real measurement record with all 68 counties', () => {
   assert.ok(Object.values(cov.depth).every(n => Number.isInteger(n) && n >= 0));
 });
 
-test('page: the scope control is hidden until the API reports features.scopes; ads and obituary rules untouched', () => {
-  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
-  assert.match(html, /<button class="scope-btn" id="scopeBtn" type="button" hidden/);
-  assert.match(html, /SC\.on = !!\(d\.features && d\.features\.scopes\)/);
-  assert.match(html, /localStorage\.setItem\('tsn\.myCounties'/);
-  assert.match(html, /var AD_TABS = \['events', 'jobs', 'deals', 'classifieds', 'news'\]; \/\/ the only tabs with side ads/);
-  assert.match(html, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ var k = kindOf\(it\.sourceId\); return k === 'police' \|\| k === 'courts'; \}\)/);
-  assert.ok(!/Missouri[^'"]*Tri-State/.test(html.match(/function drawScope[\s\S]*?\n  \}\n/)[0]));
-});
-
-test('area control: one button showing the current area, Tri-State as the only broad option, no All Regions for readers', () => {
+test('home page has no Area filter: no button, sheet, county picker, My counties or saved area (ship59)', () => {
   const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
   // valid inline scripts (a stray // comment in a one-line try once broke the page)
   for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) assert.doesNotThrow(() => new Function(m[1]));
-  const btn = html.match(/<button class="scope-btn"[\s\S]*?<\/button>/)[0];
-  assert.ok(!/scope-k|>Area</.test(btn), 'no separate "Area" prefix');
-  assert.match(btn, /aria-label="Area: Tri-State"/);
-  const ui = html.slice(html.indexOf('function shortLabel'), html.indexOf("scopeBtn.addEventListener('click'"));
-  assert.ok(!/All Regions'\)|'all'|All areas/.test(ui.replace("if (l === 'All Regions') return 'Tri-State';", '')), 'All Regions is not offered');
-  assert.ok(!/<h3|scope-note/.test(ui), 'no repeated headings or explanatory notes');
-  for (const s of ["row('tristate', 'Tri-State'", "'All of ' + STATE_NAMES[s]", "className = 'scope-st'", "'Find a county'", "el('button', 'cl-go')", "el('button', 'ghost', 'Clear')", "localStorage.setItem('tsn.myCounties'", "'My counties ('"]) assert.ok(ui.includes(s), s);
-  assert.equal((ui.match(/'Done'/g) || []).length, 1, 'one Done');
-  assert.ok(!/Missouri[^'"\n]*Tri-State|Tri-State[^'"\n]*Missouri/.test(ui), 'Missouri never labeled Tri-State');
-  // saved 'all' from before falls back to Tri-State; the API still accepts scope=all (admin and old links)
-  assert.match(html, /\/\^\(tristate\|state:\[a-z\]\{2\}\|county:/);
-  assert.equal(S.parse('all').key, 'all');
-  // no duplicate area labels: the meta line doesn't repeat it, and a single-county view drops the per-card county
-  assert.ok(!/metaEl\.textContent = \(SC\.on \? SC\.label/.test(html));
+  for (const gone of ['scopeBtn', 'scopeSheet', 'scopeLbl', 'scope-btn', 'scope-sheet', 'scope-row', 'scope-st', 'scope-cty', 'scope-find', 'tabs-row',
+    'Choose an area', 'Find a county', 'My counties', 'My Counties', 'aria-label="Area', "'Area: '", 'drawScope', 'setScope', 'savedScope', 'shortLabel', "fetch('/api/counties')",
+    "setItem('tsn.scope'", "getItem('tsn.scope'", "setItem('tsn.myCounties'", "getItem('tsn.myCounties'"])
+    assert.ok(!html.includes(gone), gone);
+  assert.match(html, /<div class="nav-tabs"><div class="tabs" id="tabs" role="tablist" aria-label="Story type"><\/div><\/div>/);
+  // returning readers: the old saved area is cleared, so the feed opens on Tri-State
+  assert.ok(html.includes("try { localStorage.removeItem('tsn.scope'); localStorage.removeItem('tsn.myCounties'); } catch (e) {}"));
+  assert.ok(html.includes("var SC = { key: 'tristate',"));
+  assert.ok(html.includes("var url = '/api/news' + (SC.key !== 'tristate' ? '?scope=' + SC.key : '')"), 'the default request has no scope');
+  // the county and state pages still set their scope from the path; leaving one goes back to Tri-State
+  assert.match(html, /var g = RT && RT\.geo && RT\.geo\(location\.pathname\); if \(g\) \{ SC\.geo = g\.path; SC\.key = g\.scope;/);
+  assert.ok(html.includes("else if (SC.geo) { SC.geo = null; SC.key = 'tristate'; }"));
+  assert.ok(html.includes("if (SC.geo) { SC.geo = null; if (SC.key !== 'tristate') { SC.key = 'tristate'; load(false); } }"));
+  assert.ok(html.includes('SC.on && SC.geo && SC.key !== \'tristate\' && !state.q.trim()) return scopeEmpty();'), 'the empty state is for county and state pages only');
+  const empty = html.slice(html.indexOf('function scopeEmpty'), html.indexOf('function load('));
+  assert.ok(!/Missouri[^'"\n]*Tri-State|Tri-State[^'"\n]*Missouri/.test(html.slice(html.indexOf('var STATE_NAMES'), html.indexOf('function load('))), 'Missouri never labeled Tri-State');
+  assert.ok(empty.includes('goScope(next.key)'));
+  // untouched: locality label only with scopes on and not on a county page; ads and obituary rules
   assert.match(html, /if \(it\.place && SC\.on && !\/\^county:\/\.test\(SC\.key\)\)/);
-  // label shortening
-  const shortLabel = new Function('SC', html.match(/function shortLabel\(l\) \{[\s\S]*?\n  \}/)[0] + '; return shortLabel;');
-  const f = shortLabel({ key: 'county:ky-daviess', my: [] });
-  assert.equal(f('Daviess County, KY'), 'Daviess Co., KY'); assert.equal(f('Kentucky'), 'Kentucky'); assert.equal(f('All Regions'), 'Tri-State');
-  assert.equal(shortLabel({ key: 'counties:a,b,c', my: ['a', 'b', 'c'] })('My Counties'), 'My counties (3)');
+  assert.match(html, /var AD_TABS = \['events', 'jobs', 'deals', 'classifieds', 'news'\]; \/\/ the only tabs with side ads/);
+  assert.match(html, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ var k = kindOf\(it\.sourceId\); return k === 'police' \|\| k === 'courts'; \}\)/);
+  // the server side stays: scope API (including all for admin and old links), counties API, regional pages
+  assert.equal(S.parse('all').key, 'all');
+  assert.equal(S.parse('county:ky-henderson').key, 'county:ky-henderson');
+  for (const f of ['api/_scope.js', 'api/_geopage.js', 'api/_geoapi.js', 'api/_coverage.js']) assert.ok(fs.existsSync(path.join(root, f)), f);
+});
+
+test('the reader UI sends no picker state: README and privacy no longer describe an area choice', () => {
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8'), legal = fs.readFileSync(path.join(root, 'public/legal.html'), 'utf8');
+  assert.ok(!/My counties|My Counties|Done\/Clear|beside\s+the tabs with the current area/.test(readme));
+  assert.ok(readme.includes('There is no area picker in the reader UI'));
+  assert.ok(!/the area you chose to read|your list of counties/.test(legal));
 });
 
 test('still exactly 8 functions', () => {

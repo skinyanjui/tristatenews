@@ -70,6 +70,9 @@ const PLACES_EVENTS = 'home|homes|house|apartment|residence|neighborhood|town|ci
 const NOT_PLACE = '(?! (?:river|valley|county|township|twp\\b|state|conference|avenue|ave\\b|street|st\\b|road|turnpike|tech|wesleyan|university|college|titans|vols|volunteers|valley authority))';
 const OUT_OF_AREA_RE = new RegExp(
   '\\b(?:' + OTHER_STATES + ')\\s+(?:' + PEOPLE + ')\\b' +
+  // ship60: "Trump heads to Iowa Thursday", "since Tennessee's first box was installed" (Knoxville baby box story)
+  '|\\b(?:heads?|headed|heading|travels?|traveled|traveling|flies|flew|visits?|visited|visiting) (?:to )?(?:' + OTHER_STATES + ')\\b' + NOT_PLACE +
+  '|\\b(?:' + OTHER_STATES + ')[\'\u2019]s\\b' +
   '|\\b(?:in|near|outside|from|across) (?:rural |northern |southern |eastern |western |central |north |south |east |west |upstate |downstate )?(?:' + OTHER_STATES + ')\\b' + NOT_PLACE +
   '|\\b(?:' + OTHER_STATES + ')' + NOT_PLACE + '(?: [a-z]+){0,2} (?:' + PLACES_EVENTS + ')\\b' +
   '|\\b(?:in|near|outside|from|across|to) (?:northern |southern |eastern |western |central |north |south |east |west )?(?:' + COUNTRIES + ')\\b' +
@@ -77,6 +80,19 @@ const OUT_OF_AREA_RE = new RegExp(
 // "Gladstone, Oregon", "Nashville, Tenn." (the city part capitalised, so this one is case-sensitive)
 const TITLE_STATES = OTHER_STATES.split('|').map(x => x.replace(/\b[a-z]/g, c => c.toUpperCase())).join('|');
 const CITY_STATE_RE = new RegExp('\\b[A-Z][a-z]+(?:[ .-][A-Z][a-z]+)*, (?:' + TITLE_STATES + ')\\b(?! (?:River|Valley|County|Township|State))|\\b[A-Z][a-z]+(?:[ .-][A-Z][a-z]+)*, (?:' + STATE_ABBRS + ')\\.');
+// Well-known landmarks and national parks elsewhere (ship60: 14 News carried Gray's "Grand Canyon adds new dog to help
+// reduce wildlife interactions with visitors"). Any "<Name> National Park" counts except the parks in Indiana and
+// Kentucky (Mammoth Cave, Indiana Dunes); national forests and recreation areas are not matched at all, so Shawnee,
+// Hoosier and Daniel Boone National Forest, Land Between the Lakes and the Ohio River stay local. "Zion" alone is a
+// church name here, so only "Zion National Park" (through the National Park rule) counts.
+const LANDMARK_RE = /\b(?:Grand Canyon|Yellowstone|Yosemite|Grand Teton|Mount Rushmore|Mt\. Rushmore|Everglades|Death Valley|Joshua Tree|Denali|Mount Rainier|Great Smoky Mountains|Niagara Falls|Golden Gate Bridge|Statue of Liberty|Times Square|Las Vegas Strip|Hoover Dam|Lake Tahoe|Pikes Peak|Old Faithful|Walt Disney World|Disney World|Disneyland)\b/;
+const NATIONAL_PARK_RE = /\b((?:[A-Z][A-Za-z.'\u2019-]*\s){1,4})National Parks?\b/g;
+const LOCAL_PARKS = /(?:^|\s)(?:Mammoth Cave|Indiana Dunes)\s$/;
+function landmark(hay) {
+  if (LANDMARK_RE.test(hay)) return true;
+  for (const m of hay.matchAll(NATIONAL_PARK_RE)) if (!LOCAL_PARKS.test(m[1])) return true;
+  return false;
+}
 // Local teams, schools and leagues that headlines name without a town ("Aces fall at Ohio Valley foe", "Otters drop
 // series in Washington, Pa.", "Screaming Eagles host Missouri S&T"): a story naming one is local whatever else it names.
 const LOCAL_TEAMS_RE = /\b(?:purple aces|screaming eagles|otters|thunderbolts|castle knights|harrison warriors|north huskies|memorial tigers|central bears|boonville pioneers|apollo eagles|owensboro catholic|daviess county panthers|gliac)\b/i; // (towns and schools such as Evansville, USI, Reitz, Mater Dei are REGION_TERMS already)
@@ -88,7 +104,7 @@ const LOCAL_TOWNS_RE = /\b(?:Henderson|Newburgh|Mount Vernon|Mt\. Vernon|Princet
 // story about its own towns is not mistaken for network copy (REGION_TERMS lists only the core Tri-State places).
 function outOfArea(item, extra) {
   const hay = item.title + ' ' + item.summary;
-  if (!OUT_OF_AREA_RE.test(hay) && !CITY_STATE_RE.test(hay)) return false;
+  if (!OUT_OF_AREA_RE.test(hay) && !CITY_STATE_RE.test(hay) && !landmark(hay)) return false;
   return !inRegion(item, extra) && !LOCAL_TEAMS_RE.test(hay) && !LOCAL_TOWNS_RE.test(hay);
 }
 

@@ -209,13 +209,12 @@ Two server-side flags, both off by default (exactly `true` turns one on):
 - `COUNTY_FILTERS_ENABLED`: `/api/news?scope=` filters (`tristate`, `all`, `state:ky`, `county:ky-henderson`,
   `counties:a,b`, up to 12). Stories are matched to counties by the step 1 classifier (`api/_location.js`); a story that
   names no place counts for its batch source's verified home county. Each canonical scope is its own CDN cache entry;
-  other spellings redirect (308) to the canonical one, unknown scopes get a 400. The page shows one button beside
-  the tabs with the current area (Tri-State, a state, `Daviess Co., KY`, or `My counties (3)`). Its sheet lists Tri-State,
-  then each state as a collapsible group (All of <state> plus its counties as checkboxes), with a county search box and a
-  single Done/Clear: one county checked shows that county, several become My counties (up to 12, saved in this browser).
-  `scope=all` still works in the API (admin, old links) but is not offered to readers; a saved `all` opens as Tri-State.
-  Stories get a locality label when the classifier is confident (not repeated in a single-county view), and an empty
-  area gets an honest empty state. With the flag off, `?scope` is ignored.
+  other spellings redirect (308) to the canonical one, unknown scopes get a 400. `scope=all` works too (admin, old
+  links). There is no area picker in the reader UI (the Area button and its state/county sheet were removed in ship59):
+  the home feed is always the Tri-State view, the county and state pages below use `?scope` for their own feed, and the
+  page clears the old saved area (`tsn.scope`, `tsn.myCounties`) so a returning reader isn't left on a county view.
+  Stories get a locality label when the classifier is confident (not repeated on a county page), and an empty county or
+  state page gets an honest empty state with a link to its state or Tri-State. With the flag off, `?scope` is ignored.
 - `REGIONAL_ROUTES_ENABLED`: shareable pages `/news/<state>` and `/news/<state>/<county>` (for example
   `/news/indiana/dubois`) and `/sitemap-regions.xml`. Off, those paths are the 404 page, as before. County pages with
   fewer than 5 distinct local stories in 14 days are served `noindex` and left out of the regional sitemap; the counts

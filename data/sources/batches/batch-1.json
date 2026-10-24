@@ -292,68 +292,6 @@
     },
     {
       "seq": 73,
-      "id": "kbsi",
-      "name": "KBSI Fox 23",
-      "area": "Cape Girardeau",
-      "site": "https://www.kbsi23.com",
-      "counties": [
-        "mo-cape-girardeau"
-      ],
-      "geo": true,
-      "geoTerms": [
-        "cape girardeau",
-        "jackson, mo",
-        "perryville",
-        "marble hill",
-        "bollinger",
-        "poplar bluff",
-        "butler county",
-        "sikeston",
-        "scott city",
-        "chaffee",
-        "dexter",
-        "bloomfield",
-        "stoddard",
-        "charleston, mo",
-        "new madrid",
-        "portageville",
-        "greenville, mo",
-        "piedmont",
-        "van buren",
-        "doniphan",
-        "ripley county",
-        "wayne county, mo",
-        "carter county",
-        "mississippi county",
-        "scott county",
-        "perry county, mo",
-        "southeast missouri",
-        "semo",
-        "oran",
-        "advance",
-        "puxico",
-        "east prairie",
-        "malden",
-        "kennett"
-      ],
-      "everyMin": 30,
-      "url": "https://www.kbsi23.com/feed/",
-      "note": "Regional station (SE Missouri, southern Illinois, west Kentucky); geo-filtered.",
-      "batch": "b1",
-      "review": {
-        "approved": true,
-        "reviewer": "Grok Bot (agent) for Sam Kinyanjui, 2026-10-22; licensing to be confirmed by Sam",
-        "checkedSteps": "site identity, local original reporting in sampled items, own-site links",
-        "licensing": {
-          "paywall": null,
-          "summaryOk": null,
-          "imagesOk": false,
-          "use": "headline, short feed summary and link only; no images (project default)"
-        }
-      }
-    },
-    {
-      "seq": 74,
       "id": "clarion",
       "name": "The Hancock Clarion",
       "area": "Hawesville",
@@ -377,7 +315,7 @@
       }
     },
     {
-      "seq": 75,
+      "seq": 74,
       "id": "wrul",
       "name": "WRUL",
       "area": "Carmi",

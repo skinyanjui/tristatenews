@@ -2,7 +2,7 @@
 //   /news/<state>             -> /api/news?__route=geopage&p=/news/<state>            (vercel.json rewrites)
 //   /news/<state>/<county>    -> /api/news?__route=geopage&p=/news/<state>/<county>
 //   /sitemap-regions.xml      -> /api/news?__route=geopage&sitemap=1
-// Flag off, or a path that isn't one of our 4 states or 68 counties: the site's not-found page (404), exactly what
+// Flag off, or a path that isn't one of our 3 states or 57 counties: the site's not-found page (404), exactly what
 // these paths returned before. Flag on: public/index.html with the head pointed at the page (title, description,
 // canonical, og:url), and noindex unless the county passes the depth gate (D10: >= DEPTH_MIN distinct local stories in
 // 14 days). The gate reads the rolling per-county record each refresh maintains (tsn:geo:depth, api/_depthrec.js):
@@ -41,10 +41,9 @@ function indexable(scope, gate) {
 function meta(scope, gate) {
   const where = scope.label;
   const title = where + ' news · Tri-State News';
-  const st = scope.kind === 'state' ? scope.state : scope.countyIds[0].slice(0, 2);
   const desc = scope.kind === 'state'
     ? 'Local news from ' + where + ' counties we cover, gathered from local newsrooms and official sources.'
-    : 'Local news from ' + where + ', gathered from local newsrooms and official sources' + (st === 'mo' ? ' in southeast Missouri.' : ' in the region.');
+    : 'Local news from ' + where + ', gathered from local newsrooms and official sources in the region.';
   return { title, desc, url: ORIGIN + S.pathOf(scope), index: indexable(scope, gate) };
 }
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

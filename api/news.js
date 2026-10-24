@@ -100,8 +100,8 @@ const LOCAL_TEAMS_RE = /\b(?:purple aces|screaming eagles|otters|thunderbolts|ca
 // Named bare (capitalised, with no other state after a comma) they still count as local for this check: "Henderson
 // family returns from Mexico mission trip" stays, "Henderson, Nev. casino opens" does not.
 const LOCAL_TOWNS_RE = /\b(?:Henderson|Newburgh|Mount Vernon|Mt\. Vernon|Princeton|Jasper|Madisonville|Morganfield|Carmi|Albion|Mount Carmel|Grayville|Paducah|Tell City|Rockport|Huntingburg|Lynnville|Darmstadt|Elberfeld)\b(?!, (?!Ind\b|Indiana\b|Ky\b|Kentucky\b|Ill\b|Illinois\b)[A-Z])/;
-// extra: the source's own geoTerms, so a southeast Missouri or Purchase-area source's "Sikeston, Mo." or "Missouri man"
-// story about its own towns is not mistaken for network copy (REGION_TERMS lists only the core Tri-State places).
+// extra: the source's own geoTerms, so a Purchase-area or Pennyrile source's story about its own towns is not
+// mistaken for network copy (REGION_TERMS lists only the core Tri-State places).
 function outOfArea(item, extra) {
   const hay = item.title + ' ' + item.summary;
   if (!OUT_OF_AREA_RE.test(hay) && !CITY_STATE_RE.test(hay) && !landmark(hay)) return false;

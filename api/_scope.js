@@ -1,7 +1,7 @@
 // Geography scope for /api/news (plan PR 6.1) and the county pages (PR 6.2-6.4).
 //   ?scope=tristate            the default view (also what no ?scope gives)
-//   ?scope=all                 every story, every region (Missouri and the extended counties included)
-//   ?scope=state:ky            one state (in, ky, il, mo)
+//   ?scope=all                 every story, every region (the extended counties included)
+//   ?scope=state:ky            one state (in, ky, il)
 //   ?scope=county:ky-henderson one county
 //   ?scope=counties:a,b        several counties ("My Counties"; up to 12, sorted and de-duplicated)
 // Filtering uses the step 1 classifier (api/_location.js classify): a story counts for a county when the classifier
@@ -10,7 +10,7 @@
 // The default view is the stored snapshot unchanged, with one rule (plan D8, extended counties never enter the
 // default feed): items from expansion-batch sources (SOURCE_BATCHES) stay out of it unless they name a core county.
 // With no batch sources in the snapshot, the default view is the snapshot itself, byte for byte.
-// Missouri is extended coverage: no scope or label here ever calls a Missouri county "Tri-State".
+// Southeast Missouri was removed (ship62): there is no Missouri scope, state page or county page; /news/missouri is a 404.
 'use strict';
 const path = require('path');
 const crypto = require('crypto');
@@ -18,8 +18,8 @@ const LOC = require('./_location.js');
 const REG = require('./_sources.js');
 const TARGET = require(path.join(__dirname, '..', 'data', 'geography', 'target-counties.json'));
 
-const STATES = { in: 'Indiana', ky: 'Kentucky', il: 'Illinois', mo: 'Missouri' };
-const SLUGS = { in: 'indiana', ky: 'kentucky', il: 'illinois', mo: 'missouri' };
+const STATES = { in: 'Indiana', ky: 'Kentucky', il: 'Illinois' };
+const SLUGS = { in: 'indiana', ky: 'kentucky', il: 'illinois' };
 const COUNTIES = TARGET.counties.map(c => ({ id: c.id, state: c.id.slice(0, 2), name: c.name, fullName: c.fullName, core: c.tier === 'tri_state_core' }));
 const BY_ID = new Map(COUNTIES.map(c => [c.id, c]));
 const CORE = new Set(COUNTIES.filter(c => c.core).map(c => c.id));
@@ -155,7 +155,7 @@ function depth(snap, sources, now) {
   return out;
 }
 
-// /news/<state>[/<county>] <-> scope. Returns null for anything that isn't one of our states or 68 counties.
+// /news/<state>[/<county>] <-> scope. Returns null for anything that isn't one of our 3 states or 57 counties.
 function fromPath(p) {
   const m = /^\/news\/([a-z]+)(?:\/([a-z-]+))?\/?$/.exec(String(p || '').toLowerCase().split(/[?#]/)[0]);
   if (!m) return null;

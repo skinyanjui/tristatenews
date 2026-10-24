@@ -1,21 +1,22 @@
 # Geography manifest
 
-Reviewed, version-controlled county data for the 68-county expansion (plan PR 2.1), and the locality and alias
+Reviewed, version-controlled county data for the county expansion (plan PR 2.1; 68 counties, 57 since southeast
+Missouri was removed in ship62), and the locality and alias
 tables generated from it (PR 2.2). This folder is not served (the site only serves `public/`). The read-only
 `/api/counties` and `/api/regions` (PR 2.3) answer from the generated `api/_geo.js`; no route uses the locality
 lookups yet.
 
 | File | What it holds |
 | --- | --- |
-| `target-counties.json` | The 68 counties (30 `tri_state_core`, 38 `extended`), their sources, groups and memberships |
-| `optional-counties.json` | Crawford and Orange IN, Breckinridge and Grayson KY. Not part of the 68, not routed, not indexed |
-| `census/2025_Gaz_counties_extract.txt` | The 72 rows for these counties, copied verbatim from the Census 2025 Gazetteer counties file |
-| `census/national_county2020_extract.txt` | The same 72 rows from the Census national county FIPS file (codes2020) |
+| `target-counties.json` | The 57 counties (30 `tri_state_core`, 27 `extended`) in Illinois, Indiana and Kentucky, their sources, groups and memberships |
+| `optional-counties.json` | Crawford and Orange IN, Breckinridge and Grayson KY. Not part of the 57, not routed, not indexed |
+| `census/2025_Gaz_counties_extract.txt` | The 61 rows for these counties (57 + 4 optional), copied verbatim from the Census 2025 Gazetteer counties file |
+| `census/national_county2020_extract.txt` | The same 61 rows from the Census national county FIPS file (codes2020) |
 | `census/county_adjacency2025_extract.txt` | Census 2025 county adjacency rows between these counties, used to check region memberships |
 | `alias-review.json` | Editorial review input: always-ambiguous names, common words, and the few `distinctive` overrides |
 | `communities.json` | **Generated.** Census places with any part in a target county, with every target county they touch |
 | `locality-aliases.json` | **Generated.** Place and county aliases with `ambiguous`, `requiresState` and the reasons for each |
-| `census/2025_Gaz_place_extract.txt` | The 481 places' rows, verbatim from the Census 2025 Gazetteer places file |
+| `census/2025_Gaz_place_extract.txt` | The 387 places' rows, verbatim from the Census 2025 Gazetteer places file |
 | `census/place_by_county2020_extract.txt` | Every county row of those places, verbatim from the Census 2020 place-by-county files (codes2020/place_by_cou) |
 | `census/place_county_geocoder_2025.txt` | Census Geocoder county for 2025 places not in the 2020 file (Public_AR_Current / Current_Current, 2026-10-18) |
 | `census/2025_Gaz_state_extract.txt` | State postal codes and names, verbatim from the 2025 Gazetteer states file |
@@ -34,11 +35,12 @@ Census extracts from the national downloads when moving to a new vintage.
 - **Centroid:** the Gazetteer's internal point (`INTPTLAT`, `INTPTLONG`). It is a point inside the county,
   not the geometric centroid; `centroid.kind` says so.
 - **County seat:** the state's own publication: Illinois Blue Book 2025-2026 (Secretary of State), IN.gov
-  county profiles, the Kentucky Department for Libraries and Archives county chart, and the Missouri Official
-  Manual 2025-2026. `seat.corroboratedBy` lists a second state source where one was checked and agrees.
+  county profiles and the Kentucky Department for Libraries and Archives county chart. `seat.corroboratedBy` lists a second state source where one was checked and agrees.
   `seat.asPublished` keeps the source's spelling when it abbreviates (`Mt. Vernon` is stored as `Mount Vernon`).
-- **Tier and the historic Tri-State label:** Sam's expansion brief. Missouri is extended only and never a member
-  of `tri_state_core` or `tri_state_historic`.
+- **Tier and the historic Tri-State label:** Sam's expansion brief.
+- **No Missouri (ship62, 2026-10-23):** Sam: "I don't want Missouri." The 11 southeast Missouri counties, their
+  region, seat sources and Census rows were removed (`manifestVersion` 2026-10-23.1); `scripts/extract-census.js` now
+  reads only the Illinois, Indiana and Kentucky place-by-county files.
 
 Every source has its URL, retrieval date and a sha256 of the downloaded file in `sources`. The extracts'
 own sha256 values are in `censusExtracts`, and the tests check them.
@@ -58,8 +60,7 @@ own sha256 values are in `censusExtracts`, and the tests check them.
 way readers and newsrooms think about the area, using county-seat geography and Census adjacency, never where a
 publisher is based. Every target county has exactly one **primary** region; a few border counties also have a
 **secondary** one. Each membership's `sourceReference` gives the reasoning (seat, distance from the hub county's
-Census internal point, the neighbors it borders in that region, the brief's guidance). Missouri counties are
-only in Cape Girardeau & SE Missouri and are never part of the historic Tri-State.
+Census internal point, the neighbors it borders in that region, the brief's guidance).
 
 | Region (`region:<id>`) | Hub | Primary | Secondary |
 | --- | --- | --- | --- |
@@ -69,7 +70,6 @@ only in Cape Girardeau & SE Missouri and are never part of the historic Tri-Stat
 | Vincennes, Jasper & SW Indiana (`vincennes-jasper-sw-indiana`) | Knox, Dubois IN | Knox, Daviess, Dubois, Pike, Martin, Perry, Spencer IN | Lawrence IL |
 | Southern Illinois / Little Egypt (`southern-illinois`) | Williamson IL | All 22 Illinois counties | none |
 | Paducah, Murray & far western KY (`paducah-murray-far-western-ky`) | McCracken, Calloway KY | McCracken, Graves, Calloway, Marshall, Ballard, Carlisle, Hickman, Fulton, Livingston, Lyon, Trigg KY | Massac, Pulaski, Alexander IL |
-| Cape Girardeau & SE Missouri (`cape-girardeau-se-missouri`) | Cape Girardeau MO | All 11 Missouri counties | none |
 
 ### Southern Illinois subregions
 
@@ -93,15 +93,15 @@ Changing a region is an editorial decision: edit the members, give the reason in
 
 **Communities** are Census places only (incorporated places and CDPs), never a hand-typed list. A place's counties
 come from the 2020 place-by-county relationship file, so a place that spans counties keeps all of them (Carbondale is
-Jackson and Williamson IL; Cape Girardeau is Cape Girardeau and Scott MO). `partlyOutside` marks places that also
-reach a county outside the 68 (Centralia). Places new since 2020 (mostly 2025 CDPs) take the county that contains
+Jackson and Williamson IL). `partlyOutside` marks places that also
+reach a county outside the 57 (Centralia). Places new since 2020 (mostly 2025 CDPs) take the county that contains
 their internal point from the Census Geocoder; for those `countyIdsComplete` is false.
 
 **Aliases** cover each place name (with Mount/Mt./Mt and Saint/St./St spellings), each county as "X County" and
 "X Co.", and a bare county name only when no place or county anywhere in the U.S. shares it ("Vanderburgh").
 
 - `ambiguous` when the name has two or more candidates in the area (Marion IL/KY, Mount Vernon IN/IL, Princeton,
-  Benton, Greenville, Perry/Wayne/Union/Daviess County, Jackson MO vs Jackson County IL), is a state name
+  Benton, Perry/Union/Daviess County), is a state name
   (Washington), is a reviewed common word or surname (Clay, Murray, Providence), or is listed in `alwaysAmbiguous`
   (Washington, Marion, Mount Vernon). An ambiguous name resolves only with a state qualifier or a county named in
   the same text that leaves one candidate. A feed's own state never resolves it.
@@ -119,9 +119,9 @@ cacheable: `Cache-Control: public, max-age=300, s-maxage=86400, stale-while-reva
 
 | Request | Answer |
 | --- | --- |
-| `GET /api/counties` | All 68 counties: id, state, name, fullName, FIPS, tier, `historicTriState`, seat (with source id), Census internal point, `regions {primary, secondary[], subregion}`; plus `tiers` and `sources` |
-| `?state=IL\|IN\|KY\|MO`, `?tier=tri_state_core\|extended`, `?region=<id>`, `?id=<id>[,<id>]` | Filters, combinable. A region filter includes secondary members and accepts subregions (`southern-illinois:east`). Unknown values: 400 with `allowed`; unknown ids: 404 |
-| `GET /api/regions` | The 7 regions and 2 Southern Illinois subregions: name, kind, parent, hub, states, `counties {primary[], secondary[]}`, subregions |
+| `GET /api/counties` | All 57 counties: id, state, name, fullName, FIPS, tier, `historicTriState`, seat (with source id), Census internal point, `regions {primary, secondary[], subregion}`; plus `tiers` and `sources` |
+| `?state=IL\|IN\|KY`, `?tier=tri_state_core\|extended`, `?region=<id>`, `?id=<id>[,<id>]` | Filters, combinable. A region filter includes secondary members and accepts subregions (`southern-illinois:east`). Unknown values: 400 with `allowed`; unknown ids: 404 |
+| `GET /api/regions` | The 6 regions and 2 Southern Illinois subregions: name, kind, parent, hub, states, `counties {primary[], secondary[]}`, subregions |
 | `GET /api/regions?id=<id>` | One region or subregion (404 if unknown) |
 
-Missouri counties are `extended`, `historicTriState: false`, and nothing in their entries says Tri-State.
+`?state=MO` is an unknown state (400): there is no Missouri coverage.

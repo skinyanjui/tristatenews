@@ -19,10 +19,6 @@
   ],
   "commonWords": [
     {
-      "name": "advance",
-      "reason": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
       "name": "anna",
       "reason": "common word: given name; a bare mention is usually not the place"
     },
@@ -33,10 +29,6 @@
     {
       "name": "ava",
       "reason": "common word: given name; a bare mention is usually not the place"
-    },
-    {
-      "name": "baker",
-      "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
       "name": "bonnie",
@@ -75,19 +67,11 @@
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
-      "name": "commerce",
-      "reason": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
       "name": "cutler",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
       "name": "cypress",
-      "reason": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
-      "name": "delta",
       "reason": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
@@ -100,10 +84,6 @@
     },
     {
       "name": "dixon",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "dudley",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
@@ -120,10 +100,6 @@
     },
     {
       "name": "farley",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "fisk",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
@@ -175,10 +151,6 @@
       "reason": "common word: country or region name; a bare mention is usually not the place"
     },
     {
-      "name": "hunter",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "name": "hurst",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
@@ -203,20 +175,8 @@
       "reason": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
-      "name": "kelso",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "lambert",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "name": "ledbetter",
       "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "lithium",
-      "reason": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
       "name": "lowes",
@@ -224,10 +184,6 @@
     },
     {
       "name": "mackey",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "matthews",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
@@ -240,10 +196,6 @@
     },
     {
       "name": "montgomery",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "morley",
       "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
@@ -273,10 +225,6 @@
     {
       "name": "panther",
       "reason": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
-      "name": "perkins",
-      "reason": "common word: surname; a bare mention is usually not the place"
     },
     {
       "name": "poole",
@@ -323,15 +271,7 @@
       "reason": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
-      "name": "whiting",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "name": "wingo",
-      "reason": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "name": "wyatt",
       "reason": "common word: surname; a bare mention is usually not the place"
     }
   ],

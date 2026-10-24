@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "manifestVersion": "2026-10-18.3",
+  "manifestVersion": "2026-10-23.1",
   "generatedBy": "scripts/build-geo.js",
   "rules": {
     "ambiguous": "same_name_in_area OR state_name OR common_word OR always_ambiguous. An ambiguous name resolves only with a state qualifier (\"Marion, Ill.\") or a co-occurring county alias that picks one candidate; a feed's state never resolves it.",
-    "requiresState": "ambiguous OR namesakes_elsewhere (the name exists outside the 68 counties, per the national 2025 Gazetteer place and county files), unless alias-review.json lists the name as distinctive. A requiresState name that is not ambiguous also resolves from the feed's own state.",
+    "requiresState": "ambiguous OR namesakes_elsewhere (the name exists outside the target counties, per the national 2025 Gazetteer place and county files), unless alias-review.json lists the name as distinctive. A requiresState name that is not ambiguous also resolves from the feed's own state.",
     "distinctive": "an override can clear requiresState for a name with namesakes elsewhere; it can never clear ambiguous."
   },
   "sources": {
@@ -12,42 +12,8 @@
     "stateNames": "census/2025_Gaz_state_extract.txt (2025 Gazetteer, states)",
     "review": "data/geography/alias-review.json"
   },
-  "count": 539,
+  "count": 439,
   "aliases": [
-    {
-      "alias": "advance",
-      "forms": [
-        "advance"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-advance",
-          "geoid": "2900262",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 3,
-        "counties": 0
-      },
-      "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
     {
       "alias": "albion",
       "forms": [
@@ -239,68 +205,6 @@
       }
     },
     {
-      "alias": "allenville",
-      "forms": [
-        "allenville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-allenville",
-          "geoid": "2900748",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "altenburg",
-      "forms": [
-        "altenburg"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-altenburg",
-          "geoid": "2900928",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "alto pass",
       "forms": [
         "alto pass"
@@ -363,38 +267,6 @@
         "counties": 0
       },
       "review": "common word: given name; a bare mention is usually not the place"
-    },
-    {
-      "alias": "anniston",
-      "forms": [
-        "anniston"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-anniston",
-          "geoid": "2901288",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
     },
     {
       "alias": "anthoston",
@@ -525,40 +397,6 @@
         "counties": 0
       },
       "review": "common word: given name; a bare mention is usually not the place"
-    },
-    {
-      "alias": "baker",
-      "forms": [
-        "baker"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-baker",
-          "geoid": "2903034",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 6,
-        "counties": 3
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
     },
     {
       "alias": "ballard county",
@@ -811,36 +649,6 @@
       }
     },
     {
-      "alias": "bell city",
-      "forms": [
-        "bell city"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-bell-city",
-          "geoid": "2904132",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "belle prairie city",
       "forms": [
         "belle prairie city"
@@ -953,26 +761,15 @@
           "countyIds": [
             "ky-marshall"
           ]
-        },
-        {
-          "type": "place",
-          "id": "mo-benton",
-          "geoid": "2904798",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
         }
       ],
       "countyIds": [
         "il-franklin",
-        "ky-marshall",
-        "mo-scott"
+        "ky-marshall"
       ],
       "states": [
         "IL",
-        "KY",
-        "MO"
+        "KY"
       ],
       "ambiguous": true,
       "requiresState": true,
@@ -981,70 +778,8 @@
         "namesakes_elsewhere"
       ],
       "namesakesElsewhere": {
-        "places": 11,
+        "places": 12,
         "counties": 9
-      }
-    },
-    {
-      "alias": "bernie",
-      "forms": [
-        "bernie"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-bernie",
-          "geoid": "2904960",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "bertrand",
-      "forms": [
-        "bertrand"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-bertrand",
-          "geoid": "2904996",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
       }
     },
     {
@@ -1076,36 +811,6 @@
       ],
       "namesakesElsewhere": {
         "places": 1,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "biehle",
-      "forms": [
-        "biehle"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-biehle",
-          "geoid": "2905320",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -1214,70 +919,6 @@
       }
     },
     {
-      "alias": "blodgett",
-      "forms": [
-        "blodgett"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-blodgett",
-          "geoid": "2906346",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "bloomfield",
-      "forms": [
-        "bloomfield"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-bloomfield",
-          "geoid": "2906382",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 11,
-        "counties": 0
-      }
-    },
-    {
       "alias": "bluford",
       "forms": [
         "bluford"
@@ -1298,65 +939,6 @@
       ],
       "states": [
         "IL"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "bollinger",
-      "forms": [
-        "bollinger"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-bollinger",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "bollinger county",
-      "forms": [
-        "bollinger co.",
-        "bollinger county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-bollinger",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -1554,38 +1136,6 @@
       }
     },
     {
-      "alias": "brewer",
-      "forms": [
-        "brewer"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-brewer",
-          "geoid": "2908272",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
       "alias": "bridgeport",
       "forms": [
         "bridgeport"
@@ -1638,36 +1188,6 @@
       ],
       "states": [
         "IL"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "broseley",
-      "forms": [
-        "broseley"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-broseley",
-          "geoid": "2908812",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -1869,36 +1389,6 @@
       }
     },
     {
-      "alias": "burfordville",
-      "forms": [
-        "burfordville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-burfordville",
-          "geoid": "2909784",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "burna",
       "forms": [
         "burna"
@@ -2020,38 +1510,6 @@
         "counties": 0
       },
       "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
-      "alias": "butler county",
-      "forms": [
-        "butler co.",
-        "butler county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-butler",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 7
-      }
     },
     {
       "alias": "cadiz",
@@ -2347,36 +1805,6 @@
       }
     },
     {
-      "alias": "canalou",
-      "forms": [
-        "canalou"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-canalou",
-          "geoid": "2911026",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "cannelburg",
       "forms": [
         "cannelburg"
@@ -2427,68 +1855,6 @@
       ],
       "states": [
         "IN"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "cape girardeau",
-      "forms": [
-        "cape girardeau"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-cape-girardeau",
-          "geoid": "2911242",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau",
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau",
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "cape girardeau county",
-      "forms": [
-        "cape girardeau co.",
-        "cape girardeau county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-cape-girardeau",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -2655,38 +2021,6 @@
       }
     },
     {
-      "alias": "carter county",
-      "forms": [
-        "carter co.",
-        "carter county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-carter",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 4
-      }
-    },
-    {
       "alias": "carterville",
       "forms": [
         "carterville"
@@ -2716,38 +2050,6 @@
       "namesakesElsewhere": {
         "places": 1,
         "counties": 0
-      }
-    },
-    {
-      "alias": "catron",
-      "forms": [
-        "catron"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-catron",
-          "geoid": "2912052",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
       }
     },
     {
@@ -2972,38 +2274,6 @@
       }
     },
     {
-      "alias": "chaffee",
-      "forms": [
-        "chaffee"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-chaffee",
-          "geoid": "2912988",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
-      }
-    },
-    {
       "alias": "chandler",
       "forms": [
         "chandler"
@@ -3036,38 +2306,6 @@
         "counties": 0
       },
       "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "alias": "charleston",
-      "forms": [
-        "charleston"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-charleston",
-          "geoid": "2913366",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 7,
-        "counties": 1
-      }
     },
     {
       "alias": "chrisney",
@@ -3490,40 +2728,6 @@
         "places": 15,
         "counties": 1
       }
-    },
-    {
-      "alias": "commerce",
-      "forms": [
-        "commerce"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-commerce",
-          "geoid": "2915760",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 4,
-        "counties": 0
-      },
-      "review": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
       "alias": "corydon",
@@ -4204,40 +3408,6 @@
       }
     },
     {
-      "alias": "delta",
-      "forms": [
-        "delta"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-delta",
-          "geoid": "2919072",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 7,
-        "counties": 3
-      },
-      "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
       "alias": "dexter",
       "forms": [
         "dexter"
@@ -4251,67 +3421,25 @@
           "countyIds": [
             "ky-calloway"
           ]
-        },
-        {
-          "type": "place",
-          "id": "mo-dexter",
-          "geoid": "2919396",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
         }
       ],
       "countyIds": [
-        "ky-calloway",
-        "mo-stoddard"
+        "ky-calloway"
       ],
       "states": [
-        "KY",
-        "MO"
+        "KY"
       ],
       "ambiguous": true,
       "requiresState": true,
       "reasons": [
-        "same_name_in_area",
         "common_word",
         "namesakes_elsewhere"
       ],
       "namesakesElsewhere": {
-        "places": 9,
+        "places": 10,
         "counties": 0
       },
       "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "alias": "diehlstadt",
-      "forms": [
-        "diehlstadt"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-diehlstadt",
-          "geoid": "2919486",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
     },
     {
       "alias": "dix",
@@ -4409,38 +3537,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 0
-      }
-    },
-    {
-      "alias": "doniphan",
-      "forms": [
-        "doniphan"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-doniphan",
-          "geoid": "2919792",
-          "state": "MO",
-          "countyIds": [
-            "mo-ripley"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-ripley"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 1
       }
     },
     {
@@ -4626,40 +3722,6 @@
       }
     },
     {
-      "alias": "dudley",
-      "forms": [
-        "dudley"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-dudley",
-          "geoid": "2920296",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 4,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "dundas",
       "forms": [
         "dundas"
@@ -4722,36 +3784,6 @@
       }
     },
     {
-      "alias": "dutchtown",
-      "forms": [
-        "dutchtown"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-dutchtown",
-          "geoid": "2920566",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "earlington",
       "forms": [
         "earlington"
@@ -4802,36 +3834,6 @@
       ],
       "states": [
         "IL"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "east prairie",
-      "forms": [
-        "east prairie"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-east-prairie",
-          "geoid": "2921052",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -5104,36 +4106,6 @@
       }
     },
     {
-      "alias": "ellsinore",
-      "forms": [
-        "ellsinore"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-ellsinore",
-          "geoid": "2921916",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "elnora",
       "forms": [
         "elnora"
@@ -5293,38 +4265,6 @@
       "review": "common word: english word or phrase; a bare mention is usually not the place"
     },
     {
-      "alias": "essex",
-      "forms": [
-        "essex"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-essex",
-          "geoid": "2922600",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 5,
-        "counties": 5
-      }
-    },
-    {
       "alias": "evansville",
       "forms": [
         "evansville"
@@ -5390,38 +4330,6 @@
         "counties": 0
       },
       "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
-      "alias": "fairdealing",
-      "forms": [
-        "fairdealing"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-fairdealing",
-          "geoid": "2923248",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler",
-            "mo-ripley"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler",
-        "mo-ripley"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
     },
     {
       "alias": "fairfield",
@@ -5616,39 +4524,6 @@
         "places": 1,
         "counties": 0
       }
-    },
-    {
-      "alias": "fisk",
-      "forms": [
-        "fisk"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-fisk",
-          "geoid": "2924328",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
     },
     {
       "alias": "flora",
@@ -5959,68 +4834,6 @@
       }
     },
     {
-      "alias": "fremont",
-      "forms": [
-        "fremont"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-fremont",
-          "geoid": "2925948",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 9,
-        "counties": 4
-      }
-    },
-    {
-      "alias": "frohna",
-      "forms": [
-        "frohna"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-frohna",
-          "geoid": "2926092",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "fulton",
       "forms": [
         "fulton"
@@ -6213,38 +5026,6 @@
       }
     },
     {
-      "alias": "gideon",
-      "forms": [
-        "gideon"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-gideon",
-          "geoid": "2926974",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
       "alias": "gilbertsville",
       "forms": [
         "gilbertsville"
@@ -6265,38 +5046,6 @@
       ],
       "states": [
         "KY"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "glen allen",
-      "forms": [
-        "glen allen"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-glen-allen",
-          "geoid": "2927280",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": true,
@@ -6403,38 +5152,6 @@
         "counties": 0
       },
       "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
-      "alias": "gordonville",
-      "forms": [
-        "gordonville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-gordonville",
-          "geoid": "2927928",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      }
     },
     {
       "alias": "goreville",
@@ -6589,38 +5306,6 @@
       }
     },
     {
-      "alias": "grandin",
-      "forms": [
-        "grandin"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-grandin",
-          "geoid": "2928180",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
       "alias": "grandview",
       "forms": [
         "grandview"
@@ -6714,36 +5399,6 @@
       }
     },
     {
-      "alias": "grayridge",
-      "forms": [
-        "grayridge"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-grayridge",
-          "geoid": "2928864",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "grayville",
       "forms": [
         "grayville"
@@ -6789,33 +5444,21 @@
           "countyIds": [
             "ky-muhlenberg"
           ]
-        },
-        {
-          "type": "place",
-          "id": "mo-greenville",
-          "geoid": "2929476",
-          "state": "MO",
-          "countyIds": [
-            "mo-wayne"
-          ]
         }
       ],
       "countyIds": [
-        "ky-muhlenberg",
-        "mo-wayne"
+        "ky-muhlenberg"
       ],
       "states": [
-        "KY",
-        "MO"
+        "KY"
       ],
-      "ambiguous": true,
+      "ambiguous": false,
       "requiresState": true,
       "reasons": [
-        "same_name_in_area",
         "namesakes_elsewhere"
       ],
       "namesakesElsewhere": {
-        "places": 24,
+        "places": 25,
         "counties": 1
       }
     },
@@ -7189,36 +5832,6 @@
       }
     },
     {
-      "alias": "harviell",
-      "forms": [
-        "harviell"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-harviell",
-          "geoid": "2930844",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "hatfield",
       "forms": [
         "hatfield"
@@ -7341,36 +5954,6 @@
       ],
       "namesakesElsewhere": {
         "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "haywood city",
-      "forms": [
-        "haywood city"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-haywood-city",
-          "geoid": "2931204",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -7803,70 +6386,6 @@
       }
     },
     {
-      "alias": "howardville",
-      "forms": [
-        "howardville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-howardville",
-          "geoid": "2933364",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "hunter",
-      "forms": [
-        "hunter"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-hunter",
-          "geoid": "2933778",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 7,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "huntingburg",
       "forms": [
         "huntingburg"
@@ -8061,49 +6580,6 @@
         "counties": 1
       },
       "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
-      "alias": "jackson",
-      "forms": [
-        "jackson"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-jackson",
-          "geoid": "2935648",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        },
-        {
-          "type": "county",
-          "id": "il-jackson",
-          "state": "IL",
-          "countyIds": [
-            "il-jackson"
-          ]
-        }
-      ],
-      "countyIds": [
-        "il-jackson",
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "IL",
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "same_name_in_area",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 16,
-        "counties": 23
-      }
     },
     {
       "alias": "jackson county",
@@ -8561,40 +7037,6 @@
       }
     },
     {
-      "alias": "kelso",
-      "forms": [
-        "kelso"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-kelso",
-          "geoid": "2938216",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "kevil",
       "forms": [
         "kevil"
@@ -8783,40 +7225,6 @@
       }
     },
     {
-      "alias": "lambert",
-      "forms": [
-        "lambert"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-lambert",
-          "geoid": "2940448",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "lawrence county",
       "forms": [
         "lawrence co.",
@@ -8974,69 +7382,6 @@
       }
     },
     {
-      "alias": "lilbourn",
-      "forms": [
-        "lilbourn"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-lilbourn",
-          "geoid": "2942536",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "lithium",
-      "forms": [
-        "lithium"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-lithium",
-          "geoid": "2943346",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      },
-      "review": "common word: english word or phrase; a bare mention is usually not the place"
-    },
-    {
       "alias": "livermore",
       "forms": [
         "livermore"
@@ -9098,38 +7443,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 5
-      }
-    },
-    {
-      "alias": "longtown",
-      "forms": [
-        "longtown"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-longtown",
-          "geoid": "2943940",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
       }
     },
     {
@@ -9514,36 +7827,6 @@
       }
     },
     {
-      "alias": "marble hill",
-      "forms": [
-        "marble hill"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-marble-hill",
-          "geoid": "2945848",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "mariah hill",
       "forms": [
         "mariah hill"
@@ -9649,36 +7932,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 11
-      }
-    },
-    {
-      "alias": "marston",
-      "forms": [
-        "marston"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-marston",
-          "geoid": "2946406",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
       }
     },
     {
@@ -9816,40 +8069,6 @@
         "places": 0,
         "counties": 0
       }
-    },
-    {
-      "alias": "matthews",
-      "forms": [
-        "matthews"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-matthews",
-          "geoid": "2946730",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 3,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
     },
     {
       "alias": "maunie",
@@ -10198,134 +8417,6 @@
       }
     },
     {
-      "alias": "mill spring",
-      "forms": [
-        "mill spring"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-mill-spring",
-          "geoid": "2948386",
-          "state": "MO",
-          "countyIds": [
-            "mo-wayne"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-wayne"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "millersville",
-      "forms": [
-        "millersville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-millersville",
-          "geoid": "2948350",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "miner",
-      "forms": [
-        "miner"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-miner",
-          "geoid": "2948656",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi",
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi",
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
-      }
-    },
-    {
-      "alias": "mississippi county",
-      "forms": [
-        "mississippi co.",
-        "mississippi county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-mississippi",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
-      }
-    },
-    {
       "alias": "monroe city",
       "forms": [
         "monroe city"
@@ -10392,38 +8483,6 @@
       "review": "common word: surname; a bare mention is usually not the place"
     },
     {
-      "alias": "morehouse",
-      "forms": [
-        "morehouse"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-morehouse",
-          "geoid": "2949898",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
-      }
-    },
-    {
       "alias": "morganfield",
       "forms": [
         "morganfield"
@@ -10452,40 +8511,6 @@
         "places": 0,
         "counties": 0
       }
-    },
-    {
-      "alias": "morley",
-      "forms": [
-        "morley"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-morley",
-          "geoid": "2949988",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
     },
     {
       "alias": "mortons gap",
@@ -10945,38 +8970,6 @@
       }
     },
     {
-      "alias": "naylor",
-      "forms": [
-        "naylor"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-naylor",
-          "geoid": "2951302",
-          "state": "MO",
-          "countyIds": [
-            "mo-ripley"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-ripley"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
       "alias": "nebo",
       "forms": [
         "nebo"
@@ -11005,36 +8998,6 @@
       ],
       "namesakesElsewhere": {
         "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "neelyville",
-      "forms": [
-        "neelyville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-neelyville",
-          "geoid": "2951446",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -11095,38 +9058,6 @@
       "reasons": [],
       "namesakesElsewhere": {
         "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "new hamburg",
-      "forms": [
-        "new hamburg"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-new-hamburg",
-          "geoid": "2951842",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
         "counties": 0
       }
     },
@@ -11194,96 +9125,6 @@
       ],
       "namesakesElsewhere": {
         "places": 10,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "new madrid",
-      "forms": [
-        "new madrid"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-new-madrid",
-          "geoid": "2952076",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "new madrid county",
-      "forms": [
-        "new madrid co.",
-        "new madrid county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-new-madrid",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "new wells",
-      "forms": [
-        "new wells"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-new-wells",
-          "geoid": "2952364",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -11446,36 +9287,6 @@
       }
     },
     {
-      "alias": "north lilbourn",
-      "forms": [
-        "north lilbourn"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-north-lilbourn",
-          "geoid": "2953138",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "nortonville",
       "forms": [
         "nortonville"
@@ -11537,38 +9348,6 @@
       ],
       "namesakesElsewhere": {
         "places": 15,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "oak ridge",
-      "forms": [
-        "oak ridge"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-oak-ridge",
-          "geoid": "2953786",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 7,
         "counties": 0
       }
     },
@@ -11692,36 +9471,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 2
-      }
-    },
-    {
-      "alias": "old appleton",
-      "forms": [
-        "old appleton"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-old-appleton",
-          "geoid": "2954200",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
       }
     },
     {
@@ -11945,36 +9694,6 @@
       }
     },
     {
-      "alias": "oran",
-      "forms": [
-        "oran"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-oran",
-          "geoid": "2954758",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "orient",
       "forms": [
         "orient"
@@ -12097,36 +9816,6 @@
       ],
       "namesakesElsewhere": {
         "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "oxly",
-      "forms": [
-        "oxly"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-oxly",
-          "geoid": "2955694",
-          "state": "MO",
-          "countyIds": [
-            "mo-ripley"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-ripley"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -12259,38 +9948,6 @@
       }
     },
     {
-      "alias": "parma",
-      "forms": [
-        "parma"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-parma",
-          "geoid": "2956342",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 3,
-        "counties": 0
-      }
-    },
-    {
       "alias": "patoka",
       "forms": [
         "patoka"
@@ -12355,70 +10012,6 @@
       }
     },
     {
-      "alias": "penermon",
-      "forms": [
-        "penermon"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-penermon",
-          "geoid": "2956900",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "perkins",
-      "forms": [
-        "perkins"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-perkins",
-          "geoid": "2957044",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 2
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "perry county",
       "forms": [
         "perry co.",
@@ -12440,25 +10033,15 @@
           "countyIds": [
             "il-perry"
           ]
-        },
-        {
-          "type": "county",
-          "id": "mo-perry",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
         }
       ],
       "countyIds": [
         "il-perry",
-        "in-perry",
-        "mo-perry"
+        "in-perry"
       ],
       "states": [
         "IL",
-        "IN",
-        "MO"
+        "IN"
       ],
       "ambiguous": true,
       "requiresState": true,
@@ -12468,39 +10051,7 @@
       ],
       "namesakesElsewhere": {
         "places": 0,
-        "counties": 7
-      }
-    },
-    {
-      "alias": "perryville",
-      "forms": [
-        "perryville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-perryville",
-          "geoid": "2957116",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 4,
-        "counties": 0
+        "counties": 8
       }
     },
     {
@@ -12596,38 +10147,6 @@
       }
     },
     {
-      "alias": "piedmont",
-      "forms": [
-        "piedmont"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-piedmont",
-          "geoid": "2957422",
-          "state": "MO",
-          "countyIds": [
-            "mo-wayne"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-wayne"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 7,
-        "counties": 0
-      }
-    },
-    {
       "alias": "pike county",
       "forms": [
         "pike co.",
@@ -12680,36 +10199,6 @@
       ],
       "states": [
         "IL"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "pinhook",
-      "forms": [
-        "pinhook"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-pinhook",
-          "geoid": "2957926",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -12818,38 +10307,6 @@
       }
     },
     {
-      "alias": "pocahontas",
-      "forms": [
-        "pocahontas"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-pocahontas",
-          "geoid": "2958628",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 5,
-        "counties": 2
-      }
-    },
-    {
       "alias": "poole",
       "forms": [
         "poole"
@@ -12915,66 +10372,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 2
-      }
-    },
-    {
-      "alias": "poplar bluff",
-      "forms": [
-        "poplar bluff"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-poplar-bluff",
-          "geoid": "2959096",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "portageville",
-      "forms": [
-        "portageville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-portageville",
-          "geoid": "2959186",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
       }
     },
     {
@@ -13244,66 +10641,6 @@
       }
     },
     {
-      "alias": "puxico",
-      "forms": [
-        "puxico"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-puxico",
-          "geoid": "2960284",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "qulin",
-      "forms": [
-        "qulin"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-qulin",
-          "geoid": "2960428",
-          "state": "MO",
-          "countyIds": [
-            "mo-butler"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-butler"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "raglesville",
       "forms": [
         "raglesville"
@@ -13562,68 +10899,6 @@
       ],
       "namesakesElsewhere": {
         "places": 2,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "ripley county",
-      "forms": [
-        "ripley co.",
-        "ripley county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-ripley",
-          "state": "MO",
-          "countyIds": [
-            "mo-ripley"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-ripley"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 1
-      }
-    },
-    {
-      "alias": "risco",
-      "forms": [
-        "risco"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-risco",
-          "geoid": "2961994",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -14280,72 +11555,6 @@
       }
     },
     {
-      "alias": "scott city",
-      "forms": [
-        "scott city"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-scott-city",
-          "geoid": "2966368",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau",
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau",
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "scott county",
-      "forms": [
-        "scott co.",
-        "scott county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-scott",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 10
-      }
-    },
-    {
       "alias": "sebree",
       "forms": [
         "sebree"
@@ -14408,36 +11617,6 @@
       }
     },
     {
-      "alias": "sedgewickville",
-      "forms": [
-        "sedgewickville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-sedgewickville",
-          "geoid": "2966476",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "sesser",
       "forms": [
         "sesser"
@@ -14468,36 +11647,6 @@
       }
     },
     {
-      "alias": "shakertowne",
-      "forms": [
-        "shakertowne"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-shakertowne",
-          "geoid": "2966935",
-          "state": "MO",
-          "countyIds": [
-            "mo-perry"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-perry"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "shawneetown",
       "forms": [
         "shawneetown"
@@ -14511,32 +11660,21 @@
           "countyIds": [
             "il-gallatin"
           ]
-        },
-        {
-          "type": "place",
-          "id": "mo-shawneetown",
-          "geoid": "2967124",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
         }
       ],
       "countyIds": [
-        "il-gallatin",
-        "mo-cape-girardeau"
+        "il-gallatin"
       ],
       "states": [
-        "IL",
-        "MO"
+        "IL"
       ],
-      "ambiguous": true,
+      "ambiguous": false,
       "requiresState": true,
       "reasons": [
-        "same_name_in_area"
+        "namesakes_elsewhere"
       ],
       "namesakesElsewhere": {
-        "places": 0,
+        "places": 1,
         "counties": 0
       }
     },
@@ -14561,38 +11699,6 @@
       ],
       "states": [
         "IN"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "sikeston",
-      "forms": [
-        "sikeston"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-sikeston",
-          "geoid": "2967790",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid",
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid",
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -15075,36 +12181,6 @@
       }
     },
     {
-      "alias": "stoddard county",
-      "forms": [
-        "stoddard co.",
-        "stoddard county"
-      ],
-      "refs": [
-        {
-          "type": "county",
-          "id": "mo-stoddard",
-          "state": "MO",
-          "countyIds": [
-            "mo-stoddard"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-stoddard"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
       "alias": "stonefort",
       "forms": [
         "stonefort"
@@ -15230,38 +12306,6 @@
       "namesakesElsewhere": {
         "places": 0,
         "counties": 0
-      }
-    },
-    {
-      "alias": "tallapoosa",
-      "forms": [
-        "tallapoosa"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-tallapoosa",
-          "geoid": "2972196",
-          "state": "MO",
-          "countyIds": [
-            "mo-new-madrid"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-new-madrid"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 1
       }
     },
     {
@@ -15869,38 +12913,6 @@
       }
     },
     {
-      "alias": "van buren",
-      "forms": [
-        "van buren"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-van-buren",
-          "geoid": "2975580",
-          "state": "MO",
-          "countyIds": [
-            "mo-carter"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-carter"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 4,
-        "counties": 4
-      }
-    },
-    {
       "alias": "vanderburgh",
       "forms": [
         "vanderburgh"
@@ -15950,36 +12962,6 @@
       ],
       "states": [
         "IN"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "vanduser",
-      "forms": [
-        "vanduser"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-vanduser",
-          "geoid": "2975724",
-          "state": "MO",
-          "countyIds": [
-            "mo-scott"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-scott"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,
@@ -16407,33 +13389,22 @@
           "countyIds": [
             "il-wayne"
           ]
-        },
-        {
-          "type": "county",
-          "id": "mo-wayne",
-          "state": "MO",
-          "countyIds": [
-            "mo-wayne"
-          ]
         }
       ],
       "countyIds": [
-        "il-wayne",
-        "mo-wayne"
+        "il-wayne"
       ],
       "states": [
-        "IL",
-        "MO"
+        "IL"
       ],
-      "ambiguous": true,
+      "ambiguous": false,
       "requiresState": true,
       "reasons": [
-        "same_name_in_area",
         "namesakes_elsewhere"
       ],
       "namesakesElsewhere": {
         "places": 0,
-        "counties": 14
+        "counties": 15
       }
     },
     {
@@ -16811,72 +13782,6 @@
       }
     },
     {
-      "alias": "whitewater",
-      "forms": [
-        "whitewater"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-whitewater",
-          "geoid": "2979612",
-          "state": "MO",
-          "countyIds": [
-            "mo-cape-girardeau"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-cape-girardeau"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 5,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "whiting",
-      "forms": [
-        "whiting"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-whiting",
-          "geoid": "2979684",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 5,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "wickliffe",
       "forms": [
         "wickliffe"
@@ -16941,38 +13846,6 @@
       }
     },
     {
-      "alias": "williamsville",
-      "forms": [
-        "williamsville"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-williamsville",
-          "geoid": "2980026",
-          "state": "MO",
-          "countyIds": [
-            "mo-wayne"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-wayne"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": true,
-      "reasons": [
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 2,
-        "counties": 0
-      }
-    },
-    {
       "alias": "willisville",
       "forms": [
         "willisville"
@@ -17001,36 +13874,6 @@
       ],
       "namesakesElsewhere": {
         "places": 1,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "wilson city",
-      "forms": [
-        "wilson city"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-wilson-city",
-          "geoid": "2980260",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
         "counties": 0
       }
     },
@@ -17132,40 +13975,6 @@
       }
     },
     {
-      "alias": "wyatt",
-      "forms": [
-        "wyatt"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-wyatt",
-          "geoid": "2981178",
-          "state": "MO",
-          "countyIds": [
-            "mo-mississippi"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-mississippi"
-      ],
-      "states": [
-        "MO"
-      ],
-      "ambiguous": true,
-      "requiresState": true,
-      "reasons": [
-        "common_word",
-        "namesakes_elsewhere"
-      ],
-      "namesakesElsewhere": {
-        "places": 1,
-        "counties": 0
-      },
-      "review": "common word: surname; a bare mention is usually not the place"
-    },
-    {
       "alias": "xenia",
       "forms": [
         "xenia"
@@ -17218,36 +14027,6 @@
       ],
       "states": [
         "KY"
-      ],
-      "ambiguous": false,
-      "requiresState": false,
-      "reasons": [],
-      "namesakesElsewhere": {
-        "places": 0,
-        "counties": 0
-      }
-    },
-    {
-      "alias": "zalma",
-      "forms": [
-        "zalma"
-      ],
-      "refs": [
-        {
-          "type": "place",
-          "id": "mo-zalma",
-          "geoid": "2981430",
-          "state": "MO",
-          "countyIds": [
-            "mo-bollinger"
-          ]
-        }
-      ],
-      "countyIds": [
-        "mo-bollinger"
-      ],
-      "states": [
-        "MO"
       ],
       "ambiguous": false,
       "requiresState": false,

@@ -8,7 +8,7 @@
 //   2025_Gaz_place_national.txt     https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip
 //   2025_Gaz_counties_national.txt  https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip
 //   2025_Gaz_state_national.txt     https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_state_national.zip
-//   st17_il_place_by_county2020.txt, st18_in_…, st21_ky_…, st29_mo_…  https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/
+//   st17_il_place_by_county2020.txt, st18_in_…, st21_ky_…  https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/
 // Places that exist in the 2025 Gazetteer but not in the 2020 place-by-county files (new CDPs and places) get their
 // county from the Census Geocoder (point-in-county for the Gazetteer internal point). --geocode asks the Geocoder;
 // without it the previous answers in census/place_county_geocoder_2025.txt are reused.
@@ -42,7 +42,7 @@ async function main() {
   const manifest = JSON.parse(fs.readFileSync(path.join(DIR, 'target-counties.json'), 'utf8'));
   const target = new Set(manifest.counties.map(c => c.fips));
 
-  const pbc = ['st17_il', 'st18_in', 'st21_ky', 'st29_mo'].flatMap(s => readTable(path.join(raw, s + '_place_by_county2020.txt')).rows);
+  const pbc = ['st17_il', 'st18_in', 'st21_ky'].flatMap(s => readTable(path.join(raw, s + '_place_by_county2020.txt')).rows);
   const pbcHeader = readTable(path.join(raw, 'st17_il_place_by_county2020.txt')).header;
   const countiesOf = new Map();
   for (const { r } of pbc) { const g = r.STATEFP + r.PLACEFP; if (!countiesOf.has(g)) countiesOf.set(g, new Set()); countiesOf.get(g).add(r.STATEFP + r.COUNTYFP); }
@@ -51,10 +51,11 @@ async function main() {
   const geoFile = path.join(OUT, 'place_county_geocoder_2025.txt');
   const geoHeader = 'GEOID|NAME|INTPTLAT|INTPTLONG|COUNTY_GEOID|COUNTY_NAME|BENCHMARK|VINTAGE';
   const cached = fs.existsSync(geoFile) ? readTable(geoFile).rows : [];
-  const geocoded = new Map(cached.map(({ line, r }) => [r.GEOID, { line, r }]));
+  // Illinois, Indiana and Kentucky only (southeast Missouri was removed in ship62); older Missouri answers are dropped.
+  const geocoded = new Map(cached.filter(({ r }) => /^(17|18|21)/.test(r.GEOID)).map(({ line, r }) => [r.GEOID, { line, r }]));
   const near = r => +r.INTPTLAT > 36.0 && +r.INTPTLAT < 39.4 && +r.INTPTLONG > -91.4 && +r.INTPTLONG < -85.9;
   for (const { r } of gaz.rows) {
-    if (!['IL', 'IN', 'KY', 'MO'].includes(r.USPS) || countiesOf.has(r.GEOID) || !near(r)) continue;
+    if (!['IL', 'IN', 'KY'].includes(r.USPS) || countiesOf.has(r.GEOID) || !near(r)) continue;
     if (!geocoded.has(r.GEOID) && args.includes('--geocode')) {
       const u = 'https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=' + r.INTPTLONG + '&y=' + r.INTPTLAT + '&benchmark=Public_AR_Current&vintage=Current_Current&layers=Counties&format=json';
       const c = (await (await fetch(u)).json()).result.geographies.Counties[0];
@@ -84,7 +85,7 @@ async function main() {
   const P = 'https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/';
   const RAW = [['2025_Gaz_place_national.txt', G + '2025_Gaz_place_national.zip', '2025'], ['2025_Gaz_counties_national.txt', G + '2025_Gaz_counties_national.zip', '2025'],
     ['2025_Gaz_state_national.txt', G + '2025_Gaz_state_national.zip', '2025']]
-    .concat(['st17_il', 'st18_in', 'st21_ky', 'st29_mo'].map(s => [s + '_place_by_county2020.txt', P + s + '_place_by_county2020.txt', '2020']));
+    .concat(['st17_il', 'st18_in', 'st21_ky'].map(s => [s + '_place_by_county2020.txt', P + s + '_place_by_county2020.txt', '2020']));
   const sha = f => require('crypto').createHash('sha256').update(fs.readFileSync(path.join(raw, f))).digest('hex');
   const retrieved = args.includes('--retrieved') ? args[args.indexOf('--retrieved') + 1] : new Date().toISOString().slice(0, 10);
   fs.writeFileSync(path.join(OUT, 'raw-sources.json'), JSON.stringify({

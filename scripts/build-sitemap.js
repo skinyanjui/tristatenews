@@ -4,7 +4,7 @@
 //                                             classify the stories and write data/geography/coverage.json
 //   node scripts/build-sitemap.js             print the regional sitemap the site would serve from that file
 // Run --measure with EXPANDED_SOURCES_ENABLED=true SOURCE_BATCHES=b1,b2 to measure what readers would get with the
-// verified batches on. /sitemap-regions.xml (api/_geopage.js) lists the 4 state pages and only the county pages whose
+// verified batches on. /sitemap-regions.xml (api/_geopage.js) lists the 3 state pages (Illinois, Indiana, Kentucky) and only the county pages whose
 // measured depth (distinct local stories in 14 days) is at least DEPTH_MIN; the others are served with noindex.
 'use strict';
 const fs = require('fs');
@@ -30,7 +30,7 @@ async function measure() {
   };
   fs.writeFileSync(OUT, JSON.stringify(rec, null, 2) + '\n');
   const pass = Object.entries(depth).filter(([, n]) => n >= S.DEPTH_MIN);
-  console.log('measured ' + rec.items + ' items from ' + rec.sources + ' sources; ' + pass.length + ' of 68 counties pass the gate (>= ' + S.DEPTH_MIN + ')');
+  console.log('measured ' + rec.items + ' items from ' + rec.sources + ' sources; ' + pass.length + ' of ' + Object.keys(depth).length + ' counties pass the gate (>= ' + S.DEPTH_MIN + ')');
   console.log('default view: ' + JSON.stringify(rec.defaultView));
 }
 

@@ -57,8 +57,8 @@ Step 1 of the county expansion (plan PR 4.2). `api/_location.js` gives each stor
 - **Where the story happens.** Evidence comes from the story's own headline and summary, matched with `api/_places.js` `locate()` over the generated alias table.
   - A dateline ("HENDERSON, Ky. (WEHT) -") is where the newsroom filed from. When it is the only place named, the story is not assigned; the dateline is recorded in `datelinePrior`.
   - The publisher's area is recorded in `publisherPrior` (confidence 0.3) and never assigns a county.
-- **Ambiguous names stay unassigned.** Washington, Marion, Mount Vernon, Princeton, Perry County, Daviess County and the other shared names get `reason: ambiguous_name` and their candidates in `unresolved`, unless a state qualifier ("Marion, Ill.") or a county named alongside picks one. A place in another state ("Henderson, Nev.") gets `out_of_area`. A city in two counties (Sikeston, Carbondale) lists both with no primary.
-- **Separate fields.** Source coverage (`sourceCoverage(source)`, from the registry `area`), article geography (the contract) and reader preference (browser only, not touched) stay separate. Missouri counties are never in the historic Tri-State group (`inTriStateHistoric` is false for them).
+- **Ambiguous names stay unassigned.** Washington, Marion, Mount Vernon, Princeton, Perry County, Daviess County and the other shared names get `reason: ambiguous_name` and their candidates in `unresolved`, unless a state qualifier ("Marion, Ill.") or a county named alongside picks one. A place in another state ("Henderson, Nev.") gets `out_of_area`. A city in two counties (Carbondale) lists both with no primary.
+- **Separate fields.** Source coverage (`sourceCoverage(source)`, from the registry `area`), article geography (the contract) and reader preference (browser only, not touched) stay separate.
 - **Shadow only.** With `COUNTY_CLASSIFICATION_ENABLED=true` (`api/_flags.js`; off by default, only the exact value `true` turns it on), each refresh stores the result privately in `tsn:loc:shadow` (7 days, one extra SET in the same request). The public snapshot and every page stay exactly as they are.
 - **Checking accuracy.**
   - `GET /api/locations` with `x-admin-key` returns the stored record.
@@ -223,7 +223,13 @@ Two server-side flags, both off by default (exactly `true` turns one on):
 
 The default view (no `?scope`, or Tri-State) is the existing feed. Expansion-batch sources only appear in it when a story
 names one of the 30 core counties; everything else from them is under its state or its county.
-Missouri is never labeled Tri-State.
+
+Coverage is Illinois, Indiana and Kentucky: 57 counties (30 core, 27 extended). Southeast Missouri (11 counties, the
+Cape Girardeau & SE Missouri region and its 8 Missouri-only batch sources: kbsi, wcjbanner, gn-perrymo, gn-carterripley,
+gn-butler, gn-stoddard, gn-scott, gn-msnm) was removed in ship62. There is no `state:mo` scope; `/news/missouri` and
+its county paths are the 404 page and are not in `/sitemap-regions.xml` (3 state pages plus the county pages that pass
+the depth gate). Missouri stories stay out of area for the Tri-State feed (`api/news.js` outOfArea). KFVS12 (Cape
+Girardeau) stays: it covers southern Illinois and western Kentucky and is geo-filtered to the region.
 
 ## Sources & Coverage admin (county expansion step 4)
 
@@ -234,7 +240,7 @@ The admin page (`/admin.html`, same `LISTINGS_ADMIN_KEY`) has a Sources & Covera
 - Source health from each source's stored record: status (ok, quiet = fetched fine but nothing local right now,
   stale = nothing for 3x its own measured cadence and at least 2 days, failing, paused, off, not fetched), items,
   newest story, cadence (batch evidence, else the median gap of its stored stories) and last fetch.
-- Counties: all 68 with tier, stories in the last 14 days in the current snapshot, the committed measurement
+- Counties: all 57 with tier, stories in the last 14 days in the current snapshot, the committed measurement
   (`data/geography/coverage.json`), home sources and gaps.
 - Classifier review queue (ambiguous names first) with a manual county override. `POST /api/coverage
   {key, countyIds, note}` (`[]` = no county, `{key, clear: true}` removes it) writes `tsn:loc:overrides` and an

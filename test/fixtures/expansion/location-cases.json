@@ -1,8 +1,8 @@
 {
   "note": "Hand-written classifier regression cases (plan §15 fixtures A and B plus the §3.10 collisions). Synthetic headlines written for these tests, not real stories. expect.countyIds is the exact county set; expect.scope the scope.",
   "cases": [
-    { "name": "A: Perry MO collision", "source": "wfie", "item": { "title": "Perryville man charged after chase", "summary": "The Perry County Sheriff (Mo.) says the man was taken into custody." }, "expect": { "scope": "county", "countyIds": ["mo-perry"] } },
-    { "name": "A2: Perry County, Mo. qualified", "source": "kfvs", "item": { "title": "Perry County, Mo. commissioners approve road plan", "summary": "" }, "expect": { "scope": "county", "countyIds": ["mo-perry"], "level": "verified_county" } },
+    { "name": "A: Perry County (Mo.) is not ours (Missouri removed, ship62): unassigned", "source": "wfie", "item": { "title": "Perryville man charged after chase", "summary": "The Perry County Sheriff (Mo.) says the man was taken into custody." }, "expect": { "scope": "unknown", "countyIds": [] } },
+    { "name": "A2: Perry County, Mo. qualified: outside the area (Missouri removed, ship62)", "source": "kfvs", "item": { "title": "Perry County, Mo. commissioners approve road plan", "summary": "" }, "expect": { "scope": "unknown", "countyIds": [], "reason": "place_outside_area" } },
     { "name": "B: Evansville outlet, Hopkins story", "source": "wfie", "item": { "title": "Madisonville city council approves budget", "summary": "" }, "expect": { "scope": "county", "countyIds": ["ky-hopkins"] } },
     { "name": "Washington alone", "source": "wfie", "item": { "title": "Washington council meets Tuesday", "summary": "" }, "expect": { "scope": "unknown", "countyIds": [], "reason": "ambiguous_name" } },
     { "name": "Marion alone", "source": "kfvs", "item": { "title": "Marion police investigate break-in", "summary": "" }, "expect": { "scope": "unknown", "countyIds": [], "reason": "ambiguous_name" } },
@@ -22,6 +22,6 @@
     { "name": "Two counties", "source": "wfie", "item": { "title": "Warrick and Vanderburgh County crews share road work", "summary": "Warrick County and Vanderburgh County will split the cost." }, "expect": { "scope": "multi_county", "countyIds": ["in-vanderburgh", "in-warrick"] } },
     { "name": "Statewide outlet gets no local-outlet guess", "source": "inchron", "item": { "title": "Madisonville plant to expand", "summary": "" }, "expect": { "scope": "unknown", "countyIds": [] } },
     { "name": "Publisher location alone never assigns", "source": "wfie", "item": { "title": "Fall festival this weekend", "summary": "Food, music and games for the family." }, "expect": { "scope": "unknown", "countyIds": [], "method": "publisher_prior" } },
-    { "name": "Missouri city in two counties: both, no primary", "source": "kfvs", "item": { "title": "Sikeston, Mo. council votes on budget", "summary": "" }, "expect": { "scope": "multi_county", "countyIds": ["mo-new-madrid", "mo-scott"], "reason": "place_spans_counties" } }
+    { "name": "Missouri city: no county (Missouri removed, ship62)", "source": "kfvs", "item": { "title": "Sikeston, Mo. council votes on budget", "summary": "" }, "expect": { "scope": "unknown", "countyIds": [] } }
   ]
 }

@@ -76,7 +76,7 @@ test('every method answers 404 without the admin key, with a wrong key, or when 
   } finally { un(); }
 });
 
-test('GET reports flags, batches, source health, all 68 counties and the review queue, with no reader data', async () => {
+test('GET reports flags, batches, source health, all 57 counties and the review queue, with no reader data', async () => {
   const st = store(), un = install(st);
   try {
     const news = fresh({ LISTINGS_ADMIN_KEY: KEY });
@@ -93,7 +93,8 @@ test('GET reports flags, batches, source health, all 68 counties and the review 
     assert.equal(d.sources.find(s => s.id === 'octimes').status, 'paused');
     assert.equal(d.sources.find(s => s.id === 'wfiw').status, 'off', 'batch off: listed, not fetched');
     const other = d.sources.find(s => !s.batch && s.id !== src.id && s.active); assert.equal(other.status, 'not_fetched');
-    assert.equal(d.counties.length, 68);
+    assert.equal(d.counties.length, 57);
+    assert.ok(!d.counties.some(c => c.state === 'MO' || /^mo-/.test(c.id)), 'no Missouri county in admin coverage');
     assert.ok(d.counties.every(c => (c.tier === 'core' || c.tier === 'extended') && typeof c.passesGate === 'boolean' && Array.isArray(c.homeSources)));
     assert.ok(d.counties.some(c => c.gap));
     assert.equal(d.gate.min, 5);

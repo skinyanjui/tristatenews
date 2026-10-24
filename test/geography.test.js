@@ -11,11 +11,11 @@ const M = JSON.parse(fs.readFileSync(path.join(DIR, 'target-counties.json'), 'ut
 const OPT = JSON.parse(fs.readFileSync(path.join(DIR, 'optional-counties.json'), 'utf8'));
 const C = M.counties;
 const byId = new Map(C.map(c => [c.id, c]));
-const STATE_FIPS = { IL: '17', IN: '18', KY: '21', MO: '29' };
+const STATE_FIPS = { IL: '17', IN: '18', KY: '21' };
 
 // The brief's exact lists.
 const CORE = { IL: 'Clay Edwards Gallatin Hamilton Lawrence Richland Saline Wabash Wayne White', IN: 'Daviess Dubois Gibson Knox Martin Perry Pike Posey Spencer Vanderburgh Warrick', KY: 'Daviess Hancock Henderson Hopkins McLean Muhlenberg Ohio Union Webster' };
-const EXT = { IL: 'Jefferson|Perry|Franklin|Jackson|Williamson|Union|Johnson|Pope|Hardin|Alexander|Pulaski|Massac', KY: 'Fulton|Hickman|Carlisle|Ballard|McCracken|Graves|Livingston|Marshall|Calloway|Crittenden|Lyon|Trigg|Caldwell|Christian|Todd', MO: 'Perry|Bollinger|Cape Girardeau|Wayne|Carter|Ripley|Butler|Stoddard|Scott|Mississippi|New Madrid' };
+const EXT = { IL: 'Jefferson|Perry|Franklin|Jackson|Williamson|Union|Johnson|Pope|Hardin|Alexander|Pulaski|Massac', KY: 'Fulton|Hickman|Carlisle|Ballard|McCracken|Graves|Livingston|Marshall|Calloway|Crittenden|Lyon|Trigg|Caldwell|Christian|Todd' }; // southeast Missouri removed (ship62)
 const OPTIONAL = ['IN Crawford', 'IN Orange', 'KY Breckinridge', 'KY Grayson'];
 const pairs = (o, sep) => Object.entries(o).flatMap(([s, v]) => v.split(sep).map(n => s + ' ' + n)).sort();
 const slug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -31,14 +31,14 @@ function readExtract(file) {
 const GAZ = readExtract('census/2025_Gaz_counties_extract.txt');
 const NAT = readExtract('census/national_county2020_extract.txt');
 
-test('counts: core 30, extended 38, total 68; IL 22, IN 11, KY 24, MO 11', () => {
+test('counts: core 30, extended 27, total 57; IL 22, IN 11, KY 24; no Missouri', () => {
   assert.equal(of('tri_state_core').length, 30);
-  assert.equal(of('extended').length, 38);
-  assert.equal(C.length, 68);
-  assert.deepEqual(count(C, c => c.state), { IL: 22, IN: 11, KY: 24, MO: 11 });
+  assert.equal(of('extended').length, 27);
+  assert.equal(C.length, 57);
+  assert.deepEqual(count(C, c => c.state), { IL: 22, IN: 11, KY: 24 });
   assert.deepEqual(count(of('tri_state_core'), c => c.state), { IL: 10, IN: 11, KY: 9 });
-  assert.deepEqual(count(of('extended'), c => c.state), { IL: 12, KY: 15, MO: 11 });
-  assert.deepEqual(M.invariants, { core: 30, extended: 38, total: 68, byState: { IL: 22, IN: 11, KY: 24, MO: 11 } });
+  assert.deepEqual(count(of('extended'), c => c.state), { IL: 12, KY: 15 });
+  assert.deepEqual(M.invariants, { core: 30, extended: 27, total: 57, byState: { IL: 22, IN: 11, KY: 24 } });
 });
 
 test('the county lists are exactly the brief\'s', () => {
@@ -53,7 +53,7 @@ test('ids are <st>-<slug>, unique, and state/county pairs and FIPS are unique', 
     const all = C.concat(OPT.counties).map(key);
     assert.equal(new Set(all).size, all.length);
   }
-  assert.ok(byId.has('mo-cape-girardeau') && byId.has('ky-mccracken') && byId.has('mo-new-madrid'));
+  assert.ok(byId.has('ky-mccracken') && byId.has('il-alexander'));
 });
 
 test('FIPS format: 5 digits = the state code + the 3-digit county code', () => {
@@ -122,12 +122,15 @@ test('exactly one tier per county; tier memberships agree with the county record
   }
 });
 
-test('Missouri is extended only and never in the core or the historic Tri-State', () => {
-  const mo = C.filter(c => c.state === 'MO');
-  assert.equal(mo.length, 11);
-  for (const c of mo) assert.equal(c.tier, 'extended', c.id);
+test('no Missouri: no county, member, region, source or Census row (southeast Missouri removed in ship62)', () => {
+  assert.equal(C.filter(c => c.state === 'MO' || c.fips.startsWith('29')).length, 0);
+  assert.ok(!M.members.some(m => m.countyId.startsWith('mo-')));
+  assert.ok(!M.groups.some(g => /missouri|cape-girardeau/i.test(g.id + ' ' + g.name + ' ' + g.description)));
+  assert.ok(!Object.keys(M.sources).some(k => k.startsWith('mo-')));
+  assert.ok(!Object.keys(M.invariants.byState).includes('MO'));
+  for (const f of ['2025_Gaz_counties_extract.txt', 'national_county2020_extract.txt', '2025_Gaz_place_extract.txt']) assert.ok(!readExtract('census/' + f).some(r => r.USPS === 'MO' || r.STATE === 'MO'), f);
+  assert.ok(!readExtract('census/county_adjacency2025_extract.txt').some(r => /^29/.test(r['County GEOID']) || /^29/.test(r['Neighbor GEOID'])));
   const inGroup = g => M.members.filter(m => m.groupId === g).map(m => m.countyId);
-  for (const g of ['tri_state_core', 'tri_state_historic']) assert.ok(!inGroup(g).some(id => id.startsWith('mo-')), g);
   assert.deepEqual(inGroup('tri_state_historic').sort(), of('tri_state_core').map(c => c.id).sort());
 });
 
@@ -145,9 +148,9 @@ test('every membership has a known group, a known county, source_reference and v
   }
   const keys = M.members.map(m => m.groupId + '|' + m.countyId);
   assert.equal(new Set(keys).size, keys.length, 'no duplicate memberships');
-  // Editorial regions: seven, overlapping, members by editorial judgment (see test/regions.test.js).
+  // Editorial regions: six, overlapping, members by editorial judgment (see test/regions.test.js).
   const regions = M.groups.filter(g => g.kind === 'editorial_region');
-  assert.equal(regions.length, 7);
+  assert.equal(regions.length, 6);
   for (const g of regions) {
     assert.equal(g.overlapping, true);
     assert.equal(g.membershipStatus, 'editorial_judgment', g.id);
@@ -155,7 +158,7 @@ test('every membership has a known group, a known county, source_reference and v
   }
 });
 
-test('optional and historical counties stay out of the 68 and out of every group', () => {
+test('optional and historical counties stay out of the 57 and out of every group', () => {
   assert.equal(OPT.counties.length, 4);
   for (const c of OPT.counties) {
     assert.equal(c.tier, 'optional_historical');
@@ -166,25 +169,24 @@ test('optional and historical counties stay out of the 68 and out of every group
 
 test('collisions: same-named counties are distinct records', () => {
   const ids = name => C.filter(c => c.name === name).map(c => c.id).sort();
-  assert.deepEqual(ids('Perry'), ['il-perry', 'in-perry', 'mo-perry']);
-  assert.deepEqual(ids('Wayne'), ['il-wayne', 'mo-wayne']);
+  assert.deepEqual(ids('Perry'), ['il-perry', 'in-perry']);
+  assert.deepEqual(ids('Wayne'), ['il-wayne']);
   assert.deepEqual(ids('Union'), ['il-union', 'ky-union']);
   assert.deepEqual(ids('Daviess'), ['in-daviess', 'ky-daviess']);
-  assert.equal(new Set(['il-perry', 'in-perry', 'mo-perry'].map(id => byId.get(id).fips)).size, 3);
-  assert.equal(byId.get('mo-perry').tier, 'extended');
+  assert.equal(new Set(['il-perry', 'in-perry'].map(id => byId.get(id).fips)).size, 2);
   assert.equal(byId.get('il-perry').tier, 'extended');
   assert.equal(byId.get('in-perry').tier, 'tri_state_core');
 });
 
 test('collisions: shared seat names resolve to different counties by state', () => {
   const seats = name => C.filter(c => c.seat.name === name).map(c => c.id).sort();
-  assert.deepEqual(seats('Benton'), ['il-franklin', 'ky-marshall', 'mo-scott']);
+  assert.deepEqual(seats('Benton'), ['il-franklin', 'ky-marshall']);
   assert.deepEqual(seats('Princeton'), ['in-gibson', 'ky-caldwell']);
   assert.deepEqual(seats('Marion'), ['il-williamson', 'ky-crittenden']);
   assert.deepEqual(seats('Mount Vernon'), ['il-jefferson', 'in-posey']);
-  assert.deepEqual(seats('Greenville'), ['ky-muhlenberg', 'mo-wayne']);
+  assert.deepEqual(seats('Greenville'), ['ky-muhlenberg']);
   assert.deepEqual(seats('Washington'), ['in-daviess']);
-  assert.deepEqual(seats('Jackson'), ['mo-cape-girardeau']); // the city; Jackson County IL is il-jackson (seat Murphysboro)
+  assert.deepEqual(seats('Jackson'), []); // Jackson County IL is il-jackson (seat Murphysboro)
   assert.equal(byId.get('il-jackson').seat.name, 'Murphysboro');
   assert.deepEqual(seats('Louisville'), ['il-clay']); // not Louisville KY, which is outside the area
   assert.deepEqual(seats('Elizabethtown'), ['il-hardin']); // not Elizabethtown KY

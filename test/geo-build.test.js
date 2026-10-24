@@ -1,5 +1,5 @@
 // The generated locality tables (scripts/build-geo.js): up to date, built only from the committed Census extracts,
-// limited to the 68 target counties, with multi-county places and recorded vintages.
+// limited to the 57 target counties, with multi-county places and recorded vintages.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -45,8 +45,7 @@ test('every community is a 2025 Gazetteer place in a target county, never an opt
 test('multi-county places keep every target county from the Census relationship file', () => {
   const by = id => P.communities.find(p => p.id === id);
   assert.deepEqual(by('il-carbondale').countyIds, ['il-jackson', 'il-williamson']);
-  assert.deepEqual(by('mo-cape-girardeau').countyIds, ['mo-cape-girardeau', 'mo-scott']);
-  assert.deepEqual(by('mo-sikeston').countyIds, ['mo-new-madrid', 'mo-scott']);
+  assert.ok(!P.communities.some(p => p.state === 'MO' || p.countyIds.some(id => id.startsWith('mo-'))), 'no Missouri places (removed in ship62)');
   assert.deepEqual(by('il-grayville').countyIds, ['il-edwards', 'il-white']);
   assert.equal(by('il-carbondale').partlyOutside, false);
   assert.equal(by('il-centralia').partlyOutside, true, 'Centralia also lies in counties outside the area');
@@ -56,7 +55,7 @@ test('multi-county places keep every target county from the Census relationship 
     assert.ok(p.countyIds.length <= rel.get(p.geoid), p.id);
     assert.equal(p.countyIds.length < rel.get(p.geoid), p.partlyOutside, p.id);
   }
-  assert.ok(P.communities.filter(p => p.countyIds.length > 1).length >= 15);
+  assert.ok(P.communities.filter(p => p.countyIds.length > 1).length >= 12);
 });
 
 test('places new since 2020 take their county from the Census Geocoder answer', () => {
@@ -75,7 +74,7 @@ test('sources and vintages are recorded', () => {
   for (const k of ['ambiguous', 'requiresState', 'distinctive']) assert.ok(A.rules[k], k);
   const raw = JSON.parse(read('data/geography/census/raw-sources.json'));
   assert.equal(raw.publisher, 'U.S. Census Bureau');
-  assert.deepEqual(raw.files.map(f => f.vintage), ['2025', '2025', '2025', '2020', '2020', '2020', '2020']);
+  assert.deepEqual(raw.files.map(f => f.vintage), ['2025', '2025', '2025', '2020', '2020', '2020']);
   for (const f of raw.files) { assert.match(f.url, /^https:\/\/www2\.census\.gov\//, f.file); assert.match(f.sha256, /^[0-9a-f]{64}$/, f.file); }
   assert.deepEqual([raw.geocoder.benchmark, raw.geocoder.vintage], ['Public_AR_Current', 'Current_Current']);
 });
@@ -91,7 +90,7 @@ test('name helpers', () => {
 
 test('the client copy is small and is not loaded by any page yet', () => {
   const c = JSON.parse(read(OUTPUTS.client));
-  assert.equal(c.counties.length, 68);
+  assert.equal(c.counties.length, 57);
   assert.ok(Buffer.byteLength(read(OUTPUTS.client)) < 20000);
   assert.ok(c.regions.some(r => r.id === 'region:southern-illinois:east' && r.parent === 'region:southern-illinois'));
   for (const f of fs.readdirSync(path.join(ROOT, 'public')).filter(f => /\.(html|js)$/.test(f))) {

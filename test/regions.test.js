@@ -34,14 +34,13 @@ const EXPECTED = {
   'madisonville-coal-fields': { primary: 'ky-caldwell ky-christian ky-crittenden ky-hopkins ky-muhlenberg ky-todd ky-union ky-webster', secondary: '' },
   'vincennes-jasper-sw-indiana': { primary: 'in-daviess in-dubois in-knox in-martin in-perry in-pike in-spencer', secondary: 'il-lawrence' },
   'southern-illinois': { primary: M.counties.filter(c => c.state === 'IL').map(c => c.id).sort().join(' '), secondary: '' },
-  'paducah-murray-far-western-ky': { primary: 'ky-ballard ky-calloway ky-carlisle ky-fulton ky-graves ky-hickman ky-livingston ky-lyon ky-marshall ky-mccracken ky-trigg', secondary: 'il-alexander il-massac il-pulaski' },
-  'cape-girardeau-se-missouri': { primary: M.counties.filter(c => c.state === 'MO').map(c => c.id).sort().join(' '), secondary: '' }
+  'paducah-murray-far-western-ky': { primary: 'ky-ballard ky-calloway ky-carlisle ky-fulton ky-graves ky-hickman ky-livingston ky-lyon ky-marshall ky-mccracken ky-trigg', secondary: 'il-alexander il-massac il-pulaski' }
 };
 const split = s => (s ? s.split(' ') : []).sort();
 
 test('every target county has exactly one primary region', () => {
   for (const c of M.counties) assert.equal(primaryOf(c.id).length, 1, c.id);
-  assert.equal(RM.filter(m => m.membershipType === 'primary').length, 68);
+  assert.equal(RM.filter(m => m.membershipType === 'primary').length, 57);
 });
 
 test('regions hold only target counties, never optional ones', () => {
@@ -82,22 +81,16 @@ test('memberships follow real adjacency: each member borders a primary member of
   }
 });
 
-test('Missouri: only Cape Girardeau & SE Missouri, never core or the historic Tri-State', () => {
-  for (const c of M.counties.filter(x => x.state === 'MO')) {
-    assert.deepEqual(RM.filter(m => m.countyId === c.id).map(m => m.groupId), ['region:cape-girardeau-se-missouri'], c.id);
-  }
-  const ids = g => M.members.filter(m => m.groupId === g).map(m => m.countyId);
-  for (const g of ['tri_state_core', 'tri_state_historic']) assert.ok(!ids(g).some(id => id.startsWith('mo-')), g);
-  assert.deepEqual(members('cape-girardeau-se-missouri').filter(id => !id.startsWith('mo-')), []);
+test('no Missouri region or member (southeast Missouri removed in ship62)', () => {
+  assert.ok(!REGIONS.some(g => /missouri|cape-girardeau/.test(g.id)));
+  assert.ok(!RM.some(m => m.countyId.startsWith('mo-')));
 });
 
 test('Case A: same-named counties land in the right state\'s region', () => {
   const p = id => primaryOf(id)[0].slice(7);
   assert.equal(p('il-perry'), 'southern-illinois');
   assert.equal(p('in-perry'), 'vincennes-jasper-sw-indiana');
-  assert.equal(p('mo-perry'), 'cape-girardeau-se-missouri');
   assert.equal(p('il-wayne'), 'southern-illinois');
-  assert.equal(p('mo-wayne'), 'cape-girardeau-se-missouri');
   assert.equal(p('il-union'), 'southern-illinois');
   assert.equal(p('ky-union'), 'madisonville-coal-fields');
   assert.equal(p('in-daviess'), 'vincennes-jasper-sw-indiana');

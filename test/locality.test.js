@@ -9,20 +9,23 @@ const ids = (t, o) => locate(t, o).matches.map(m => m.countyIds.join('+')).sort(
 const unresolved = (t, o) => locate(t, o).unresolved.map(u => u.alias);
 
 test('the review flags Washington, Marion and Mount Vernon and the other shared names as ambiguous', () => {
-  for (const k of ['washington', 'marion', 'mount vernon', 'princeton', 'benton', 'greenville', 'jackson', 'shawneetown', 'clay', 'hardin', 'johnson', 'calhoun',
-    'perry county', 'wayne county', 'union county', 'daviess county']) {
+  for (const k of ['washington', 'marion', 'mount vernon', 'princeton', 'benton', 'clay', 'hardin', 'johnson', 'calhoun',
+    'perry county', 'union county', 'daviess county']) {
     assert.ok(alias(k), k);
     assert.equal(alias(k).ambiguous, true, k);
     assert.equal(alias(k).requiresState, true, k);
   }
   for (const k of ['washington', 'marion', 'mount vernon']) assert.ok(alias(k).reasons.includes('always_ambiguous'), k);
   assert.ok(alias('washington').reasons.includes('state_name'));
-  assert.deepEqual(alias('benton').countyIds, ['il-franklin', 'ky-marshall', 'mo-scott']);
+  assert.deepEqual(alias('benton').countyIds, ['il-franklin', 'ky-marshall']);
   assert.deepEqual(alias('princeton').countyIds, ['in-gibson', 'ky-caldwell']);
-  assert.deepEqual(alias('greenville').countyIds, ['ky-muhlenberg', 'mo-wayne']);
+  // Without southeast Missouri (ship62) Greenville, Shawneetown and Wayne County have one candidate here: no longer
+  // ambiguous, but they still need a state (namesakes elsewhere); Jackson is no local place at all.
+  for (const k of ['greenville', 'shawneetown', 'wayne county']) { assert.equal(alias(k).ambiguous, false, k); assert.equal(alias(k).requiresState, true, k); }
+  assert.deepEqual(alias('greenville').countyIds, ['ky-muhlenberg']);
+  assert.equal(alias('jackson'), undefined);
   assert.deepEqual(alias('marion').countyIds, ['il-williamson', 'ky-crittenden']);
   assert.deepEqual(alias('mount vernon').countyIds, ['il-jefferson', 'in-posey']);
-  assert.deepEqual(alias('jackson').countyIds, ['il-jackson', 'mo-cape-girardeau'], 'Jackson, Mo. vs Jackson County, Ill.');
   assert.deepEqual(alias('mount vernon').forms, ['mount vernon', 'mt vernon', 'mt. vernon']);
 });
 
@@ -40,16 +43,16 @@ test('ambiguity rules hold for every alias', () => {
   assert.equal(alias('henderson').ambiguous, false);
 });
 
-test('Case A: Perry, Wayne, Union and Daviess counties resolve only with their state', () => {
-  const cases = { Perry: { Ill: 'il-perry', Ind: 'in-perry', Mo: 'mo-perry' }, Wayne: { Ill: 'il-wayne', Mo: 'mo-wayne' },
+test('Case A: Perry, Union and Daviess counties resolve only with their state', () => {
+  const cases = { Perry: { Ill: 'il-perry', Ind: 'in-perry' },
     Union: { Ill: 'il-union', Ky: 'ky-union' }, Daviess: { Ind: 'in-daviess', Ky: 'ky-daviess' } };
-  const full = { Ill: 'Illinois', Ind: 'Indiana', Ky: 'Kentucky', Mo: 'Missouri' }, postal = { Ill: 'IL', Ind: 'IN', Ky: 'KY', Mo: 'MO' };
+  const full = { Ill: 'Illinois', Ind: 'Indiana', Ky: 'Kentucky' }, postal = { Ill: 'IL', Ind: 'IN', Ky: 'KY' };
   for (const [name, st] of Object.entries(cases)) {
     for (const [ap, id] of Object.entries(st)) {
       for (const q of [ap + '.', full[ap], postal[ap]]) assert.deepEqual(ids(name + ' County, ' + q + ', man sentenced'), [id], name + ' ' + q);
       assert.deepEqual(ids(name + ' Co., ' + ap + '.'), [id], name + ' Co.');
     }
-    for (const st2 of ['Ill', 'Ind', 'Ky', 'Mo']) {
+    for (const st2 of ['Ill', 'Ind', 'Ky']) {
       assert.deepEqual(ids(name + ' County man sentenced', { feedState: st2.toLowerCase() === 'ill' ? 'ill' : st2.toUpperCase() }), [], name + ' bare in a ' + st2 + ' feed');
     }
     assert.deepEqual(unresolved(name + ' County deputies'), [name.toLowerCase() + ' county']);
@@ -86,18 +89,21 @@ test('Marion, Ill. vs Marion elsewhere', () => {
 test('shared seats and towns: Benton, Princeton, Greenville, Jackson, Washington', () => {
   assert.deepEqual(ids('Benton, Ill.'), ['il-franklin']);
   assert.deepEqual(ids('Benton, Ky.'), ['ky-marshall']);
-  assert.deepEqual(ids('Benton, Mo.'), ['mo-scott']);
+  assert.deepEqual(ids('Benton, Mo.'), [], 'Missouri is not covered (ship62)');
   assert.deepEqual(ids('Benton, Ark.'), []);
   assert.deepEqual(ids('Princeton, Ind.'), ['in-gibson']);
   assert.deepEqual(ids('Princeton, Ky.'), ['ky-caldwell']);
   assert.deepEqual(ids('Princeton, N.J.'), []);
   assert.deepEqual(unresolved('Princeton man sentenced', { feedState: 'ind' }), ['princeton']);
   assert.deepEqual(ids('Greenville, Ky.'), ['ky-muhlenberg']);
-  assert.deepEqual(ids('Greenville, Mo.'), ['mo-wayne']);
+  assert.deepEqual(ids('Greenville, Mo.'), []);
   assert.deepEqual(ids('Greenville, S.C.'), []);
-  assert.deepEqual(ids('Jackson, Mo.'), ['mo-cape-girardeau']);
+  assert.deepEqual(ids('Jackson, Mo.'), []);
+  assert.deepEqual(ids('Wayne County, Mo., deputies'), []);
+  assert.deepEqual(ids('Wayne County, Ill., deputies'), ['il-wayne']);
+  assert.deepEqual(ids('Cape Girardeau man charged'), []);
+  assert.deepEqual(ids('Sikeston, Mo.'), []);
   assert.deepEqual(ids('Jackson County, Ill.'), ['il-jackson']);
-  assert.deepEqual(unresolved('Jackson man charged', { feedState: 'mo' }), ['jackson']);
   assert.deepEqual(ids('Washington, Ind.'), ['in-daviess']);
   assert.deepEqual(unresolved('Washington lawmakers', { feedState: 'ind' }), ['washington']);
   assert.deepEqual(ids('Washington, D.C.'), []);
@@ -105,7 +111,7 @@ test('shared seats and towns: Benton, Princeton, Greenville, Jackson, Washington
 
 test('other §3.10 cases: Louisville, Ill. and Elizabethtown, Ill. are not the Kentucky cities', () => {
   assert.deepEqual(ids('Louisville, Ill.'), ['il-clay']);
-  assert.deepEqual(ids('Louisville, Ky.'), [], 'Louisville, Ky. is outside the 68 counties');
+  assert.deepEqual(ids('Louisville, Ky.'), [], 'Louisville, Ky. is outside the 57 counties');
   assert.deepEqual(ids('Louisville man', { feedState: 'ky' }), [], 'bare Louisville in a Kentucky feed is not Clay County, Ill.');
   assert.deepEqual(ids('Elizabethtown, Ill.'), ['il-hardin']);
   assert.deepEqual(ids('Elizabethtown, Ky.'), []);
@@ -130,7 +136,7 @@ test('names with namesakes elsewhere: state qualifier or the feed state, never b
 
 test('legacy parity: every name in the old "anywhere" list is still found, in the same county', () => {
   const county = { evansville: 'in-vanderburgh', owensboro: 'ky-daviess', carmi: 'il-white', morganfield: 'ky-union', grayville: 'il-white' };
-  const skip = new Set(['shawneetown']); // Shawneetown, Ill. and the Shawneetown CDP in Cape Girardeau County, Mo.: now ambiguous
+  const skip = new Set(['shawneetown']); // the Shawneetown CDP in Cape Girardeau County, Mo. is a namesake elsewhere, so it needs ", Ill."
   for (const st of Object.keys(PLACES)) {
     for (const name of PLACES[st].anywhere) {
       if (skip.has(name)) continue;
@@ -141,7 +147,7 @@ test('legacy parity: every name in the old "anywhere" list is still found, in th
       if (county[name]) assert.ok(r.matches.some(m => m.countyIds.includes(county[name])), name);
     }
   }
-  assert.ok(alias('shawneetown').refs.some(r => r.state === 'MO'));
+  assert.ok(alias('shawneetown').refs.every(r => r.state === 'IL'));
   assert.deepEqual(ids('Shawneetown, Ill.'), ['il-gallatin']);
 });
 
@@ -151,7 +157,7 @@ test('inCore30 uses the 30-county core and is not wired into any route', () => {
   assert.equal(inCore30({ title: 'Marion, Ill., man sentenced' }, 'ill'), false, 'Williamson County is extended, not core');
   assert.equal(inCore30({ title: 'Fairfield woman charged' }, 'ill'), true, 'Wayne County, Ill., from an Illinois feed');
   assert.equal(inCore30({ title: 'Paducah man sentenced' }, 'ky'), false, 'McCracken County is extended, not core');
-  assert.equal(inCore30({ title: 'Jackson, Mo., man' }, null), false, 'Missouri is never core');
+  assert.equal(inCore30({ title: 'Jackson, Mo., man' }, null), false, 'Missouri is not covered');
   assert.equal(inCore30({ title: 'Sentenced', summary: 'of Owensboro' }, 'ky'), true);
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'api', 'news.js'), 'utf8');
   assert.ok(!/inCore30|locate\(|_geo\.js/.test(src), 'news.js still uses inTriState only');

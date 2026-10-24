@@ -12,7 +12,9 @@ const reg = require('../api/_sources.js');
 const b3 = reg.BATCHES.find(b => b.batch === 'b3');
 
 const g = t => ({ title: t, summary: '', link: 'https://news.google.com/rss/articles/abc' });
-const STODDARD = { id: 'gn-stoddard', kind: 'news', geoTerms: ['dexter', 'bloomfield, mo', 'stoddard county'] };
+// A made-up source with out-of-state home towns, to test the mechanism (the southeast Missouri sources it was modeled on
+// were removed in ship62; see test/no-missouri.test.js).
+const STODDARD = { id: 'example-geoterms', kind: 'news', geoTerms: ['dexter', 'bloomfield, mo', 'stoddard county'] };
 const MCLEAN = { id: 'mcleannews', kind: 'news', localSection: true, geoTerms: ['mclean county', 'calhoun', 'livermore'] };
 
 test('outOfArea: a source\'s own geoTerms keep its "<Town>, Mo." and "Missouri man" stories', () => {
@@ -88,6 +90,6 @@ test('ship60: Todd County uses the gn-todd town fallback (whopam.com answers a C
   const t = b3.sources.find(s => s.id === 'gn-todd');
   assert.deepEqual(t.counties, ['ky-todd']);
   assert.equal(t.fallback, 'google_news_towns');
-  assert.equal(t.seq, 86, 'takes whoptodd\'s place, so seq stays continuous');
+  assert.equal(t.seq, 84, 'took whoptodd\'s place (86); 84 since ship62 dropped kbsi and wcjbanner before it, so seq stays continuous');
   assert.match(new URL(t.url).searchParams.get('q'), /site:whopam\.com/);
 });

@@ -29,7 +29,8 @@ test('fixture cases: county sets, scopes and reasons', () => {
 });
 
 test('ambiguous names are never assigned without a qualifier, and say why', () => {
-  for (const t of ['Washington', 'Marion', 'Mount Vernon', 'Mt. Vernon', 'Princeton', 'Benton', 'Greenville', 'Perry County', 'Wayne County', 'Union County', 'Daviess County']) {
+  // (Greenville and Wayne County left this list in ship62: without Missouri each has one candidate here, so they only need a state.)
+  for (const t of ['Washington', 'Marion', 'Mount Vernon', 'Mt. Vernon', 'Princeton', 'Benton', 'Perry County', 'Union County', 'Daviess County']) {
     for (const s of ['wfie', 'weht', 'kfvs', 'owtimes', 'inchron']) {
       const l = L.classify({ title: t + ' officials announce new plan', summary: '' }, src(s));
       assert.deepEqual(l.countyIds, [], t + ' via ' + s);
@@ -71,15 +72,15 @@ test('source coverage is its own field; the location contract has every field', 
 
 test('county ids look like in-perry, ky-daviess, and every assigned id is in the manifest', () => {
   const ids = new Set(GEO.counties.map(c => c.id));
-  for (const id of ['in-perry', 'ky-daviess', 'il-perry', 'mo-perry', 'in-daviess']) assert.ok(ids.has(id), id);
-  for (const c of GEO.counties) assert.match(c.id, /^(in|ky|il|mo)-[a-z0-9-]+$/, c.id);
+  for (const id of ['in-perry', 'ky-daviess', 'il-perry', 'in-daviess']) assert.ok(ids.has(id), id);
+  for (const c of GEO.counties) assert.match(c.id, /^(in|ky|il)-[a-z0-9-]+$/, c.id);
   for (const c of CASES) for (const id of c.expect.countyIds) assert.ok(ids.has(id), id);
 });
 
-test('Missouri is never labeled historic Tri-State', () => {
-  for (const c of GEO.counties.filter(x => x.state === 'MO')) assert.ok(!c.groups.includes('tri_state_historic'), c.id);
-  const l = L.classify({ title: 'Cape Girardeau County, Mo. opens new jail', summary: '' }, src('kfvs'));
-  assert.equal(l.stateIds[0], 'MO');
+test('Missouri is not covered (ship62): no Missouri county, and a Missouri story gets no county or state', () => {
+  assert.ok(!GEO.counties.some(x => x.state === 'MO'));
+  const l = L.classify({ title: 'Cape Girardeau County, Mo. opens new jail', summary: 'Missouri officials said' }, src('kfvs'));
+  assert.deepEqual([l.countyIds, l.stateIds || []], [[], []]);
   assert.equal(l.inTriStateHistoric, false);
   const k = L.classify({ title: 'Posey County fair', summary: '' }, src('wfie'));
   assert.equal(k.inTriStateHistoric, true);

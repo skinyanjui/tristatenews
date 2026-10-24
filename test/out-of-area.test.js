@@ -122,6 +122,6 @@ test('local parks, forests, rivers, teams and shared town names stay local', () 
     ['Tennessee Valley Authority plans Paradise upgrade', ''],
   ];
   for (const [t, s] of keep) assert.equal(outOfArea(it(t, s)), false, t);
-  // a southeast Missouri batch source's own towns still count (ship58)
+  // a source's own geoTerms still count (ship58; the mechanism, with a made-up out-of-state town)
   assert.equal(outOfArea(it('Missouri\'s new law affects Sikeston schools', ''), ['sikeston']), false);
 });

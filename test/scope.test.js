@@ -28,20 +28,17 @@ const SNAP_B = Object.assign({}, SNAP_BASE, { items: SNAP_BASE.items.concat([
 ]) });
 const ids = v => v.items.map(i => i.title);
 
-test('parse: canonical keys, labels, errors; Missouri is never labeled Tri-State', () => {
+test('parse: canonical keys, labels, errors; no Missouri scope (removed in ship62)', () => {
   assert.strictEqual(S.parse(undefined).key, 'tristate');
   assert.strictEqual(S.parse('ALL').key, 'all');
   assert.strictEqual(S.parse('state:KY').key, 'state:ky');
   assert.strictEqual(S.parse('county:ky-henderson').label, 'Henderson County, KY');
   assert.strictEqual(S.parse('counties:ky-daviess,in-dubois,ky-daviess').key, 'counties:in-dubois,ky-daviess');
-  for (const bad of ['state:tx', 'county:ky-nowhere', 'counties:', 'nope', 'counties:' + S.COUNTIES.slice(0, 13).map(c => c.id).join(',')]) assert.ok(S.parse(bad).error, bad);
-  assert.strictEqual(S.COUNTIES.length, 68);
+  for (const bad of ['state:tx', 'state:mo', 'county:mo-cape-girardeau', 'counties:mo-scott', 'county:ky-nowhere', 'counties:', 'nope', 'counties:' + S.COUNTIES.slice(0, 13).map(c => c.id).join(',')]) assert.ok(S.parse(bad).error, bad);
+  assert.strictEqual(S.COUNTIES.length, 57);
   assert.strictEqual(S.CORE.size, 30);
-  for (const c of S.COUNTIES.filter(x => x.state === 'mo')) {
-    assert.ok(!S.CORE.has(c.id));
-    assert.ok(!/tri-?state/i.test(S.parse('county:' + c.id).label), c.id);
-  }
-  assert.ok(!/tri-?state/i.test(S.parse('state:mo').label));
+  assert.ok(!S.COUNTIES.some(c => c.state === 'mo'));
+  assert.deepStrictEqual(Object.keys(S.STATES).sort(), ['il', 'in', 'ky']);
 });
 
 test('default view: the snapshot object itself when no batch source is in it (byte for byte)', () => {
@@ -81,7 +78,7 @@ test('depth counts distinct local stories per county in 14 days', () => {
   const d = S.depth(old, SRC, NOW);
   assert.strictEqual(d['ky-henderson'], 2, 'same title once; 20-day-old story out');
   assert.strictEqual(d['ky-hancock'], 1);
-  assert.strictEqual(Object.keys(d).length, 68);
+  assert.strictEqual(Object.keys(d).length, 57);
 });
 
 test('routes: /news/<state>[/<county>] <-> scope, both ways; tab routes unchanged', () => {
@@ -97,7 +94,11 @@ test('routes: /news/<state>[/<county>] <-> scope, both ways; tab routes unchange
     assert.strictEqual(RT.geo(S.pathOf(sc)).scope, sc.key);
   }
   assert.strictEqual(S.fromPath('/news/indiana/nowhere'), null);
-  assert.strictEqual(S.fromPath('/news/missouri/cape-girardeau').label, 'Cape Girardeau County, MO');
+  assert.strictEqual(S.fromPath('/news/missouri'), null);
+  assert.strictEqual(S.fromPath('/news/missouri/cape-girardeau'), null);
+  assert.strictEqual(RT.geo('/news/missouri'), null);
+  assert.strictEqual(RT.geo('/news/missouri/cape-girardeau'), null);
+  assert.strictEqual(RT.geoPath('state:mo'), null);
   const vj = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
   const rw = vj.rewrites.map(r => r.source);
   for (const s of ['/news/:state/:county', '/news/:state', '/sitemap-regions.xml']) assert.ok(rw.indexOf(s) >= 0 && rw.indexOf(s) < rw.indexOf('/:path*'), s + ' before the not-found catch-all');
@@ -161,19 +162,19 @@ test('county pages: 404 with REGIONAL_ROUTES_ENABLED off; on, head points at the
   const G = require('../api/_geopage.js');
   const cov = require('../data/geography/coverage.json');
   assert.strictEqual(/name="robots" content="noindex"/.test(ok.body), !(cov.depth['in-dubois'] >= cov.min));
-  const mo = await call(on, 'news.js', { __route: 'geopage', p: '/news/missouri/cape-girardeau' }, '/news/missouri/cape-girardeau');
-  assert.ok(!/Tri-State News<\/title>/.test(mo.body) || !/Cape Girardeau County, MO[^<]*Tri-State(?! News)/.test(mo.body));
-  assert.ok(!/Tri-State/.test(G.page(S.parse('county:mo-cape-girardeau')).meta.desc));
+  for (const p of ['/news/missouri', '/news/missouri/cape-girardeau', '/news/missouri/scott']) assert.strictEqual((await call(on, 'news.js', { __route: 'geopage', p }, p)).code, 404, p + ' (Missouri removed in ship62)');
+  assert.ok(!/Missouri/.test(G.page(S.parse('county:ky-henderson')).meta.desc));
   const nf = await call(on, 'news.js', { __route: 'geopage', p: '/news/indiana/nowhere' }, '/news/indiana/nowhere');
   assert.strictEqual(nf.code, 404);
   const sm = await call(on, 'news.js', { __route: 'geopage', sitemap: '1' }, '/sitemap-regions.xml');
-  for (const st of ['indiana', 'kentucky', 'illinois', 'missouri']) assert.ok(sm.body.includes('/news/' + st + '</loc>'), st);
+  for (const st of ['indiana', 'kentucky', 'illinois']) assert.ok(sm.body.includes('/news/' + st + '</loc>'), st);
+  assert.ok(!/missouri/i.test(sm.body), 'no Missouri page in the sitemap');
   for (const c of S.COUNTIES) assert.strictEqual(sm.body.includes(S.pathOf(S.parse('county:' + c.id)) + '</loc>'), cov.depth[c.id] >= cov.min, c.id);
   const smOff = await call({}, 'news.js', { __route: 'geopage', sitemap: '1' }, '/sitemap-regions.xml');
   assert.strictEqual(smOff.code, 404);
 });
 
-test('coverage.json is a real measurement record with all 68 counties', () => {
+test('coverage.json is a real measurement record with all 57 counties', () => {
   const cov = require('../data/geography/coverage.json');
   assert.ok(Date.parse(cov.measuredAt));
   assert.strictEqual(cov.min, S.DEPTH_MIN);
@@ -200,7 +201,7 @@ test('home page has no Area filter: no button, sheet, county picker, My counties
   assert.ok(html.includes("if (SC.geo) { SC.geo = null; if (SC.key !== 'tristate') { SC.key = 'tristate'; load(false); } }"));
   assert.ok(html.includes('SC.on && SC.geo && SC.key !== \'tristate\' && !state.q.trim()) return scopeEmpty();'), 'the empty state is for county and state pages only');
   const empty = html.slice(html.indexOf('function scopeEmpty'), html.indexOf('function load('));
-  assert.ok(!/Missouri[^'"\n]*Tri-State|Tri-State[^'"\n]*Missouri/.test(html.slice(html.indexOf('var STATE_NAMES'), html.indexOf('function load('))), 'Missouri never labeled Tri-State');
+  assert.ok(!/Missouri/.test(html), 'no Missouri on the page (removed in ship62)');
   assert.ok(empty.includes('goScope(next.key)'));
   // untouched: locality label only with scopes on and not on a county page; ads and obituary rules
   assert.match(html, /if \(it\.place && SC\.on && !\/\^county:\/\.test\(SC\.key\)\)/);

@@ -5,7 +5,7 @@
 //   { v: 1, updatedAt, days: 14, cap: 40, c: { '<countyId>': [['<story id>', <hour>], ...] } }
 // story id: 10 hex chars of sha1(normalized title), the same "distinct title" rule as _scope.depth(); hour: whole hours
 // since the epoch of the story's published time. Each county keeps at most CAP newest ids (the gate needs 5), so
-// the record is bounded: 68 x 40 entries, under 70 KB even when every county is full.
+// the record is bounded: 57 x 40 entries, under 70 KB even when every county is full.
 // Cost: read with the refresh's existing read request (+1 GET) and written with its existing write request (+1 SET),
 // so 2 more billed commands per refresh and no extra round trips.
 // Readers: the county pages and /sitemap-regions.xml (api/_geopage.js) and the admin coverage report. When the record

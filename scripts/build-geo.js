@@ -5,7 +5,7 @@
 //   node scripts/build-geo.js --check   exit 1 if any committed output differs from what the inputs produce
 //
 // Inputs (all committed):
-//   data/geography/target-counties.json            the 68-county manifest, groups and regions
+//   data/geography/target-counties.json            the 57-county manifest, groups and regions
 //   data/geography/alias-review.json               editorial review: always-ambiguous names, common words, overrides
 //   data/geography/census/2025_Gaz_place_extract.txt, place_by_county2020_extract.txt, place_county_geocoder_2025.txt,
 //   data/geography/census/2025_Gaz_state_extract.txt, 2025_namesakes.txt   (see scripts/extract-census.js)
@@ -126,7 +126,7 @@ function build() {
   const always = new Map(review.alwaysAmbiguous.map(w => [w.name, w]));
   for (const [k, cs] of countyBase) {
     const e = entries.get(k);
-    if (e) { // a place shares the county's base name: the bare name may mean the county (Jackson MO vs Jackson County IL)
+    if (e) { // a place shares the county's base name: the bare name may mean the county (a town and a county of the same name)
       for (const c of cs) if (!e.refs.some(r => r.countyIds.includes(c.id))) e.refs.push({ type: 'county', id: c.id, state: c.state, countyIds: [c.id] });
     } else if (cs.length === 1 && !stateKeys.has(k) && !common.has(k) && !always.has(k) && !(namesakes.get(k) || {}).places && !(namesakes.get(k) || {}).counties) {
       const b = entry(k, 'county'); // bare county name with no namesake anywhere in the U.S. ("Vanderburgh")
@@ -199,7 +199,7 @@ function build() {
     schemaVersion: 1, manifestVersion: manifest.manifestVersion, generatedBy: 'scripts/build-geo.js',
     rules: {
       ambiguous: 'same_name_in_area OR state_name OR common_word OR always_ambiguous. An ambiguous name resolves only with a state qualifier ("Marion, Ill.") or a co-occurring county alias that picks one candidate; a feed\'s state never resolves it.',
-      requiresState: 'ambiguous OR namesakes_elsewhere (the name exists outside the 68 counties, per the national 2025 Gazetteer place and county files), unless alias-review.json lists the name as distinctive. A requiresState name that is not ambiguous also resolves from the feed\'s own state.',
+      requiresState: 'ambiguous OR namesakes_elsewhere (the name exists outside the target counties, per the national 2025 Gazetteer place and county files), unless alias-review.json lists the name as distinctive. A requiresState name that is not ambiguous also resolves from the feed\'s own state.',
       distinctive: 'an override can clear requiresState for a name with namesakes elsewhere; it can never clear ambiguous.',
     },
     sources: { namesakes: 'census/2025_namesakes.txt, derived by scripts/extract-census.js from 2025_Gaz_place_national.txt and 2025_Gaz_counties_national.txt', stateNames: 'census/2025_Gaz_state_extract.txt (2025 Gazetteer, states)', review: 'data/geography/alias-review.json' },

@@ -4,15 +4,14 @@
 // Both answer from api/_geo.js, the module scripts/build-geo.js generates from data/geography/. Nothing here reads
 // or writes Redis, fetches anything, or keeps state: the same request always gets the same bytes until the next
 // deploy, so responses are CDN-cacheable and carry a strong ETag.
-// Missouri counties are extended coverage: they are never in tri_state_core or tri_state_historic, and nothing in a
-// Missouri county's or region's entry calls it Tri-State.
+// Coverage is Illinois, Indiana and Kentucky (southeast Missouri was removed in ship62).
 'use strict';
 const crypto = require('crypto');
 const GEO = require('./_geo.js');
 
 const CACHE = 'public, max-age=300, s-maxage=86400, stale-while-revalidate=604800';
 const NOTE = 'Read-only reference data. Regions and subregions are editorial judgment, not official boundaries. ' +
-  'Missouri counties are extended coverage and are never part of the Tri-State.';
+  'Coverage is Illinois, Indiana and Kentucky.';
 const R = GEO.registry;
 const groupById = new Map(R.groups.map(g => [g.id, g]));
 const isRegion = g => g.kind === 'editorial_region' || g.kind === 'editorial_subregion';

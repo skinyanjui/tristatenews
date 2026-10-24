@@ -1,6 +1,6 @@
 // Read-only geography API (plan PR 2.3): /api/counties and /api/regions, hosted by api/news.js through
 // vercel.json rewrites. Contract: GET/HEAD only, no Redis or network, deterministic and cacheable, data equal to
-// the reviewed manifest, and Missouri never labeled Tri-State.
+// the reviewed manifest, and no Missouri (southeast Missouri was removed in ship62).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -63,16 +63,16 @@ test('same answer via the Vercel rewrite, the local server path and the module i
   }
 });
 
-test('GET /api/counties: all 68 counties, equal to the manifest', () => {
+test('GET /api/counties: all 57 counties, equal to the manifest', () => {
   const r = call('counties');
   assert.equal(r.code, 200);
   assert.equal(r.headers['content-type'], 'application/json; charset=utf-8');
   const b = r.body;
   assert.equal(b.schemaVersion, 1);
   assert.equal(b.manifestVersion, M.manifestVersion);
-  assert.equal(b.count, 68); assert.equal(b.counties.length, 68);
+  assert.equal(b.count, 57); assert.equal(b.counties.length, 57);
   assert.deepEqual(b.filters, {});
-  assert.deepEqual(b.tiers.map(t => [t.id, t.count]), [['tri_state_core', 30], ['extended', 38]]);
+  assert.deepEqual(b.tiers.map(t => [t.id, t.count]), [['tri_state_core', 30], ['extended', 27]]);
   const byId = new Map(M.counties.map(c => [c.id, c]));
   for (const c of b.counties) {
     const m = byId.get(c.id);
@@ -93,24 +93,16 @@ test('GET /api/counties: all 68 counties, equal to the manifest', () => {
 // Every string anywhere inside a value (keys are field names, not labels).
 const strings = v => (typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(strings) : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []);
 
-test('Missouri is never labeled Tri-State', () => {
-  const mo = call('counties', { query: { state: 'MO' } }).body;
-  assert.equal(mo.count, 11);
-  for (const c of mo.counties) {
-    assert.equal(c.tier, 'extended', c.id);
-    assert.equal(c.historicTriState, false, c.id);
-    assert.equal(c.regions.primary, 'region:cape-girardeau-se-missouri', c.id);
-    assert.deepEqual(c.regions.secondary, [], c.id);
-    for (const s of strings(c)) assert.doesNotMatch(s, /tri[- ]?state/i, c.id + ': ' + s);
-  }
-  const all = call('counties').body.counties;
-  assert.ok(all.filter(c => c.historicTriState).every(c => c.state !== 'MO'));
-  assert.equal(all.filter(c => c.historicTriState).length, 30);
-  const r = call('regions', { query: { id: 'cape-girardeau-se-missouri' } }).body.regions[0];
-  assert.deepEqual(r.states, ['MO']);
-  for (const s of strings(r)) assert.doesNotMatch(s, /tri[- ]?state/i, s);
-  for (const reg of call('regions').body.regions) if (reg.states.includes('MO')) for (const s of strings(reg)) assert.doesNotMatch(s, /tri[- ]?state/i, reg.id);
-  assert.match(mo.note, /Missouri counties are extended coverage and are never part of the Tri-State/);
+test('no Missouri: ?state=MO is an unknown state, the Missouri region is gone, no county or region names Missouri', () => {
+  const mo = call('counties', { query: { state: 'MO' } });
+  assert.equal(mo.code, 400);
+  assert.deepEqual(mo.body.allowed, ['IL', 'IN', 'KY']);
+  assert.equal(call('regions', { query: { id: 'cape-girardeau-se-missouri' } }).code, 404);
+  const all = call('counties').body;
+  assert.ok(all.counties.every(c => c.state !== 'MO' && !c.id.startsWith('mo-')));
+  assert.equal(all.counties.filter(c => c.historicTriState).length, 30);
+  for (const s of strings(all.counties).concat(strings(call('regions').body.regions))) assert.doesNotMatch(s, /missouri/i, s);
+  assert.match(all.note, /Coverage is Illinois, Indiana and Kentucky/);
 });
 
 test('county filters: state, tier, region (with or without the region: prefix, subregions too), id', () => {
@@ -118,8 +110,6 @@ test('county filters: state, tier, region (with or without the region: prefix, s
   assert.equal(ids({ state: 'ky' }).length, 24);
   assert.equal(ids({ state: 'IN' }).length, 11);
   assert.equal(ids({ tier: 'tri_state_core' }).length, 30);
-  assert.ok(ids({ tier: 'tri_state_core' }).every(id => !id.startsWith('mo-')));
-  assert.deepEqual(ids({ state: 'mo', tier: 'tri_state_core' }), []);
   assert.deepEqual(ids({ region: 'owensboro-western-ky' }).sort(), ['ky-daviess', 'ky-hancock', 'ky-mclean', 'ky-muhlenberg', 'ky-ohio'], 'primary and secondary members');
   assert.deepEqual(ids({ region: 'region:owensboro-western-ky' }), ids({ region: 'owensboro-western-ky' }));
   assert.equal(ids({ region: 'southern-illinois:east' }).length, 12);
@@ -147,12 +137,12 @@ test('bad input: 400 for unknown filter values, 404 for unknown ids, 405 for wri
   }
 });
 
-test('GET /api/regions: seven regions and two Southern Illinois subregions, equal to the manifest', () => {
+test('GET /api/regions: six regions and two Southern Illinois subregions, equal to the manifest', () => {
   const b = call('regions').body;
   assert.equal(b.manifestVersion, M.manifestVersion);
-  assert.equal(b.count, 9);
+  assert.equal(b.count, 8);
   const top = b.regions.filter(r => r.kind === 'editorial_region'), sub = b.regions.filter(r => r.kind === 'editorial_subregion');
-  assert.equal(top.length, 7); assert.equal(sub.length, 2);
+  assert.equal(top.length, 6); assert.equal(sub.length, 2);
   for (const r of b.regions) {
     const g = M.groups.find(x => x.id === r.id);
     assert.equal(r.name, g.name); assert.deepEqual(r.hubCountyIds, g.hubCountyIds); assert.equal(r.membershipStatus, 'editorial_judgment');

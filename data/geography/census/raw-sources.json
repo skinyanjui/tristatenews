@@ -44,12 +44,6 @@
       "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st21_ky_place_by_county2020.txt",
       "vintage": "2020",
       "sha256": "3b23e8bff3d3489c36d7b6097f3dc5e54e717c32aafc6737abfa60c3ce8256a8"
-    },
-    {
-      "file": "st29_mo_place_by_county2020.txt",
-      "url": "https://www2.census.gov/geo/docs/reference/codes2020/place_by_cou/st29_mo_place_by_county2020.txt",
-      "vintage": "2020",
-      "sha256": "e1c2625d071325fb63c121b39d6ecbb9027931e76201d34cdac4e88960df0371"
     }
   ]
 }

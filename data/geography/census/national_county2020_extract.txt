@@ -60,14 +60,3 @@ KY|21|219|00516956|Todd County|H1|A
 KY|21|221|00516957|Trigg County|H1|A
 KY|21|225|00516959|Union County|H1|A
 KY|21|233|00516963|Webster County|H1|A
-MO|29|017|00758463|Bollinger County|H1|A
-MO|29|023|00758466|Butler County|H1|A
-MO|29|031|00758470|Cape Girardeau County|H1|A
-MO|29|035|00758472|Carter County|H1|A
-MO|29|133|00758521|Mississippi County|H1|A
-MO|29|143|00758526|New Madrid County|H1|A
-MO|29|157|00758533|Perry County|H1|A
-MO|29|181|00758545|Ripley County|H1|A
-MO|29|201|00758553|Scott County|H1|A
-MO|29|207|00758556|Stoddard County|H1|A
-MO|29|223|00758564|Wayne County|H1|A

@@ -27,9 +27,9 @@ const { locate, foldGeo } = require('./_places.js');
 const GEO = require('./_geo.js');
 
 const COUNTY = new Map(GEO.counties.map(c => [c.id, c]));
-const FILE_STATE = { 'indiana.json': 'IN', 'kentucky.json': 'KY', 'illinois.json': 'IL', 'missouri.json': 'MO' };
-const STRICT_STATE = { ind: 'IN', ky: 'KY', ill: 'IL', mo: 'MO' };
-const STATE_WORDS = { IN: 'indiana', KY: 'kentucky', IL: 'illinois', MO: 'missouri' };
+const FILE_STATE = { 'indiana.json': 'IN', 'kentucky.json': 'KY', 'illinois.json': 'IL' };
+const STRICT_STATE = { ind: 'IN', ky: 'KY', ill: 'IL' };
+const STATE_WORDS = { IN: 'indiana', KY: 'kentucky', IL: 'illinois' }; // the covered states (southeast Missouri was removed in ship62)
 const AREA_STATES = new Set(Object.keys(STATE_WORDS));
 const REGIONAL = 5; // this many counties or more: a regional story, no primary county
 
@@ -106,7 +106,7 @@ function classify(item, source, opts) {
   const folded = {}; for (const k of keys) folded[k] = foldGeo(qualifyParens(fields[k]));
   const where = t => keys.filter(k => new RegExp('(?<![a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z0-9])').test(folded[k]));
   const hits = r.matches.map(m => ({ alias: m.alias, text: m.text, type: m.type, id: m.id, countyIds: m.countyIds, how: m.method, fields: where(m.text) }));
-  // A local outlet's non-ambiguous name with exactly one candidate in our 68 counties ("Madisonville" in an Evansville
+  // A local outlet's non-ambiguous name with exactly one candidate in our 57 counties ("Madisonville" in an Evansville
   // TV feed) counts, at lower confidence. Statewide outlets and ambiguous names never get this.
   const unresolved = [];
   for (const u of r.unresolved) {

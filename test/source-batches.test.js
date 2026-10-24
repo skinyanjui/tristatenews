@@ -58,7 +58,7 @@ test('batches are valid together with the base files; seq continues 65.. without
       assert.ok(['google_news_site', 'google_news_towns'].includes(s.fallback), s.id);
       assert.strictEqual(s.rateGroup, 'gnews', s.id);
     } else assert.ok(!s.fallback && !s.localSection, s.id);
-    if (/^mo-/.test(s.counties[0])) assert.ok(s.counties.every(c => /^mo-/.test(c)), s.id + ' Missouri entries claim only Missouri counties');
+    assert.ok(s.counties.every(c => !/^mo-/.test(c)), s.id + ': no Missouri county (southeast Missouri removed in ship62)');
   }
 });
 
@@ -112,12 +112,13 @@ test('batches add no outlet that the base registry already fetches (same id or s
 test('gap report: the batches give every claimed county a home source; base-only report is unchanged by batches', () => {
   const { gaps } = require('../scripts/source-gaps.js');
   const base = gaps({ baseOnly: true }), all = gaps();
-  assert.strictEqual(all.rows.length, 68);
+  assert.strictEqual(all.rows.length, 57);
   for (const s of ALL) for (const c of s.counties) assert.ok(all.rows.find(r => r.id === c).sources > 0, c);
   assert.ok(all.without.length < base.without.length);
   assert.ok(all.without.every(r => base.without.some(b => b.id === r.id)));
-  // batch 3 (2026-10-22): 38 of 68 counties had no home source with b1 and b2; 12 remain
-  assert.strictEqual(all.without.length, 12);
+  // batch 3 (2026-10-22): 38 of 68 counties had no home source with b1 and b2; 12 remained, 2 of them in Missouri,
+  // which ship62 removed: 10 of the 57 remain
+  assert.strictEqual(all.without.length, 10);
   assert.deepStrictEqual(all.without.filter(r => r.tier === 'tri_state_core').map(r => r.id).sort(), ['il-gallatin', 'il-richland']);
 });
 

@@ -1,23 +1,22 @@
 {
-  "$comment": "Reviewed, version-controlled list of the 68 target counties. Never generated from Wikipedia. FIPS, names, ANSI codes and centroids come from the committed Census extracts in census/; seats from the official state sources listed. Re-verify with: node --test test/geography.test.js",
+  "$comment": "Reviewed, version-controlled list of the 57 target counties. Never generated from Wikipedia. FIPS, names, ANSI codes and centroids come from the committed Census extracts in census/; seats from the official state sources listed. Re-verify with: node --test test/geography.test.js Southeast Missouri (11 counties) was removed on 2026-10-23 (ship62, Sam: \"I don’t want Missouri\").",
   "schemaVersion": 1,
-  "manifestVersion": "2026-10-18.3",
+  "manifestVersion": "2026-10-23.1",
   "reviewStatus": "pending_review",
   "invariants": {
     "core": 30,
-    "extended": 38,
-    "total": 68,
+    "extended": 27,
+    "total": 57,
     "byState": {
       "IL": 22,
       "IN": 11,
-      "KY": 24,
-      "MO": 11
+      "KY": 24
     }
   },
   "censusExtracts": {
-    "census/2025_Gaz_counties_extract.txt": "7133627ec5ea40ef49c6f2e229d28a2bd39749590b704e10aba32c5c1b8a8f66",
-    "census/national_county2020_extract.txt": "f57145c4fa2f26e2444681f8f994f10c36f1e312c2393d7d5d72d1ae9f1c1644",
-    "census/county_adjacency2025_extract.txt": "97f0bf9bfbd4ddb27308e7562c084474546653407b46492c642e562a0abaf0b1"
+    "census/2025_Gaz_counties_extract.txt": "d0c2a6851cd7adbff44f3ad65e57dd2104e9674842ad5e1961b922c9a218de36",
+    "census/national_county2020_extract.txt": "d891442480899e37b12735cf7fa8f44fe701c105169e5f34d77c41d84c7a5d74",
+    "census/county_adjacency2025_extract.txt": "28cee352e15ee737dfab87382634a44652eada86e246f9ef85afcbdbc817a7bb"
   },
   "sources": {
     "census-gazetteer-2025": {
@@ -139,31 +138,6 @@
       "retrieved": "2026-10-18",
       "sha256": {
         "json": "c98191ed2e6cd16e384f44408964cc4b0c195b8b3c6c75c142aed0dcb57f7e50"
-      },
-      "usedFor": [
-        "seat corroboration"
-      ]
-    },
-    "mo-sos-official-manual-2025-26": {
-      "publisher": "Missouri Secretary of State",
-      "title": "Official Manual, State of Missouri 2025-2026, Chapter 8: Cities and Counties",
-      "url": "https://www.sos.mo.gov/cmsimages/bluebook/2025-2026/8_Counties.pdf",
-      "vintage": "2025-2026",
-      "retrieved": "2026-10-18",
-      "sha256": {
-        "pdf": "fa9df62ceda2d9aaed79516a8909fd404ccf2ea21aafcd451643c8bca508089f"
-      },
-      "usedFor": [
-        "seat"
-      ]
-    },
-    "mo-data-portal-counties": {
-      "publisher": "State of Missouri, data.mo.gov",
-      "title": "Missouri Counties (byps-gsbw)",
-      "url": "https://data.mo.gov/d/byps-gsbw",
-      "retrieved": "2026-10-18",
-      "sha256": {
-        "csv": "21261f083249ded56b4092aa7464fbce7d0e64b9e9b0e4c26aa2e39ef85a989b"
       },
       "usedFor": [
         "seat corroboration"
@@ -2149,391 +2123,6 @@
         ],
         "verifiedAt": "2026-10-18"
       }
-    },
-    {
-      "id": "mo-perry",
-      "state": "MO",
-      "name": "Perry",
-      "fullName": "Perry County",
-      "fips": "29157",
-      "stateFips": "29",
-      "countyFips": "157",
-      "ansiCode": "00758533",
-      "tier": "extended",
-      "seat": {
-        "name": "Perryville",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 37.71113,
-        "lon": -89.802125,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-bollinger",
-      "state": "MO",
-      "name": "Bollinger",
-      "fullName": "Bollinger County",
-      "fips": "29017",
-      "stateFips": "29",
-      "countyFips": "017",
-      "ansiCode": "00758463",
-      "tier": "extended",
-      "seat": {
-        "name": "Marble Hill",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 37.318427,
-        "lon": -90.024645,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-cape-girardeau",
-      "state": "MO",
-      "name": "Cape Girardeau",
-      "fullName": "Cape Girardeau County",
-      "fips": "29031",
-      "stateFips": "29",
-      "countyFips": "031",
-      "ansiCode": "00758470",
-      "tier": "extended",
-      "seat": {
-        "name": "Jackson",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 37.384141,
-        "lon": -89.685658,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-wayne",
-      "state": "MO",
-      "name": "Wayne",
-      "fullName": "Wayne County",
-      "fips": "29223",
-      "stateFips": "29",
-      "countyFips": "223",
-      "ansiCode": "00758564",
-      "tier": "extended",
-      "seat": {
-        "name": "Greenville",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 37.111074,
-        "lon": -90.453931,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-carter",
-      "state": "MO",
-      "name": "Carter",
-      "fullName": "Carter County",
-      "fips": "29035",
-      "stateFips": "29",
-      "countyFips": "035",
-      "ansiCode": "00758472",
-      "tier": "extended",
-      "seat": {
-        "name": "Van Buren",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.944858,
-        "lon": -90.945705,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-ripley",
-      "state": "MO",
-      "name": "Ripley",
-      "fullName": "Ripley County",
-      "fips": "29181",
-      "stateFips": "29",
-      "countyFips": "181",
-      "ansiCode": "00758545",
-      "tier": "extended",
-      "seat": {
-        "name": "Doniphan",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.65017,
-        "lon": -90.874834,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-butler",
-      "state": "MO",
-      "name": "Butler",
-      "fullName": "Butler County",
-      "fips": "29023",
-      "stateFips": "29",
-      "countyFips": "023",
-      "ansiCode": "00758466",
-      "tier": "extended",
-      "seat": {
-        "name": "Poplar Bluff",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.71518,
-        "lon": -90.40313,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-stoddard",
-      "state": "MO",
-      "name": "Stoddard",
-      "fullName": "Stoddard County",
-      "fips": "29207",
-      "stateFips": "29",
-      "countyFips": "207",
-      "ansiCode": "00758556",
-      "tier": "extended",
-      "seat": {
-        "name": "Bloomfield",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.851557,
-        "lon": -89.947481,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-scott",
-      "state": "MO",
-      "name": "Scott",
-      "fullName": "Scott County",
-      "fips": "29201",
-      "stateFips": "29",
-      "countyFips": "201",
-      "ansiCode": "00758553",
-      "tier": "extended",
-      "seat": {
-        "name": "Benton",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 37.047793,
-        "lon": -89.568098,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-mississippi",
-      "state": "MO",
-      "name": "Mississippi",
-      "fullName": "Mississippi County",
-      "fips": "29133",
-      "stateFips": "29",
-      "countyFips": "133",
-      "ansiCode": "00758521",
-      "tier": "extended",
-      "seat": {
-        "name": "Charleston",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.826264,
-        "lon": -89.295929,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
-    },
-    {
-      "id": "mo-new-madrid",
-      "state": "MO",
-      "name": "New Madrid",
-      "fullName": "New Madrid County",
-      "fips": "29143",
-      "stateFips": "29",
-      "countyFips": "143",
-      "ansiCode": "00758526",
-      "tier": "extended",
-      "seat": {
-        "name": "New Madrid",
-        "source": "mo-sos-official-manual-2025-26",
-        "corroboratedBy": [
-          "mo-data-portal-counties"
-        ]
-      },
-      "centroid": {
-        "lat": 36.594261,
-        "lon": -89.655948,
-        "kind": "census_internal_point",
-        "source": "census-gazetteer-2025"
-      },
-      "verification": {
-        "fips": "verified",
-        "seat": "verified",
-        "centroid": "verified",
-        "fipsSources": [
-          "census-gazetteer-2025",
-          "census-national-county-2020",
-          "census-gazetteer-2024"
-        ],
-        "verifiedAt": "2026-10-18"
-      }
     }
   ],
   "groups": [
@@ -2551,7 +2140,7 @@
       "kind": "tier",
       "parent": null,
       "overlapping": false,
-      "description": "The 38 extended counties in Illinois, Kentucky and Missouri. Never part of the historic Tri-State."
+      "description": "The 27 extended counties in Illinois and Kentucky. Never part of the historic Tri-State."
     },
     {
       "id": "tri_state_historic",
@@ -2559,7 +2148,7 @@
       "kind": "label",
       "parent": null,
       "overlapping": true,
-      "description": "Counties that may be labeled part of the historic Tri-State (IL, IN, KY core). Missouri is never a member."
+      "description": "Counties that may be labeled part of the historic Tri-State (IL, IN, KY core)."
     },
     {
       "id": "region:evansville-ohio-river",
@@ -2633,18 +2222,6 @@
       "hubCountyIds": [
         "ky-mccracken",
         "ky-calloway"
-      ]
-    },
-    {
-      "id": "region:cape-girardeau-se-missouri",
-      "name": "Cape Girardeau & Southeast Missouri",
-      "kind": "editorial_region",
-      "parent": null,
-      "overlapping": true,
-      "membershipStatus": "editorial_judgment",
-      "description": "Editorial region: explicit county memberships chosen by editorial judgment. Not an official or statistical boundary.",
-      "hubCountyIds": [
-        "mo-cape-girardeau"
       ]
     },
     {
@@ -3278,83 +2855,6 @@
     {
       "groupId": "extended",
       "countyId": "ky-todd",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-perry",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-bollinger",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-cape-girardeau",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-wayne",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-carter",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-ripley",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-butler",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-stoddard",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-scott",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-mississippi",
-      "membershipType": "tier",
-      "sourceReference": "brief-2026-10",
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "extended",
-      "countyId": "mo-new-madrid",
       "membershipType": "tier",
       "sourceReference": "brief-2026-10",
       "verifiedAt": "2026-10-18"
@@ -4209,149 +3709,6 @@
       "countyId": "il-alexander",
       "membershipType": "secondary",
       "sourceReference": "editorial judgment: county seat Cairo; internal point 36 mi from McCracken County KY (hub); borders Ballard KY in this region (Census adjacency 2025); Cairo is across the Ohio from Ballard; brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-perry",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Perryville; internal point 23 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Cape Girardeau MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-bollinger",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Marble Hill; internal point 19 mi from Cape Girardeau County MO (hub); borders Cape Girardeau MO, Perry MO, Stoddard MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-cape-girardeau",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Jackson; region hub; borders Bollinger MO, Perry MO, Scott MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-wayne",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Greenville; internal point 46 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Butler MO, Carter MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-carter",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Van Buren; internal point 76 mi from Cape Girardeau County MO (hub); borders Butler MO, Ripley MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-ripley",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Doniphan; internal point 83 mi from Cape Girardeau County MO (hub); borders Butler MO, Carter MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-butler",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Poplar Bluff; internal point 61 mi from Cape Girardeau County MO (hub); borders Carter MO, Ripley MO, Stoddard MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-stoddard",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Bloomfield; internal point 40 mi from Cape Girardeau County MO (hub); borders Bollinger MO, Butler MO, Cape Girardeau MO, New Madrid MO, Scott MO, Wayne MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-scott",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Benton; internal point 24 mi from Cape Girardeau County MO (hub); borders Cape Girardeau MO, Mississippi MO, New Madrid MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-mississippi",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat Charleston; internal point 44 mi from Cape Girardeau County MO (hub); borders New Madrid MO, Scott MO in this region (Census adjacency 2025); brief region guidance",
-      "basedOn": [
-        "editorial-regions-2026-10",
-        "census-county-adjacency-2025",
-        "census-gazetteer-2025",
-        "brief-2026-10"
-      ],
-      "verifiedAt": "2026-10-18"
-    },
-    {
-      "groupId": "region:cape-girardeau-se-missouri",
-      "countyId": "mo-new-madrid",
-      "membershipType": "primary",
-      "sourceReference": "editorial judgment: county seat New Madrid; internal point 55 mi from Cape Girardeau County MO (hub); borders Mississippi MO, Scott MO, Stoddard MO in this region (Census adjacency 2025); brief region guidance",
       "basedOn": [
         "editorial-regions-2026-10",
         "census-county-adjacency-2025",

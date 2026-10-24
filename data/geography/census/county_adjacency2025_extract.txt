@@ -2,9 +2,6 @@ County Name|County GEOID|Neighbor Name|Neighbor GEOID|Length
 Alexander County, IL|17003|Pulaski County, IL|17153|60075
 Alexander County, IL|17003|Union County, IL|17181|21118
 Alexander County, IL|17003|Ballard County, KY|21007|11586
-Alexander County, IL|17003|Cape Girardeau County, MO|29031|11120
-Alexander County, IL|17003|Mississippi County, MO|29133|39600
-Alexander County, IL|17003|Scott County, MO|29201|35776
 Clay County, IL|17025|Richland County, IL|17159|46311
 Clay County, IL|17025|Wayne County, IL|17191|38849
 Edwards County, IL|17047|Richland County, IL|17159|16892
@@ -39,7 +36,6 @@ Jackson County, IL|17077|Franklin County, IL|17055|12151
 Jackson County, IL|17077|Perry County, IL|17145|36702
 Jackson County, IL|17077|Union County, IL|17181|38017
 Jackson County, IL|17077|Williamson County, IL|17199|29061
-Jackson County, IL|17077|Perry County, MO|29157|41248
 Jefferson County, IL|17081|Franklin County, IL|17055|37292
 Jefferson County, IL|17081|Hamilton County, IL|17065|14595
 Jefferson County, IL|17081|Perry County, IL|17145|11524
@@ -89,8 +85,6 @@ Union County, IL|17181|Jackson County, IL|17077|38017
 Union County, IL|17181|Johnson County, IL|17087|29621
 Union County, IL|17181|Pulaski County, IL|17153|18080
 Union County, IL|17181|Williamson County, IL|17199|9931
-Union County, IL|17181|Cape Girardeau County, MO|29031|31993
-Union County, IL|17181|Perry County, MO|29157|660
 Wabash County, IL|17185|Edwards County, IL|17047|65910
 Wabash County, IL|17185|Lawrence County, IL|17101|22748
 Wabash County, IL|17185|Richland County, IL|17159|3716
@@ -184,7 +178,6 @@ Ballard County, KY|21007|Alexander County, IL|17003|11586
 Ballard County, KY|21007|Pulaski County, IL|17153|33159
 Ballard County, KY|21007|Carlisle County, KY|21039|52520
 Ballard County, KY|21007|McCracken County, KY|21145|31821
-Ballard County, KY|21007|Mississippi County, MO|29133|6233
 Breckinridge County, KY|21027|Perry County, IN|18123|35975
 Breckinridge County, KY|21027|Grayson County, KY|21085|75997
 Breckinridge County, KY|21027|Hancock County, KY|21091|23844
@@ -202,7 +195,6 @@ Carlisle County, KY|21039|Ballard County, KY|21007|52520
 Carlisle County, KY|21039|Graves County, KY|21083|19287
 Carlisle County, KY|21039|Hickman County, KY|21105|30626
 Carlisle County, KY|21039|McCracken County, KY|21145|848
-Carlisle County, KY|21039|Mississippi County, MO|29133|24499
 Christian County, KY|21047|Caldwell County, KY|21033|17361
 Christian County, KY|21047|Hopkins County, KY|21107|40214
 Christian County, KY|21047|Muhlenberg County, KY|21177|28625
@@ -221,8 +213,6 @@ Daviess County, KY|21059|Henderson County, KY|21101|35754
 Daviess County, KY|21059|McLean County, KY|21149|36724
 Daviess County, KY|21059|Ohio County, KY|21183|40089
 Fulton County, KY|21075|Hickman County, KY|21105|38139
-Fulton County, KY|21075|Mississippi County, MO|29133|23305
-Fulton County, KY|21075|New Madrid County, MO|29143|44183
 Graves County, KY|21083|Calloway County, KY|21035|27652
 Graves County, KY|21083|Carlisle County, KY|21039|19287
 Graves County, KY|21083|Hickman County, KY|21105|30134
@@ -245,7 +235,6 @@ Henderson County, KY|21101|Webster County, KY|21233|21138
 Hickman County, KY|21105|Carlisle County, KY|21039|30626
 Hickman County, KY|21105|Fulton County, KY|21075|38139
 Hickman County, KY|21105|Graves County, KY|21083|30134
-Hickman County, KY|21105|Mississippi County, MO|29133|24011
 Hopkins County, KY|21107|Caldwell County, KY|21033|77410
 Hopkins County, KY|21107|Christian County, KY|21047|40214
 Hopkins County, KY|21107|McLean County, KY|21149|27764
@@ -312,52 +301,3 @@ Webster County, KY|21233|Henderson County, KY|21101|21138
 Webster County, KY|21233|Hopkins County, KY|21107|46203
 Webster County, KY|21233|McLean County, KY|21149|16470
 Webster County, KY|21233|Union County, KY|21225|24838
-Bollinger County, MO|29017|Cape Girardeau County, MO|29031|53004
-Bollinger County, MO|29017|Perry County, MO|29157|25253
-Bollinger County, MO|29017|Stoddard County, MO|29207|31563
-Bollinger County, MO|29017|Wayne County, MO|29223|40372
-Butler County, MO|29023|Carter County, MO|29035|14398
-Butler County, MO|29023|Ripley County, MO|29181|42636
-Butler County, MO|29023|Stoddard County, MO|29207|69572
-Butler County, MO|29023|Wayne County, MO|29223|37605
-Cape Girardeau County, MO|29031|Alexander County, IL|17003|11120
-Cape Girardeau County, MO|29031|Union County, IL|17181|31993
-Cape Girardeau County, MO|29031|Bollinger County, MO|29017|53004
-Cape Girardeau County, MO|29031|Perry County, MO|29157|54660
-Cape Girardeau County, MO|29031|Scott County, MO|29201|39580
-Cape Girardeau County, MO|29031|Stoddard County, MO|29207|9017
-Carter County, MO|29035|Butler County, MO|29023|14398
-Carter County, MO|29035|Ripley County, MO|29181|41306
-Carter County, MO|29035|Wayne County, MO|29223|22907
-Mississippi County, MO|29133|Alexander County, IL|17003|39600
-Mississippi County, MO|29133|Ballard County, KY|21007|6233
-Mississippi County, MO|29133|Carlisle County, KY|21039|24499
-Mississippi County, MO|29133|Fulton County, KY|21075|23305
-Mississippi County, MO|29133|Hickman County, KY|21105|24011
-Mississippi County, MO|29133|New Madrid County, MO|29143|42970
-Mississippi County, MO|29133|Scott County, MO|29201|33128
-New Madrid County, MO|29143|Fulton County, KY|21075|44183
-New Madrid County, MO|29143|Mississippi County, MO|29133|42970
-New Madrid County, MO|29143|Scott County, MO|29201|16162
-New Madrid County, MO|29143|Stoddard County, MO|29207|50192
-Perry County, MO|29157|Jackson County, IL|17077|41248
-Perry County, MO|29157|Union County, IL|17181|660
-Perry County, MO|29157|Bollinger County, MO|29017|25253
-Perry County, MO|29157|Cape Girardeau County, MO|29031|54660
-Ripley County, MO|29181|Butler County, MO|29023|42636
-Ripley County, MO|29181|Carter County, MO|29035|41306
-Scott County, MO|29201|Alexander County, IL|17003|35776
-Scott County, MO|29201|Cape Girardeau County, MO|29031|39580
-Scott County, MO|29201|Mississippi County, MO|29133|33128
-Scott County, MO|29201|New Madrid County, MO|29143|16162
-Scott County, MO|29201|Stoddard County, MO|29207|47742
-Stoddard County, MO|29207|Bollinger County, MO|29017|31563
-Stoddard County, MO|29207|Butler County, MO|29023|69572
-Stoddard County, MO|29207|Cape Girardeau County, MO|29031|9017
-Stoddard County, MO|29207|New Madrid County, MO|29143|50192
-Stoddard County, MO|29207|Scott County, MO|29201|47742
-Stoddard County, MO|29207|Wayne County, MO|29223|26318
-Wayne County, MO|29223|Bollinger County, MO|29017|40372
-Wayne County, MO|29223|Butler County, MO|29023|37605
-Wayne County, MO|29223|Carter County, MO|29035|22907
-Wayne County, MO|29223|Stoddard County, MO|29207|26318

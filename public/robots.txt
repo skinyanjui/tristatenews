@@ -4,3 +4,4 @@ Disallow: /admin.html
 Disallow: /api/
 
 Sitemap: https://tristatenewss.vercel.app/sitemap.xml
+Sitemap: https://tristatenewss.vercel.app/sitemap-regions.xml

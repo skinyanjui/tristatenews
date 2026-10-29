@@ -65,7 +65,9 @@ test('home page CSS and JS are cacheable files, loaded with a fresh content hash
   assert.ok(html.includes(B.cssTag(B.hash(read('public/assets/app.css')))), 'app.css ?v= is current: run node scripts/build-assets.js');
   assert.ok(html.includes(B.jsTag(B.hash(read('public/assets/app.js')))), 'app.js ?v= is current: run node scripts/build-assets.js');
   assert.ok(html.indexOf('/assets/app.css') < html.indexOf('</head>'), 'CSS in the head');
-  assert.ok(html.indexOf('/assets/app.js') > html.lastIndexOf('</main>') && html.indexOf('/assets/app.js') < html.indexOf('</body>'), 'JS where the inline script was, end of body');
+  // ship68: lib.js then app.js, both defer in <head> (they run in order after the document is parsed)
+  assert.ok(html.includes(B.libTag(B.hash(read('public/assets/lib.js')))), 'lib.js ?v= is current');
+  assert.ok(html.indexOf('/assets/lib.js') < html.indexOf('/assets/app.js') && html.indexOf('/assets/app.js') < html.indexOf('</head>'), 'lib.js, then app.js, in the head');
   const h = vercel.headers.find(x => x.source === '/assets/(.*)');
   assert.ok(h && h.headers.some(k => k.key === 'Cache-Control' && /max-age=31536000/.test(k.value) && /immutable/.test(k.value)));
   assert.ok(html.length < 20000, 'first HTML is small: ' + html.length);

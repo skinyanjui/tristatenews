@@ -644,6 +644,14 @@
       tabsEl.appendChild(b);
     });
   }
+  // Prefetch on intent: pointing at, touching or focusing a board tab starts loading that board (once; loadBoard reuses
+  // a request in flight), so the switch shows posts at once.
+  var TAB_BOARD = { classifieds: 'item', deals: 'deal', events: 'event', jobs: 'job', obits: 'obit' };
+  function warmTab(e) {
+    var t = e.target && e.target.closest ? e.target.closest('[data-cat]') : null, k = t && TAB_BOARD[t.dataset.cat];
+    if (k && boards[k] && !boards[k].loaded) loadBoard(k);
+  }
+  ['pointerover', 'touchstart', 'focusin'].forEach(function (ev) { tabsEl.addEventListener(ev, warmTab, ev === 'touchstart' ? { passive: true, capture: true } : true); });
   tabsEl.addEventListener('keydown', function (e) {
     var keys = { ArrowRight: 1, ArrowLeft: -1, Home: 0, End: 0 };
     if (!(e.key in keys)) return;
@@ -823,11 +831,14 @@
   };
   Object.keys(boards).forEach(function (k) { try { boards[k].mine = JSON.parse(localStorage.getItem(boards[k].key) || '[]'); } catch (e) {} });
   function saveMine(b) { try { localStorage.setItem(b.key, JSON.stringify(b.mine.slice(-50))); } catch (e) {} }
+  // One request per board at a time: a render, a tab switch or a hover while one is in flight reuses it (b.pending).
   function loadBoard(kind) {
     var b = boards[kind];
-    return fetch('/api/listings?kind=' + kind, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (b.pending) return b.pending;
+    b.pending = fetch('/api/listings?kind=' + kind, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       b.configured = !!(d && d.configured); b.items = d && d.items ? d.items : []; b.loaded = true;
-    }).catch(function () { b.loaded = true; b.configured = false; }).then(function () { renderTabs(); drawBoard(kind); if (state.q.trim() && state.cat !== 'submit') render(); });
+    }).catch(function () { b.loaded = true; b.configured = false; }).then(function () { b.pending = null; renderTabs(); drawBoard(kind); if (state.q.trim() && state.cat !== 'submit') render(); });
+    return b.pending;
   }
   function loadDeals() { return loadBoard('deal'); }
   function evCat(i) {

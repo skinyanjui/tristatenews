@@ -1,7 +1,7 @@
 // The /advertise page (rates, packages, how our ads work, and the inquiry form), behind the ADS_PAGE flag.
 //   GET|HEAD /advertise   (vercel.json rewrites it to /api/inbox?__route=adpage; no new function)
 // ADS_PAGE:
-//   unset or anything else  off: 302 to /#advertise, which opens the site's existing Advertise form
+//   unset or anything else  off: 308 (permanent) to /#advertise, which opens the site's existing Advertise form
 //   preview                 the page, with noindex (X-Robots-Tag and a robots meta tag) and no caching: for review
 //   on                      the page, indexable and cached briefly: sales are open
 // The page lives in data/pages/advertise.html, not public/, so it can't be reached around the flag. vercel.json
@@ -22,7 +22,7 @@ function handler(req, res) {
   if (m === 'off') {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Location', '/#advertise');
-    return res.status(302).send('');
+    return res.status(308).send('');
   }
   if (cached === null) cached = fs.readFileSync(FILE, 'utf8');
   let html = cached;

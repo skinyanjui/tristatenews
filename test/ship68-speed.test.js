@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const B = require('../scripts/build-assets.js');
 const vercel = JSON.parse(read('vercel.json'));
-const html = read('public/index.html'), head = html.slice(0, html.indexOf('</head>'));
+const html = read('data/pages/index.html'), head = html.slice(0, html.indexOf('</head>'));
 
 test('no parser-blocking scripts: lib.js (the six libraries + the head call) and app.js are defer, in order', () => {
   assert.equal(read('public/assets/lib.js'), B.libSource(), 'lib.js is current: run node scripts/build-assets.js');
@@ -40,7 +40,7 @@ test('Geist is self-hosted (OFL), with no Google Fonts anywhere and the CSP narr
   }
   assert.match(read('public/assets/fonts/OFL.txt'), /SIL Open Font License/);
   assert.match(read('public/assets/app.css'), /@font-face \{ font-family:'Geist'; font-style:normal; font-weight:400 600; font-display:swap; src:url\('\/assets\/fonts\/geist-1\.8\.2-latin\.woff2'\)/);
-  for (const f of ['public/index.html', 'public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'data/pages/404.html']) assert.ok(!/fonts\.(googleapis|gstatic)\.com/.test(read(f)), f);
+  for (const f of ['data/pages/index.html', 'public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'data/pages/404.html']) assert.ok(!/fonts\.(googleapis|gstatic)\.com/.test(read(f)), f);
   for (const f of ['public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'data/pages/404.html']) assert.ok(read(f).includes('/assets/fonts/geist-1.8.2.css'), f);
   const csp = vercel.headers[0].headers.find(h => h.key === 'Content-Security-Policy').value;
   assert.ok(!/fonts\.g/.test(csp)); assert.match(csp, /font-src 'self' data:;/);

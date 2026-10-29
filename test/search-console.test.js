@@ -11,7 +11,7 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const TAG = '<meta name="google-site-verification" content="imgrimRmsdx3n0xLUgcG6A2o24uvOpP_ApcVkTKElNY" />';
 
 test('verification meta tag is in the <head> of the home page and the public content pages, once', () => {
-  for (const f of ['public/index.html', 'public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'public/order.html', 'data/pages/advertise.html', 'data/pages/404.html']) {
+  for (const f of ['data/pages/index.html', 'public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'public/order.html', 'data/pages/advertise.html', 'data/pages/404.html']) {
     const h = read(f), head = h.slice(0, h.indexOf('</head>'));
     assert.equal(head.split(TAG).length - 1, 1, f);
   }

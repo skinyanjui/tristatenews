@@ -44,9 +44,9 @@ test('each tab is served with its own title, description, canonical and og tags,
   assert.equal((await call(tab, { p: '/jobs' }, 'POST')).status, 405);
 });
 
-test('a path that is not a tab gets the not-found page; "/" stays the static index.html with the News head', async () => {
+test('a path that is not a tab gets the not-found page; the shell (data/pages/index.html) carries the News head', async () => {
   assert.equal((await call(tab, { p: '/nope' })).status, 404);
-  const home = read('public/index.html'), news = RT.byPath('/');
+  const home = read('data/pages/index.html'), news = RT.byPath('/');
   assert.equal(one(home, /<title>([^<]*)<\/title>/), news.title);
   assert.equal(one(home, /<link rel="canonical" href="([^"]*)"/), RT.ORIGIN + '/');
 });
@@ -55,11 +55,11 @@ test('the tab page is hosted by api/news.js: still exactly 8 functions, index.ht
   const fns = fs.readdirSync(path.join(root, 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_'));
   assert.equal(fns.length, 8, fns.join(', '));
   assert.match(read('api/news.js'), /tabpage: \(\) => require\('\.\/_tabpage\.js'\)/);
-  assert.match(vercel.functions['api/news.js'].includeFiles, /public\/index\.html/);
+  assert.match(vercel.functions['api/news.js'].includeFiles, /data\/pages\/index\.html/);
 });
 
 test('home page CSS and JS are cacheable files, loaded with a fresh content hash', () => {
-  const html = read('public/index.html');
+  const html = read('data/pages/index.html');
   assert.ok(!/<style>/.test(html), 'no inline <style> block');
   assert.ok(!/<script>\s*\(function \(\) \{/.test(html), 'no inline app script');
   assert.ok(html.includes(B.cssTag(B.hash(read('public/assets/app.css')))), 'app.css ?v= is current: run node scripts/build-assets.js');
@@ -78,6 +78,6 @@ test('/advertise fallback is a permanent redirect; /legal is the one legal URL',
   assert.deepEqual(vercel.redirects.find(r => r.source === '/legal.html'), { source: '/legal.html', destination: '/legal', permanent: true });
   const sm = read('public/sitemap.xml');
   assert.ok(sm.includes('<loc>' + RT.ORIGIN + '/legal</loc>') && !sm.includes('legal.html'));
-  for (const f of ['public/index.html', 'public/assets/app.js', 'data/pages/404.html', 'data/pages/advertise.html', 'api/newsletter.js'])
+  for (const f of ['data/pages/index.html', 'public/assets/app.js', 'data/pages/404.html', 'data/pages/advertise.html', 'api/newsletter.js'])
     assert.ok(!read(f).includes('/legal.html'), f + ' links /legal directly');
 });

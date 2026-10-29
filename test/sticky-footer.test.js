@@ -1,7 +1,7 @@
 // Sticky footer (ship61): on every public page the footer sits at the bottom of the screen when the content is short
 // and follows the content when it is long. The rule is a column body at least one screen tall (100dvh, 100vh first as
 // the fallback) whose main takes the spare height; the footer is pushed down by that height, never position:fixed.
-// County pages (/news/<state>/<county>) are public/index.html served by api/_geopage.js; admin.html has no footer.
+// County pages (/news/<state>/<county>) are data/pages/index.html served by api/_geopage.js; admin.html has no footer.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -41,7 +41,7 @@ test('index.html (News, Events, Obituaries, Jobs, Deals, Classifieds, county pag
   assert.match(main, /<div class="foot-push" aria-hidden="true"><\/div>\s*<div class="legal-foot">[\s\S]*<\/div>\s*$/, 'spacer sits right before the footer, which ends main');
   assert.equal((html.match(/class="foot-push"/g) || []).length, 1);
   neverFixed(css, ['.legal-foot', '.foot-push'], 'index');
-  assert.match(read('api/_geopage.js'), /'public', 'index\.html'/, 'county pages are index.html');
+  assert.match(read('api/_geopage.js'), /'data', 'pages', 'index\.html'/, 'county pages are index.html');
 });
 
 test('legal.css pages (legal, newsletter, unsubscribe, 404): header, main, footer column', () => {

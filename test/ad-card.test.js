@@ -7,7 +7,7 @@ const path = require('path');
 const A = require('../public/adslots.js');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-const html = read('public/index.html'), mod = read('public/adslots.js'), raw = read('public/sponsors.json');
+const html = require('./_page.js')(), mod = read('public/adslots.js'), raw = read('public/sponsors.json');
 const sponsors = JSON.parse(raw);
 const NOW = Date.parse('2026-10-18T15:00:00Z');
 const ad = (n, extra) => Object.assign({ name: 'Advertiser ' + n, text: 'Text ' + n, url: 'https://ad' + n + '.test/' }, extra || {});

@@ -45,7 +45,7 @@ test('no Missouri county, region, scope or page', () => {
   const geo = JSON.parse(read('public/geo-data.json'));
   assert.ok(!geo.counties.some(c => c.state === 'MO') && !geo.regions.some(r => /missouri/i.test(r.id + r.name)));
   assert.ok(!Object.keys(JSON.parse(read('data/geography/coverage.json')).depth).some(k => /^mo-/.test(k)));
-  assert.doesNotMatch(read('public/index.html'), /Missouri/);
+  assert.doesNotMatch(require('./_page.js')(), /Missouri/);
 });
 
 test('Missouri stories stay out of area for the Tri-State feed', () => {

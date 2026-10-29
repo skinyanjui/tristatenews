@@ -109,7 +109,7 @@ test('GET /api/flowers through listings.js: the unpaid fallback by default, the 
 });
 
 test('the page: a text link on obituaries only, "paid link" and rel="sponsored noopener" when paid, outside the card link', () => {
-  const html = read('public/index.html');
+  const html = require('./_page.js')();
   assert.ok(html.includes('<script src="/flowers.js"></script>'));
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
   assert.ok(fn.includes("['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
@@ -169,7 +169,7 @@ test('Donate: a home donateUrl, or the obituary asks for donations; never an inv
 });
 
 test('action row (ship59): links, heart and share in ONE row at the bottom of the card at every width, never wrapping', () => {
-  const html = read('public/index.html');
+  const html = require('./_page.js')();
   const css = html.slice(html.indexOf('/* Obituary action row'), html.indexOf('/* in-listing Sponsored card'));
   assert.ok(css.includes('.ob { display:flex; flex-direction:column; }') && css.includes('.ob > .ob-acts { margin-top:auto;'), 'pinned to the bottom');
   assert.ok(css.includes('.card:has(.cf-ob) > .cf { margin-top:auto; }'), 'feed obituary cards too');

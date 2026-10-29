@@ -151,7 +151,7 @@ function render(issue, email, opts) {
     '<p style="margin:24px 0 0">' + a(base + '/news', 'More local news \u2192') + '</p>' +
     '</td></tr></table>' +
     '<p style="max-width:600px;color:#666;font-size:12px;line-height:18px;margin:16px auto 0">Headlines link to the original publishers. You get this because you signed up at ' + a(base + '/', base.replace(/^https?:\/\//, '')) + '.<br>' +
-    a(u, 'Unsubscribe', 'color:#666;text-decoration:underline') + ' \u00b7 ' + a(base + '/legal.html', 'Privacy and terms', 'color:#666;text-decoration:underline') +
+    a(u, 'Unsubscribe', 'color:#666;text-decoration:underline') + ' \u00b7 ' + a(base + '/legal', 'Privacy and terms', 'color:#666;text-decoration:underline') +
     (postal ? '<br>' + esc(postal) : '') + '</p></td></tr></table></body></html>';
   const text = 'Tri-State News, week of ' + issue.weekOf + '\n\nTOP HEADLINES\n' + issue.headlines.map(x => '- ' + x.title + ' (' + x.source + ')\n  ' + x.link).join('\n') +
     (issue.events.length ? '\n\nCOMING UP\n' + issue.events.map(x => '- ' + fmtDay(x.at) + (x.timed ? ' ' + fmtTime(x.at) : '') + ': ' + x.title + (x.place ? ', ' + x.place : '') + '\n  ' + x.link).join('\n') : '') +

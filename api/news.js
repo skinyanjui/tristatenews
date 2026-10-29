@@ -1099,6 +1099,8 @@ function scoped(snap, scope, filters) {
 // ?__route=counties / ?__route=regions) are the read-only geography API in api/_geoapi.js, which never touches Redis.
 // /api/locations (?__route=locations) is the admin-only county-classification report in api/_locations.js.
 // /api/coverage (?__route=coverage) is the admin Sources & Coverage report and override endpoint in api/_coverage.js.
+// The tab pages (/events, /jobs, ... rewritten to ?__route=tabpage) are public/index.html with the tab's head, in
+// api/_tabpage.js.
 // Every other request is the news handler above.
 module.exports = require('./_dispatch.js').host({
   refresh: () => require('./_refresh.js'),
@@ -1106,6 +1108,7 @@ module.exports = require('./_dispatch.js').host({
   regions: () => require('./_geoapi.js').regions,
   locations: () => require('./_locations.js'),
   geopage: () => require('./_geopage.js'),
+  tabpage: () => require('./_tabpage.js'),
   coverage: () => require('./_coverage.js')
 }, handler);
 module.exports.parseFeed = parseFeed;

@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-const html = read('public/index.html');
+const html = require('./_page.js')();
 const css = html.slice(html.indexOf('/* ---------- card spacing'), html.indexOf('</style>'));
 
 test('index.html: shared tokens, used by every card type', () => {

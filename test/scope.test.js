@@ -183,7 +183,7 @@ test('coverage.json is a real measurement record with all 57 counties', () => {
 });
 
 test('home page has no Area filter: no button, sheet, county picker, My counties or saved area (ship59)', () => {
-  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const html = require('./_page.js')();
   // valid inline scripts (a stray // comment in a one-line try once broke the page)
   for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) assert.doesNotThrow(() => new Function(m[1]));
   for (const gone of ['scopeBtn', 'scopeSheet', 'scopeLbl', 'scope-btn', 'scope-sheet', 'scope-row', 'scope-st', 'scope-cty', 'scope-find', 'tabs-row',

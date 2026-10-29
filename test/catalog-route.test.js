@@ -65,7 +65,7 @@ test('GET /api/catalog: same answer from listings.js (Vercel rewrite and local p
 });
 
 test('the page reads prices from /api/catalog and shows price and duration before checkout', () => {
-  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const html = require('./_page.js')();
   assert.ok(html.includes("fetch('/api/catalog')"));
   assert.ok(!/fetch\('\/api\/checkout', \{ cache/.test(html), 'prices no longer come from GET /api/checkout');
   assert.ok(html.includes("var period = fw.capped ? 'until ' + TSNFeatured.dayLabel(fw.until) : 'for ' + pr.days + ' days';"));

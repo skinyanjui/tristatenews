@@ -29,6 +29,11 @@
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)/",
       "destination": "/:tab",
       "permanent": true
+    },
+    {
+      "source": "/legal.html",
+      "destination": "/legal",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -118,7 +123,7 @@
     },
     {
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)",
-      "destination": "/index.html"
+      "destination": "/api/news?__route=tabpage&p=/:tab"
     },
     {
       "source": "/legal",
@@ -205,6 +210,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }

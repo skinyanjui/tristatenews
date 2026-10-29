@@ -47,7 +47,7 @@ test('window: not offered when less than a day would be added; the webhook (minH
 });
 
 test('one file for page and server: the page loads it, checkout and the webhook require it, lint checks it', () => {
-  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const html = require('./_page.js')();
   const head = html.slice(0, html.indexOf('</head>'));
   assert.ok(head.includes('<script src="/featured.js"></script>'));
   assert.ok(html.includes("TSNFeatured.window({ kind: kind, date: it.date, ends: it.ends }, pr.days, Date.now())"));

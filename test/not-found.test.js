@@ -42,7 +42,7 @@ test('the 404 page carries no ads, ad scripts or outside scripts', () => {
 });
 
 test('the home page reads ?q= so the 404 search lands on results', () => {
-  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const html = require('./_page.js')();
   assert.match(html, /new URLSearchParams\(location\.search\)\.get\('q'\)/);
 });
 
@@ -124,8 +124,8 @@ test('unknown paths are 404s', () => {
   assert.doesNotMatch(route('/nope').fn, /api=1/);
 });
 
-test('every tab path and the home page stay 200 on index.html', () => {
-  for (const r of RT.ROUTES) assert.deepEqual(route(r.path), { status: 200, file: '/index.html' }, r.path);
+test('every tab path and the home page stay 200 on index.html (tabs through the tab page, with their own head)', () => {
+  for (const r of RT.ROUTES) assert.deepEqual(route(r.path), r.path === '/' ? { status: 200, file: '/index.html' } : { status: 200, fn: '/api/news?__route=tabpage&p=/:tab' }, r.path);
 });
 
 test('the 308 redirects for retired paths still run first', () => {
@@ -135,7 +135,8 @@ test('the 308 redirects for retired paths still run first', () => {
 });
 
 test('pages, files, functions and API rewrites are untouched', () => {
-  for (const p of ['/legal.html', '/order.html', '/admin.html', '/unsubscribe.html', '/newsletter.html', '/robots.txt', '/sitemap.xml', '/favicon.svg', '/breaking.js', '/legal.css'])
+  assert.deepEqual(route('/legal.html'), { status: 308, to: '/legal' });
+  for (const p of ['/legal', '/order.html', '/admin.html', '/unsubscribe.html', '/newsletter.html', '/robots.txt', '/sitemap.xml', '/favicon.svg', '/breaking.js', '/legal.css'])
     assert.equal(route(p).status, 200, p);
   assert.equal(route('/newsletter').file, '/newsletter.html');
   assert.equal(route('/advertise').fn, '/api/inbox?__route=adpage');
@@ -174,5 +175,6 @@ test('local server: unknown paths 404 with the page; tabs, pages and redirect ta
   const api = await get(port, '/api/no-such-thing');
   assert.equal(api.status, 404); assert.deepEqual(JSON.parse(api.body), { error: 'not found' });
   for (const p of ['/all', '/liked/', '/news', '/police-courts', '/police', '/courts']) { const r = await get(port, p); assert.equal(r.status, 308, p); assert.equal(r.headers.location, '/', p); }
-  for (const p of ['/', '/events', '/jobs/', '/obituaries', '/legal', '/legal.html', '/admin', '/newsletter']) assert.equal((await get(port, p)).status, 200, p);
+  for (const p of ['/', '/events', '/jobs/', '/obituaries', '/legal', '/admin', '/newsletter']) assert.equal((await get(port, p)).status, 200, p);
+  assert.equal((await get(port, '/legal.html')).status, 308, '/legal.html moved to /legal');
 });

@@ -149,7 +149,7 @@ test('fair rotation among sponsors sharing a spot, and samples only when nothing
   assert.deepStrictEqual([0, 1, 2].map(i => A.order(ads, t0 + i * T)[0].name).sort(), ['One', 'Three', 'Two']);
   assert.deepStrictEqual(A.order(ads.slice(0, 2), t0).map(a => a.name).concat().sort(), ['One', 'Two']);
   assert.deepStrictEqual(A.order([], NOW), []);
-  assert.ok(read('public/index.html').includes("TSNAds.railFill(tab, r[1], cfg[r[1]], Date.now()") && read('public/adslots.js').includes('var ads = order(list, now).filter(validAd).slice(0, 2);'));
+  assert.ok(require('./_page.js')().includes("TSNAds.railFill(tab, r[1], cfg[r[1]], Date.now()") && read('public/adslots.js').includes('var ads = order(list, now).filter(validAd).slice(0, 2);'));
   const samples = { on: true, ads: [{ name: 'Ninebark Bakehouse', text: 'x' }] };
   assert.strictEqual(A.fill('job', { jobs: ads }, NOW, samples).type, 'direct', 'a real campaign comes first');
   assert.strictEqual(A.fill('job', { jobs: [] }, NOW, samples).type, 'sample', 'an empty spot can show a sample');

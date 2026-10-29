@@ -189,7 +189,7 @@ test('wiring and pages: /newsletter rewrite, sign-up and confirm page, home box,
   const pg = read('public/newsletter.html');
   for (const s of ["action: 'confirm'", 'id="nlWebsite"', 'Confirm my subscription', "q.get('confirm')", 'one-click unsubscribe']) assert.ok(pg.includes(s), s);
   assert.ok(!/localStorage\.setItem|sessionStorage|document\.cookie/.test(pg));
-  const idx = read('public/index.html');
+  const idx = require('./_page.js')();
   assert.ok(idx.includes('href="/newsletter">Newsletter</a>') && idx.includes("o.d.message || 'Check your email to confirm.'") && idx.includes("' of ' + Number(g.minVerifiedSubscribers)"));
   const ad = read('data/pages/advertise.html');
   assert.ok(ad.includes("'Coming soon — ' + g.verifiedSubscribers.toLocaleString('en-US') + ' of '") && ad.includes('TSNSizes.newsletterPreview'));

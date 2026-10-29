@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const S = require('../public/adsizes.js');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-const html = read('public/index.html');
+const html = require('./_page.js')();
 const { PLACEMENTS } = require('../api/_creative.js');
 
 test('size map: News 320x100 on phones and 728x90 from 768px; boards 300x250; side ads 160x600, 300x600 from 2560px', () => {

@@ -5,8 +5,7 @@
 // Delivery: stored in Upstash Redis (same variables as api/react.js) and/or emailed through Resend.
 //   RESEND_API_KEY + TIPS_TO_EMAIL  (optional TIPS_FROM_EMAIL, default Resend's onboarding sender)
 // With neither configured the endpoint answers 503 and the page says submissions aren't open yet.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', TO = process.env.TIPS_TO_EMAIL || '';
@@ -19,7 +18,7 @@ const JPEG_RE = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/;
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f<>]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, n);
 const one = (v, n) => clean(v, n).replace(/\s+/g, ' ');
 const todayChi = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const { esc } = require('./_html.js');
 
 function goodImage(v) {
   if (typeof v !== 'string' || v.length > MAX_PHOTO) return '';
@@ -43,11 +42,7 @@ function validate(b) {
   const photos = (Array.isArray(b.photos) ? b.photos : []).slice(0, 2).map(goodImage).filter(Boolean);
   return { type, headline, details, town, when, name, email, phone, anon: b.anon === true, photos };
 }
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 async function sendMail(t, ref) {
   const rows = [['Type', t.type], ['Town', t.town], ['Happened', t.when || '—'], ['Name', t.name + (t.anon ? ' (do not publish name)' : '')], ['Email', t.email], ['Phone', t.phone || '—']];
   const html = '<h2>' + esc(t.headline) + '</h2><p style="white-space:pre-wrap">' + esc(t.details) + '</p><table cellpadding="4">' + rows.map(r => '<tr><td><b>' + r[0] + '</b></td><td>' + esc(r[1]) + '</td></tr>').join('') + '</table><p>Reference ' + ref + '</p>';
@@ -59,7 +54,7 @@ async function sendMail(t, ref) {
 async function handler(req, res) {
   const send = (c, o) => res.status(c).json(o);
   res.setHeader('Cache-Control', 'no-store');
-  const stored = !!(URL_ && TOKEN), mail = !!(RESEND && TO);
+  const stored = STORE.stored(), mail = !!(RESEND && TO);
   try {
     if (req.method === 'GET') {
       if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN) || !stored) return send(404, { error: 'not found' });
@@ -84,6 +79,7 @@ async function handler(req, res) {
     if (mail) { try { await sendMail(v, ref); done = true; } catch (e) { if (!stored) throw e; } }
     return done ? send(200, { ok: true, ref }) : send(502, { error: 'Couldn’t send that. Try again.' });
   } catch (e) {
+    require('./_log.js').fail('submit', e);
     return send(502, { error: 'Couldn’t send that. Try again in a moment.' });
   }
 }

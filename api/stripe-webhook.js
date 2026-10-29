@@ -22,8 +22,7 @@
 // Refunds: a full refund ends the unused part of that order's Featured window and marks the order refunded; a partial
 // refund is recorded for the admin. Disputes are recorded for the admin (the post stays Featured).
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const CATALOG = require('./_catalog.js');
 const O = require('./_orders.js');
@@ -41,13 +40,7 @@ const LIFE_DAYS = { item: 30, deal: 30, job: 45 };
 const DONE = ['fulfilled', 'needs_refund', 'amount_mismatch', 'needs_review', 'refunded', 'partially_refunded', 'disputed'];
 const HANDLED = ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed', 'charge.refunded', 'charge.dispute.created'];
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  const out = await r.json();
-  if (Array.isArray(out) && out.some(x => x && x.error)) throw new Error('store command');
-  return out;
-}
+const pipeline = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (_) { return null; } };
 function readRaw(req) {
   return new Promise((resolve, reject) => {
@@ -208,12 +201,12 @@ async function onDispute(ev, now) {
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  if (!SECRET || !URL_ || !TOKEN) return res.status(503).end();
-  let claimed = null;
+  if (!SECRET || !STORE.stored()) return res.status(503).end();
+  let claimed = null, ev = null;
   try {
     const raw = await readRaw(req);
     if (!verify(raw, req.headers['stripe-signature'], SECRET)) return res.status(400).end();
-    const ev = JSON.parse(raw.toString('utf8'));
+    ev = JSON.parse(raw.toString('utf8'));
     if (!ev || !OBJ_RE.test(String(ev.id)) || !ev.data) return res.status(400).end();
     if (!HANDLED.includes(ev.type)) return res.status(200).json({ received: true });
     // Claim the event first (SET NX), so two deliveries of it at once can't both apply it. The claim says
@@ -227,6 +220,8 @@ async function handler(req, res) {
     await pipeline([['SET', evKey, String(outcome), 'EX', String(EVENT_TTL)]]); // the outcome, once everything above is stored
     return res.status(200).json({ received: true, outcome });
   } catch (e) {
+    // the event id and type only (no session, customer or payload): enough to find it in the Stripe dashboard
+    require('./_log.js').fail('stripe-webhook', e, { event: ev && ev.id, type: ev && ev.type });
     if (claimed) { try { await pipeline([['DEL', claimed]]); } catch (_) { /* the claim lapses after CLAIM_TTL */ } }
     return res.status(500).end(); // nothing marked processed: Stripe retries
   }

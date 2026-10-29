@@ -235,7 +235,7 @@ function decodeEntities(s) {
 
 function unwrap(s) {
   const m = s.match(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/);
-  return m ? m[1] : decodeEntities(s);
+  return decodeEntities(m ? m[1] : s); // CDATA text is decoded once too, so a feed's &amp;quot; reads the same either way
 }
 
 function stripHtml(s) {
@@ -308,18 +308,33 @@ function parseFeed(xml, source) {
 }
 
 // iCal (.ics) calendars: `published` carries the event's start time.
-function chicagoToUtc(y, mo, d, h, mi) {
-  const guess = Date.UTC(y, mo - 1, d, h, mi);
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(guess));
-  const g = t => Number(parts.find(p => p.type === t).value);
-  const asChi = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
-  return new Date(guess - (asChi - guess));
+// A wall-clock time in an IANA zone -> the UTC instant, right next to DST changes too: a repeated fall-back time is
+// its first (daylight) occurrence, a time skipped by spring-forward moves an hour on. An unknown zone falls back to Chicago.
+const TZ = 'America/Chicago';
+function zonedToUtc(tz, y, mo, d, h, mi) {
+  let fmt;
+  try { fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz || TZ, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }); }
+  catch (_) { fmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }); }
+  const want = Date.UTC(y, mo - 1, d, h, mi);
+  const offsetAt = t => { const p = fmt.formatToParts(new Date(t)), g = k => Number(p.find(x => x.type === k).value); return Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute')) - t; };
+  const a = want - offsetAt(want), b = want - offsetAt(a), c = want - offsetAt(b);
+  const exact = [a, b, c].filter(t => t + offsetAt(t) === want);
+  // an existing time: its first occurrence (fall-back hour: the daylight one); a skipped time: an hour on
+  return new Date(exact.length ? Math.min.apply(null, exact) : Math.max(a, b, c));
 }
+function chicagoToUtc(y, mo, d, h, mi) { return zonedToUtc(TZ, y, mo, d, h, mi); }
+// The Chicago calendar date (YYYY-MM-DD) of an instant, and the instant that day starts.
+const chicagoDate = t => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
+const chicagoDayStart = t => { const [y, mo, d] = chicagoDate(t).split('-').map(Number); return chicagoToUtc(y, mo, d, 0, 0).getTime(); };
+// DTSTART;TZID=America/New_York:20261030T190000, DTSTART:20261030T190000Z, DTSTART;VALUE=DATE:20261030. A time with
+// neither Z nor TZID (floating) is read as Chicago time, as before.
 function icalDate(line) {
   const m = /:(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?\s*$/.exec(line);
   if (!m) return null;
   const [y, mo, d, h, mi] = [+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0)];
-  return (m[7] ? new Date(Date.UTC(y, mo - 1, d, h, mi)) : chicagoToUtc(y, mo, d, h, mi)).toISOString();
+  if (m[7]) return new Date(Date.UTC(y, mo - 1, d, h, mi)).toISOString();
+  const tz = /;TZID=("?)([^;:"]+)\1/i.exec(line.slice(0, line.lastIndexOf(':')));
+  return zonedToUtc(tz ? tz[2].trim() : TZ, y, mo, d, h, mi).toISOString();
 }
 function parseIcal(text, source) {
   const unfolded = text.replace(/\r?\n[ \t]/g, '');
@@ -672,9 +687,10 @@ function combine(results, now, pool) {
       const ts = it.published ? Date.parse(it.published) : null;
       const key = normKey(it);
       if (it.isEvent) {
-        // upcoming events only: from the start of today (Chicago) to 120 days out
-        if (ts === null || ts < now - 864e5 || ts > now + 120 * 864e5) continue;
-        const ekey = key + '|' + new Date(ts).toISOString().slice(0, 10);
+        // upcoming events only: from the start of today (Chicago) to 120 days out; the same event twice on one Chicago
+        // day is one event (a UTC date would split an evening event at 7 PM CT from its 6:30 PM listing)
+        if (ts === null || ts < chicagoDayStart(now) || ts > now + 120 * 864e5) continue;
+        const ekey = key + '|' + chicagoDate(ts);
         if (seen.has(ekey)) continue;
         seen.add(ekey);
         events.push(it);
@@ -816,9 +832,8 @@ function logoFor(src) {
 // Each source keeps its own record (last good stories + validators + health), so one failed or rate-limited
 // run never makes a source's stories disappear. The merged page data is stored as one snapshot that
 // /api/news serves, so visitors never wait on the feeds.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-const stored = () => !!(URL_ && TOKEN);
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const stored = STORE.stored;
 const OVERRIDES_KEY = 'tsn:loc:overrides';
 const DEPTH = () => require('./_depthrec.js');
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
@@ -836,14 +851,7 @@ const KEEP_ITEMS = 80;                  // stories kept per source
 const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 }, gnews: { gapMs: 1500, perRun: 5 } };
 const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'gleaner', 'kfvs', 'wthi', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
 
-async function redis(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
-    method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' },
-    body: JSON.stringify(commands), signal: AbortSignal.timeout(8000),
-  });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const redis = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
 // MGET through the same /pipeline call. Anything but an array of the right length is treated like an unreachable
 // store (the caller's catch), so a bad answer can never be mistaken for "no previous state" and overwrite it.
@@ -1093,7 +1101,7 @@ function page(snap, before) {
 
 async function handler(req, res) {
   try { await run(req, res); } catch (e) {
-    console.error('news failed', e && e.stack || e);
+    require('./_log.js').fail('news', e);
     res.setHeader('Cache-Control', 'no-store');
     res.status(503).json({ error: 'news temporarily unavailable' }); // the detail is in the function log only
   }
@@ -1185,6 +1193,10 @@ module.exports.inRegion = inRegion;
 module.exports.inTriState = inTriState;
 module.exports.isWire = isWire;
 module.exports.parseIcal = parseIcal;
+module.exports.icalDate = icalDate;
+module.exports.zonedToUtc = zonedToUtc;
+module.exports.chicagoDate = chicagoDate;
+module.exports.chicagoDayStart = chicagoDayStart;
 module.exports.refreshAll = refreshAll;
 module.exports.SOURCES = SOURCES;
 module.exports.DISABLED_SOURCES = DISABLED_SOURCES;

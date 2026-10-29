@@ -15,8 +15,7 @@
 // Order status: created -> fulfilled | needs_refund | amount_mismatch | needs_review | payment_failed,
 //               then refunded | partially_refunded | disputed.
 // Removal records: needs_review (removed by reports or the admin while Featured) | removed_by_poster.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 
@@ -43,17 +42,13 @@ function removalCmds(id, post, reason, now) {
   return recordCmds(key, { type: 'post_removed', listing: id, title: String(post.title || '').slice(0, 120), reason, featuredUntil: Number(post.featuredUntil), orders: Object.keys(post.featuredOrders || {}), at: new Date(now).toISOString(), status: reason === 'poster' ? 'removed_by_poster' : 'needs_review' }, now);
 }
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 
 async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   const send = (c, o) => res.status(c).send(JSON.stringify(o));
-  if (req.method !== 'GET' || !ADMIN || !same(req.headers['x-admin-key'], ADMIN) || !URL_ || !TOKEN) return send(404, { error: 'not found' });
+  if (req.method !== 'GET' || !ADMIN || !same(req.headers['x-admin-key'], ADMIN) || !STORE.stored()) return send(404, { error: 'not found' });
   try {
     const idx = await pipeline([['ZREVRANGE', ORDERS, '0', String(MAX_SHOWN - 1)], ['ZREVRANGE', ATTENTION, '0', String(MAX_SHOWN - 1)]]);
     const ids = (idx[0] && idx[0].result) || [], att = (idx[1] && idx[1].result) || [];
@@ -66,6 +61,7 @@ async function handler(req, res) {
     const totals = { orders: paid.length, paidCents: paid.reduce((n, o) => n + o.paidCents, 0), refundedCents: paid.reduce((n, o) => n + (Number(o.refundedCents) || 0), 0), attention: attention.length };
     return send(200, { orders, attention, totals });
   } catch (e) {
+    require('./_log.js').fail('orders', e);
     return send(502, { error: 'store unavailable' });
   }
 }

@@ -31,8 +31,7 @@
 //   tsn:cr:audit       list of review actions (newest first, last 1000; no TTL)
 //   tsn:cr:rl:<ip>     uploads per connection per day; tsn:cr:ref:<ref>  creatives per reference (MAX_PER_REF open)
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const SZ = require('../public/adsizes.js');
 const BANNER_SIZES = SZ.usedSizes(); // the IAB sizes a creative can carry its own banner for
@@ -200,13 +199,7 @@ function tokenRef(token, now) {
   return same(m[3], want) ? m[1] : '';
 }
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  const out = await r.json();
-  if (Array.isArray(out) && out.some(x => x && x.error)) throw new Error('store command');
-  return out;
-}
+const pipeline = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (_) { return null; } };
 const K = { rec: id => 'tsn:cr:' + id, img: id => 'tsn:cr:img:' + id, imgSize: (id, k) => 'tsn:cr:img:' + id + ':' + k, index: 'tsn:cr:index', pending: 'tsn:cr:pending', live: 'tsn:cr:live', audit: 'tsn:cr:audit', rl: ip => 'tsn:cr:rl:' + ip, ref: r => 'tsn:cr:ref:' + r };
 
@@ -252,7 +245,7 @@ function livePlan(list) {
 
 async function handler(req, res) {
   const send = (c, o, cache) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', cache || 'no-store'); return res.status(c).send(JSON.stringify(o)); };
-  if (!URL_ || !TOKEN) return send(req.method === 'GET' && req.query && req.query.live ? 200 : 503, req.method === 'GET' && req.query && req.query.live ? { configured: false, cards: {}, slots: {}, rails: { left: [], right: [] } } : { error: 'Creative uploads aren’t open yet.' });
+  if (!STORE.stored()) return send(req.method === 'GET' && req.query && req.query.live ? 200 : 503, req.method === 'GET' && req.query && req.query.live ? { configured: false, cards: {}, slots: {}, rails: { left: [], right: [] } } : { error: 'Creative uploads aren’t open yet.' });
   const admin = !!ADMIN && same(req.headers['x-admin-key'], ADMIN);
   const now = Date.now();
   try {
@@ -344,6 +337,7 @@ async function handler(req, res) {
     ]);
     return send(200, { ok: true, id, status: 'pending' });
   } catch (e) {
+    require('./_log.js').fail('creative', e);
     return send(502, { error: 'Couldn’t save that. Try again.' });
   }
 }

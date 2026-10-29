@@ -9,8 +9,7 @@
 // remain. Sessions expire after an hour, so the period named on Stripe's page is the one the webhook applies.
 // Needs STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET for api/stripe-webhook.js). Without them the page hides the button.
 // SITE_URL sets where Stripe sends people back to (defaults to the request's host).
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const KEY = process.env.STRIPE_SECRET_KEY || '';
 const CATALOG = require('./_catalog.js');
 // Same shape as before ({cents, days, label} per kind), now read from the catalog.
@@ -20,16 +19,12 @@ const INDEX = { item: 'tsn:ls:index', deal: 'tsn:dl:index', event: 'tsn:ev:index
 const ORDER_TTL = 30 * 86400; // an unpaid order; the webhook rewrites it without a TTL once a payment arrives
 const SESSION_MINUTES = 60;
 const F = require('../public/featured.js');
-const isConfigured = () => !!(KEY && URL_ && TOKEN);
+const isConfigured = () => !!(KEY && STORE.stored());
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
 const rec = id => 'tsn:ls:' + id;
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 
 async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -84,6 +79,7 @@ async function handler(req, res) {
     }
     return send(200, { url: d.url });
   } catch (e) {
+    require('./_log.js').fail('checkout', e);
     return send(502, { error: 'Couldn’t start checkout. Try again in a moment.' });
   }
 }

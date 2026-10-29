@@ -22,7 +22,7 @@ const LIST = '<div id="list" class="list" aria-busy="true"></div>';
 const PRELOAD = '<link rel="preload" href="/api/news" as="fetch" crossorigin>\n';
 let html = null;
 
-const esc = C.esc;
+const { esc } = require('./_html.js');
 
 // data/pages/index.html with its head pointed at route r (what TSNRoutes.apply(document, r) does in the browser).
 function page(r) {

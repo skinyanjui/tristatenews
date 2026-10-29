@@ -16,8 +16,7 @@
 // confirmation link: the count the newsletter-sponsor gate uses), tsn:nl:unsubs (left the list), tsn:nl:pending (zset
 // email -> time). Tokens are random; only their SHA-256 is stored.
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
@@ -45,7 +44,7 @@ function provider() {
   if (!process.env.NEWSLETTER_SECRET && !process.env.CRON_SECRET) missing.push('NEWSLETTER_SECRET');
   return { name: 'Resend', confirmReady, issueReady: missing.length === 0, missing };
 }
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const { esc } = require('./_html.js');
 
 // The confirmation email: one link, why they got it, and an unsubscribe link and header like every newsletter.
 function confirmEmail(email, token) {
@@ -65,14 +64,10 @@ async function resend(body) {
   return r.ok;
 }
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 // Verified (confirmed) subscribers: what the newsletter-sponsor gate counts (api/_catalog.js newsletterEligibility).
 async function verifiedCount() {
-  if (!URL_ || !TOKEN) return 0;
+  if (!STORE.stored()) return 0;
   const g = await pipeline([['SCARD', K.confirmed]]);
   return Number(g[0] && g[0].result) || 0;
 }
@@ -80,7 +75,7 @@ async function verifiedCount() {
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const send = (c, o) => res.status(c).json(o);
-  if (!URL_ || !TOKEN) return send(503, { error: 'Signups aren’t open yet. Please check back soon.' });
+  if (!STORE.stored()) return send(503, { error: 'Signups aren’t open yet. Please check back soon.' });
   const now = Date.now();
   const isAdmin = () => !!ADMIN && same(req.headers['x-admin-key'], ADMIN);
   try {
@@ -140,6 +135,7 @@ async function handler(req, res) {
     const ok = already ? p.confirmReady : emailSent;
     return send(200, { ok: true, pending: true, emailSent: ok, message: ok ? MESSAGES.sent : p.confirmReady ? MESSAGES.failed : MESSAGES.saved });
   } catch (e) {
+    require('./_log.js').fail('subscribe', e);
     return send(502, { error: 'Couldn’t sign you up. Try again in a moment.' });
   }
 }

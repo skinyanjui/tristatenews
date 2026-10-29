@@ -291,7 +291,7 @@ async function handler(req, res) {
     if (b.website) return send(200, { ok: true, ref: 'AD-' + Date.now().toString(36).toUpperCase().slice(-6) + 'XX' });
     const who = contact(b);
     if (who.error) return send(400, who);
-    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+    const ip = require('./_ip.js').clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX']]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve started a few orders today. Email us and we’ll help.' });
     const [campaigns, orders] = await Promise.all([openCampaigns(), openOrders()]);

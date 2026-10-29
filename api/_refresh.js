@@ -7,7 +7,7 @@
 // and the run's id and status counts (PR 1.3). Per-source results, with their private error detail, are stored under
 // tsn:runs:<runId> for 7 days.
 const { same } = require('./_safe.js');
-const { refreshAll, stored } = require('./news.js');
+const { refreshAll, stored, redis } = require('./news.js');
 
 module.exports = async function (req, res) {
   const secret = process.env.CRON_SECRET || '';
@@ -19,6 +19,8 @@ module.exports = async function (req, res) {
     const tier = req.query && req.query.tier === 'fast' ? 'fast' : 'all';
     const t0 = Date.now();
     const { snapshot, report, store, runId, run, locations } = await refreshAll({ tier });
+    // Community boards: expired ids out of every index (their GETs are read-only and CDN-cached, api/listings.js).
+    try { await redis(require('./listings.js').pruneCmds(Date.now())); store.requests++; store.commands += 5; } catch (e) { console.error('board prune failed', e && e.message); }
     const bad = report.filter(r => r.result.startsWith('fail'));
     send(200, { ok: true, tier, runId, ms: Date.now() - t0, stories: snapshot.items.length, sourcesWithStories: snapshot.sources.filter(s => s.count > 0).length, notModified: report.filter(r => r.result === '304').length, failing: bad, statuses: run.statusCounts, store, locations: locations ? { total: locations.total, assigned: locations.assigned, requiresReview: locations.requiresReview } : undefined });
   } catch (e) {

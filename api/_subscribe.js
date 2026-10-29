@@ -23,7 +23,9 @@ const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DAILY_PER_IP = 5, CONFIRM_DAYS = 7, TEST_PER_DAY = 10;
-const K = { subs: 'tsn:nl:subs', confirmed: 'tsn:nl:confirmed', unsubs: 'tsn:nl:unsubs', pending: 'tsn:nl:pending', pend: h => 'tsn:nl:pend:' + h, rec: e => 'tsn:nl:sub:' + e, rl: ip => 'tsn:nl:rl:' + ip };
+const K = { subs: 'tsn:nl:subs', confirmed: 'tsn:nl:confirmed', unsubs: 'tsn:nl:unsubs', pending: 'tsn:nl:pending', pend: h => 'tsn:nl:pend:' + h, rec: e => 'tsn:nl:sub:' + e, rl: ip => 'tsn:nl:rl:' + ip, cool: h => 'tsn:nl:cool:' + h };
+// One confirmation email per address per day, whoever asks (signup bombing from many IPs can't flood an inbox).
+const EMAIL_COOLDOWN = 86400;
 const MESSAGES = {
   sent: 'Almost done: check your inbox and tap the link to confirm. It expires in ' + CONFIRM_DAYS + ' days.',
   failed: 'Thanks! We’ve saved your sign-up, but couldn’t send the confirmation email just now. We’ll send it soon; nothing goes out until you confirm.',
@@ -123,10 +125,12 @@ async function handler(req, res) {
     if (b.website) return send(200, { ok: true, pending: true, emailSent: p.confirmReady, message: p.confirmReady ? MESSAGES.sent : MESSAGES.saved }); // honeypot
     const email = norm(b.email);
     if (!validEmail(email)) return send(400, { error: 'Enter a valid email address.' });
-    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+    const ip = require('./_ip.js').clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX'], ['SISMEMBER', K.confirmed, email]]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'Too many attempts today. Try again tomorrow.' });
     const already = Number(rl[2] && rl[2].result) === 1;
+    // Cooling down: the answer is the same as a send (it doesn't reveal that someone asked for this address today).
+    if (!already) { const c = await pipeline([['SET', K.cool(hash(email)), '1', 'NX', 'EX', String(EMAIL_COOLDOWN)]]); if (!(c[0] && c[0].result === 'OK')) return send(200, { ok: true, pending: true, emailSent: p.confirmReady, message: p.confirmReady ? MESSAGES.sent : MESSAGES.saved }); }
     let emailSent = false;
     if (!already) { // a confirmed reader gets no new email; the answer below is the same
       const token = crypto.randomBytes(32).toString('hex');
@@ -140,4 +144,4 @@ async function handler(req, res) {
   }
 }
 module.exports = handler;
-Object.assign(module.exports, { K, CONFIRM_DAYS, MESSAGES, hash, provider, confirmEmail, verifiedCount });
+Object.assign(module.exports, { K, EMAIL_COOLDOWN, CONFIRM_DAYS, MESSAGES, hash, provider, confirmEmail, verifiedCount });

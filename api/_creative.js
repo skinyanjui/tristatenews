@@ -328,7 +328,7 @@ async function handler(req, res) {
     if (!who) return send(403, { error: 'Check your reference and the email you used on your inquiry, or the upload link we sent you.' });
     const v = validate(b);
     if (v.error) return send(400, v);
-    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+    const ip = require('./_ip.js').clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX'], ['SCARD', K.ref(who.ref)]]);
     if (Number(rl[0] && rl[0].result) > DAILY_PER_IP) return send(429, { error: 'Too many uploads today. Try again tomorrow.' });
     if (Number(rl[2] && rl[2].result) >= MAX_PER_REF) return send(429, { error: 'This reference already has ' + MAX_PER_REF + ' creatives waiting or running. Ask us to retire one first.' });

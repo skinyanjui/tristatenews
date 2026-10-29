@@ -25,7 +25,7 @@ function fakeStore(stripe) {
     switch (op) {
       case 'GET': return { result: kv.has(k) ? kv.get(k) : null };
       case 'MGET': return { result: [k, ...a].map(x => (kv.has(x) ? kv.get(x) : null)) };
-      case 'SET': kv.set(k, a[0]); return { result: 'OK' };
+      case 'SET': if (a.includes('NX') && kv.has(k)) return { result: null }; kv.set(k, a[0]); return { result: 'OK' };
       case 'INCR': kv.set(k, String((Number(kv.get(k)) || 0) + 1)); return { result: Number(kv.get(k)) };
       case 'EXPIRE': case 'PERSIST': return { result: 1 };
       case 'ZADD': { const s = z.get(k) || new Map(); z.set(k, s); s.set(a[1], Number(a[0])); return { result: 1 }; }

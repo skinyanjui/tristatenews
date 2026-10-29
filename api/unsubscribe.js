@@ -50,7 +50,7 @@ async function handler(req, res) {
     if (!EMAIL_RE.test(email) || /[<>"'\s,;]/.test(email)) return send(400, { error: 'Enter a valid email address.' });
     // A mail app's one-click request has no person behind it, so it must carry a valid token.
     if (oneClick && !validToken(email, b.token || q.token)) return send(400, { error: 'This unsubscribe link isn’t valid. Enter your email on the page instead.' });
-    const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+    const ip = require('./_ip.js').clientIp(req) || 'x';
     const rl = await pipeline([['INCR', 'tsn:nl:unrl:' + ip], ['EXPIRE', 'tsn:nl:unrl:' + ip, '86400', 'NX']]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'Too many attempts today. Try again tomorrow, or email us.' });
     const rm = await pipeline([['SREM', 'tsn:nl:subs', email], ['SREM', 'tsn:nl:confirmed', email], ['ZREM', 'tsn:nl:pending', email]]);

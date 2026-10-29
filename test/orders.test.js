@@ -155,7 +155,7 @@ test('webhook retry safety: a store failure answers 500 with no marker, and the 
     listing(w, 'jobpost2', 'job', null, 40);
     const sid2 = await checkout(mod, w, 'jobpost2', 'job');
     const ev2 = evt('checkout.session.completed', paidSession(sid2, { metadata: { id: 'jobpost2', kind: 'job', days: '30', cents: '9900', price_version: C.PRICE_VERSION } }));
-    w.fail = c => c[1] === 'tsn:stripe:evt:' + ev2.id && c[0] === 'SET';
+    w.fail = c => c[1] === 'tsn:stripe:evt:' + ev2.id && c[0] === 'SET' && c[2] !== 'processing'; // the outcome marker, not the claim
     assert.strictEqual((await hook(mod, ev2)).code, 500);
     w.fail = null;
     const before = post(w, 'jobpost2').featuredUntil;
@@ -315,7 +315,9 @@ test('removing a post that is still Featured leaves a record: reports and admin 
     const rm = () => [...w.kv.keys()].filter(k => k.startsWith('tsn:order:rm-')).map(k => JSON.parse(w.kv.get(k)));
     listing(w, 'reppost1', 'job', { featuredUntil: fu, featuredOrders: { cs_test_a: [1, fu] } });
     for (const ip of ['1.1.1.1', '2.2.2.2', '3.3.3.3']) assert.strictEqual((await call(L, { method: 'POST', headers: { 'x-forwarded-for': ip }, body: { action: 'report', id: 'reppost1', uid: 'user-0002' } })).code, 200);
-    assert.ok(!w.kv.has('tsn:ls:reppost1'));
+    // ship67: a Featured post is never removed or hidden by reports: it stays up and goes to the admin review queue
+    assert.ok(w.kv.has('tsn:ls:reppost1') && !JSON.parse(w.kv.get('tsn:ls:reppost1')).hidden, 'still up');
+    assert.ok(w.z.get('tsn:ls:review').has('reppost1'), 'queued for review');
     listing(w, 'admpost1', 'job', { featuredUntil: fu });
     assert.strictEqual((await call(L, { method: 'DELETE', headers: { 'x-admin-key': ENV.LISTINGS_ADMIN_KEY }, query: { id: 'admpost1' } })).code, 200);
     listing(w, 'ownpost1', 'job', { featuredUntil: fu });
@@ -323,9 +325,8 @@ test('removing a post that is still Featured leaves a record: reports and admin 
     listing(w, 'plain001', 'job');
     assert.strictEqual((await call(L, { method: 'DELETE', query: { id: 'plain001', uid: 'user-0001' } })).code, 200);
     const recs = rm().sort((a, b) => a.listing.localeCompare(b.listing));
-    assert.deepStrictEqual(recs.map(r => [r.listing, r.reason, r.status, r.featuredUntil]), [['admpost1', 'admin', 'needs_review', fu], ['ownpost1', 'poster', 'removed_by_poster', fu], ['reppost1', 'reports', 'needs_review', fu]]);
-    assert.deepStrictEqual(recs[2].orders, ['cs_test_a']);
-    assert.strictEqual(attention(w).length, 2);
+    assert.deepStrictEqual(recs.map(r => [r.listing, r.reason, r.status, r.featuredUntil]), [['admpost1', 'admin', 'needs_review', fu], ['ownpost1', 'poster', 'removed_by_poster', fu]]);
+    assert.strictEqual(attention(w).length, 1);
     for (const k of w.kv.keys()) if (k.startsWith('tsn:order:')) assert.ok(!w.exp.has(k), k + ' has no TTL');
     assert.strictEqual((await call(L, { method: 'DELETE', query: { id: 'plain001', uid: 'user-0009' } })).code, 403, 'still only the poster');
   });

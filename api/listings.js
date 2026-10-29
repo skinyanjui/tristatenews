@@ -4,7 +4,11 @@
 //   GET    /api/listings?img=<id>             -> the listing's photo (JPEG)
 //   GET    /api/listings?kind=item|deal|event|job|obit -> { configured, items: [...] }   newest first
 //   POST   /api/listings  {title,price,town,desc,contact,uid,adult:true}  -> { ok, item }   (adult: the poster confirmed 18+)
-//   POST   /api/listings  {action:'report', id, uid}           -> hides a listing after 3 reports
+//   POST   /api/listings  {action:'report', id, uid}           -> after 3 reports (from 3 IPs) the listing is hidden, not
+//                                                                 deleted, and queued for review (tsn:ls:review); a
+//                                                                 Featured listing is never hidden, only queued
+//   GET    /api/listings?review=1   with x-admin-key            -> the review queue, newest report first
+//   POST   /api/listings  {action:'restore', id}  with x-admin-key -> unhide and take it off the queue (DELETE removes it)
 //   DELETE /api/listings?id=...&uid=...                        -> the poster removes their own listing
 // Set LISTINGS_ADMIN_KEY to remove any listing: DELETE with header x-admin-key.
 const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -12,7 +16,9 @@ const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TO
 const { same } = require('./_safe.js');
 const { removalCmds } = require('./_orders.js'); // a post removed while Featured leaves an order record (never silent)
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
-const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3;
+const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3, REPORTS_PER_IP = 10;
+const REVIEW = 'tsn:ls:review';
+const { clientIp, ipHash } = require('./_ip.js');
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
 // Each index expires a margin after the longest any of its listings can live, and that clock restarts on every
@@ -105,6 +111,37 @@ function validate(b, kind) {
   return { title, price, town, desc, contact, category, condition };
 }
 
+// A listing reported by REPORTS_TO_HIDE different readers: hidden from the boards (kept, with its TTL, so an admin
+// can restore it) and queued for review. A Featured listing (paid, still running) is never hidden automatically: it
+// is only queued, and an admin decides (DELETE removes it and records the order, as before).
+function reportCmds(id, o, reports, now) {
+  const featured = Number(o.featuredUntil) > now;
+  const cmds = [['ZADD', REVIEW, String(now), id], ['EXPIRE', REVIEW, String((EVENT_MAX_DAYS + 2) * 86400)]];
+  if (!featured && !o.hidden) cmds.push(['SET', rec(id), JSON.stringify(Object.assign({}, o, { hidden: true, hiddenAt: new Date(now).toISOString(), reports })), 'KEEPTTL']);
+  return cmds;
+}
+// The admin review queue: newest report first, with each listing's record (uid left out) and whether it is hidden.
+async function review(req, send) {
+  if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(404, { error: 'not found' });
+  const q = await pipeline([['ZREVRANGE', REVIEW, '0', '199', 'WITHSCORES']]);
+  const flat = (q[0] && q[0].result) || [], ids = [];
+  for (let i = 0; i < flat.length; i += 2) if (ID_RE.test(flat[i])) ids.push({ id: flat[i], at: new Date(Number(flat[i + 1])).toISOString() });
+  if (!ids.length) return send(200, { items: [] });
+  const got = await pipeline(ids.flatMap(x => [['GET', rec(x.id)], ['SCARD', 'tsn:ls:rep:' + x.id]]));
+  const stale = [];
+  const items = ids.map((x, i) => {
+    let o = null; try { o = JSON.parse(got[2 * i].result); } catch (_) {}
+    if (!o) { stale.push(x.id); return null; }
+    const { uid, ...rest } = o;
+    return Object.assign({ id: x.id, reportedAt: x.at, reports: Number(got[2 * i + 1] && got[2 * i + 1].result) || 0, hidden: !!o.hidden, featured: Number(o.featuredUntil) > Date.now() }, rest);
+  }).filter(Boolean);
+  if (stale.length) { try { await pipeline([['ZREM', REVIEW, ...stale]]); } catch (_) {} }
+  return send(200, { items });
+}
+// Expired ids out of every board index (run by the refresh cron, api/_refresh.js; posts prune their own board too).
+function pruneCmds(now) {
+  return ['item', 'deal', 'event', 'job', 'obit'].map(k => ['ZREMRANGEBYSCORE', indexFor(k), '-inf', String(cutoffFor(k, now))]);
+}
 async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
@@ -132,14 +169,18 @@ async function handler(req, res) {
 
     if (req.method === 'GET') {
       const cutoff = cutoffFor(kind, now);
-      const idx = await pipeline([['ZREMRANGEBYSCORE', INDEX, '-inf', String(cutoff)], [kind === 'event' ? 'ZRANGE' : 'ZREVRANGE', INDEX, '0', String(MAX_SHOWN - 1)]]);
-      const ids = (idx[1] && idx[1].result || []).filter(x => ID_RE.test(x));
+      if (req.query && req.query.review) return review(req, send);
+      // Read-only (expired ids are pruned by posts and by the refresh cron, pruneCmds) and CDN-cached briefly: a new
+      // post shows on the poster's page from the POST answer, and to everyone else within about 30 seconds.
+      const idx = await pipeline([kind === 'event' ? ['ZRANGEBYSCORE', INDEX, '(' + cutoff, '+inf', 'LIMIT', '0', String(MAX_SHOWN)] : ['ZREVRANGEBYSCORE', INDEX, '+inf', '(' + cutoff, 'LIMIT', '0', String(MAX_SHOWN)]]);
+      const ids = (idx[0] && idx[0].result || []).filter(x => ID_RE.test(x));
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
       if (!ids.length) return send(200, { configured: true, items: [] });
       const got = await pipeline(ids.map(id => ['GET', rec(id)]));
       const items = [];
       got.forEach((g, i) => {
         if (!g || !g.result) return;
-        try { const o = JSON.parse(g.result); items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, svc: o.svc, featured: Number(o.featuredUntil) > now, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
+        try { const o = JSON.parse(g.result); if (o.hidden) return; items.push({ id: ids[i], title: o.title, price: o.price, town: o.town, desc: o.desc, contact: o.contact, at: o.at, code: o.code, ends: o.ends, category: o.category, condition: o.condition, business: o.business, date: o.date, time: o.time, place: o.place, jobType: o.jobType, pay: o.pay, svc: o.svc, featured: Number(o.featuredUntil) > now, img: !!o.img, logo: o.logo || '' }); } catch (_) {}
       });
       const today = todayChi();
       return send(200, { configured: true, items: items.filter(x => (!x.ends || x.ends >= today) && (!x.date || x.date >= today)) });
@@ -147,14 +188,28 @@ async function handler(req, res) {
 
     if (req.method === 'POST' && body.action === 'report') {
       if (!ID_RE.test(String(body.id)) || !UID_RE.test(String(body.uid))) return send(400, { error: 'bad request' });
-      const rip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || body.uid;
-      const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, rip], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
-      if ((Number(out[2] && out[2].result) || 0) >= REPORTS_TO_HIDE) {
+      const ip = clientIp(req), who = ip || body.uid, day = new Date(now).toISOString().slice(0, 10);
+      const rk = 'tsn:ls:reprl:' + ipHash(who, 'report|' + day);
+      const lim = await pipeline([['INCR', rk], ['EXPIRE', rk, '86400', 'NX']]);
+      if ((Number(lim[0] && lim[0].result) || 0) > REPORTS_PER_IP) return send(429, { error: 'You’ve sent a lot of reports today. Try again tomorrow.' });
+      const out = await pipeline([['SADD', 'tsn:ls:rep:' + body.id, ipHash(who, 'report')], ['EXPIRE', 'tsn:ls:rep:' + body.id, String(DAYS * 86400)], ['SCARD', 'tsn:ls:rep:' + body.id]]);
+      const reports = Number(out[2] && out[2].result) || 0;
+      if (reports >= REPORTS_TO_HIDE) {
         const g = await pipeline([['GET', rec(body.id)]]);
         let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
-        await pipeline(removalCmds(body.id, o, 'reports', now).concat([['DEL', rec(body.id)], ['DEL', imgKey(body.id)], ['ZREM', 'tsn:ls:index', body.id], ['ZREM', 'tsn:dl:index', body.id], ['ZREM', 'tsn:ev:index', body.id], ['ZREM', 'tsn:jb:index', body.id], ['ZREM', 'tsn:ob:index', body.id]]));
+        if (o) await pipeline(reportCmds(body.id, o, reports, now));
       }
       return send(200, { ok: true });
+    }
+    if (req.method === 'POST' && body.action === 'restore') {
+      if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(404, { error: 'not found' });
+      if (!ID_RE.test(String(body.id))) return send(400, { error: 'bad request' });
+      const g = await pipeline([['GET', rec(body.id)]]);
+      let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
+      const cmds = [['ZREM', REVIEW, body.id], ['DEL', 'tsn:ls:rep:' + body.id]];
+      if (o && o.hidden) { delete o.hidden; delete o.hiddenAt; cmds.push(['SET', rec(body.id), JSON.stringify(o), 'KEEPTTL']); }
+      await pipeline(cmds);
+      return send(200, { ok: true, restored: !!o });
     }
 
     if (req.method === 'POST') {
@@ -162,7 +217,7 @@ async function handler(req, res) {
       if (body.adult !== true) return send(400, { error: 'Please confirm you’re 18 or older.', field: 'adult' }); // Terms: posters must be 18+
       const v = validate(body, kind);
       if (v.error) return send(400, { error: v.error, field: v.field });
-      const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+      const ip = require('./_ip.js').clientIp(req) || 'x';
       const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400', 'NX'], ['INCR', 'tsn:ls:rlip:' + ip], ['EXPIRE', 'tsn:ls:rlip:' + ip, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_UID || (Number(rl[2] && rl[2].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve posted a few items today. Try again tomorrow.' });
       const id = now.toString(36) + Math.random().toString(36).slice(2, 8);
@@ -183,12 +238,13 @@ async function handler(req, res) {
       const g = await pipeline([['GET', rec(id)]]);
       let o = null; try { o = JSON.parse(g[0].result); } catch (_) {}
       if (!admin && (!o || o.uid !== uid)) return send(403, { error: 'not yours' });
-      await pipeline(removalCmds(id, o, admin ? 'admin' : 'poster', now).concat([['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id], ['ZREM', 'tsn:ob:index', id]]));
+      await pipeline(removalCmds(id, o, admin ? 'admin' : 'poster', now).concat([['ZREM', REVIEW, id], ['DEL', 'tsn:ls:rep:' + id], ['DEL', rec(id)], ['DEL', imgKey(id)], ['ZREM', 'tsn:ls:index', id], ['ZREM', 'tsn:dl:index', id], ['ZREM', 'tsn:ev:index', id], ['ZREM', 'tsn:jb:index', id], ['ZREM', 'tsn:ob:index', id]]));
       return send(200, { ok: true });
     }
     return send(405, { error: 'method' });
   } catch (e) {
     // reading degrades quietly (the page just shows no community posts); a failed write must say so
+    res.setHeader('Cache-Control', 'no-store'); // never cache a failed read
     return req.method === 'GET' ? send(200, { configured: false, items: [] }) : send(502, { error: 'Couldn’t save that right now. Try again in a moment.' });
   }
 }
@@ -202,3 +258,6 @@ module.exports.validate = validate;
 module.exports.goodImage = goodImage;
 module.exports.indexTtl = indexTtl;
 module.exports.indexFor = indexFor;
+module.exports.reportCmds = reportCmds;
+module.exports.pruneCmds = pruneCmds;
+module.exports.REVIEW = REVIEW;

@@ -32,6 +32,9 @@ const F = require('../public/featured.js');
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const SESSION_RE = /^cs_[A-Za-z0-9_]{1,200}$/, PI_RE = /^pi_[A-Za-z0-9_]{1,200}$/, OBJ_RE = /^[a-z]{2,4}_[A-Za-z0-9_]{1,200}$/;
 const DAY = 864e5, EVENT_TTL = 30 * 86400;
+// A claim outlives the function (maxDuration) but not Stripe's retry schedule: if a run dies without reaching its
+// catch, the claim lapses and the next delivery processes the event.
+const CLAIM_TTL = 300;
 const INDEX = { item: 'tsn:ls:index', deal: 'tsn:dl:index', event: 'tsn:ev:index', job: 'tsn:jb:index' };
 // How long a post stays on its board after it was posted (its index score), as api/listings.js prunes them.
 const LIFE_DAYS = { item: 30, deal: 30, job: 45 };
@@ -206,19 +209,25 @@ async function onDispute(ev, now) {
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   if (!SECRET || !URL_ || !TOKEN) return res.status(503).end();
+  let claimed = null;
   try {
     const raw = await readRaw(req);
     if (!verify(raw, req.headers['stripe-signature'], SECRET)) return res.status(400).end();
     const ev = JSON.parse(raw.toString('utf8'));
     if (!ev || !OBJ_RE.test(String(ev.id)) || !ev.data) return res.status(400).end();
     if (!HANDLED.includes(ev.type)) return res.status(200).json({ received: true });
-    const seen = await pipeline([['GET', 'tsn:stripe:evt:' + ev.id]]);
-    if (seen[0] && seen[0].result) return res.status(200).json({ received: true, duplicate: true });
+    // Claim the event first (SET NX), so two deliveries of it at once can't both apply it. The claim says
+    // 'processing' until the outcome replaces it; if anything below fails the claim is dropped and Stripe retries.
+    const evKey = 'tsn:stripe:evt:' + ev.id;
+    const claim = await pipeline([['SET', evKey, 'processing', 'NX', 'EX', String(CLAIM_TTL)]]);
+    if (!(claim[0] && claim[0].result === 'OK')) return res.status(200).json({ received: true, duplicate: true });
+    claimed = evKey;
     const now = Date.now();
     const outcome = ev.type.startsWith('checkout.session.') ? await onSession(ev, now) : ev.type === 'charge.refunded' ? await onRefund(ev, now) : await onDispute(ev, now);
-    await pipeline([['SET', 'tsn:stripe:evt:' + ev.id, String(outcome), 'EX', String(EVENT_TTL)]]); // last: only after everything above is stored
+    await pipeline([['SET', evKey, String(outcome), 'EX', String(EVENT_TTL)]]); // the outcome, once everything above is stored
     return res.status(200).json({ received: true, outcome });
   } catch (e) {
+    if (claimed) { try { await pipeline([['DEL', claimed]]); } catch (_) { /* the claim lapses after CLAIM_TTL */ } }
     return res.status(500).end(); // nothing marked processed: Stripe retries
   }
 }

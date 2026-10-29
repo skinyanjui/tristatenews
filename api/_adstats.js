@@ -83,7 +83,7 @@ async function handler(req, res) {
     if (!ev) return none();
     try {
       const day = camp.today(now);
-      const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().replace(/[^0-9a-fA-F:.]/g, '').slice(0, 45) || 'x';
+      const ip = require('./_ip.js').clientIp(req) || 'x';
       const h = connHash(ip, day);
       const g = await pipeline([['INCR', K.rl(h)], ['EXPIRE', K.rl(h), '86400', 'NX'], ['GET', camp.K.rec(ev.cid)]]);
       if ((Number(g[0] && g[0].result) || 0) > DAILY_PER_CONN) return none();

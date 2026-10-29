@@ -1035,6 +1035,7 @@ async function refreshAll(opts) {
   if (persist) {
     const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
     cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
+    cmds.push(...require('./_storyid.js').idsCmds(snap.items, 2 * 86400)); // the ids /api/react accepts a heart for
     cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
     // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
     if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
@@ -1045,6 +1046,45 @@ async function refreshAll(opts) {
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
   return { snapshot: snap, report, store, runId, run, locations: shadowLoc ? shadowLoc.summary : null };
+}
+
+// Work that should finish after the answer is sent. On Vercel the request context exposes waitUntil (the same hook
+// @vercel/functions' waitUntil() uses, read here without adding the dependency); elsewhere (local server, tests)
+// the promise simply runs on in the open process.
+function background(promise) {
+  try {
+    const ctx = globalThis[Symbol.for('@vercel/request-context')];
+    const c = ctx && typeof ctx.get === 'function' ? ctx.get() : null;
+    if (c && typeof c.waitUntil === 'function') return c.waitUntil(promise);
+  } catch (_) { /* fall through */ }
+  return promise;
+}
+
+// Paging (PR ship67). The answer carries every event and obituary (their tabs and the calendar need them all) but
+// only the NEWS_PAGE newest stories of the other kinds (news, police, courts, institutions); more: { before } says
+// there are older ones, which ?before=<that ISO time> returns, NEWS_PAGE at a time, stories only. The page fetches
+// them when the reader reaches the end of News. isEvent/isObit are left out: the page tells kinds by source.
+const NEWS_PAGE = 200;
+function page(snap, before) {
+  if (!snap || !Array.isArray(snap.items)) return snap;
+  const kinds = {}; (snap.sources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind; });
+  const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits';
+  const strip = it => { const o = Object.assign({}, it); delete o.isEvent; delete o.isObit; return o; };
+  const t = it => Date.parse(it.published) || 0;
+  let cut = Infinity;
+  if (before != null) {
+    cut = Date.parse(String(Array.isArray(before) ? before[0] : before));
+    if (!Number.isFinite(cut)) return { error: 'before must be an ISO time' };
+  }
+  const stories = snap.items.filter(it => !boardKind(it) && t(it) < cut).sort((a, b) => t(b) - t(a));
+  const shown = stories.slice(0, NEWS_PAGE);
+  const more = stories.length > NEWS_PAGE ? { before: new Date(t(shown[shown.length - 1])).toISOString() } : null;
+  const keep = new Set(shown);
+  const items = before != null ? shown : snap.items.filter(it => boardKind(it) || keep.has(it));
+  const out = Object.assign({}, snap, { items: items.map(strip) });
+  if (before != null) delete out.sources;
+  if (more) out.more = more;
+  return out;
 }
 
 async function handler(req, res) {
@@ -1071,15 +1111,23 @@ async function run(req, res) {
   }
   let snap = await readSnapshot();
   if (!snap || Date.now() - Date.parse(snap.updatedAt) > SNAP_MAX_AGE) {
-    // No fresh snapshot (cron not set up yet, or it stopped): refresh now. A short lock keeps a burst of
-    // visitors from each re-fetching every feed.
+    // No fresh snapshot (cron not set up yet, or it stopped). A short lock lets one request refresh; the rest don't
+    // re-fetch every feed. Stale snapshot: serve it now and refresh after the answer (background()). No snapshot at
+    // all: the lock holder refreshes inline; everyone else gets a 503 with Retry-After instead of piling on.
     let locked = false;
     if (stored()) { try { const l = await redis([['SET', LOCK_KEY, '1', 'NX', 'EX', '90']]); locked = !(l[0] && l[0].result === 'OK'); } catch (e) { /* carry on */ } }
-    if (!locked || !snap) { try { snap = (await refreshAll({})).snapshot; } catch (e) { if (!snap) throw e; } }
+    if (!snap && locked) {
+      res.setHeader('Cache-Control', 'no-store'); res.setHeader('Retry-After', '15');
+      return res.status(503).json({ error: 'news is refreshing, try again shortly' });
+    }
+    if (!snap) snap = (await refreshAll({})).snapshot;
+    else if (!locked) background(refreshAll({}).catch(e => console.error('background refresh failed', e && e.message)));
   }
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900, max-age=120');
+  const view = page(publicSnapshot(scoped(snap, scope, filters)), req.query && req.query.before);
+  if (view.error) { res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=300'); return res.status(400).json({ error: view.error }); }
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600, max-age=120');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.status(200).send(JSON.stringify(publicSnapshot(scoped(snap, scope, filters))));
+  res.status(200).send(JSON.stringify(view));
 }
 
 // Scope filters (plan PR 6.1, api/_scope.js), behind COUNTY_FILTERS_ENABLED. Off: ?scope is ignored and the response is
@@ -1133,6 +1181,9 @@ module.exports.statusOf = statusOf;
 module.exports.STATUSES = STATUSES;
 module.exports.RUN_TTL = RUN_TTL;
 module.exports.publicSnapshot = publicSnapshot;
+module.exports.page = page;
+module.exports.NEWS_PAGE = NEWS_PAGE;
+module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
 module.exports.outOfArea = outOfArea;
 module.exports.titleWords = titleWords;

@@ -90,9 +90,10 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     assert.equal(count(store.log, 'SET'), N + 3, 'one SET per fetched source, the snapshot, the run record and the depth record');
     // 2026-10-22: the read request also carries HGETALL tsn:loc:overrides (admin county overrides): +1 command, same trips.
     assert.equal(count(store.log, 'HGETALL'), 1);
-    assert.equal(store.log.commands.length, N + 6);
+    // ship67: + the current story-id set for /api/react (DEL, SADD, RENAME, EXPIRE), same write request.
+    assert.equal(store.log.commands.length, N + 10);
     assert.equal(all.report.length, N);
-    assert.deepEqual(all.store, { requests: 2, commands: N + 6 }, 'refreshAll reports what it sent');
+    assert.deepEqual(all.store, { requests: 2, commands: N + 10 }, 'refreshAll reports what it sent');
     // Same keys and TTLs as before: tsn:src:<id> for 14 days, the snapshot for 2 days.
     for (const s of news.SOURCES) assert.equal(store.ttl.get('tsn:src:' + s.id), 14 * 86400, s.id);
     assert.equal(store.ttl.get('tsn:news:snapshot'), 2 * 86400);
@@ -105,7 +106,7 @@ test('news refresh: one MGET reads every source state; writes unchanged; 2 round
     const F = fast.report.length;
     assert.ok(F > 0 && F <= 15, 'fast sources fetched: ' + F);
     assert.deepEqual([store.log.requests, count(store.log, 'MGET'), count(store.log, 'GET'), count(store.log, 'SET')], [2, 1, 1, F + 3]);
-    assert.deepEqual(fast.store, { requests: 2, commands: F + 6 });
+    assert.deepEqual(fast.store, { requests: 2, commands: F + 10 }); // + the story-id set (4 commands, ship67)
     assert.equal(F + 6, 19, '13 due fast sources + MGET + HGETALL + GET depth + snapshot + run record + SET depth');
     assert.equal(store.ttl.get('tsn:geo:depth'), 14 * 86400, 'depth record expires with its window');
     console.log('# measured news commands per run: all=' + (N + 3) + ' (PR 1.2: ' + (N + 2) + '), fast=' + store.log.commands.length + ' (PR 1.2: ' + (F + 2) + ')');
@@ -230,7 +231,8 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    assert.deepEqual(res.body.store, { requests: 2, commands: N + 6 });
+    // ship67: + one request pruning the 5 board indexes (api/listings.js pruneCmds)
+    assert.deepEqual(res.body.store, { requests: 3, commands: N + 15 });
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
     for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'notModified', 'failing', 'statuses']) assert.ok(k in res.body, k);
   } finally { restore(); }

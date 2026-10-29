@@ -2512,12 +2512,18 @@
     }).catch(function () { /* keep what we have; the button comes back on the next render */ });
   }
 
+  var RETRY_MS = 60 * 1000;
+  // true when time a is before time b (ISO strings); unknown times never count as older.
+  function older(a, b) { var x = Date.parse(a), y = Date.parse(b); return isFinite(x) && isFinite(y) && x < y; }
   function load(force) {
     var first = !state.loaded;
     if (first || force) { if (first || !state.items.length) skeletons(); }
     var url = '/api/news' + (SC.key !== 'tristate' ? '?scope=' + SC.key : ''), want = SC.key;
-    return fetch(url, force ? { cache: 'reload' } : undefined).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
+    // cache 'no-cache': always ask the server (a cheap CDN hit), never reuse the browser's own copy unasked.
+    return fetch(url, { cache: force ? 'reload' : 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
       if (want !== SC.key) return; // the reader switched area while this was loading
+      // The first stories in the HTML are newer than this answer (an older CDN copy): keep them and ask again shortly.
+      if (state.partial && older(d.updatedAt, state.updatedAt)) { state.fetchedAt = Date.now(); if (!state.retried) { state.retried = true; setTimeout(function () { load(false); }, RETRY_MS); } return; }
       state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = d.more || null; state.partial = false;
       scopeFrom(d);
       state.error = false; state.loaded = true;

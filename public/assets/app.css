@@ -111,7 +111,6 @@ main:focus { outline:none; }
 .job-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
 .job-grid { grid-template-columns:1fr; }
 @media (min-width:720px) { .job-grid { grid-template-columns:1fr 1fr; } }
-.job-links { display:flex; flex-wrap:wrap; gap:4px 16px; }
 
 /* money: featured posts, sponsors, newsletter, advertise */
 .is-featured { position:relative; border-color:var(--amber) !important; background:color-mix(in srgb, var(--amber) 7%, var(--background)); }
@@ -321,7 +320,6 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 @media (max-width:479px) { .ev.ev-plain { gap:12px; } .ev-date { width:64px; } .ev-plain .ev-go { padding:0 14px; } }
 .ev { position:relative; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--background); }
 .ev-hero { position:relative; aspect-ratio:16/10; background:var(--gray-100); overflow:hidden; }
-.ev-art { aspect-ratio:16/6; }
 .ev-img { display:block; width:100%; height:100%; max-width:none; object-fit:cover; }
 .ev-row svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .ev-body { display:flex; flex-direction:column; gap:8px; flex:1; padding:16px; min-width:0; }
@@ -375,8 +373,6 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .cl-label { font-size:12px; line-height:16px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
 .cl-links { display:flex; flex-wrap:wrap; gap:4px 16px; }
 .cl-links a { color:var(--blue); font-weight:500; min-height:32px; display:inline-flex; align-items:center; }
-.cl-code { display:flex; align-items:center; gap:8px; font-size:12px; line-height:16px; color:var(--text-muted); }
-.cl-code code { font-family:var(--font-mono); font-size:14px; color:var(--foreground); border:1px dashed var(--gray-400); border-radius:var(--radius-sm); padding:2px 8px; user-select:all; }
 .cl-note { color:var(--text-muted); font-size:12px; line-height:16px; margin:0; }
 .more { display:flex; justify-content:center; margin-top:24px; }
 .more button { min-height:var(--ctl); padding:0 16px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; background:var(--background); }

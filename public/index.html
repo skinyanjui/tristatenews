@@ -23,17 +23,11 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tri-State News","url":"https://tristatenewss.vercel.app/","description":"Local news aggregator for the Evansville IN-KY-IL tri-state."}</script>
-<script src="/breaking.js"></script>
-<script src="/routes.js"></script>
-<script src="/featured.js"></script>
-<script src="/adslots.js"></script>
-<script src="/adsizes.js"></script>
-<script src="/flowers.js"></script>
-<script>/* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/app.css?v=35beeec30e">
+<link rel="preload" href="/assets/fonts/geist-1.8.2-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/api/news" as="fetch" crossorigin>
+<link rel="stylesheet" href="/assets/app.css?v=1752c7a58b">
+<script defer src="/assets/lib.js?v=c06dacdfcc"></script>
+<script defer src="/assets/app.js?v=1cc225c506"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to stories</a>
@@ -83,6 +77,5 @@
   </div>
 </main>
 
-<script src="/assets/app.js?v=999e4a3868"></script>
 </body>
 </html>

@@ -2430,6 +2430,11 @@
       var mb = el('button', null, 'Show more (' + (rest.length - shown.length) + ' left)'); mb.type = 'button';
       mb.addEventListener('click', function () { state.limit += PAGE; render(); });
       moreEl.appendChild(mb);
+    } else if (state.cat === 'news' && state.more && !state.q.trim()) {
+      // /api/news sends the newest stories; older ones come a page at a time (?before=), only when asked for.
+      var ob = el('button', null, 'Show older stories'); ob.type = 'button';
+      ob.addEventListener('click', function () { ob.disabled = true; ob.textContent = 'Loading\u2026'; loadOlder().then(function () { state.limit += PAGE; render(); }); });
+      moreEl.appendChild(ob);
     }
   }
 
@@ -2455,13 +2460,26 @@
     stateBox(t, b, 'Show ' + next.label, function () { goScope(next.key); });
   }
 
+  // The next page of older stories (api/news.js page()): appended once each, the same area as the current list.
+  function loadOlder() {
+    var m = state.more, want = SC.key; if (!m || !m.before) return Promise.resolve();
+    var url = '/api/news?' + (SC.key !== 'tristate' ? 'scope=' + SC.key + '&' : '') + 'before=' + encodeURIComponent(m.before);
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
+      if (want !== SC.key || state.more !== m) return;
+      var seen = {}; state.items.forEach(function (i) { seen[i.id || i.link] = 1; });
+      (d.items || []).forEach(function (i) { if (!seen[i.id || i.link]) state.items.push(i); });
+      state.more = d.more || null;
+      loadCounts();
+    }).catch(function () { /* keep what we have; the button comes back on the next render */ });
+  }
+
   function load(force) {
     var first = !state.loaded;
     if (first || force) { if (first || !state.items.length) skeletons(); }
     var url = '/api/news' + (SC.key !== 'tristate' ? '?scope=' + SC.key : ''), want = SC.key;
     return fetch(url, force ? { cache: 'reload' } : undefined).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
       if (want !== SC.key) return; // the reader switched area while this was loading
-      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now();
+      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = d.more || null;
       scopeFrom(d);
       state.error = false; state.loaded = true;
       render();

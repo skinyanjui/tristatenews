@@ -46,7 +46,7 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
   t.mock.method(news, 'homeView', async () => view());
   const out = await call({ p: '/' });
   assert.equal(out.status, 200);
-  assert.equal(out.headers['cache-control'], 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600');
+  assert.equal(out.headers['cache-control'], 'public, max-age=0, s-maxage=60, stale-while-revalidate=60');
   const h = out.body, list = listOf(h);
   assert.match(h, /<meta name="google-site-verification" content="[^"]+"/);
   assert.match(h, /<title>Tri-State News<\/title>/);

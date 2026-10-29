@@ -140,7 +140,7 @@ test('/api/news: COUNTY_FILTERS_ENABLED on filters, labels, 400s bad scopes and 
   assert.deepStrictEqual(d.items.map(i => i.title), ['Henderson County Fiscal Court approves budget']);
   assert.deepStrictEqual(d.features, { scopes: true, routes: false });
   assert.strictEqual(d.scope.label, 'Henderson County, KY');
-  assert.match(r.headers['cache-control'], /s-maxage=300/);
+  assert.match(r.headers['cache-control'], /max-age=0, s-maxage=60, stale-while-revalidate=60/);
   const def = JSON.parse((await call(on, 'news.js', {})).body);
   assert.deepStrictEqual(def.items.map(i => i.title), ids(SNAP_BASE), 'default view unchanged with filters on');
   assert.strictEqual(def.scope.key, 'tristate');

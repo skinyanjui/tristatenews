@@ -96,7 +96,7 @@ const files = new Set(fs.readdirSync(path.join(root, 'public')).map(f => '/' + f
 const fns = new Set(fs.readdirSync(path.join(root, 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_')).map(f => '/api/' + f.slice(0, -3)));
 function route(p) {
   for (const r of vercel.redirects) if (toRe(r.source).test(p)) return { status: r.permanent ? 308 : 307, to: r.destination };
-  if (p === '/') return { status: 200, file: '/index.html' };
+  if (p === '/' && files.has('/index.html')) return { status: 200, file: '/index.html' }; // the filesystem wins over rewrites
   if (files.has(p)) return { status: 200, file: p };
   if (fns.has(p)) return { status: 200, fn: p };
   for (const r of vercel.rewrites) if (toRe(r.source).test(p)) {
@@ -124,8 +124,10 @@ test('unknown paths are 404s', () => {
   assert.doesNotMatch(route('/nope').fn, /api=1/);
 });
 
-test('every tab path and the home page stay 200 on index.html (tabs through the tab page, with their own head)', () => {
-  for (const r of RT.ROUTES) assert.deepEqual(route(r.path), r.path === '/' ? { status: 200, file: '/index.html' } : { status: 200, fn: '/api/news?__route=tabpage&p=/:tab' }, r.path);
+test('every tab path and the home page are 200 through the tab page (with their own head; "/" with its first stories)', () => {
+  assert.ok(!files.has('/index.html'), 'no public/index.html: a static file would be served before the "/" rewrite');
+  for (const r of RT.ROUTES) assert.deepEqual(route(r.path), r.path === '/' ? { status: 200, fn: '/api/news?__route=tabpage&p=/' } : { status: 200, fn: '/api/news?__route=tabpage&p=/:tab' }, r.path);
+  assert.deepEqual(route('/index.html'), { status: 308, to: '/' });
 });
 
 test('the 308 redirects for retired paths still run first', () => {

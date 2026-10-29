@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The home page's CSS and JS are cacheable files under public/assets (a year, immutable, vercel.json), each loaded
-// from public/index.html with ?v=<content hash> so a change is picked up at once:
+// from data/pages/index.html with ?v=<content hash> so a change is picked up at once:
 //   assets/app.css   the page's styles (with the self-hosted Geist @font-face rules, assets/fonts)
 //   assets/lib.js    LIBS (breaking, routes, featured, adslots, adsizes, flowers) in that order, then the call that
 //                    points the head at the current tab; built from those files, which stay in public/ for the other
@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const PUB = path.join(__dirname, '..', 'public');
-const INDEX = path.join(PUB, 'index.html');
+const INDEX = path.join(__dirname, '..', 'data', 'pages', 'index.html');
 const CSS = path.join(PUB, 'assets', 'app.css');
 const JS = path.join(PUB, 'assets', 'app.js');
 const LIB = path.join(PUB, 'assets', 'lib.js');

@@ -3,7 +3,7 @@
 //   /news/<state>/<county>    -> /api/news?__route=geopage&p=/news/<state>/<county>
 //   /sitemap-regions.xml      -> /api/news?__route=geopage&sitemap=1
 // Flag off, or a path that isn't one of our 3 states or 57 counties: the site's not-found page (404), exactly what
-// these paths returned before. Flag on: public/index.html with the head pointed at the page (title, description,
+// these paths returned before. Flag on: data/pages/index.html with the head pointed at the page (title, description,
 // canonical, og:url), and noindex unless the county passes the depth gate (D10: >= DEPTH_MIN distinct local stories in
 // 14 days). The gate reads the rolling per-county record each refresh maintains (tsn:geo:depth, api/_depthrec.js):
 // one GET, cached in this instance for 5 minutes (pages are also CDN-cached). When the record is missing, empty or
@@ -15,7 +15,7 @@ const path = require('path');
 const FLAGS = require('./_flags.js');
 const S = require('./_scope.js');
 const ORIGIN = 'https://tristatenewss.vercel.app';
-const INDEX = path.join(__dirname, '..', 'public', 'index.html');
+const INDEX = path.join(__dirname, '..', 'data', 'pages', 'index.html');
 const D = require('./_depthrec.js');
 let html = null, cached = null;
 const GATE_MS = 5 * 6e4;

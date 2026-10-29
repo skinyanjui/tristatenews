@@ -102,7 +102,7 @@ test('routes: /news/<state>[/<county>] <-> scope, both ways; tab routes unchange
   const vj = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
   const rw = vj.rewrites.map(r => r.source);
   for (const s of ['/news/:state/:county', '/news/:state', '/sitemap-regions.xml']) assert.ok(rw.indexOf(s) >= 0 && rw.indexOf(s) < rw.indexOf('/:path*'), s + ' before the not-found catch-all');
-  assert.match(vj.functions['api/news.js'].includeFiles, /public\/index\.html/);
+  assert.match(vj.functions['api/news.js'].includeFiles, /data\/pages\/index\.html/);
 });
 
 // The handlers, with a fake store answering every Redis call with the snapshot (no network, no real Redis).

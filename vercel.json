@@ -2,7 +2,7 @@
   "functions": {
     "api/news.js": {
       "maxDuration": 30,
-      "includeFiles": "{public/index.html,data/pages/404.html}"
+      "includeFiles": "{data/pages/index.html,data/pages/404.html}"
     },
     "api/alerts.js": {
       "maxDuration": 20
@@ -28,6 +28,11 @@
     {
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)/",
       "destination": "/:tab",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
       "permanent": true
     },
     {
@@ -120,6 +125,10 @@
     {
       "source": "/sitemap-regions.xml",
       "destination": "/api/news?__route=geopage&sitemap=1"
+    },
+    {
+      "source": "/",
+      "destination": "/api/news?__route=tabpage&p=/"
     },
     {
       "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)",

@@ -837,6 +837,7 @@ const stored = STORE.stored;
 const OVERRIDES_KEY = 'tsn:loc:overrides';
 const DEPTH = () => require('./_depthrec.js');
 const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id => 'tsn:src:' + id;
+const NEWS_CACHE = 'public, max-age=0, s-maxage=60, stale-while-revalidate=60'; // /api/news 200s and the tab pages with stories
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
 // Fast tier (every 10 min): sources that post often and tolerate polling. BLOX papers (Messenger-Inquirer,
@@ -853,15 +854,6 @@ const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'g
 
 const redis = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
-// MGET through the same /pipeline call. Anything but an array of the right length is treated like an unreachable
-// store (the caller's catch), so a bad answer can never be mistaken for "no previous state" and overwrite it.
-async function mget(keys) {
-  if (!keys.length) return [];
-  const out = await redis([['MGET'].concat(keys)]);
-  const v = out && out[0] && out[0].result;
-  if (!Array.isArray(v) || v.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
-  return v;
-}
 
 async function readSnapshot() {
   if (!stored()) return null;
@@ -1137,7 +1129,9 @@ async function run(req, res) {
   }
   const view = page(publicSnapshot(scoped(snap, scope, filters)), req.query && req.query.before);
   if (view.error) { res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=300'); return res.status(400).json({ error: view.error }); }
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600, max-age=120');
+  // Browsers always revalidate (max-age=0), so a reload shows the latest snapshot; the CDN keeps a copy for a minute
+  // and may serve it one more minute while it fetches a new one, so most requests stay CDN hits.
+  res.setHeader('Cache-Control', NEWS_CACHE);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.status(200).send(JSON.stringify(view));
 }
@@ -1214,6 +1208,7 @@ module.exports.publicSnapshot = publicSnapshot;
 module.exports.page = page;
 module.exports.NEWS_PAGE = NEWS_PAGE;
 module.exports.homeView = homeView;
+module.exports.NEWS_CACHE = NEWS_CACHE;
 module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
 module.exports.outOfArea = outOfArea;

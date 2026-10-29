@@ -62,7 +62,6 @@ function build() {
   const review = JSON.parse(fs.readFileSync(path.join(DIR, 'alias-review.json'), 'utf8'));
   const byFips = new Map(manifest.counties.map(c => [c.fips, c]));
   const states = readTable('2025_Gaz_state_extract.txt').map(r => ({ postal: r.USPS, name: r.NAME }));
-  const stateName = new Map(states.map(s => [s.postal, s.name]));
   const stateKeys = new Set(states.map(s => nameKey(s.name)));
   const namesakes = new Map(readTable('2025_namesakes.txt').map(r => [r.NAME_KEY, { places: +r.PLACES_ELSEWHERE, counties: +r.COUNTIES_ELSEWHERE }]));
 

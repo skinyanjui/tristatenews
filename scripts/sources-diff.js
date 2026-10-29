@@ -78,4 +78,4 @@ async function main(argv) {
 }
 
 if (require.main === module) main(process.argv.slice(2)).then(c => process.exit(c), e => { console.error('error: ' + e.message); process.exit(2); });
-module.exports = { compare, registrySources, logoFor, FIELDS };
+module.exports = { compare, registrySources, logoFor };

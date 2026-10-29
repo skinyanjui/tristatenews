@@ -175,12 +175,12 @@ test('/api/news paging: every event and obituary, the newest NEWS_PAGE stories, 
   assert.ok(!('more' in small), 'no more key when everything fits');
 });
 
-test('/api/news: stale -> served at once, refreshed in the background; missing + locked -> 503 Retry-After; swr 3600', () => {
+test('/api/news: stale -> served at once, refreshed in the background; missing + locked -> 503 Retry-After; short cache (ship71)', () => {
   const src = read('api/news.js');
   assert.match(src, /if \(!snap && locked\) \{\s*res\.setHeader\('Cache-Control', 'no-store'\); res\.setHeader\('Retry-After', '15'\);/);
   assert.match(src, /else if \(!locked\) background\(refreshAll\(\{\}\)/);
   assert.match(src, /Symbol\.for\('@vercel\/request-context'\)/);
-  assert.match(src, /'public, s-maxage=300, stale-while-revalidate=3600, max-age=120'/);
+  assert.match(src, /res\.setHeader\('Cache-Control', NEWS_CACHE\)/);
   const news = require('../api/news.js');
   let ran = false; const p = Promise.resolve().then(() => { ran = true; });
   return news.background(p).then(() => assert.ok(ran));

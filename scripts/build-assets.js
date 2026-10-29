@@ -40,4 +40,4 @@ function build() {
 }
 
 if (require.main === module) build();
-module.exports = { build, hash, cssTag, jsTag, libTag, libSource, LIBS, APPLY, INDEX, CSS, JS, LIB };
+module.exports = { build, hash, cssTag, jsTag, libTag, libSource, LIBS, APPLY, INDEX, CSS, JS };

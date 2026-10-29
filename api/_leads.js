@@ -72,4 +72,4 @@ function counts(leads) {
   return out;
 }
 
-module.exports = { STATUSES, LABELS, REF_RE, KEEP_DAYS, NOTE_MAX, NOTES_MAX, HISTORY_MAX, LOG_MAX, K, cleanNote, blank, normalize, change, saveCommands, counts };
+module.exports = { STATUSES, LABELS, REF_RE, NOTE_MAX, NOTES_MAX, HISTORY_MAX, K, blank, normalize, change, saveCommands, counts };

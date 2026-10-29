@@ -315,7 +315,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// Tab paths: index.html with the tab's own head (vercel.json rewrites them to /api/news?__route=tabpage, api/_tabpage.js);
+// Tab paths, "/" included: data/pages/index.html with the tab's own head and, on News, Obituaries and Institutions, the first stories (vercel.json rewrites them to /api/news?__route=tabpage, api/_tabpage.js);
 // everything else gets the 404 page, as on Vercel.
 const TAB_PATHS = new Set(RT.ROUTES.map(r => r.path));
 const notFoundHandler = require('./api/_notfound.js');
@@ -323,7 +323,6 @@ const tabPageHandler = require('./api/_tabpage.js');
 app.get(/.*/, (req, res, next) => {
   const p = req.path.replace(/\/+$/, '') || '/';
   if (!TAB_PATHS.has(p)) return next();
-  if (p === '/') return res.sendFile(path.join(publicDir, 'index.html'));
   const r = Object.create(req, { query: { value: { p } } });
   return tabPageHandler(r, res);
 });

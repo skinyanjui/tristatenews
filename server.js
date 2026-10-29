@@ -303,6 +303,9 @@ app.get(['/news/:state', '/news/:state/:county', '/sitemap-regions.xml'], (req, 
   return geoPageHandler(r, res);
 });
 
+// /legal.html moved to /legal (vercel.json redirects it the same way); /legal itself is legal.html below.
+app.get('/legal.html', (req, res) => res.redirect(308, '/legal'));
+
 // Serve static frontend files from /public
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir, { extensions: ['html'] }));
@@ -312,12 +315,17 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(publicDir, 'admin.html'));
 });
 
-// Tab paths (vercel.json rewrites them to index.html); everything else gets the 404 page, as on Vercel.
+// Tab paths: index.html with the tab's own head (vercel.json rewrites them to /api/news?__route=tabpage, api/_tabpage.js);
+// everything else gets the 404 page, as on Vercel.
 const TAB_PATHS = new Set(RT.ROUTES.map(r => r.path));
 const notFoundHandler = require('./api/_notfound.js');
+const tabPageHandler = require('./api/_tabpage.js');
 app.get(/.*/, (req, res, next) => {
   const p = req.path.replace(/\/+$/, '') || '/';
-  return TAB_PATHS.has(p) ? res.sendFile(path.join(publicDir, 'index.html')) : next();
+  if (!TAB_PATHS.has(p)) return next();
+  if (p === '/') return res.sendFile(path.join(publicDir, 'index.html'));
+  const r = Object.create(req, { query: { value: { p } } });
+  return tabPageHandler(r, res);
 });
 app.use((req, res) => notFoundHandler(req, res));
 

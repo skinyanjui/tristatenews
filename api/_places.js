@@ -2,7 +2,7 @@
 // (FBI field offices, U.S. Attorneys): their items are kept only when they name one of these places.
 // Counties: IN Vanderburgh, Warrick, Posey, Gibson, Pike, Dubois, Spencer; KY Henderson, Daviess, Union,
 // Webster, Hopkins, Ohio, McLean; IL White, Wabash, Edwards, Gallatin, Wayne. Towns are the county seats and
-// main towns (the ones in the page's town list, LOCS in public/index.html, that fall in these counties).
+// main towns (the ones in the page's town list, LOCS in data/pages/index.html, that fall in these counties).
 //
 // Each state has two lists:
 //   anywhere: names unique enough to count wherever they appear ("Evansville", "Owensboro").

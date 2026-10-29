@@ -1146,12 +1146,26 @@ function scoped(snap, scope, filters) {
   return Object.assign({}, v, { features: { scopes: true, routes: FLAGS.on('REGIONAL_ROUTES_ENABLED') } });
 }
 
+// The /api/news answer for the Tri-State view, for the tab page's first stories in the HTML (api/_tabpage.js, PR
+// ship69). Only a fresh snapshot (within SNAP_MAX_AGE): with none, or a stale one, the page loads as before and its
+// own /api/news call does the refresh. Never refreshes and never throws.
+async function homeView() {
+  try {
+    const snap = await readSnapshot();
+    if (!snap || !(Date.now() - Date.parse(snap.updatedAt) <= SNAP_MAX_AGE)) return null;
+    const filters = FLAGS.on('COUNTY_FILTERS_ENABLED');
+    const scope = filters ? require('./_scope.js').parse(undefined) : null;
+    const v = page(publicSnapshot(scoped(snap, scope, filters)));
+    return v && !v.error && Array.isArray(v.items) ? v : null;
+  } catch (e) { return null; }
+}
+
 // /api/refresh is served by this function too (vercel.json rewrites it to /api/news?__route=refresh); its handler,
 // with its own CRON_SECRET check, lives in api/_refresh.js. /api/counties and /api/regions (rewritten to
 // ?__route=counties / ?__route=regions) are the read-only geography API in api/_geoapi.js, which never touches Redis.
 // /api/locations (?__route=locations) is the admin-only county-classification report in api/_locations.js.
 // /api/coverage (?__route=coverage) is the admin Sources & Coverage report and override endpoint in api/_coverage.js.
-// The tab pages (/events, /jobs, ... rewritten to ?__route=tabpage) are public/index.html with the tab's head, in
+// The tab pages (/events, /jobs, ... rewritten to ?__route=tabpage) are data/pages/index.html with the tab's head, in
 // api/_tabpage.js.
 // Every other request is the news handler above.
 module.exports = require('./_dispatch.js').host({
@@ -1187,6 +1201,7 @@ module.exports.RUN_TTL = RUN_TTL;
 module.exports.publicSnapshot = publicSnapshot;
 module.exports.page = page;
 module.exports.NEWS_PAGE = NEWS_PAGE;
+module.exports.homeView = homeView;
 module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
 module.exports.outOfArea = outOfArea;

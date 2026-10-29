@@ -1,7 +1,7 @@
 // Ad counts (ads plan Phase 5.3): first-party, cookie-free daily totals of views and clicks for each campaign and
 // placement, so any figure quoted to an advertiser is measured, not invented. vercel.json rewrites /api/adstats to
 // /api/inbox?__route=adstats (no new function).
-//   POST /api/adstats  {e:'v'|'c', cid, pl}  public, sent by navigator.sendBeacon from public/index.html: 'v' once per
+//   POST /api/adstats  {e:'v'|'c', cid, pl}  public, sent by navigator.sendBeacon from data/pages/index.html: 'v' once per
 //                                           page load when at least half of a campaign ad is on screen, 'c' on a click.
 //                                           Always answers 204 and says nothing about whether it counted.
 //   GET  /api/adstats?cid=<id>[&format=csv]  with x-admin-key  that campaign's counts by day and placement

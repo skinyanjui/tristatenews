@@ -2414,8 +2414,9 @@
     var moreEl = document.getElementById('more'); moreEl.textContent = '';
     var seenSrc = {}; all.forEach(function (i) { seenSrc[i.sourceId] = 1; });
     var n = Object.keys(seenSrc).length;
-    metaEl.textContent = all.length + ' stor' + (all.length === 1 ? 'y' : 'ies') + ' from ' + n + ' source' + (n === 1 ? '' : 's') +
-      ' · Updated ' + new Date(state.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    var upd = 'Updated ' + new Date(state.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    // the stories embedded in the page are only the first screenful: no counts until the full answer is in
+    metaEl.textContent = state.partial ? upd : all.length + ' stor' + (all.length === 1 ? 'y' : 'ies') + ' from ' + n + ' source' + (n === 1 ? '' : 's') + ' · ' + upd;
     if (!shown.length && !brk.length && SC.on && SC.geo && SC.key !== 'tristate' && !state.q.trim()) return scopeEmpty();
     if (!shown.length && !brk.length) {
       var noQ = !state.q.trim();
@@ -2490,7 +2491,7 @@
     var url = '/api/news' + (SC.key !== 'tristate' ? '?scope=' + SC.key : ''), want = SC.key;
     return fetch(url, force ? { cache: 'reload' } : undefined).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
       if (want !== SC.key) return; // the reader switched area while this was loading
-      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = d.more || null;
+      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = d.more || null; state.partial = false;
       scopeFrom(d);
       state.error = false; state.loaded = true;
       render();
@@ -2527,8 +2528,24 @@
   setInterval(function () { if (!document.hidden) loadOfficial(); }, 2 * 60 * 1000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) loadOfficial(); });
 
+  // First stories in the HTML (PR ship69): "/", /obituaries and /institutions arrive with the tab's first stories
+  // (api/_tabpage.js, api/_cards.js) as cards and as JSON in #tsn-data. Draw from that at once (the same cards, so
+  // nothing moves); load() below then brings the full answer without skeletons and draws again.
+  (function () {
+    var s = document.getElementById('tsn-data'); if (!s) return;
+    var d = null; try { d = JSON.parse(s.textContent); } catch (e) { d = null; }
+    if (s.parentNode) s.parentNode.removeChild(s);
+    if (!d || !Array.isArray(d.items) || d.cat !== state.cat || SC.key !== 'tristate' || state.loaded) return;
+    state.items = d.items; state.sources = Array.isArray(d.sources) ? d.sources : []; state.updatedAt = d.updatedAt; state.partial = true;
+    scopeFrom(d);
+    state.error = false; state.loaded = true;
+    render();
+  })();
   loadWeather();
-  load(false);
+  // With the first stories already drawn, the full answer waits for the page's own load (pictures first) so it doesn't
+  // compete with the lead picture on a slow connection.
+  if (state.partial && document.readyState !== 'complete') window.addEventListener('load', function () { load(false); }, { once: true });
+  else load(false);
   loadOfficial();
   loadDeals(); loadBoard('event'); loadBoard('job');
 })();

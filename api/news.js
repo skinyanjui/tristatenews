@@ -607,7 +607,10 @@ async function loadSource(source, prev, now, opts) {
   // Every endpoint came back empty: keep the wire count from the one that was all wire copy, so the run report says
   // all_wire instead of looking like a quiet feed (the Google News fallback has no wire count of its own).
   if (wireSeen && !last.items.length && !last.notModified && !(last.wire >= wireSeen.wire)) last = Object.assign({}, last, wireSeen);
-  if (source.kind === 'events' && last.items.length) { try { await sizeImages(last.items, prev); } catch (_) { /* pictures are optional */ } }
+  // Every source's pictures are sized (ship68; events only before), so an oversized publisher photo never reaches a card.
+  // News sources get a time budget (IMG_BUDGET_MS) so a source's turn in its host group never grows by more than
+  // that; pictures not checked in time stay as they are and are checked on a later run.
+  if (last.items.length) { try { await sizeImages(last.items, prev, source.kind === 'events' ? 0 : IMG_BUDGET_MS); } catch (_) { /* pictures are optional */ } }
   return { source, ...last, refused, blocked, blockCount: last.blockCount || (Object.keys(blocked).length ? (prev && prev.blockCount) || 0 : 0) };
 }
 
@@ -754,8 +757,9 @@ function smallerImage(u) {
 // Theatre JPEG). Each new picture URL gets one HEAD request; the size is kept on the stored item, so a picture is
 // checked once, not every run. Over IMG_MAX_BYTES the card shows its date tile instead. At most IMG_CHECKS new
 // pictures per source per run, IMG_PARALLEL at a time with a 3 s timeout, so a refresh never waits long on them.
-const IMG_MAX_BYTES = 1024 * 1024, IMG_CHECKS = 10, IMG_PARALLEL = 3;
-async function sizeImages(items, prev) {
+const IMG_MAX_BYTES = 500 * 1024, IMG_CHECKS = 10, IMG_PARALLEL = 3, IMG_BUDGET_MS = 2500;
+async function sizeImages(items, prev, budgetMs) {
+  const until = budgetMs ? Date.now() + budgetMs : Infinity;
   const known = new Map();
   ((prev && prev.items) || []).forEach(i => { if (i.image && Number.isFinite(i.imageBytes)) known.set(i.image, i.imageBytes); });
   const todo = [];
@@ -765,7 +769,7 @@ async function sizeImages(items, prev) {
     if (!todo.includes(it.image) && todo.length < IMG_CHECKS) todo.push(it.image);
   }
   const got = new Map();
-  for (let i = 0; i < todo.length; i += IMG_PARALLEL) {
+  for (let i = 0; i < todo.length && Date.now() < until; i += IMG_PARALLEL) {
     await Promise.all(todo.slice(i, i + IMG_PARALLEL).map(async u => {
       let n = -1; // unknown: no Content-Length, or the HEAD failed; the picture is kept
       try {
@@ -1195,4 +1199,5 @@ module.exports.SAFETY_MAX_DAYS = SAFETY_MAX_DAYS;
 module.exports.smallerImage = smallerImage;
 module.exports.sizeImages = sizeImages;
 module.exports.IMG_MAX_BYTES = IMG_MAX_BYTES;
+module.exports.IMG_BUDGET_MS = IMG_BUDGET_MS;
 module.exports.logoFor = logoFor;

@@ -57,6 +57,7 @@ function page(scope, gate) {
     .replace(/(<meta property="og:title" content=")[^"]*/, '$1' + esc(m.title))
     .replace(/(<meta property="og:description" content=")[^"]*/, '$1' + esc(m.desc))
     .replace(/(<meta property="og:url" content=")[^"]*/, '$1' + esc(m.url));
+  h = h.replace('<link rel="preload" href="/api/news" as="fetch" crossorigin>\n', ''); // these pages fetch /api/news?scope=, not /api/news
   if (!m.index) h = h.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex">');
   return { html: h, meta: m };
 }

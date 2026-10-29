@@ -263,7 +263,7 @@ test('routing: /api/creative is a rewrite to inbox.js (no new function), local s
 });
 
 test('the page fills ads only from approved creatives; images are still, lazy and described; tel links stay in the tab', () => {
-  const html = read('public/index.html'), sponsors = JSON.parse(read('public/sponsors.json'));
+  const html = require('./_page.js')(), sponsors = JSON.parse(read('public/sponsors.json'));
   assert.ok(html.includes("fetch('/api/creative?live=1')"));
   assert.ok(html.includes("SPONSORS.__samples = sj && sj.samples ? sj.samples : null;"), 'from sponsors.json the page takes only the sample switch');
   assert.deepStrictEqual([...html.matchAll(/\bsj\.([a-z_]+)/g)].map(m => m[1]), ['samples', 'samples'], 'ads typed into sponsors.json are never shown');

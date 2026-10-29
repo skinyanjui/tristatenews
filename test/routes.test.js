@@ -6,7 +6,7 @@ const path = require('path');
 const RT = require('../public/routes.js');
 const root = path.join(__dirname, '..');
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
-const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+const html = require('./_page.js')();
 const sitemap = fs.readFileSync(path.join(root, 'public/sitemap.xml'), 'utf8');
 
 test('every tab in index.html has a route, and paths are unique', () => {
@@ -20,8 +20,9 @@ test('every tab in index.html has a route, and paths are unique', () => {
   for (const old of ['/all', '/all/', '/ALL', '/liked', '/news', '/news?x=1']) assert.equal(RT.byPath(old).cat, 'news', old);
 });
 
-test('vercel.json rewrites every non-root route to /index.html and nothing else', () => {
-  const rw = vercel.rewrites.find(r => r.destination === '/index.html');
+test('vercel.json rewrites every non-root route to the tab page (index.html with its own head) and nothing else', () => {
+  const rw = vercel.rewrites.find(r => r.destination === '/api/news?__route=tabpage&p=/:tab');
+  assert.ok(!vercel.rewrites.some(r => r.destination === '/index.html'), 'no tab is served as the bare index.html');
   const alt = rw.source.match(/\(([^)]+)\)/)[1].split('|').map(x => '/' + x).sort();
   assert.deepEqual(alt, RT.ROUTES.filter(r => r.path !== '/').map(r => r.path).sort());
   for (const keep of ['/api/news', '/legal.html', '/unsubscribe.html', '/admin.html', '/breaking.js']) assert.ok(!new RegExp('^/(' + alt.map(a => a.slice(1)).join('|') + ')$').test(keep), keep);
@@ -30,7 +31,7 @@ test('vercel.json rewrites every non-root route to /index.html and nothing else'
 test('sitemap lists every indexable route, and not /news, /all or /liked', () => {
   for (const old of ['/news', '/all', '/liked']) assert.ok(!sitemap.includes('<loc>' + RT.ORIGIN + old + '</loc>'), old);
   for (const r of RT.ROUTES) assert.equal(sitemap.includes('<loc>' + RT.ORIGIN + r.path + '</loc>'), r.index, r.path);
-  assert.ok(sitemap.includes('/legal.html'));
+  assert.ok(sitemap.includes('<loc>' + RT.ORIGIN + '/legal</loc>') && !sitemap.includes('/legal.html'));
 });
 
 test('path lookup ignores case, trailing slash, query and hash; titles and descriptions are distinct', () => {

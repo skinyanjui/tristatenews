@@ -9,7 +9,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const A = require('../public/adslots.js');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-const html = read('public/index.html'), legal = read('public/legal.html'), raw = read('public/sponsors.json');
+const html = require('./_page.js')(), legal = read('public/legal.html'), raw = read('public/sponsors.json');
 const sponsors = JSON.parse(raw);
 // Everything but the labeled sample-ad switch and its code, which test/sample-ads.test.js checks on its own.
 const rawNoSamples = JSON.stringify(Object.assign({}, sponsors, { samples: undefined, note: sponsors.note.replace(/ 'samples' is the one switch[\s\S]*$/, '') }));

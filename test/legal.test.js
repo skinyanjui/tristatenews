@@ -7,7 +7,7 @@ const path = require('path');
 const C = require('../api/_catalog.js');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-const legal = read('public/legal.html'), html = read('public/index.html');
+const legal = read('public/legal.html'), html = require('./_page.js')();
 const text = s => s.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 const section = id => { const a = legal.indexOf('<section class="lg-panel" id="' + id + '"'); assert.ok(a >= 0, id); return legal.slice(a, legal.indexOf('</section>', a)); };
 const terms = section('terms'), privacy = section('privacy'), ads = section('advertising');

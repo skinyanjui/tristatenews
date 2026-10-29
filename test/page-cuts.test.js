@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+const html = require('./_page.js')();
 const legal = fs.readFileSync(path.join(root, 'public/legal.html'), 'utf8');
 const sponsors = JSON.parse(fs.readFileSync(path.join(root, 'public/sponsors.json'), 'utf8'));
 const count = (s, re) => (s.match(re) || []).length;
@@ -39,7 +39,7 @@ test('no fixed bottom bar and no space reserved for it', () => {
 
 test('footer: Legal, Advertise, Submit news and Unsubscribe once each; attribution once', () => {
   const foot = html.slice(html.indexOf('<div class="legal-foot">'), html.indexOf('</main>'));
-  assert.strictEqual(count(html, /href="\/legal\.html"/g), 1);
+  assert.strictEqual(count(html, /href="\/legal"/g), 1);
   assert.strictEqual(count(html, /href="\/unsubscribe\.html"/g), 1);
   assert.ok(/id="adOpen">Advertise</.test(foot) && /id="snOpen">Submit news</.test(foot));
   assert.strictEqual(count(html, /link to the original publisher/gi), 1);

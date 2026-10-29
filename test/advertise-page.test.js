@@ -30,9 +30,9 @@ test('ADS_PAGE off (the default): /advertise redirects to the site’s Advertise
   for (const flag of [undefined, '', '0', 'off', 'true', 'yes', 'ON ']) {
     const r = await serve(flag, 'GET', true);
     if (flag === 'ON ') { assert.strictEqual(r.status, 200, 'case and spaces are ignored'); continue; }
-    assert.deepStrictEqual([r.status, r.headers.location, r.headers['cache-control'], r.body], [302, '/#advertise', 'no-store', ''], String(flag));
+    assert.deepStrictEqual([r.status, r.headers.location, r.headers['cache-control'], r.body], [308, '/#advertise', 'no-store', ''], String(flag));
   }
-  assert.ok(read('public/index.html').includes("if (location.hash === '#advertise') setTimeout(function () { openAd();"), 'the redirect opens the existing form');
+  assert.ok(require('./_page.js')().includes("if (location.hash === '#advertise') setTimeout(function () { openAd();"), 'the redirect opens the existing form');
 });
 
 test('ADS_PAGE=preview: served with noindex and no caching; ADS_PAGE=on: indexable, cached briefly', async () => {
@@ -160,7 +160,7 @@ test('plain words: untargeted, where ads never go, links to the upload page and 
   for (const s of ['Ads appear on the Jobs, Deals, Events and Classifieds boards and in the News feed, never directly next to a Police & courts item', 'There are never ads on Obituaries', 'Ads aren’t targeted',
     'Everyone who opens a board sees the same ads', 'labeled “Sponsored,”', 'A person reviews every ad before it runs'])
     assert.ok(t.includes(s), s);
-  assert.ok(page.includes('href="/creative.html"') && page.includes('href="/legal.html#advertising"'));
+  assert.ok(page.includes('href="/creative.html"') && page.includes('href="/legal#advertising"'));
   assert.ok(!/adslots\.js|\/api\/creative|sponsors\.json|googlesyndication|localStorage|sessionStorage|document\.cookie|<iframe|<video|autoplay/.test(page));
   assert.ok(!/\b\d[\d,]*\s*(readers|visitors|views|impressions|subscribers|people)\b/i.test(t), 'no audience numbers');
   assert.ok(!/sample|example\.com/i.test(page));
@@ -168,7 +168,7 @@ test('plain words: untargeted, where ads never go, links to the upload page and 
 });
 
 test('the Advertise form on the site: newsletter is "Coming soon", and the rates page link shows only when the page is on', () => {
-  const html = read('public/index.html');
+  const html = require('./_page.js')();
   assert.ok(html.includes("['Newsletter sponsorship', 'One sponsor in each email', 'Coming soon']"));
   assert.ok(html.includes("fetch('/advertise', { method: 'HEAD', redirect: 'manual', cache: 'no-store' })") && html.includes('if (r.status !== 200) return;'));
 });

@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const A = require('../public/adslots.js');
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-const html = read('public/index.html');
+const html = require('./_page.js')();
 const css = html.slice(html.indexOf('/* ---------- wide screens'), html.lastIndexOf('</style>'));
 const NOW = Date.parse('2026-10-21T18:00:00Z');
 const ON = { on: true, ads: [{ name: 'Ninebark Bakehouse', text: 'a' }, { name: 'Marrow Creek Orchard', text: 'b' }, { name: 'Quillfeather Books', text: 'c' }, { name: 'Tinmouth Bicycle Works', text: 'd' }] };

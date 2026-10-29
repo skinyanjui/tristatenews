@@ -141,7 +141,7 @@ test('serving and page: campaign ads carry cid and pl; the page counts only thos
   const out = P.plan([{ id: CID, creativeId: cr.id, placements: ['card:jobs', 'line:jobs'], start: '2026-10-18', end: '2026-10-31', status: 'active' }], [cr], NOW, c => ({ id: c.id, name: 'Shop', url: 'https://shop.test/' }));
   assert.deepStrictEqual([out.cards.jobs[0].pl, out.slots.jobs[0].pl, out.cards.jobs[0].cid], ['card:jobs', 'line:jobs', CID]);
   assert.ok(require('../public/adslots.js').validAd(out.cards.jobs[0]));
-  const ix = read('public/index.html');
+  const ix = require('./_page.js')();
   const fn = ix.slice(ix.indexOf('function adCount('), ix.indexOf('adIO.observe(a);'));
   assert.ok(fn.includes("if (!ad.cid || !ad.pl || navigator.webdriver) return;"), 'only booked campaign ads, never samples or house units');
   assert.ok(fn.includes('{ threshold: 0.5 }') && fn.includes('if (!adSeen[k])'), 'half on screen, once per page load');

@@ -286,7 +286,7 @@ test('wiring: route through inbox.js (still 8 functions), order page, panel, /ad
   for (const s of ["fetch('/api/packages')", "action: 'order'", "action: 'checkout'", '/creative.html?order=1&ref=', 'Sponsored feature:</b> coming soon', 'id="agree"', '#terms-packages']) assert.ok(op.includes(s), s);
   assert.ok(!/\$\s?\d/.test(op.replace(/<script>[\s\S]*<\/script>/, '')), 'no hardcoded prices in the order page');
   assert.ok(!/localStorage|sessionStorage|document\.cookie/.test(op), 'nothing stored in the browser');
-  const idx = read('public/index.html');
+  const idx = require('./_page.js')();
   assert.ok(idx.includes("fetch('/api/packages')") && idx.includes("'/order.html?pkg=' + k") && idx.includes('Sponsored features: coming soon.'));
   assert.ok(read('data/pages/advertise.html').includes("location.href = '/order.html?pkg=' + k"));
   const cr = read('public/creative.html');

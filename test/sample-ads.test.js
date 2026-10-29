@@ -8,7 +8,7 @@ const path = require('path');
 const A = require('../public/adslots.js');
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
-const html = read('public/index.html'), sponsors = JSON.parse(read('public/sponsors.json'));
+const html = require('./_page.js')(), sponsors = JSON.parse(read('public/sponsors.json'));
 const NOW = Date.parse('2026-10-18T15:00:00Z');
 const real = { name: 'Real Advertiser', text: 'Approved', url: 'https://real.test/', cta: 'Visit website' };
 const ON = { on: true, ads: [{ name: 'Alpha Shop', text: 'One' }, { name: 'Beta Shop', text: 'Two' }, { name: 'Gamma Shop' }] };

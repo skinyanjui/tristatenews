@@ -33,7 +33,7 @@ function neverFixed(css, sels, label) {
 }
 
 test('index.html (News, Events, Obituaries, Jobs, Deals, Classifieds, county pages): footer pushed to the bottom', () => {
-  const css = styleOf('public/index.html'), html = read('public/index.html');
+  const css = styleOf('public/assets/app.css'), html = require('./_page.js')();
   bodyIsScreenTallColumn(css, 'index'); mainTakesSpare(css, 'body > main', 'index');
   assert.deepEqual(rules(css, 'body > main').display, ['flex']); assert.deepEqual(rules(css, 'body > main')['flex-direction'], ['column']);
   assert.ok(rules(css, '.foot-push').flex.includes('1 0 0'), 'spacer soaks up the spare height');
@@ -68,7 +68,7 @@ test('order.html and /advertise: flex column main, footer pushed with margin-top
 });
 
 test('the only position:fixed things are the toast and the wide-screen rails, never a footer', () => {
-  const css = styleOf('public/index.html');
+  const css = styleOf('public/assets/app.css');
   const fixed = [...css.matchAll(/([^{}]+)\{[^{}]*position:\s*fixed[^{}]*\}/g)].map(m => m[1].trim().replace(/^@media[^{]*\{\s*/, ''));
   for (const s of fixed) assert.doesNotMatch(s, /foot/, s);
 });

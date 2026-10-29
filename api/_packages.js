@@ -30,8 +30,7 @@
 // shares: not yet active, cancelled or refunded); tsn:pkg:log (admin actions, newest first); tsn:pkg:rl:<ip>.
 // Nothing here emails anyone. Payment never happens here: Stripe takes it, or Sam invoices by hand.
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const CATALOG = require('./_catalog.js');
 const CAMP = require('./_campaigns.js');
@@ -55,7 +54,7 @@ const validDate = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d)) && Number.isFinite(
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (_) { return null; } };
 // A real Stripe secret key, not a placeholder. Anything else means: invoice by hand.
-const cardReady = () => /^(sk|rk)_(test|live)_[A-Za-z0-9]{20,}$/.test(KEY) && !!(URL_ && TOKEN);
+const cardReady = () => /^(sk|rk)_(test|live)_[A-Za-z0-9]{20,}$/.test(KEY) && STORE.stored();
 
 // How many boards the advertiser picks, and what those picks mean.
 const PICKS = { A: 1, B: 2, C: 2 };
@@ -151,11 +150,7 @@ const publicInfo = () => ({
   boards: BOARDS, leadDays: LEAD_DAYS, aheadDays: AHEAD_DAYS, holdDays: HOLD_DAYS, card: cardReady(),
 });
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 async function openCampaigns() {
   const g = await pipeline([['SMEMBERS', CAMP.K.open]]);
   const ids = ((g[0] && g[0].result) || []).filter(i => CAMP.ID_RE.test(i));
@@ -214,7 +209,7 @@ function newsletterGate(verified) {
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const send = (c, o) => res.status(c).json(o);
-  const stored = !!(URL_ && TOKEN), now = Date.now();
+  const stored = STORE.stored(), now = Date.now();
   const isAdmin = () => !!ADMIN && same(req.headers['x-admin-key'], ADMIN) && stored;
   try {
     if (req.method === 'GET') {
@@ -307,6 +302,7 @@ async function handler(req, res) {
     await pipeline(saveCmds(rec, { at, ref, action: 'order', from: '', to: 'pending_payment', note: '' }).concat([['ZADD', K.index, String(now), ref], ['LPUSH', 'tsn:ads', JSON.stringify(lead)], ['LTRIM', 'tsn:ads', '0', '299']]));
     return send(200, { ok: true, ref, pkg: r.pkg, start: r.start, end: r.end, cents: p.cents, placements: r.placements });
   } catch (e) {
+    require('./_log.js').fail('packages', e);
     return send(502, { error: 'Couldn’t reach the store. Try again in a moment.' });
   }
 }

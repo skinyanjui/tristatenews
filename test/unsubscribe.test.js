@@ -12,7 +12,7 @@ function fake() {
       case 'SREM': { const s = sets.get(k); const n = s && s.delete(a[0]) ? 1 : 0; return { result: n }; }
       case 'INCR': kv.set(k, (kv.get(k) || 0) + 1); return { result: kv.get(k) };
       case 'EXPIRE': return { result: 1 };
-      default: return { error: 'unsupported ' + op };
+      default: return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'unsupported ' + op });
     }
   };
   const srv = http.createServer((req, res) => { let b = ''; req.on('data', d => b += d); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(JSON.parse(b).map(run))); }); });

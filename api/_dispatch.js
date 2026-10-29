@@ -15,11 +15,21 @@ function routeOf(req) {
 
 // routes: { name: () => handler }. fallback: the host file's own handler (used for its own path and for any route
 // it does not host). Without a fallback an unknown route answers 404.
+// A route whose handler throws (or rejects) is logged (api/_log.js) and answers 500 if nothing was sent yet; most
+// handlers catch their own errors, this is the net under the rest.
+function guard(name, h, req, res) {
+  const failed = e => {
+    require('./_log.js').fail('route ' + name, e);
+    try { if (!res.headersSent) { res.setHeader('Cache-Control', 'no-store'); res.status(500).json({ error: 'something went wrong' }); } } catch (_) { /* response already gone */ }
+  };
+  try { const out = h(req, res); return out && typeof out.then === 'function' ? out.catch(failed) : out; } catch (e) { return failed(e); }
+}
+
 function host(routes, fallback) {
   return function dispatch(req, res) {
     const load = Object.prototype.hasOwnProperty.call(routes, routeOf(req)) ? routes[routeOf(req)] : null;
-    if (load) return load()(req, res);
-    if (fallback) return fallback(req, res);
+    const name = load ? routeOf(req) : 'fallback', h = load ? load() : fallback;
+    if (h) return guard(name, h, req, res);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(404).json({ error: 'not found' });
   };

@@ -24,6 +24,7 @@ module.exports = async function (req, res) {
     const bad = report.filter(r => r.result.startsWith('fail'));
     send(200, { ok: true, tier, runId, ms: Date.now() - t0, stories: snapshot.items.length, sourcesWithStories: snapshot.sources.filter(s => s.count > 0).length, notModified: report.filter(r => r.result === '304').length, failing: bad, statuses: run.statusCounts, store, locations: locations ? { total: locations.total, assigned: locations.assigned, requiresReview: locations.requiresReview } : undefined });
   } catch (e) {
+    require('./_log.js').fail('refresh', e);
     send(502, { error: String(e && e.message || e).slice(0, 120) });
   }
 };

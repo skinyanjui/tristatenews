@@ -15,9 +15,7 @@ const BREAKING_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\
 const LEAD_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]\s*/i;
 const TZ = 'America/Chicago';
 
-const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-// JSON inside <script>: nothing in it can close the element or break the script (</, <!--, U+2028/2029).
-const jsonScript = v => JSON.stringify(v).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+const { esc, jsonScript } = require('./_html.js');
 function safeHref(u) {
   try { const x = new URL(u); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '#'; } catch (e) { return '#'; }
 }

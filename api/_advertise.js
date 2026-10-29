@@ -7,8 +7,7 @@
 //        -> { ok, lead }: change a lead's status or add a note; every change goes in the activity log
 // Stored in Upstash Redis and/or emailed through Resend (RESEND_API_KEY + TIPS_TO_EMAIL), like api/submit.js. The
 // email goes only to our own inbox; nothing here ever emails the advertiser.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const L = require('./_leads.js');
 const { PACKAGES, budgetBands } = require('./_catalog.js');
@@ -21,7 +20,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;
 const DAILY_PER_IP = 5;
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f<>]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, n);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const { esc } = require('./_html.js');
 
 function validate(b) {
   const business = clean(b.business, 80).replace(/\s+/g, ' '), name = clean(b.name, 60).replace(/\s+/g, ' ');
@@ -35,15 +34,11 @@ function validate(b) {
   if (phone && !PHONE_RE.test(phone)) return { error: 'Enter a phone number like 812-555-0142, or leave it blank.', field: 'phone' };
   return { business, name, email, phone, interest, package: pkg, budget, message };
 }
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const send = (c, o) => res.status(c).json(o);
-  const stored = !!(URL_ && TOKEN), mail = !!(RESEND && TO);
+  const stored = STORE.stored(), mail = !!(RESEND && TO);
   try {
     const parse = x => { try { return x ? JSON.parse(x) : null; } catch (e) { return null; } };
     const isAdmin = () => !!ADMIN && same(req.headers['x-admin-key'], ADMIN) && stored;
@@ -93,6 +88,7 @@ async function handler(req, res) {
     }
     return done ? send(200, { ok: true, ref }) : send(502, { error: 'Couldn’t send that. Try again.' });
   } catch (e) {
+    require('./_log.js').fail('advertise', e);
     return send(502, { error: 'Couldn’t send that. Try again in a moment.' });
   }
 }

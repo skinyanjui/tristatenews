@@ -38,7 +38,7 @@ function fakeStore() {
       case 'HGETALL': return { result: [].concat(...[...(hashes.get(a[0]) || new Map())]) };
       case 'ZADD': { const z = zsets.get(a[0]) || new Map(); zsets.set(a[0], z); let n = 0; for (let i = 1; i < a.length; i += 2) { if (!z.has(a[i + 1])) n++; z.set(a[i + 1], Number(a[i])); } return { result: n }; }
       case 'ZREMRANGEBYSCORE': { const z = zsets.get(a[0]) || new Map(); let n = 0; const hi = Number(a[2]); for (const [m, s] of z) if (s <= hi) { z.delete(m); n++; } return { result: n }; }
-      default: return { error: 'ERR unknown command ' + op };
+      default: return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'ERR unknown command ' + op });
     }
   };
   const handle = body => { log.requests++; return JSON.parse(body).map(run); };

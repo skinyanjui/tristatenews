@@ -20,9 +20,10 @@ function fake() {
       case 'ZADD': { const m = z.get(k) || new Map(); m.set(a[1], +a[0]); z.set(k, m); return { result: 1 }; }
       case 'ZREMRANGEBYSCORE': { const m = z.get(k); let n = 0; if (m) for (const [id, sc] of m) if (sc <= +a[1]) { m.delete(id); n++; } return { result: n }; }
       case 'EXPIRE': if (!exists(k)) return { result: 0 }; if (a[1] === 'NX' && ttl.has(k)) return { result: 0 }; if (a[1] === 'NX' && !ttl.has(k) || a[1] !== 'NX' && a[1] !== undefined && a[1] !== 'NX' || a.length === 1) ttl.set(k, +a[0]); return { result: 1 };
+      case 'SISMEMBER': return { result: 1 };
       case 'TTL': return { result: !exists(k) ? -2 : ttl.has(k) ? ttl.get(k) : -1 };
       case 'SCAN': { const re = new RegExp('^' + a[1].replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'); return { result: ['0', [...sets.keys(), ...z.keys(), ...kv.keys()].filter(x => re.test(x))] }; }
-      default: return { error: 'unsupported ' + op };
+      default: return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'unsupported ' + op });
     }
   };
   const srv = http.createServer((req, res) => { let b = ''; req.on('data', d => b += d); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(JSON.parse(b).map(run))); }); });

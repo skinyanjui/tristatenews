@@ -37,8 +37,8 @@ const PLACES = {
   },
 };
 const STATE_ABBR = { kentucky: 'ky', indiana: 'ind', illinois: 'ill', 'ky.': 'ky', 'ind.': 'ind', 'ill.': 'ill', ky: 'ky', ind: 'ind', ill: 'ill', in: 'ind', il: 'ill' };
-const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const words = list => new RegExp('(?:^|[^a-z])(?:' + list.map(esc).join('|') + ')(?![a-z])');
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // for a RegExp source, not HTML
+const words = list => new RegExp('(?:^|[^a-z])(?:' + list.map(escRe).join('|') + ')(?![a-z])');
 const ANY = words([].concat(PLACES.ind.anywhere, PLACES.ky.anywhere, PLACES.ill.anywhere));
 const LOCAL = { ind: words(PLACES.ind.local), ky: words(PLACES.ky.local), ill: words(PLACES.ill.local) };
 
@@ -76,10 +76,10 @@ function geo() {
   const data = require('./_geo.js');
   const byForm = new Map();
   for (const a of data.aliases) for (const f of a.forms) byForm.set(f, a);
-  const formRe = new RegExp('(?<![a-z0-9])(' + [...byForm.keys()].sort((x, y) => y.length - x.length || (x < y ? -1 : 1)).map(esc).join('|') + ')(?![a-z0-9])', 'g');
+  const formRe = new RegExp('(?<![a-z0-9])(' + [...byForm.keys()].sort((x, y) => y.length - x.length || (x < y ? -1 : 1)).map(escRe).join('|') + ')(?![a-z0-9])', 'g');
   const names = Object.entries(data.states).map(([p, n]) => [n.toLowerCase(), p]);
-  const nameRe = new RegExp(',\\s*(' + names.map(([n]) => esc(n)).sort((x, y) => y.length - x.length).join('|') + ')(?![a-z])', 'gi');
-  const apRe = new RegExp(',\\s*(' + Object.keys(AP_STATES).sort((x, y) => y.length - x.length).map(esc).join('|') + ')', 'gi');
+  const nameRe = new RegExp(',\\s*(' + names.map(([n]) => escRe(n)).sort((x, y) => y.length - x.length).join('|') + ')(?![a-z])', 'gi');
+  const apRe = new RegExp(',\\s*(' + Object.keys(AP_STATES).sort((x, y) => y.length - x.length).map(escRe).join('|') + ')', 'gi');
   const postalRe = new RegExp(',\\s*(' + Object.keys(data.states).join('|') + ')(?![A-Za-z])', 'g'); // capitals only: ", IN" not ", in a"
   const core = new Set(data.counties.filter(c => c.groups.includes('tri_state_core')).map(c => c.id));
   GEO = { data, byForm, formRe, nameRe, apRe, postalRe, stateOf: new Map(names), core };

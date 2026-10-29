@@ -11,8 +11,7 @@
 //   POST   /api/listings  {action:'restore', id}  with x-admin-key -> unhide and take it off the queue (DELETE removes it)
 //   DELETE /api/listings?id=...&uid=...                        -> the poster removes their own listing
 // Set LISTINGS_ADMIN_KEY to remove any listing: DELETE with header x-admin-key.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const { removalCmds } = require('./_orders.js'); // a post removed while Featured leaves an order record (never silent)
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
@@ -43,16 +42,7 @@ function goodImage(v, max) {
   return head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff ? v : '';
 }
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' },
-    body: JSON.stringify(commands),
-    signal: AbortSignal.timeout(6000),
-  });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 
 const CATS = { item: ['Furniture', 'Electronics', 'Vehicles', 'Tools', 'Home & garden', 'Clothing', 'Sports & outdoors', 'Toys & kids', 'Other'], deal: ['Food & drink', 'Shopping', 'Services', 'Entertainment', 'Auto', 'Other'], event: ['Music', 'Food & drink', 'Family', 'Sports', 'Arts', 'Community', 'Other'], job: ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'], obit: ['Other'] };
 const JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
@@ -146,7 +136,7 @@ async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => res.status(code).send(JSON.stringify(obj));
-  if (!URL_ || !TOKEN) return send(200, { configured: false, items: [] });
+  if (!STORE.stored()) return send(200, { configured: false, items: [] });
   try {
     let body = {};
     if (req.method === 'POST') {
@@ -243,6 +233,7 @@ async function handler(req, res) {
     }
     return send(405, { error: 'method' });
   } catch (e) {
+    require('./_log.js').fail('listings', e);
     // reading degrades quietly (the page just shows no community posts); a failed write must say so
     res.setHeader('Cache-Control', 'no-store'); // never cache a failed read
     return req.method === 'GET' ? send(200, { configured: false, items: [] }) : send(502, { error: 'Couldn’t save that right now. Try again in a moment.' });

@@ -9,9 +9,8 @@
 const B = require('../public/breaking.js');
 const { same } = require('./_safe.js');
 
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-const stored = () => !!(URL_ && TOKEN);
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const stored = STORE.stored;
 const K = {
   snapshot: 'tsn:alerts:snapshot',      // JSON {updatedAt, alerts, sources}; EX 900
   lock: 'tsn:alerts:lock',              // NX EX 20 while one request refreshes
@@ -58,14 +57,7 @@ const FEEDS = [
   { id: 'kytc-wzdx', name: 'KYTC', everyMin: 10, type: 'wzdx', link: 'https://goky.ky.gov/', url: 'https://storage.googleapis.com/kytc-its-2020-openrecords/public/feeds/WZDx/kytc_wzdx_v4.1.geojson' },
 ];
 
-async function redis(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
-    method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' },
-    body: JSON.stringify(commands), signal: AbortSignal.timeout(5000),
-  });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const redis = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
 const hash = s => require('crypto').createHash('sha1').update(String(s)).digest('hex').slice(0, 16);
 
@@ -214,6 +206,7 @@ module.exports = async function (req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.status(200).send(JSON.stringify(force ? Object.assign({ ok: snap.sources.every(s => s.ok || s.cached) }, snap) : publicAlerts(snap)));
   } catch (e) {
+    require('./_log.js').fail('alerts', e);
     res.setHeader('Cache-Control', 'no-store');
     res.status(503).json({ error: 'alerts temporarily unavailable', alerts: [] });
   }

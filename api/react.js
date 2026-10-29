@@ -1,7 +1,6 @@
 // Shared heart counts for stories. Stored in Upstash Redis (the Vercel Marketplace "Upstash for Redis"
 // integration sets these variables). Without it, the page falls back to counting only the reader's own heart.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const ID_RE = /^[a-z0-9]{4,24}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
 const key = id => 'tsn:likes:' + id;
@@ -15,20 +14,11 @@ const IDS = require('./_storyid.js').KEY;
 const { clientIp, ipHash } = require('./_ip.js');
 const rlKey = (ip, day) => 'tsn:likes:rl:' + ipHash(ip, 'likes|' + day);
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' },
-    body: JSON.stringify(commands),
-    signal: AbortSignal.timeout(6000),
-  });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return r.json();
-}
+const pipeline = STORE.pipeline;
 
 async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  if (!URL_ || !TOKEN) {
+  if (!STORE.stored()) {
     res.setHeader('Cache-Control', 'public, s-maxage=300');
     return res.status(200).send(JSON.stringify({ configured: false, counts: {} }));
   }
@@ -54,6 +44,7 @@ async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=15');
     return res.status(200).send(JSON.stringify({ configured: true, counts }));
   } catch (e) {
+    require('./_log.js').fail('react', e);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(JSON.stringify({ configured: false, counts: {} }));
   }

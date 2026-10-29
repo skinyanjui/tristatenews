@@ -16,22 +16,17 @@
 // (RFC 8058 one-click, handled by api/unsubscribe.js).
 // One issue per ISO week (Chicago time): recipients are recorded in tsn:nl:issue:<week>:sent as each batch of up to
 // 100 is accepted by Resend, so a retry or a second call that week only mails whoever was not reached yet.
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const unsub = require('./unsubscribe.js');
 
 const TZ = 'America/Chicago';
 const HEADLINES = 10, PER_SOURCE = 2, EVENTS = 8, BATCH = 100;
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const { esc } = require('./_html.js');
 const site = () => String(process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/$/, '');
 const safeUrl = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (e) { return ''; } };
 
-async function redis(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(8000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  return (await r.json()).map(x => x && x.result);
-}
+const redis = async commands => (await STORE.pipeline(commands)).map(x => x && x.result);
 async function getJson(path) {
   const r = await fetch(site() + path, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error(path + ' HTTP ' + r.status);
@@ -175,7 +170,7 @@ function missingForSend() {
   if (!process.env.NEWSLETTER_FROM) need.push('NEWSLETTER_FROM');
   if (!process.env.NEWSLETTER_POSTAL_ADDRESS) need.push('NEWSLETTER_POSTAL_ADDRESS');
   if (!process.env.NEWSLETTER_SECRET && !process.env.CRON_SECRET) need.push('NEWSLETTER_SECRET');
-  if (!URL_ || !TOKEN) need.push('KV_REST_API_URL/KV_REST_API_TOKEN');
+  if (!STORE.stored()) need.push('KV_REST_API_URL/KV_REST_API_TOKEN');
   return need;
 }
 
@@ -212,7 +207,7 @@ async function handler(req, res) {
     if (!wantSend) {
       const m = render(issue, 'preview@example.com');
       if (q.format === 'html') { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.status(200).send(m.html); }
-      let subscribers = null; try { if (URL_ && TOKEN) [subscribers] = await redis([['SCARD', 'tsn:nl:confirmed']]); } catch (e) { /* preview anyway */ }
+      let subscribers = null; try { if (STORE.stored()) [subscribers] = await redis([['SCARD', 'tsn:nl:confirmed']]); } catch (e) { /* preview anyway */ }
       return res.status(200).json({ dryRun: true, week: issue.week, subject: issue.subject, headlines: issue.headlines.length, events: issue.events.length, subscribers, wouldSend: missingForSend().length === 0, missingForSend: missingForSend(), headers: m.headers, html: m.html, text: m.text });
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'sending needs POST' });
@@ -222,6 +217,7 @@ async function handler(req, res) {
     const out = await send(issue);
     return res.status(out.status).json(out.body);
   } catch (e) {
+    require('./_log.js').fail('newsletter', e);
     return res.status(502).json({ error: String(e && e.message || e).slice(0, 200) });
   }
 }

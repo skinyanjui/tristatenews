@@ -43,6 +43,7 @@ module.exports = async function (req, res) {
     res.setHeader('Allow', 'GET, POST');
     return send(405, { error: 'method not allowed' });
   } catch (e) {
+    require('./_log.js').fail('locations', e);
     return send(502, { error: 'report unavailable' });
   }
 };

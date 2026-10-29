@@ -18,8 +18,7 @@
 // every campaign by creation time; tsn:camp:open set of campaigns not ended; tsn:camp:audit list of every action
 // (newest first, last 1000).
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 
@@ -134,13 +133,7 @@ function plan(records, creatives, now, pub) {
   return out;
 }
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  const out = await r.json();
-  if (Array.isArray(out) && out.some(x => x && x.error)) throw new Error('store command');
-  return out;
-}
+const pipeline = STORE.pipeline;
 async function openRecords() {
   const ids = (await pipeline([['SMEMBERS', K.open]]))[0].result || [];
   return ids.length ? ((await pipeline([['MGET', ...ids.map(K.rec)]]))[0].result || []).map(parse).filter(Boolean) : [];
@@ -155,7 +148,7 @@ async function livePlan(now, pub) {
 
 async function handler(req, res) {
   const send = (c, o) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); return res.status(c).send(JSON.stringify(o)); };
-  if (!URL_ || !TOKEN || !ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(404, { error: 'not found' });
+  if (!STORE.stored() || !ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(404, { error: 'not found' });
   const now = Date.now();
   try {
     if (req.method === 'GET') {
@@ -196,6 +189,7 @@ async function handler(req, res) {
     await pipeline(cmds);
     return send(200, { ok: true, campaign: r.rec });
   } catch (e) {
+    require('./_log.js').fail('campaigns', e);
     return send(502, { error: 'Couldn’t reach the store. Try again.' });
   }
 }

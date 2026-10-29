@@ -632,16 +632,43 @@
 
   /* ---------- tabs and search ---------- */
   var tabsEl = document.getElementById('tabs');
+  // The tab row is built once (and again only when a tab appears or hides: News and Institutions hide when empty), then
+  // each render only updates aria-selected and the roving tabindex, so keyboard focus on a tab survives redraws. Each
+  // tab names the part of the page it shows (aria-controls); those parts are tabpanels labelled by the selected tab.
+  var TAB_PANEL = { news: 'list', institution: 'list', events: 'ev', obits: 'ob list', jobs: 'jb', deals: 'dl', classifieds: 'cl' };
+  var tabsKey = null;
   function renderTabs() {
-    tabsEl.textContent = '';
-    CATS.forEach(function (c) {
+    var vis = CATS.filter(function (c) {
       // Tabs show no counts; a count is only used to hide an empty News, Police & courts or Institutions tab (it still shows when its URL is open).
-      if (c.id === 'news' || c.id === 'institution') { if (state.cat !== c.id && !state.items.some(function (i) { return inCat(i, c.id); })) return; }
-      var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(state.cat === c.id)); b.tabIndex = state.cat === c.id ? 0 : -1; b.dataset.cat = c.id; b.dataset.sec = c.id;
-      b.appendChild(el('span', null, c.label));
-      b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); });
-      tabsEl.appendChild(b);
+      return !((c.id === 'news' || c.id === 'institution') && state.cat !== c.id && !state.items.some(function (i) { return inCat(i, c.id); }));
+    });
+    var key = vis.map(function (c) { return c.id; }).join(',');
+    if (key !== tabsKey) {
+      var had = document.activeElement && tabsEl.contains(document.activeElement) ? document.activeElement.dataset.cat : null;
+      tabsEl.textContent = '';
+      vis.forEach(function (c) {
+        var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'tab-' + c.id;
+        b.setAttribute('aria-controls', TAB_PANEL[c.id]); b.dataset.cat = c.id; b.dataset.sec = c.id;
+        b.appendChild(el('span', null, c.label));
+        b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); });
+        tabsEl.appendChild(b);
+      });
+      tabsKey = key;
+      var back = had && document.getElementById('tab-' + had); if (back) back.focus();
+    }
+    [].forEach.call(tabsEl.children, function (b) {
+      var on = b.dataset.cat === state.cat;
+      if (b.getAttribute('aria-selected') !== String(on)) b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    Object.keys(TAB_PANEL).forEach(function (cat) {
+      TAB_PANEL[cat].split(' ').forEach(function (id) {
+        var p = document.getElementById(id); if (!p) return;
+        if (p.getAttribute('role') !== 'tabpanel') p.setAttribute('role', 'tabpanel');
+        // labelled by the selected tab when it shows this part, else (until then) by the tab that owns it
+        var by = TAB_PANEL[state.cat] && TAB_PANEL[state.cat].split(' ').indexOf(id) >= 0 ? state.cat : p.getAttribute('aria-labelledby') ? null : cat;
+        if (by && document.getElementById('tab-' + by)) p.setAttribute('aria-labelledby', 'tab-' + by);
+      });
     });
   }
   // Prefetch on intent: pointing at, touching or focusing a board tab starts loading that board (once; loadBoard reuses

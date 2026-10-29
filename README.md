@@ -10,8 +10,8 @@ Hourly local news from Evansville, Owensboro, Madisonville, Carbondale, Marion, 
 ## How it works
 
 - `api/news.js` fetches every feed in `SOURCES`, drops AP wire copy, keeps only regional stories from wider-market stations (`geo: true`), removes duplicates, and returns one list. The same filters (wire, region, obituary, out-of-area, standing pages) run again on stored stories each time the snapshot is built, so a filter change cleans stories already saved. The news feed keeps up to 240 stories; Police & courts (80), events and obituaries have their own limits, so a busy news day can't push out a sheriff's post that is still in its window.
-- The response is cached at the edge for one hour (`s-maxage=3600`), so the feeds are re-pulled about once an hour. An open page also re-checks every hour.
-- `public/index.html` is the page. Headlines open the original article in a new tab. Weather comes from Open-Meteo.
+- A scheduled refresh (GitHub Actions, see "How the news is fetched") stores a snapshot in Redis; `/api/news` serves it, cached at the edge for 5 minutes (`s-maxage=300, stale-while-revalidate=3600`). An open page re-checks every hour.
+- The page is the shell `data/pages/index.html` (outside `public/`, so Vercel never serves it statically) with its CSS and JavaScript in `public/assets/`. Every tab path, `/` included, is served by `api/_tabpage.js` (hosted by `api/news.js`); see "Page delivery" below. Headlines open the original article in a new tab. Weather comes from Open-Meteo.
 - A source that fails or returns nothing is hidden automatically.
 
 ## API paths and Vercel functions
@@ -38,6 +38,16 @@ Vercel's Hobby plan allows 12 functions per deployment, and every `api/*.js` fil
 To add a path without a new function, put its handler in an `_`-prefixed file, add it to a host's `host({...})` table and add the rewrite; `test/api-routes.test.js` checks the map and the function count (at most 9).
 
 **Not found.** Vercel serves files and functions first, then rewrites in order. The last two rewrites send anything unmatched to `api/_notfound.js`: HTTP 404 with `data/pages/404.html` (noindex, no ads, links to every section and a search box that opens `/?q=`), or JSON `{"error":"not found"}` under `/api/`. Keep them last. Tab paths, the 308 redirects for retired paths, and clean page paths (`/legal`, `/privacy`, `/order`, ... rewritten to their `.html` file) all match earlier. `npm run dev` does the same. `test/not-found.test.js` covers it.
+
+## Page delivery (ships 65–69)
+- **Heads per tab.** `/`, `/events`, `/obituaries`, `/jobs`, `/deals`, `/classifieds` and `/institutions` are rewritten to `/api/news?__route=tabpage&p=<path>` (`api/_tabpage.js`), which serves the shell with that tab's title, description, canonical and og tags (from `public/routes.js`). `/index.html` 308s to `/`; `/legal` is the legal page (`/legal.html` 308s to it).
+- **First stories in the HTML.** `/`, `/obituaries` and `/institutions` carry the tab's first 24 stories from the current snapshot (`api/_cards.js`): cards in the same markup the page builds, plus the same data as JSON in `<script type="application/json" id="tsn-data">`. The page draws from that at once and loads the full `/api/news` after its load event. No fresh snapshot (or a store slower than 1.5 s) gives the plain shell, never an error. Pages with stories are cached `s-maxage=300, stale-while-revalidate=3600`.
+- **Assets.** `node scripts/build-assets.js` builds `public/assets/lib.js` (the shared libraries `breaking.js`, `routes.js`, `featured.js`, `adslots.js`, `adsizes.js`, `flowers.js`, joined in order) and stamps `?v=<hash>` on `app.css`, `lib.js` and `app.js` in the shell; `/assets/*` is cached for a year (immutable). Both scripts load with `defer` in the head. Run it after changing any of those files; CI fails when the output is stale. The standalone library files stay in `public/` because the server code and `admin.html`/`creative.html`/`advertise.html` use them.
+- **Fonts.** Geist and Geist Mono 1.8.2 (SIL OFL, `public/assets/fonts/OFL.txt`) are self-hosted as Latin subsets; no Google Fonts (the CSP allows `font-src 'self'` only).
+- **Pictures.** Every source's pictures are size-checked at refresh; over 500 KB the card shows no photo.
+
+## Tests and CI
+`npm run lint` and `npm test` (Node 20). `.github/workflows/ci.yml` runs both, plus a stale-asset check, on every pull request and push to main with no secrets and the store variables blanked (check name **CI / test**). Locally, run the suite the same way: unset `UPSTASH_*`, `KV_*`, `REDIS_URL` and `EXTRA_FEEDS` first. Errors in the functions are logged as one line each by `api/_log.js` (`[tsn] <where> failed: …`), with URLs, emails and tokens masked and never a request body.
 
 ## Add feeds without editing code
 
@@ -128,7 +138,7 @@ Source icons come from Google's favicon service for the publisher's domain (the 
 The footer's "Submit news" button opens a submission form (type, headline, details, town, date, up to two photos, contact info, consent). `POST /api/submit` validates it, rate-limits 5 per IP per day, ignores bots via a hidden honeypot field, and delivers it by either or both of:
 - **Redis:** stored in the `tsn:tips` list (latest 500). Read them with `GET /api/submit` and header `x-admin-key: <LISTINGS_ADMIN_KEY>`.
 - **Email (Resend):** set `RESEND_API_KEY` and `TIPS_TO_EMAIL` (optional `TIPS_FROM_EMAIL`). Photos arrive as attachments and replies go to the submitter.
-With neither configured the form says submissions aren't open yet. Edit the "Good to know" policy lines in `public/index.html` (`renderSubmit`) to match your newsroom's rules.
+With neither configured the form says submissions aren't open yet. Edit the "Good to know" policy lines in `public/assets/app.js` (`renderSubmit`) to match your newsroom's rules.
 
 
 ## Events, obituaries and banners
@@ -141,7 +151,7 @@ With neither configured the form says submissions aren't open yet. Edit the "Goo
   - Checked and left out: Fredrick & Son (Vincennes, 403 to automated requests), Harris Funeral Home Madisonville (robots.txt disallows all crawlers), Boone and Pierce (403).
   - They are kept for 21 days. The Courier & Press publishes through Legacy.com, whose terms forbid automated access, so Evansville is covered by the funeral homes above.
 - **Weather banner**: current conditions from Open-Meteo, alerts from the National Weather Service API (`api.weather.gov`), both called from the browser and credited in the banner.
-- **Breaking banner**: shows only stories the outlet itself labels breaking (see `BREAKING_RE`), for 12 hours, with the outlet name and a link.
+- **Breaking banner**: shows only stories the outlet itself labels breaking (see `BREAKING_RE`) and official alerts (`public/breaking.js`), for 3 hours, with the outlet name and a link.
 
 - **Ticketmaster events** (concerts, sports, theater within 75 miles of Evansville): set `TICKETMASTER_API_KEY` (free key from developer.ticketmaster.com) in the Vercel environment variables and redeploy. Without it the source is skipped. The key is read on the server only and never stored with the feed data or sent to the browser.
 

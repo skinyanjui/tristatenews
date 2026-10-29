@@ -13,8 +13,7 @@
 // Storage (Upstash Redis): tsn:adstat:<campaign id> hash of "<YYYY-MM-DD>|<placement>|v" and "...|c" counters (no TTL:
 // the advertiser's report, kept like the campaign record); tsn:as:rl:<hash> the per-connection daily counter.
 const crypto = require('crypto');
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const camp = require('./_campaigns.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
@@ -65,20 +64,14 @@ function csv(rec, r) {
 const pairs = a => { const o = {}; if (Array.isArray(a)) for (let i = 0; i + 1 < a.length; i += 2) o[a[i]] = a[i + 1]; else if (a && typeof a === 'object') Object.assign(o, a); return o; };
 const parse = s => { try { return s ? JSON.parse(s) : null; } catch (_) { return null; } };
 
-async function pipeline(commands) {
-  const r = await fetch(URL_.replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { authorization: 'Bearer ' + TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(commands), signal: AbortSignal.timeout(6000) });
-  if (!r.ok) throw new Error('store ' + r.status);
-  const out = await r.json();
-  if (Array.isArray(out) && out.some(x => x && x.error)) throw new Error('store command');
-  return out;
-}
+const pipeline = STORE.pipeline;
 
 async function handler(req, res) {
   const json = (c, o) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); return res.status(c).send(JSON.stringify(o)); };
   const none = () => { res.setHeader('Cache-Control', 'no-store'); return res.status(204).end(); };
   const now = Date.now();
   if (req.method === 'POST') {
-    if (!URL_ || !TOKEN || !camp.enabled() || isBot(req.headers['user-agent'])) return none();
+    if (!STORE.stored() || !camp.enabled() || isBot(req.headers['user-agent'])) return none();
     const ev = parseEvent(req.body);
     if (!ev) return none();
     try {
@@ -92,7 +85,7 @@ async function handler(req, res) {
     } catch (_) { /* a lost count is better than an error on the reader's page */ }
     return none();
   }
-  if (req.method !== 'GET' || !URL_ || !TOKEN || !ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return json(404, { error: 'not found' });
+  if (req.method !== 'GET' || !STORE.stored() || !ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return json(404, { error: 'not found' });
   const cid = String((req.query && req.query.cid) || '');
   if (!camp.ID_RE.test(cid)) return json(400, { error: 'Pick a campaign.' });
   try {

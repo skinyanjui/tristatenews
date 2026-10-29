@@ -28,7 +28,7 @@ function store() {
     if (op === 'MGET') return { result: a.map(k => (kv.has(k) ? kv.get(k) : null)) };
     if (op === 'GET') return { result: kv.has(a[0]) ? kv.get(a[0]) : null };
     if (op === 'SET') { const [k, v, ...o] = a; if (o.includes('NX') && kv.has(k)) return { result: null }; kv.set(k, v); const ex = o.indexOf('EX'); if (ex >= 0) ttl.set(k, +o[ex + 1]); return { result: 'OK' }; }
-    return { error: 'unsupported ' + op };
+    return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','ZREMRANGEBYSCORE','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'unsupported ' + op });
   };
   return { kv, ttl, log, handle: body => JSON.parse(body).map(run) };
 }

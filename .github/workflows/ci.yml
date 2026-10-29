@@ -1,0 +1,45 @@
+# Lint and the full test suite on every pull request and every push to main. No secrets and no store: the store
+# variables are blanked, so nothing here can reach production Redis, Stripe or Resend. The check is named "CI / test".
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      UPSTASH_REDIS_REST_URL: ''
+      UPSTASH_REDIS_REST_TOKEN: ''
+      KV_REST_API_URL: ''
+      KV_REST_API_TOKEN: ''
+      KV_REST_API_READ_ONLY_TOKEN: ''
+      KV_URL: ''
+      REDIS_URL: ''
+      EXTRA_FEEDS: ''
+      STRIPE_SECRET_KEY: ''
+      STRIPE_WEBHOOK_SECRET: ''
+      RESEND_API_KEY: ''
+      CRON_SECRET: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm install --no-audit --no-fund --no-package-lock
+      - name: Lint
+        run: npm run lint
+      - name: Generated files are current
+        run: |
+          node scripts/build-assets.js
+          git diff --exit-code -- data/pages/index.html public/assets || { echo "::error::Run node scripts/build-assets.js and commit the result."; exit 1; }
+      - name: Tests
+        run: npm test

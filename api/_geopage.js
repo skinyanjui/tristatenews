@@ -46,7 +46,7 @@ function meta(scope, gate) {
     : 'Local news from ' + where + ', gathered from local newsrooms and official sources in the region.';
   return { title, desc, url: ORIGIN + S.pathOf(scope), index: indexable(scope, gate) };
 }
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const { esc } = require('./_html.js');
 function page(scope, gate) {
   if (html === null) html = fs.readFileSync(INDEX, 'utf8');
   const m = meta(scope, gate);

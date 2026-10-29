@@ -2,6 +2,9 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /api/
+# the read-only feeds the pages draw from, so crawlers can render the tabs (every other /api/ path stays blocked)
+Allow: /api/news
+Allow: /api/listings
 
 Sitemap: https://tristatenewss.vercel.app/sitemap.xml
 Sitemap: https://tristatenewss.vercel.app/sitemap-regions.xml

@@ -170,4 +170,4 @@ function pathOf(scope) {
   return null;
 }
 
-module.exports = { overrideKey, locOf, homeOf, BY_ID, BATCH, parse, view, inScope, depth, fromPath, pathOf, COUNTIES, CORE, STATES, SLUGS, DEPTH_MIN, DEPTH_DAYS, MAX_COUNTIES, MIN_CONF };
+module.exports = { overrideKey, locOf, homeOf, BY_ID, BATCH, parse, view, depth, fromPath, pathOf, COUNTIES, CORE, STATES, SLUGS, DEPTH_MIN, DEPTH_DAYS };

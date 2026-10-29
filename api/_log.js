@@ -17,4 +17,4 @@ function fail(where, e, extra) {
     console.error('[tsn] ' + where + ' failed: ' + name + msg + (bits.length ? ' (' + bits.join(' ') + ')' : ''));
   } catch (_) { /* logging must never throw */ }
 }
-module.exports = { fail, scrub };
+module.exports = { fail };

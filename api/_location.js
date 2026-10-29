@@ -30,7 +30,6 @@ const COUNTY = new Map(GEO.counties.map(c => [c.id, c]));
 const FILE_STATE = { 'indiana.json': 'IN', 'kentucky.json': 'KY', 'illinois.json': 'IL' };
 const STRICT_STATE = { ind: 'IN', ky: 'KY', ill: 'IL' };
 const STATE_WORDS = { IN: 'indiana', KY: 'kentucky', IL: 'illinois' }; // the covered states (southeast Missouri was removed in ship62)
-const AREA_STATES = new Set(Object.keys(STATE_WORDS));
 const REGIONAL = 5; // this many counties or more: a regional story, no primary county
 
 // Base confidence per (alias type, locate() method). Text evidence only; see the header for the meaning.
@@ -244,4 +243,4 @@ function accuracy(rows, labels) {
 }
 const VERSION = 1;
 
-module.exports = { classify, sourceCoverage, shadow, summarize, accuracy, levelOf, splitDateline, qualifyParens, SHADOW_KEY, SHADOW_TTL, VERSION, AREA_STATES };
+module.exports = { classify, sourceCoverage, shadow, summarize, accuracy, levelOf, SHADOW_KEY, SHADOW_TTL, VERSION };

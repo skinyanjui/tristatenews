@@ -67,9 +67,9 @@ async function handler(req, res) {
     try { out = withStories(shell, r, await storeView(), Date.now()); } catch (e) { console.error('tab page stories failed', e && e.message); out = null; }
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  // With stories: an hour of stale-while-revalidate (as /api/news), so a cached page is never far behind the feed.
+  // With stories: the same short cache as /api/news (NEWS_CACHE), so the embedded stories are at most ~2 minutes behind.
   // Embedding tab without stories (no fresh snapshot yet): a short cache, so the stories show up soon.
-  res.setHeader('Cache-Control', out ? 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600'
+  res.setHeader('Cache-Control', out ? require('./news.js').NEWS_CACHE
     : EMBED[r.cat] ? 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
     : 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400');
   if (!r.index) res.setHeader('X-Robots-Tag', 'noindex');

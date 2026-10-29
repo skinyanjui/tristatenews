@@ -86,6 +86,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
     <section><h2 id="cuh">Creative review log</h2><div id="cru"></div></section>
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
     <section><h2 id="orh">Orders</h2><div id="ors"></div></section>
+    <section><h2 id="rvh">Reported posts</h2><p class="m">Posts reported by 3 readers are hidden from the boards until you restore or remove them. Featured (paid) posts stay up and are only listed here.</p><div id="rv"></div></section>
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
     <section id="cov"><div class="row"><h2 id="cvh">Sources &amp; Coverage</h2><button class="ghost" id="cvr" type="button">Reload</button></div>
       <p class="m">Read-only health and coverage from the stored feed state, plus the classifier review queue. A county override is written to the audit log and takes effect at the next refresh. No reader data is shown here.</p>
@@ -402,13 +403,33 @@ details summary { min-height:40px; display:flex; align-items:center; }
     d.audit.forEach(function (x) { line($('cva'), x.action.replace(/_/g, ' ') + ' · ' + (x.title || x.key), new Date(x.at).toLocaleString() + ' · ' + (x.before ? (x.before.join(', ') || 'no county') : '—') + ' → ' + (x.after ? (x.after.join(', ') || 'no county') : 'cleared') + ' · ' + x.by + (x.note ? ' · ' + x.note : '')); });
   }
   function loadCoverage() { return get('/api/coverage').then(function (d) { cov = d; drawCoverage(); return d; }, function () { cov = null; drawCoverage(); return null; }); }
+  // Reported posts (GET /api/listings?review=1): restore puts a post back; remove deletes it (and records the order
+  // when it was Featured), the same as the admin DELETE.
+  function loadReports() {
+    return get('/api/listings?review=1').then(drawReports).catch(function () { drawReports(null); });
+  }
+  function drawReports(d) {
+    var items = d ? d.items : []; $('rvh').textContent = 'Reported posts (' + items.length + ')'; $('rv').textContent = '';
+    if (!items.length) return empty($('rv'), d ? 'Nothing reported.' : 'Not available.');
+    items.forEach(function (x) {
+      var box = mk('div');
+      line(box, (x.title || x.id) + (x.featured ? ' · Featured' : '') + (x.hidden ? ' · hidden' : ' · still shown'), ct(x.reportedAt) + ' · ' + x.reports + ' reports · ' + [x.business, x.town, x.contact].filter(Boolean).join(' · '), x.desc || '');
+      var rs = mk('button', { type: 'button', class: 'ghost' }, 'Restore'), rm = mk('button', { type: 'button', class: 'ghost' }, 'Remove');
+      rs.addEventListener('click', function () { rs.disabled = true; post('/api/listings', { action: 'restore', id: x.id }).then(loadReports).catch(function () { rs.disabled = false; }); });
+      rm.addEventListener('click', function () {
+        if (!confirm('Remove this post for good?')) return; rm.disabled = true;
+        fetch('/api/listings?id=' + encodeURIComponent(x.id), { method: 'DELETE', headers: { 'x-admin-key': key } }).then(function (r) { if (!r.ok) throw 0; return loadReports(); }).catch(function () { rm.disabled = false; });
+      });
+      box.appendChild(rs); box.appendChild(rm); $('rv').appendChild(box);
+    });
+  }
   $('cvr').addEventListener('click', loadCoverage);
   $('cvsf').addEventListener('change', drawCoverage);
   $('cvcf').addEventListener('change', drawCoverage);
   $('key').addEventListener('submit', function (e) {
     e.preventDefault(); key = $('k').value.trim(); $('err').hidden = true;
     Promise.all([get('/api/subscribe').catch(function () { return null; }), get('/api/advertise').catch(function () { return null; }), get('/api/submit').catch(function () { return null; }), get('/api/orders').catch(function () { return null; }), loadCoverage()]).then(function (r) {
-      loadCreatives(); loadCampaigns(); loadPackages();
+      loadCreatives(); loadCampaigns(); loadPackages(); loadReports();
       if (!r[0] && !r[1] && !r[2] && !r[3] && !r[4]) { $('err').textContent = 'Wrong key, or nothing is set up yet.'; $('err').hidden = false; $('out').hidden = true; return; }
       $('out').hidden = false;
       drawSubscribers(r[0]);

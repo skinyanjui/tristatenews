@@ -1,3 +1,7 @@
+/* Geist 1.8.2 (SIL OFL 1.1, assets/fonts/OFL.txt), self-hosted: Latin subset; the sans file is the variable font
+   limited to weights 400-600. Cached for a year; a new version gets a new file name. */
+@font-face { font-family:'Geist'; font-style:normal; font-weight:400 600; font-display:swap; src:url('/assets/fonts/geist-1.8.2-latin.woff2') format('woff2'); }
+@font-face { font-family:'Geist Mono'; font-style:normal; font-weight:500; font-display:swap; src:url('/assets/fonts/geist-mono-1.8.2-500-latin.woff2') format('woff2'); }
 :root {
   --ctl: 32px; /* control height: no button is taller than the weather button in the nav */
   --background:#fff; --background-subtle:#fafafa; --foreground:#171717;
@@ -205,7 +209,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .q { width:100%; min-height:32px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; }
 .q::placeholder { color:var(--gray-600); }
 .nav-tabs { max-width:960px; margin:0 auto; padding:0 16px; }
-.tabs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin-left:-8px; } /* -8px = the tab's own padding, so the first dot lines up with the cards */
+.tabs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin-left:-8px; min-height:calc(var(--ctl) + 2px); } /* room for the tab row before it is drawn (it waits for the stories), so nothing below jumps (ship68: CLS 0.23 on /jobs) */ /* -8px = the tab's own padding, so the first dot lines up with the cards */
 .tabs::-webkit-scrollbar { display:none; }
 .tab { flex:none; min-height:var(--ctl); padding:0 12px; font-weight:500; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:8px; }
 .tab:hover { color:var(--foreground); }

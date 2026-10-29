@@ -200,7 +200,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://api.weather.gov; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://api.weather.gov; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     },
@@ -219,6 +219,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(breaking.js|routes.js|featured.js|adslots.js|adsizes.js|flowers.js|sponsors.json|manifest.webmanifest|legal.css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=86400"
         }
       ]
     }

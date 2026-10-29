@@ -1,0 +1,3 @@
+/* Geist 1.8.2 (SIL OFL 1.1, OFL.txt), self-hosted Latin subset for the standalone pages (legal, newsletter,
+   unsubscribe, 404). The home page has the same rules at the top of assets/app.css. */
+@font-face { font-family:'Geist'; font-style:normal; font-weight:400 600; font-display:swap; src:url('/assets/fonts/geist-1.8.2-latin.woff2') format('woff2'); }

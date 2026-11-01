@@ -269,14 +269,14 @@ test('/api/alerts: public answer drops error text; the forced (secret) answer ke
     await alerts({ query: { refresh: '1' }, headers: { authorization: 'Bearer cron-test' } }, forced);
     const f = JSON.parse(forced.body);
     assert.equal(f.ok, false);
-    assert.ok(f.sources.length > 5 && f.sources.every(s => s.error === 'HTTP 500'), 'forced answer keeps errors');
+    assert.ok(f.sources.length > 5 && f.sources.every(s => /^HTTP 500( \(after 3 tries\))?$/.test(s.error)), 'forced answer keeps errors');
     const pub = resObj();
     await alerts({ query: {}, headers: {} }, pub);
     const p = JSON.parse(pub.body);
     assert.equal(p.sources.length, f.sources.length);
     for (const s of p.sources) { assert.ok(!('error' in s), s.id); assert.equal(s.ok, false); assert.ok('count' in s && 'id' in s); }
     assert.ok(!/HTTP 500|"error"/.test(pub.body));
-    assert.ok(JSON.parse(st.kv.get('tsn:alerts:snapshot')).sources.every(s => s.error === 'HTTP 500'), 'stored snapshot unchanged');
+    assert.ok(JSON.parse(st.kv.get('tsn:alerts:snapshot')).sources.every(s => /^HTTP 500( \(after 3 tries\))?$/.test(s.error)), 'stored snapshot unchanged');
     // without the secret, ?refresh=1 is just a public read
     const fake = resObj();
     await alerts({ query: { refresh: '1' }, headers: { authorization: 'Bearer wrong' } }, fake);

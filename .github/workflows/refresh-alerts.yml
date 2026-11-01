@@ -34,8 +34,12 @@ jobs:
           if [ "$code" != "200" ]; then echo "::error::/api/alerts answered HTTP $code"; cat body.json || true; exit 1; fi
           { echo "### Official alerts: $(jq '.alerts | length' body.json) active"; echo; jq -r '.alerts[]? | "- tier \(.tier) \(.label): \(.title)"' body.json; } >> "$GITHUB_STEP_SUMMARY"
           jq -r '.sources[]? | select(.ok == false) | "::warning title=Alert feed failing::\(.id): \(.error)"' body.json
-          # The NWS feed is the one that matters most: fail the run if it did not answer.
-          if [ "$(jq -r '[.sources[]? | select(.id == "nws" and .ok == false)] | length' body.json)" != "0" ]; then echo "::error::NWS alerts feed failed"; exit 1; fi
+          # The NWS feed is the one that matters most. /api/alerts already retries it (3 tries with backoff), and "fails"
+          # counts its failed refreshes in a row. One failed refresh is a warning; two or more in a row (about 10 minutes
+          # down) fail the run, so a real NWS outage or a block still opens the issue.
+          nws_fails=$(jq -r '[.sources[]? | select(.id == "nws" and .ok == false) | (.fails // 2)] | max // 0' body.json)
+          if [ "$nws_fails" -ge 2 ]; then echo "::error::NWS alerts feed failed $nws_fails refreshes in a row"; exit 1; fi
+          if [ "$nws_fails" -ge 1 ]; then echo "::warning::NWS alerts feed failed once; the next run decides"; fi
       - name: Open or update the failure issue
         if: failure() && github.event_name == 'schedule'
         env: { GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' }

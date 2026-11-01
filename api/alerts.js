@@ -21,8 +21,18 @@ const K = {
   tiers: 'tsn:alerts:tiers',            // JSON tier config {version, nwsOverrides}; no TTL
 };
 const FRESH_MS = 60e3;
-// NWS asks for a User-Agent that identifies the app and a contact. Set NWS_USER_AGENT in Vercel to add an email.
-const UA = process.env.NWS_USER_AGENT || '(tristatenewss.vercel.app, tristatenews-alerts)';
+// api.weather.gov answers 403 to a missing or generic User-Agent: it wants the app and a contact (a site and an email).
+// The old default, '(tristatenewss.vercel.app, tristatenews-alerts)', had no email, and the NWS started refusing it
+// (Oct 31: HTTP 403 on the "nws" feed). NWS_USER_AGENT overrides this, but only if it names an email contact too.
+const DEFAULT_UA = 'TriStateNews (https://tristatenewss.vercel.app; unclesam@mail.grokbot.com)';
+const userAgent = v => (/\S+@\S+\.\S+/.test(String(v || '')) ? String(v).trim() : DEFAULT_UA);
+const UA = userAgent(process.env.NWS_USER_AGENT);
+// Retries for the NWS feed: a 403, 429 or 5xx answer, a timeout or a network error is tried again after a short wait
+// (Retry-After when the server sends one, at most 2 s). Per-try timeouts keep the worst case (~18 s) inside the
+// function's 20 s limit. Other feeds get one try, as before.
+const NWS_TRY = { timeouts: [6000, 4000, 4000], waits: [500, 1500] };
+const retryable = status => status === 403 || status === 429 || status >= 500;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // NWS forecast zones and counties for the metro (looked up with api.weather.gov/points on 2026-10-17; all NWS Paducah).
 // Vanderburgh INZ086/INC163, Warrick INZ087/INC173, Posey INZ085/INC129, Gibson INZ081/INC051,
@@ -72,10 +82,25 @@ function rssItems(xml) {
   return out;
 }
 
-async function get(url, accept) {
-  const r = await fetch(url, { headers: { 'user-agent': UA, accept: accept || '*/*' }, signal: AbortSignal.timeout(9000) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r;
+async function get(url, accept, tries) {
+  const timeouts = (tries && tries.timeouts) || [9000], waits = (tries && tries.waits) || [];
+  let err = null;
+  for (let i = 0; i < timeouts.length; i++) {
+    let wait = waits[i] || 0;
+    try {
+      const r = await fetch(url, { headers: { 'user-agent': UA, accept: accept || '*/*' }, signal: AbortSignal.timeout(timeouts[i]) });
+      if (r.ok) return r;
+      err = new Error('HTTP ' + r.status + (i ? ' (after ' + (i + 1) + ' tries)' : ''));
+      if (!retryable(r.status)) throw Object.assign(err, { final: true });
+      const ra = Number(r.headers && r.headers.get && r.headers.get('retry-after'));
+      if (ra > 0) wait = Math.min(ra * 1000, 2000);
+    } catch (e) {
+      if (e && e.final) throw e;
+      if (e !== err) err = new Error(String(e && e.message || e) + (i ? ' (after ' + (i + 1) + ' tries)' : ''));
+    }
+    if (i < timeouts.length - 1) await sleep(wait);
+  }
+  throw err;
 }
 
 function inBox(geom) {
@@ -88,7 +113,7 @@ const MAJOR_ROAD = /^(I[- ]?69|US[- ]?41)\b/i;
 // One feed -> candidates (shape documented in public/breaking.js).
 async function loadFeed(f, now, prev) {
   if (f.type === 'nws') {
-    const g = await (await get(f.url, 'application/geo+json')).json();
+    const g = await (await get(f.url, 'application/geo+json', NWS_TRY)).json();
     return (g.features || []).map(x => B.fromNws(x.properties)).filter(Boolean);
   }
   if (f.type === 'rss') {
@@ -145,13 +170,13 @@ async function refresh(prev, now, disabled, nwsOverrides) {
       const items = await loadFeed(f, now, p);
       states[f.id] = { items, lastTry: new Date(now).toISOString(), lastOk: new Date(now).toISOString(), fails: 0, error: null };
       if (items.seen) states[f.id].seen = items.seen;
-      report.push({ id: f.id, ok: true, count: items.length, error: null, ms: Date.now() - t0 });
+      report.push({ id: f.id, ok: true, count: items.length, error: null, fails: 0, ms: Date.now() - t0 });
     } catch (e) {
       const err = String(e && e.message || e).slice(0, 120);
       // keep the last good items for a failed feed, but only those still active
       states[f.id] = { items: ((p && p.items) || []).filter(c => B.isActive(c, now)), lastTry: new Date(now).toISOString(), lastOk: p && p.lastOk || null, fails: ((p && p.fails) || 0) + 1, error: err };
       if (p && p.seen) states[f.id].seen = p.seen;
-      report.push({ id: f.id, ok: false, count: states[f.id].items.length, error: err, ms: Date.now() - t0 });
+      report.push({ id: f.id, ok: false, count: states[f.id].items.length, error: err, fails: states[f.id].fails, ms: Date.now() - t0 });
     }
   }));
   let alerts = [].concat(...Object.values(states).map(s => s.items || []));
@@ -217,3 +242,7 @@ module.exports.loadFeed = loadFeed;
 module.exports.rssItems = rssItems;
 module.exports.refresh = refresh;
 module.exports.publicAlerts = publicAlerts;
+module.exports.get = get;
+module.exports.userAgent = userAgent;
+module.exports.UA = UA;
+module.exports.NWS_TRY = NWS_TRY;

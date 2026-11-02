@@ -50,7 +50,7 @@ test('server rows: label, headline, preview, then source; sized lazy thumbnail o
 
 test('app.js builds the same order and sizes (non-Breaking rows), keeping the Breaking card as it was', () => {
   const app = read('public/assets/app.js');
-  assert.match(app, /var kick = !big && RT && RT\.sectionLabel \? RT\.sectionLabel\(kd, it\.cat\) : '';\s*if \(kick\) body\.appendChild\(el\('span', 'kicker', kick\)\);\s*var h2 = el\('h2', null, hTitle\);/);
+  assert.match(app, /var kick = !big && RT && RT\.sectionLabel \? RT\.sectionLabel\(kd, it\.cat\) : '';[\s\S]{0,260}?kick = DD\.part\(kick, tabL\);[^\n]*\s*if \(kick\) body\.appendChild\(el\('span', 'kicker', kick\)\);\s*var h2 = el\('h2', null, hTitle\);/);
   assert.match(app, /if \(!big\) \{ im\.width = 112; im\.height = 112; \}/);
   assert.match(app, /if \(big\) body\.insertBefore\(src, body\.firstChild\);\s*else body\.appendChild\(src\);/);
   assert.match(app, /var h2 = el\('h2', null, hTitle\); if \(!big\) h2\.title = hTitle;/);
@@ -75,8 +75,8 @@ test('CSS: one shared row (ship75: every list); square rounded thumbnail; divide
   assert.match(blk, /--meta-h:40px;/);
   assert.match(blk, /grid-template-rows:auto; row-gap:0;/, 'one grid row, so the text column reaches the bottom at every width');
   assert.match(blk, /\.src \{ box-sizing:border-box; height:var\(--meta-h\); min-height:var\(--meta-h\); margin-top:auto; padding-right:calc\(var\(--nact, 2\) \* \(var\(--ico\) \+ var\(--act-gap\)\)\); display:flex; align-items:center; flex-wrap:nowrap; min-width:0; overflow:hidden; \}/);
-  assert.match(blk, /\.cf \{ position:absolute; right:0; bottom:12px;[^}]*display:flex; align-items:center;[^}]*height:var\(--meta-h\);/);
-  assert.match(blk, /padding:16px 0 12px;/, 'the meta row and the buttons share the same bottom edge (12px)');
+  assert.match(blk, /\.cf \{ position:absolute; right:0; bottom:var\(--sp-3\);[^}]*display:flex; align-items:center;[^}]*height:var\(--meta-h\);/);
+  assert.match(blk, /padding:var\(--sp-4\) 0 var\(--sp-3\);/, 'the meta row and the buttons share the same bottom edge (--sp-3, ship80 tokens)');
   assert.match(blk, /\.src b \{ flex:0 1000 auto; min-width:min\(5\.5em, 40%\);/, 'the source name truncates first');
   assert.match(blk, /\.src b \{[^}]*text-overflow:ellipsis;/);
   assert.match(blk, /\.src \.when \{ flex:none; margin-left:auto;[^}]*white-space:nowrap; \}/);

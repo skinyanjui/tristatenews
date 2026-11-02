@@ -10,7 +10,7 @@ const fn = (name) => { const i = js.indexOf('function ' + name + '('); assert.ok
 
 test('one shared scroller: popular and each day use evxScroller with evxCard, arrows and keyboard access', () => {
   const s = fn('evxScroller');
-  for (const k of ["el('div', 'evx-rail')", "el('div', 'evx-arrows')", 'rail.tabIndex = 0', "rail.appendChild(evxCard(it, b))", 'rail.scrollBy(', "'Scroll back'", "'Scroll forward'"]) assert.ok(s.includes(k), k);
+  for (const k of ["el('div', 'evx-rail')", "el('div', 'evx-arrows')", 'rail.tabIndex = 0', "rail.appendChild(evxCard(it, b, cls === 'evx-day'))", 'rail.scrollBy(', "'Scroll back'", "'Scroll forward'"]) assert.ok(s.includes(k), k);
   const r = fn('renderEvents');
   assert.strictEqual((r.match(/evxScroller\(/g) || []).length, 2, 'popular + days');
   assert.ok(r.includes("evxScroller('evx-sec evx-pop'"));

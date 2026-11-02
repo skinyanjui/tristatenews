@@ -591,10 +591,23 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evc.evc { width:min(256px, 78vw); display:flex; flex-direction:column; --ico:24px; --row-ink:var(--foreground); --row-wt:500; }
 .evc.evc > .evc-body { flex:1 1 auto; display:flex; flex-direction:column; gap:4px; padding:10px 12px 10px; }
 .evc.evc .evt-title { -webkit-line-clamp:2; line-clamp:2; min-height:40px; }
-.evc.evc > .evc-body > .evc-foot { margin-top:auto; padding-top:8px; height:auto; min-height:0; display:flex; align-items:center; flex-wrap:nowrap; gap:10px; }
-.evc.evc .evc-time { flex:1 1 auto; text-align:left; display:flex; align-items:center; min-width:0; font-size:13px; line-height:24px; color:var(--row-ink); font-weight:var(--row-wt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.evc.evc > .evc-body > .evc-foot { margin-top:auto; align-self:stretch; justify-content:flex-start; padding-top:8px; height:auto; min-height:0; display:flex; align-items:center; flex-wrap:nowrap; gap:10px; }
+.evc.evc .evc-time { flex:1 1 auto; text-align:left; display:block; min-width:0; font-size:13px; line-height:24px; color:var(--row-ink); font-weight:var(--row-wt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .evc.evc .evc-time .ev-live { font-weight:600; }
 .evc.evc .evc-foot .acts { flex:none; margin:0; gap:10px; flex-wrap:nowrap; }
+/* ship79: the time sits flush left on the card's content edge; heart, share, Report and Tickets/Details group on the right */
+.evc.evc .evc-foot > .evc-time { order:0; flex:1 1 auto; margin:0; padding:0; text-align:left; }
+.evc.evc .evc-foot > .evc-right { order:1; flex:none; margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
+.evc.evc .evc-foot button.ev-go { font-family:inherit; cursor:pointer; }
+.evc.evc .evc-foot .acts .cl-ico svg { width:16px; height:16px; }
+.evc.evc.evc-solo { width:auto; min-width:0; }
+.ev-grid:has(> .evc) { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(240px, 100%), 1fr)); align-items:stretch; }
+.evx-dlg { width:min(480px, calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow:auto; box-sizing:border-box; padding:20px; border:1px solid var(--gray-200); border-radius:16px; background:var(--background); color:var(--foreground); }
+.evx-dlg::backdrop { background:rgba(0,0,0,.45); }
+.evx-dlg h3 { margin:6px 0 8px; font-size:20px; line-height:26px; font-weight:600; overflow-wrap:anywhere; }
+.evx-dlg p { margin:0 0 8px; }
+.evx-dlg-desc { white-space:pre-line; overflow-wrap:anywhere; }
+.evx-dlg-x { display:block; margin:12px 0 0 auto; min-height:40px; padding:0 16px; border:1px solid var(--gray-200); border-radius:9999px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
 .evc.evc .evc-foot .acts :is(.like, .share, .cl-ico) { position:relative; inset:auto; transform:none; margin:0; flex:none; box-sizing:border-box; width:var(--ico); min-width:var(--ico); height:var(--ico); min-height:0; padding:0; gap:0; color:var(--row-ink); }
 .evc.evc .evc-foot .acts .like[aria-pressed="true"] { color:var(--red); }
 .evc.evc .evc-foot .acts .like span { display:none; }

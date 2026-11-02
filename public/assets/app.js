@@ -946,6 +946,12 @@
     if (/\b(food|taste|wine|beer|brew|bbq|bar-b-q|dinner|festival)\b/.test(t)) return 'Food & drink';
     return 'Community';
   }
+  // ship76: events leave 58 minutes after they start (or at their end, when they have one) and say "Happening now" from
+  // their start (public/eventtime.js). Checked on every draw, so a cached page never shows a stale event.
+  var ET = window.TSNEventTime || null;
+  function evStatus(x) { return ET ? ET.status({ start: x.start, date: x.date, time: x.time, end: x.end }, Date.now()) : { hide: false, live: false }; }
+  function evShown(x) { return !evStatus(x).hide; }
+  function postedEvents() { return boards.event.items.filter(evShown); }
   function feedEvents() {
     var today = inDays(0);
     return state.items.filter(function (i) { return kindOf(i.sourceId) === 'events' && i.published; }).map(function (i) {
@@ -953,7 +959,7 @@
       var date = d.toLocaleDateString('en-CA', { timeZone: z });
       var hm = d.toLocaleTimeString('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false }).replace(/^24/, '00');
       return { id: 'feed-' + i.id, title: i.title, date: date, time: (hm === '00:00' || hm < '06:00') ? '' : hm, place: i.venue || '', town: i.area || '', start: i.published, image: i.image || '', fromPrice: i.fromPrice || '', category: evCat(i), desc: (i.summary || '').replace(/\s*…\s*more:.*$/, '…'), contact: '', link: i.link, feed: true, source: i.source, logo: (state.sources.filter(function (x) { return x.id === i.sourceId; })[0] || {}).logo || '' };
-    }).filter(function (x) { return x.date >= today; });
+    }).filter(function (x) { return x.date >= today && evShown(x); });
   }
   function townOf(x) { return String(x.town || '').split(',')[0].trim(); }
   function weekendRange() {
@@ -973,7 +979,7 @@
     return true;
   }
   function shownItems(b, kind, ignoreQ) {
-    var real = b.items.slice();
+    var real = kind === 'event' ? postedEvents() : b.items.slice();
     if (kind === 'event') real = real.concat(feedEvents());
     var all = real;
     if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
@@ -1403,7 +1409,7 @@
   }
   // The heading of every board is its town picker.
   function townPicker(b, kind, title) {
-    var real = b.items.slice(); if (kind === 'event') real = real.concat(feedEvents());
+    var real = kind === 'event' ? postedEvents().concat(feedEvents()) : b.items.slice();
     var pool = real, counts = {};
     pool.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
     if (b.town && !counts[b.town]) counts[b.town] = 0;
@@ -1538,7 +1544,8 @@
     body.appendChild(top);
     var h = evxTitle(it, 'h4'); h.className = 'evt-title'; body.appendChild(h);
     var day = (rel && evxRel(it.date)) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' });
-    body.appendChild(el('div', 'evt-when', [day, evxTime(it)].filter(Boolean).join(' \u00B7 ')));
+    if (evStatus(it).live) { var lv = el('div', 'evt-when'); lv.appendChild(liveTag()); body.appendChild(lv); }
+    else body.appendChild(el('div', 'evt-when', [day, evxTime(it)].filter(Boolean).join(' \u00B7 ')));
     var via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
     var wl = [evxWhere(it), via].filter(Boolean).join(' \u00B7 '), w = el('div', 'evt-where', wl); if (wl) w.title = wl;
     body.appendChild(w);
@@ -1549,14 +1556,16 @@
   // One event in the date-grouped list (and in search): the shared row. Picture only when the event has one; the
   // label carries the date, time and category; the preview the place and description; the bottom row the source
   // (or the poster's contact), then Tickets/Details (+ "From" price) and the heart and share.
+  function liveTag() { var t = el('span', 'ev-live', ET ? ET.LABEL : 'Happening now'); return t; }
   function evxRow(it, b, inDay) {
     var day = inDay ? '' : evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' }); // under a day heading the date would repeat it
     var feed = it.feed && it.link, ac = feed ? { acts: evxReact(it), feature: null } : actions(it, 'event', b);
     var right = [];
     if (feed) { if (it.fromPrice) { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); right.push(fp); } var go = evxGo(it); go.classList.add('ad-cta'); right.push(go); }
-    var where = evxWhere(it);
+    var where = evxWhere(it), live = evStatus(it).live, kk = kick(it, [live ? '' : [day, evxTime(it)].filter(Boolean).join(' '), it.category]), kn = null;
+    if (live) { kn = el('span'); kn.appendChild(liveTag()); if (kk) kn.appendChild(document.createTextNode(' \u00B7 ' + kk)); } // "Happening now" in place of the date and time
     return UI.row({ cls: 'row-event' + (it.featured ? ' row-feat' : ''), sec: 'events', pic: photoSrc(it) || it.image || '', picRef: !!it.image,
-      kicker: kick(it, [[day, evxTime(it)].filter(Boolean).join(' '), it.category]), title: it.title, titleHref: it.link,
+      kicker: kn || kk, title: it.title, titleHref: it.link,
       text: [where, it.desc].filter(Boolean).join(' \u2014 '), avatar: it.feed ? bizAvatar(it.source || '', it.logo) : null, name: it.feed ? it.source : '',
       left: [it.feed ? null : contactNode(it.contact)], right: right, acts: ac.acts, extra: [ac.feature] });
   }
@@ -1609,7 +1618,7 @@
   }
   function evxHeader(b) {
     var head = el('div', 'evx-head'), ht = el('div', 'evx-ht');
-    var real = b.items.concat(feedEvents()), counts = {};
+    var real = postedEvents().concat(feedEvents()), counts = {};
     real.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
     if (b.town && !counts[b.town]) counts[b.town] = 0;
     var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
@@ -1686,7 +1695,7 @@
         sec.appendChild(rail); root.appendChild(sec);
       }
     }
-    if (!items.length) { root.appendChild(evxEmpty(b, b.items.concat(feedEvents()))); return root; }
+    if (!items.length) { root.appendChild(evxEmpty(b, postedEvents().concat(feedEvents()))); return root; }
     var rows = items.slice().sort(function (x, y) { var p = x.date + (x.time || '99'), q = y.date + (y.time || '99'); return p < q ? -1 : p > q ? 1 : (y.featured ? 1 : 0) - (x.featured ? 1 : 0); });
     var lim = b.lim || EVX_PAGE, shown = rows.slice(0, lim), groups = [], byDay = {};
     shown.forEach(function (it) { if (!byDay[it.date]) { byDay[it.date] = []; groups.push(it.date); } byDay[it.date].push(it); });
@@ -2048,7 +2057,7 @@
   function corpus() {
     var docs = [];
     state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
-    boards.event.items.concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
+    postedEvents().concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
     boards.job.items.forEach(function (x) { docs.push(getDoc('jobs', x)); });
     boards.obit.items.forEach(function (x) { docs.push(getDoc('obits', x)); });
     boards.item.items.forEach(function (x) { docs.push(getDoc('classifieds', x)); });
@@ -2513,6 +2522,22 @@
   });
   // keep "x min ago" honest
   setInterval(function () { if (state.items.length && !document.hidden) render(); }, 5 * 60 * 1000);
+  // ship76: an open Events tab (or search) redraws when an event starts ("Happening now") or passes its 58 minutes,
+  // checked every 30 seconds; nothing redraws while nothing changed.
+  var evSigLast = '';
+  function evSig() {
+    var n = 0, l = 0;
+    if (!ET) return '';
+    boards.event.items.forEach(function (x) { var st = evStatus(x); if (st.hide) n++; if (st.live) l++; });
+    state.items.forEach(function (i) { if (kindOf(i.sourceId) !== 'events' || !i.published) return; var st = ET.status({ start: i.published }, Date.now()); if (st.hide) n++; if (st.live) l++; });
+    return n + ':' + l;
+  }
+  setInterval(function () {
+    if (document.hidden) return;
+    var sg = evSig(); if (sg === evSigLast) return;
+    evSigLast = sg;
+    if (state.cat === 'events' || state.q.trim()) render();
+  }, 30 * 1000);
 
   // Official alerts for the Breaking slot. A failed call keeps the last list (each alert still expires on its own
   // end time), so an outage at /api/alerts or the NWS just falls back to the regular Breaking behavior.

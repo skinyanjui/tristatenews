@@ -693,6 +693,10 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .cl-adult .cl-check input { flex:none; margin-top:-2px; }
 .cl-adult .cl-check a { text-decoration:underline; text-underline-offset:2px; }
 .cl-note a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+/* ship76: "Happening now" on an event that has started, in place of its date and time (row label and carousel) */
+.ev-live { display:inline-flex; align-items:center; gap:6px; font-weight:700; color:var(--red); white-space:nowrap; }
+.ev-live::before { content:""; width:8px; height:8px; flex:none; border-radius:9999px; background:currentColor; }
+
 /* ---------- ship74/ship75: THE shared row (UI.row in app.js; api/_cards.js) for every card list ----------
    Every rule starts with article.card.row.row:not(.breaking):has(> .ca) (one selector, specific enough to win over the older per-card rules).
    One story per row at every width: a small rounded square picture on the left only when the story has one (Police &
@@ -762,7 +766,8 @@ article.card.row.row:not(.breaking):has(> .ca) .src > :is(a, button, .ob-acts, .
 article.card.row.row:not(.breaking):has(> .ca) .kicker { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
 article.card.row.row:not(.breaking):has(> .ca) .src :is(.cl-contact, .cl-price, .rt, .deal-code, .evr-from) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
 article.card.row.row:not(.breaking):has(> .ca) .src .cl-price { flex:none; font-weight:600; color:var(--foreground); }
-article.card.row.row:not(.breaking):has(> .ca) .src .cl-contact { flex:0 1 auto; color:var(--text-muted); }
+article.card.row.row:not(.breaking):has(> .ca) .src .cl-contact { flex:0 1 auto; color:var(--text-muted); min-height:0; height:auto; line-height:20px; align-self:center; }
+article.card.row.row:not(.breaking):has(> .ca) .src a.cl-contact::after { content:""; position:absolute; inset:-10px 0; } /* a 40px tap target without a taller line */
 article.card.row.row:not(.breaking):has(> .ca) .src .rt { flex:none; }
 article.card.row.row:not(.breaking):has(> .ca) .src .when ~ .rt { padding-left:var(--act-gap); }
 article.card.row.row:not(.breaking):has(> .ca) .src .ad-cta { font-weight:600; color:var(--blue); text-decoration:none; }

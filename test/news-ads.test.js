@@ -66,7 +66,7 @@ test('page wiring: News only, no search, Breaking first and ad-free, full-row ad
   assert.ok(html.indexOf('brk.forEach') < html.indexOf('var slots = {};'), 'Breaking renders before the feed');
   const n = html.slice(html.indexOf('newsAd: function'), html.indexOf('adCard: function'));
   assert.match(n, /f\.type === 'house'\) return null/);
-  assert.match(n, /UI\.adCard\('news'\)/);
+  assert.match(n, /return UI\.adRow\(f\)/, 'ship74: drawn as a story row, not a sized card');
   assert.ok(!html.includes('.list > .ad-card.ad-feed { max-width:none; }'), 'the feed card is a sized unit now (public/adsizes.js)');
   assert.match(html, /return UI\.sized\(sa, place\);/);
 });

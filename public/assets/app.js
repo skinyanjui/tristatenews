@@ -206,8 +206,29 @@
       newsAd: function () {
         var f = window.TSNAds ? TSNAds.fill('news', SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
         if (!f || f.type === 'house') return null;
-        var c = UI.adCard('news'); if (c) c.classList.add('ad-feed');
-        return c;
+        return UI.adRow(f);
+      },
+      // ship74: our own News ads (a booked campaign or a sample) are drawn exactly like a story row: the same divider,
+      // square thumbnail (only when the ad has a picture), one-line headline, two-line preview and the same fixed
+      // bottom row, with the "Sponsored" / "Sample ad" label where a story names its source and the call to action on
+      // the right. Ads from an outside network would keep that network's own sizes; there are none today.
+      adRow: function (f) {
+        var ad = f.ad || {}, isS = f.type === 'sample';
+        if (!isS && !(window.TSNAds && TSNAds.validAd(ad))) return null;
+        var row = el('article', 'card ad-row ad-feed'); row.dataset.sec = 'ad';
+        var a = isS ? UI.sampleAd('ca', ad) : UI.adLink('ca', ad);
+        var tag = a.querySelector('.spon-tag'); if (tag) tag.remove(); // the label moves to the bottom row
+        var im = a.querySelector('img.ad-img');
+        if (im) { im.className = 'th'; im.width = 112; im.height = 112; a.insertBefore(im, a.firstChild); } else a.classList.add('noimg');
+        var bd = el('div', 'bd'), h = el('h2', null, ad.name || ''); h.title = ad.name || '';
+        bd.appendChild(h);
+        var tx = isS ? (ad.text ? ad.text + ' ' : '') + 'A sample, not a real business. Your ad could be here.' : ad.text;
+        if (tx) bd.appendChild(el('p', null, tx));
+        var src = el('div', 'src');
+        src.appendChild(el('b', 'ad-lab', isS ? 'Sample ad' : 'Sponsored'));
+        src.appendChild(el('span', 'ad-cta', isS ? 'Advertise here' : (ad.cta || 'Learn more')));
+        bd.appendChild(src); a.appendChild(bd); row.appendChild(a);
+        return row;
       },
       adCard: function (kind) {
         var place = kind === 'news' ? 'card:news' : 'card:' + kind;
@@ -2319,7 +2340,11 @@
     var body = el('div', 'bd');
     // The red "Breaking" badge already says it, so the lead card drops an outlet's "BREAKING:" prefix (as the top banner does).
     var hTitle = big ? (it.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]\s*/i, '') || it.title) : it.title;
-    body.appendChild(el('h2', null, hTitle));
+    // Story rows (ship74): bold section label, headline, then the source + time line; the Breaking card keeps its layout.
+    var kick = !big && RT && RT.sectionLabel ? RT.sectionLabel(kd, it.cat) : '';
+    if (kick) body.appendChild(el('span', 'kicker', kick));
+    var h2 = el('h2', null, hTitle); if (!big) h2.title = hTitle; // one line in a News row: the full headline stays in title (and the text)
+    body.appendChild(h2);
     if (bk && (bk.label || bk.end != null)) {
       var bm = el('div', 'bk-meta');
       if (bk.label) bm.appendChild(el('b', null, bk.label));
@@ -2348,11 +2373,14 @@
     // Option B (ad-card style): picture flush left on desktop / on top on phones; source row, headline and a short
     // description; a bottom row with where the link goes plus the heart and share.
     if (pic) {
-      var im = el('img', 'th'); picLoading(im); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = ''; im.src = pic;
+      var im = el('img', 'th'); picLoading(im); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = '';
+      if (!big) { im.width = 112; im.height = 112; } // reserves the square thumbnail's box before it loads
+      im.src = pic;
       im.addEventListener('error', function () { im.remove(); a.classList.add('noimg'); });
       a.appendChild(im);
     } else a.classList.add('noimg');
-    body.insertBefore(src, body.firstChild);
+    if (big) body.insertBefore(src, body.firstChild);
+    else body.appendChild(src); // News rows: headline, preview, then the source + time line last
     a.appendChild(body);
     card.appendChild(a);
     var foot = el('div', 'cf');

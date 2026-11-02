@@ -9,6 +9,7 @@
 // public/adslots.js, never next to Police & courts or Breaking; Obituaries never get ads); one story per row.
 'use strict';
 const BK = require('../public/breaking.js');
+const RT = require('../public/routes.js');
 
 const PAGE = 24; // app.js PAGE: the first screenful of a tab
 const BREAKING_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\b|\bbreaking( news)?\s*[:|\u2013\u2014-]|[\[(]breaking[\])]/i;
@@ -91,17 +92,20 @@ function card(it, o) {
   let body = '<div class="bd">';
   const tag = '<span class="pill pill-red' + (big && pic ? ' pill-over' : '') + '"><i></i>Breaking</span>';
   if (big && !pic) body += '<div class="bk-head">' + tag + '</div>';
-  body += src + '<h2>' + esc(title) + '</h2>';
+  // ship74 story rows: bold section label, headline, then the source line (the Breaking card keeps source first)
+  const kick = big ? '' : RT.sectionLabel(kd, it.cat);
+  body += big ? src + '<h2>' + esc(title) + '</h2>' : (kick ? '<span class="kicker">' + esc(kick) + '</span>' : '') + '<h2 title="' + esc(title) + '">' + esc(title) + '</h2>';
   if (big && (o.brk.label || o.brk.end != null)) {
     body += '<div class="bk-meta">' + (o.brk.label ? '<b>' + esc(o.brk.label) + '</b>' : '') + (o.more ? '<span>+' + o.more + ' more active</span>' : '') + '</div>';
   }
   if (it.summary) body += '<p>' + esc(it.summary) + '</p>';
   if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
+  if (!big) body += src; // News rows: headline, preview, then the source + time line last
   body += '</div>';
   let img = '';
   if (pic) {
     const lead = o.lead.left; o.lead.left = false;
-    img = '<img class="th" ' + (lead ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' referrerpolicy="no-referrer" decoding="async" alt="" src="' + esc(pic) + '">';
+    img = '<img class="th" ' + (lead ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' referrerpolicy="no-referrer" decoding="async" alt=""' + (big ? '' : ' width="112" height="112"') + ' src="' + esc(pic) + '">';
   }
   const href = safeHref(it.link);
   const share = href === '#' ? '' : '<button class="share" type="button" aria-label="' + esc('Share: ' + it.title) + '" title="Share">' + SHARE + '</button>';

@@ -693,6 +693,52 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .cl-adult .cl-check input { flex:none; margin-top:-2px; }
 .cl-adult .cl-check a { text-decoration:underline; text-underline-offset:2px; }
 .cl-note a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+/* ---------- ship74: News story rows (CNN "Across our coverage" style) ----------
+   One story per row at every width: a small rounded square picture on the left only when the story has one (Police &
+   courts never do; no-picture stories are text only, no empty box), a bold section label, a larger regular-weight
+   headline, then the source + time line. Thin light dividers between rows instead of boxed cards. The Breaking card,
+   ad cards and the other tabs keep their own looks. */
+.list.news-one { gap:0; }
+.list.news-one .card:not(.breaking):has(> a.ca) { --pic:96px; --meta-h:40px; --ico:24px; --act-gap:12px; display:grid; grid-template-columns:1fr; padding:16px 0 12px; min-height:0; border:0; border-bottom:1px solid var(--gray-200); border-radius:0; box-shadow:none; background:transparent; content-visibility:auto; contain-intrinsic-size:auto 150px; }
+.list.news-one .card:not(.breaking):has(> a.ca):hover { background:transparent; box-shadow:none; border-color:var(--gray-200); }
+.list.news-one .card:not(.breaking):has(> a.ca) a.ca { display:grid; grid-template-columns:var(--pic) minmax(0, 1fr); grid-template-areas:none; grid-template-rows:auto; row-gap:0; column-gap:16px; align-items:stretch; padding:0; }
+.list.news-one .card:not(.breaking):has(> a.ca) a.ca.noimg { grid-template-columns:minmax(0, 1fr); }
+.list.news-one .card:not(.breaking):has(> a.ca) a.ca > .th { position:static; display:block; align-self:center; width:var(--pic); height:var(--pic); aspect-ratio:1/1; border-radius:8px; object-fit:cover; object-position:center 30%; background:var(--gray-200); }
+.list.news-one .card:not(.breaking):has(> a.ca) a.ca .bd { padding:0; display:flex; flex-direction:column; gap:4px; }
+.list.news-one .card:not(.breaking):has(> a.ca) .kicker { font-size:14px; line-height:20px; font-weight:700; color:var(--foreground); }
+.list.news-one .card:not(.breaking):has(> a.ca) h2 { font-size:19px; line-height:28px; font-weight:400; letter-spacing:0; display:block; -webkit-line-clamp:unset; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } /* one line; the full headline is in its title */
+.list.news-one .card:not(.breaking):has(> a.ca) .bd p:not(.cl-note) { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; min-width:0; margin:0; max-width:none; font-size:14px; line-height:20px; color:var(--text-muted); } /* the preview: at most two lines */
+.list.news-one .card:not(.breaking):has(> a.ca) .src { margin:auto 0 0; padding:0; gap:8px; font-size:13px; line-height:20px; }
+.list.news-one .card:not(.breaking):has(> a.ca) .src .when { flex:none; margin-left:auto; padding-left:var(--act-gap); white-space:nowrap; }
+.list.news-one .card:not(.breaking):has(> a.ca) .av { width:var(--ico); height:var(--ico); }
+.list.news-one .card:not(.breaking):has(> a.ca) .cf { position:absolute; right:0; bottom:12px; z-index:1; display:flex; align-items:center; box-sizing:border-box; height:var(--meta-h); min-height:0; margin:0; padding:0; border-top:0; }
+.list.news-one .card:not(.breaking):has(> a.ca) .acts { margin-right:0; gap:var(--act-gap); flex-wrap:nowrap; }
+.list.news-one .card:not(.breaking):has(> a.ca) .acts :is(.like, .share) { position:relative; inset:auto; transform:none; margin:0; flex:none; box-sizing:border-box; width:var(--ico); min-width:var(--ico); height:var(--ico); padding:0; gap:0; } /* the same box as the source logo */
+.list.news-one .card:not(.breaking):has(> a.ca) .acts :is(.like, .share)::after { content:""; position:absolute; inset:-8px -6px; } /* a 40px-tall tap target around the small icon */
+.list.news-one .card:not(.breaking):has(> a.ca) .acts .like span { display:none; } /* no count beside the heart: it would make it wider than the logo */
+.list.news-one .card:not(.breaking):has(> a.ca) .acts :is(.like, .share) svg { width:18px; height:18px; }
+.list.news-one .card:not(.breaking):has(> a.ca) .src { box-sizing:border-box; height:var(--meta-h); min-height:var(--meta-h); margin-top:auto; padding-right:calc(2 * var(--ico) + 2 * var(--act-gap)); display:flex; align-items:center; flex-wrap:nowrap; min-width:0; overflow:hidden; } /* one line: logo + source (+ place) left, time right next to the heart + share */
+.list.news-one .card:not(.breaking):has(> a.ca) .src b { flex:0 1000 auto; min-width:min(5.5em, 40%); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.list.news-one .card:not(.breaking):has(> a.ca) .src .place { flex:0 1 auto; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.list.news-one .card:not(.breaking):has(> a.ca) .src .av { flex:none; }
+.list.news-one > .card.breaking { margin-bottom:8px; }
+@media (max-width:389.98px) { /* the smallest phones: a smaller picture so logo, source, time, heart and share still fit on one row */
+  .list.news-one .card:not(.breaking):has(> a.ca) { --pic:72px; --act-gap:10px; }
+  .list.news-one .card:not(.breaking):has(> a.ca) a.ca { column-gap:12px; }
+  .list.news-one .card:not(.breaking):has(> a.ca) .src b { min-width:2.5em; }
+}
+@media (min-width:640px) {
+  .list.news-one .card:not(.breaking):has(> a.ca) { --pic:112px; }
+  .list.news-one .card:not(.breaking):has(> a.ca) a.ca { column-gap:20px; }
+  .list.news-one .card:not(.breaking):has(> a.ca) .bd p:not(.cl-note) { font-size:15px; line-height:22px; }
+  .list.news-one .card:not(.breaking):has(> a.ca) h2 { font-size:20px; line-height:28px; }
+}
+.list.news-one .card:not(.breaking):has(> a.ca) a.ca:hover h2 { color:var(--blue); }
+
+.list.news-one .card.ad-row:has(> a.ca) .src { padding-right:0; } /* no heart or share on an ad */
+.list.news-one .card.ad-row:has(> a.ca) .src .ad-lab { flex:none; min-width:0; font-size:12px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--text-muted); }
+.list.news-one .card.ad-row:has(> a.ca) .src .ad-cta { flex:none; margin-left:auto; padding-left:8px; white-space:nowrap; font-weight:600; color:var(--blue); }
+
 /* ---------- card spacing: one set of tokens for every card (news and police, Breaking, Events, Jobs, Deals,
    Classifieds, obituaries, the in-listing Sponsored card, sponsor lines and side ads). Spacing only: colours,
    fonts and layout stay as above. --card-pad inner padding (16px desktop, 12px phone); --card-gap between cards;
@@ -796,3 +842,4 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 @media (min-width:1920px) {
   .deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }
 }
+

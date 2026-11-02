@@ -63,7 +63,7 @@ test('one card per board view: after the 6th post, at the end of a shorter board
   assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.adCard(kind); if (ac) list.appendChild(ac); } });"));
   assert.ok(html.includes("adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1);"));
   assert.ok(html.includes("if (++seen === adAt) { var ac = UI.adCard('event'); if (ac) g.appendChild(ac); }"));
-  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", "'news'", 'kind'], 'placed in exactly three spots (boards, Events, the News feed card)');
+  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", 'kind'], 'placed in exactly two spots (boards, Events); the News feed ad is a story row (UI.adRow, ship74)');
   // drawBody also draws Obituaries; the module answers null there, so no card (checked above). Breaking and news
   // cards are drawn by other functions that never call adCard.
   const brk = html.slice(html.indexOf('function renderBreaking'), html.indexOf('function renderBreaking') + 4000);

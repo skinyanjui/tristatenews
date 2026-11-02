@@ -1324,7 +1324,7 @@
   var ICON_GO = [['path', { d: 'M5 12h14M13 5l7 7-7 7' }]];
   function ticketLink(u) { return /ticketmaster|gopurpleaces|tickets?\b|eventbrite/i.test(u || ''); }
   // An event anywhere outside the Events tab (search results): the same row as on the Events tab.
-  function eventCard(it, b) { return evxRow(it, b); }
+  function eventCard(it, b) { var c = evxCard(it, b); c.classList.add('evc-solo'); return c; } // ship79: search uses the one event card
   // "Send flowers" (public/flowers.js; Advertising Policy section 8): a quiet text link under an obituary, never an
   // ad. GET /api/flowers says where it goes: the funeral home's own florist page when we know it, otherwise the
   // affiliate link labeled "paid link" (rel="sponsored noopener"), otherwise the unpaid fallbackUrl (no label,
@@ -1522,53 +1522,7 @@
     });
     return actRow(sb, it);
   }
-  // Row 5, actions: Tickets/Details (+ "From" price) left, heart and share right; community posts keep contact, Report, Feature here.
-  function evxFoot(it, b, price) {
-    var foot = el('div', 'evt-foot');
-    if (it.feed && it.link) {
-      foot.appendChild(evxGo(it));
-      if (it.fromPrice && price) { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); foot.appendChild(fp); }
-      foot.appendChild(evxReact(it));
-    } else {
-      if (it.contact) foot.appendChild(el('span', 'cl-contact', it.contact));
-      var ac = actions(it, 'event', b); if (ac.acts) foot.appendChild(ac.acts); if (ac.feature) foot.appendChild(ac.feature);
-    }
-    return foot;
-  }
-  // The card template, the same five slots on every card (an empty slot keeps its height):
-  // 1 Featured label + category, 2 title (2 lines), 3 date · time CT, 4 venue · town · via source (1 line), 5 actions.
-  function evxBody(it, b, cls, rel, price) {
-    var body = el('div', 'evt ' + cls), top = el('div', 'evt-top');
-    if (it.featured) top.appendChild(evxPaid());
-    if (it.category) top.appendChild(el('span', 'evr-cat', it.category));
-    body.appendChild(top);
-    var h = evxTitle(it, 'h4'); h.className = 'evt-title'; body.appendChild(h);
-    var day = (rel && evxRel(it.date)) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' });
-    if (evStatus(it).live) { var lv = el('div', 'evt-when'); lv.appendChild(liveTag()); body.appendChild(lv); }
-    else body.appendChild(el('div', 'evt-when', [day, evxTime(it)].filter(Boolean).join(' \u00B7 ')));
-    var via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
-    var wl = [evxWhere(it), via].filter(Boolean).join(' \u00B7 '), w = el('div', 'evt-where', wl); if (wl) w.title = wl;
-    body.appendChild(w);
-    body.appendChild(evxFoot(it, b, price));
-    return body;
-  }
-  // One event in the date-grouped list: picture (or date tile) in a fixed-width column on the left, the template on the right.
-  // One event in the date-grouped list (and in search): the shared row. Picture only when the event has one; the
-  // label carries the date, time and category; the preview the place and description; the bottom row the source
-  // (or the poster's contact), then Tickets/Details (+ "From" price) and the heart and share.
   function liveTag() { var t = el('span', 'ev-live', ET ? ET.LABEL : 'Happening now'); return t; }
-  function evxRow(it, b, inDay) {
-    var day = inDay ? '' : evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' }); // under a day heading the date would repeat it
-    var feed = it.feed && it.link, ac = feed ? { acts: evxReact(it), feature: null } : actions(it, 'event', b);
-    var right = [];
-    if (feed) { if (it.fromPrice) { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); right.push(fp); } var go = evxGo(it); go.classList.add('ad-cta'); right.push(go); }
-    var where = evxWhere(it), live = evStatus(it).live, kk = kick(it, [live ? '' : [day, evxTime(it)].filter(Boolean).join(' '), it.category]), kn = null;
-    if (live) { kn = el('span'); kn.appendChild(liveTag()); if (kk) kn.appendChild(document.createTextNode(' \u00B7 ' + kk)); } // "Happening now" in place of the date and time
-    return UI.row({ cls: 'row-event' + (it.featured ? ' row-feat' : ''), sec: 'events', pic: photoSrc(it) || it.image || '', picRef: !!it.image,
-      kicker: kn || kk, title: it.title, titleHref: it.link,
-      text: [where, it.desc].filter(Boolean).join(' \u2014 '), avatar: it.feed ? bizAvatar(it.source || '', it.logo) : null, name: it.feed ? it.source : '',
-      left: [it.feed ? null : contactNode(it.contact)], right: right, acts: ac.acts, extra: [ac.feature] });
-  }
   // The horizontal side-scroller (ship77: shared by "Featured & popular" and every day on the Events tab): a heading
   // row with back / forward arrows (640px and up), then a snapping rail of event cards that scrolls by touch, trackpad,
   // the arrows or the keyboard (the rail is focusable; arrow keys scroll it, Tab walks its cards' links).
@@ -1585,11 +1539,32 @@
     return sec;
   }
   // A card in the horizontal Featured / Popular row: picture on top, the same template below.
-  // ship78: the event card keeps its own design (picture or date tile with the date badge on top, category, a 2-line
-  // title, the day, venue and town) and borrows only the shared bottom row: one fixed, non-wrapping row pinned to the
-  // card's bottom (cards in a scroller are equal height) with the time or "Happening now", heart, share and Tickets/Details.
+  // ship78/ship79: THE event card, the one template for every event (feed or community post, featured, Popular, each
+  // day scroller and search): picture or date tile with the date badge on top, category, a 2-line title, the day, the
+  // venue line; then one fixed, non-wrapping bottom row pinned to the card's bottom: the time (or "Happening now" /
+  // "All day") flush left, and on the right heart, share, Report (community posts) and Tickets/Details. A post with no
+  // ticket link gets a Details button that opens the post (evxDetails, also reached by its /events#ev-<id> link).
+  function evxPostHref(it) { return it.id ? location.origin + '/events#ev-' + encodeURIComponent(it.id) : ''; }
+  function evxDetails(it) {
+    var d = el('dialog', 'evx-dlg'), x = el('button', 'evx-dlg-x', 'Close'); x.type = 'button';
+    d.setAttribute('aria-label', it.title);
+    if (it.category) d.appendChild(el('div', 'evr-cat', it.category));
+    d.appendChild(el('h3', null, it.title));
+    d.appendChild(el('p', 'evt-when', [evxDate(it.date, { weekday: 'long', month: 'long', day: 'numeric' }), evStatus(it).live ? (ET ? ET.LABEL : 'Happening now') : evxTime(it) || 'All day'].filter(Boolean).join(' \u00B7 ')));
+    var wh = evxWhere(it); if (wh) d.appendChild(el('p', 'evt-where', wh));
+    if (it.desc) d.appendChild(el('p', 'evx-dlg-desc', it.desc));
+    var cn = !it.feed && contactNode(it.contact, it.contact); if (cn) { var cp = el('p'); cp.appendChild(cn); d.appendChild(cp); }
+    if (it.link) d.appendChild(evxGo(it));
+    x.addEventListener('click', function () { d.close(); });
+    d.addEventListener('close', function () { d.remove(); if (location.hash.indexOf('#ev-') === 0) history.replaceState(null, '', location.pathname + location.search); });
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+    d.appendChild(x); document.body.appendChild(d);
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    return d;
+  }
   function evxCard(it, b) {
-    var c = el('article', 'evc' + (it.featured ? ' evr-feat' : ''));
+    var c = el('article', 'evc' + (it.featured ? ' evr-feat' : '') + (it.feed ? '' : ' evc-post'));
+    if (it.id) c.id = 'ev-' + it.id;
     c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
     c.appendChild(evxPic(it, 'evc-pic'));
     var body = el('div', 'evt evc-body'), top = el('div', 'evt-top');
@@ -1601,14 +1576,20 @@
     var via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
     var wl = [evxWhere(it), via].filter(Boolean).join(' \u00B7 '), w = el('div', 'evt-where', wl); if (wl) w.title = wl;
     body.appendChild(w);
-    var feed = it.feed && it.link, ac = feed ? { acts: evxReact(it), feature: null } : actions(it, 'event', b);
-    if (!feed && it.contact) body.appendChild(el('div', 'evt-where cl-contact', it.contact));
-    if (ac.feature) body.appendChild(ac.feature);
-    var foot = el('div', 'evt-foot evc-foot'), tm = el('span', 'evc-time');
+    var ac = actions(it, 'event', b); // community posts: Report (or Remove on your own) and Feature; nothing for feed events
+    if (ac.feature) body.appendChild(ac.feature); // Feature stays under the content: a wide paid action, not a 24px control
+    var foot = el('div', 'evt-foot evc-foot'), tm = el('span', 'evc-time'), right = el('div', 'evc-right');
     if (evStatus(it).live) tm.appendChild(liveTag()); else tm.textContent = evxTime(it) || 'All day';
     foot.appendChild(tm);
-    if (ac.acts) foot.appendChild(ac.acts);
-    if (feed) foot.appendChild(evxGo(it));
+    var href = it.link || evxPostHref(it);
+    var acts = href ? evxReact(it.link ? it : Object.assign({}, it, { link: href, source: it.source || 'Community events' })) : el('div', 'acts');
+    if (ac.acts) while (ac.acts.firstChild) acts.appendChild(ac.acts.firstChild); // Report joins heart and share
+    right.appendChild(acts);
+    var go;
+    if (it.link) go = evxGo(it);
+    else { go = el('button', 'ev-go', 'Details'); go.type = 'button'; go.setAttribute('aria-label', 'Details for ' + it.title); go.addEventListener('click', function () { evxDetails(it); }); }
+    right.appendChild(go);
+    foot.appendChild(right);
     body.appendChild(foot);
     c.appendChild(body);
     return c;
@@ -1700,6 +1681,14 @@
     if (btns.firstChild) box.appendChild(btns);
     return box;
   }
+  var evxHashDone = '';
+  function evxOpenHash() { // a shared community post link (/events#ev-<id>): bring its card into view and open it
+    var hsh = location.hash; if (hsh.indexOf('#ev-') !== 0 || hsh === evxHashDone) return;
+    var id = decodeURIComponent(hsh.slice(4)), it = postedEvents().filter(function (x) { return String(x.id) === id; })[0];
+    if (!it) return;
+    evxHashDone = hsh; var c = document.getElementById('ev-' + id); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest', inline: 'start' });
+    evxDetails(it);
+  }
   function renderEvents() {
     var b = boards.event, root = b.el;
     leadPic = true;
@@ -1748,6 +1737,7 @@
       var mw = el('div', 'evx-more'); mw.appendChild(UI.button('Show more events (' + (rows.length - shown.length) + ' left)', null, function () { b.lim = lim + EVX_PAGE; drawBoard('event'); }));
       root.appendChild(mw);
     }
+    setTimeout(evxOpenHash, 0);
     return root;
   }
   var JOB_BOARDS = [
@@ -2147,7 +2137,7 @@
     if (last < text.length) out.appendChild(document.createTextNode(text.slice(last)));
     node.textContent = ''; node.appendChild(out);
   }
-  function hlCard(c, words) { c.querySelectorAll('h2, h3 a, h3, .ev-desc, .ev-row span, .cl-desc, .card p').forEach(function (n) { if (!n.children.length) highlight(n, words); }); }
+  function hlCard(c, words) { c.querySelectorAll('h2, h3 a, h3, .evt-title a, .evt-title, .ev-desc, .ev-row span, .cl-desc, .card p').forEach(function (n) { if (!n.children.length) highlight(n, words); }); }
 
   var srEl = document.getElementById('sr');
   function renderSearch(sq) {

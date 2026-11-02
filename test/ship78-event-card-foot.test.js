@@ -10,8 +10,8 @@ const fn = (name) => { const i = js.indexOf('function ' + name + '('); assert.ok
 
 test('evxCard: picture/date tile on top, category, title, day and venue up front; one bottom row with time or live, acts, button', () => {
   const c = fn('evxCard');
-  for (const k of ["evxPic(it, 'evc-pic')", "el('span', 'evr-cat', it.category)", "evxTitle(it, 'h4')", "'evt-when'", "'evt-where'", "el('div', 'evt-foot evc-foot')", 'tm.appendChild(liveTag())', 'evxTime(it)', 'foot.appendChild(ac.acts)', 'foot.appendChild(evxGo(it))']) assert.ok(c.includes(k), k);
-  assert.ok(c.indexOf('foot.appendChild(ac.acts)') < c.indexOf('foot.appendChild(evxGo(it))'), 'heart and share, then the button');
+  for (const k of ["evxPic(it, 'evc-pic')", "el('span', 'evr-cat', it.category)", "evxTitle(it, 'h4')", "'evt-when'", "'evt-where'", "el('div', 'evt-foot evc-foot')", 'tm.appendChild(liveTag())', 'evxTime(it)', 'right.appendChild(acts)', 'go = evxGo(it)', 'right.appendChild(go)']) assert.ok(c.includes(k), k);
+  assert.ok(c.indexOf('right.appendChild(acts)') < c.indexOf('right.appendChild(go)'), 'heart and share, then the button');
   assert.ok(!c.includes('UI.row('), 'not the news row template');
 });
 

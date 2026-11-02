@@ -11,8 +11,8 @@ const fnOf = name => { const i = app.indexOf('  function ' + name + '('); assert
 
 test('every card type is drawn by the one row component', () => {
   assert.match(app, /row: function \(o\) \{\s*var c = el\('article', 'card row'/);
-  for (const f of ['dealCard', 'jobCard', 'obitCard', 'evxRow', 'obitRow', 'cardBase']) assert.match(fnOf(f), /UI\.row\(\{/, f);
-  assert.match(fnOf('eventCard'), /return evxRow\(it, b\);/, 'events in search use the Events row');
+  for (const f of ['dealCard', 'jobCard', 'obitCard', 'obitRow', 'cardBase']) assert.match(fnOf(f), /UI\.row\(\{/, f);
+  assert.match(fnOf('eventCard'), /evxCard\(it, b\)/, 'events in search use the one event card (ship79)');
   assert.match(app, /var card = el\('article', big \? 'card breaking' : 'card row'\);/, 'News, Police & courts, institutions, county pages, saved');
   assert.match(read('api/_cards.js'), /'<article class="card' \+ \(big \? ' breaking' : ' row'\)/, 'server-drawn rows are the same rows');
   assert.match(app, /boardAd: function \(kind\)[\s\S]{0,300}UI\.adRow\(f\)/, 'our own board ads are rows too');
@@ -50,10 +50,8 @@ test('per-type rules kept: obituaries one bottom row and no ads; police photo-fr
   assert.match(app, /var spn = kind !== 'obit' && UI\.sponsor/);
   assert.ok(app.includes("var pic = safe ? '' : it.image;"));
   assert.match(fnOf('kick'), /filter\(Boolean\)/, 'empty label parts are dropped');
-  assert.match(fnOf('evxRow'), /var day = inDay \? '' :/, 'no date label under its own day heading');
   assert.match(fnOf('cardBase'), /el\('b', 'cl-price', priceText\(it\.price\)\)/);
   assert.match(fnOf('jobCard'), /el\('a', 'ad-cta', 'Apply'\)/);
-  assert.match(fnOf('evxRow'), /evxGo\(it\)/, 'Tickets / Details');
   assert.match(fnOf('dealCard'), /'deal-code'/);
 });
 

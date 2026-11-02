@@ -44,7 +44,7 @@ function withStories(h, r, view, now) {
   if (!view || !EMBED[r.cat] || h.indexOf(LIST) < 0) return null;
   const p = C.pick(view, r.cat, now);
   if (!p) return null;
-  const list = '<div id="list" class="list' + (r.cat === 'news' ? ' news-one' : '') + '" aria-busy="false">' + C.cards(p, now) + '</div>' +
+  const list = '<div id="list" class="list' + (r.cat === 'news' ? ' news-one' : '') + '" aria-busy="false">' + C.cards(p, now, { news: 'News', institution: 'Institutions', obits: 'Obituaries' }[r.cat] || '') + '</div>' +
     '\n  <script type="application/json" id="tsn-data">' + C.jsonScript(Object.assign({ cat: r.cat }, p.data)) + '</script>';
   return h.replace(PRELOAD, '').replace(LIST, () => list);
 }

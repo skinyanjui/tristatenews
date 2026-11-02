@@ -43,8 +43,7 @@ test('the page filters every event list and shows "Happening now" in place of th
   assert.match(app, /return x\.date >= today && evShown\(x\);/, 'feed events');
   assert.strictEqual((app.match(/boards\.event\.items\.concat|b\.items\.concat\(feedEvents/g) || []).length, 0, 'no unfiltered event list left');
   assert.match(app, /postedEvents\(\)\.concat\(feedEvents\(\)\)\.forEach\(function \(e\) \{ docs\.push\(getDoc\('events', e\)\);/, 'search');
-  assert.match(app, /if \(live\) \{ kn = el\('span'\); kn\.appendChild\(liveTag\(\)\);/, 'row');
-  assert.match(app, /if \(evStatus\(it\)\.live\) \{ var lv = el\('div', 'evt-when'\); lv\.appendChild\(liveTag\(\)\);/, 'carousel');
+  assert.ok(app.includes('if (evStatus(it).live) tm.appendChild(liveTag());'), 'event card bottom row (ship79: the one template for every event)');
   assert.match(app, /if \(state\.cat === 'events' \|\| state\.q\.trim\(\)\) render\(\);\n  \}, 30 \* 1000\);/);
   assert.match(read('public/assets/app.css'), /\.ev-live \{[^}]*font-weight:700; color:var\(--red\);/);
   assert.ok(read('public/assets/lib.js').includes('/* ---- public/eventtime.js ---- */'), 'bundled for the page');

@@ -16,7 +16,7 @@ test('one shared scroller: popular and each day use evxScroller with evxCard, ar
   assert.ok(r.includes("evxScroller('evx-sec evx-pop'"));
   assert.ok(r.includes("evxScroller('evx-day', h,"));
   assert.ok(!r.includes('evxRow('), 'no vertical rows in day groups');
-  assert.ok(js.includes('evxRow(it, b'), 'search results stay rows');
+  assert.ok(!js.includes('function evxRow('), 'ship79: search uses the event card too');
 });
 
 test('day scrollers: filtered items only, empty days skipped, the ad sits between scrollers', () => {

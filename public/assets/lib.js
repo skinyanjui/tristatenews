@@ -198,7 +198,14 @@
     var m = /^(state|county):([a-z]{2})(?:-([a-z-]+))?$/.exec(String(scope || '')); if (!m || !STATE_SLUGS[m[2]]) return null;
     return '/news/' + STATE_SLUGS[m[2]] + (m[1] === 'county' ? '/' + m[3] : '');
   }
-  return { ORIGIN: ORIGIN, STATE_SLUGS: STATE_SLUGS, geo: geo, geoPath: geoPath, ROUTES: ROUTES, ALIASES: ALIASES, OLD_TABS: OLD_TABS, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
+  // The bold section label over a story in the News list (ship74), from the source's kind and the item's own
+  // category when it has one (Sports, Arts...); '' for a plain News story (redundant on the News page). Used by the page (app.js) and the server cards (api/_cards.js).
+  var KIND_LABEL = { police: 'Police & courts', courts: 'Police & courts', obits: 'Obituaries', events: 'Events', institution: 'Institutions' };
+  function sectionLabel(kind, cat) {
+    if (KIND_LABEL[kind]) return kind === 'events' && cat ? String(cat) : KIND_LABEL[kind];
+    return cat ? String(cat) : ''; // plain News: no label, the headline is the top line
+  }
+  return { sectionLabel: sectionLabel, ORIGIN: ORIGIN, STATE_SLUGS: STATE_SLUGS, geo: geo, geoPath: geoPath, ROUTES: ROUTES, ALIASES: ALIASES, OLD_TABS: OLD_TABS, norm: norm, byPath: byPath, byCat: byCat, apply: apply };
 });
 ;
 /* ---- public/featured.js ---- */

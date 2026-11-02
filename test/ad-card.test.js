@@ -62,7 +62,7 @@ test('one card per board view: after the 6th post, at the end of a shorter board
   assert.ok(html.includes("var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1);"));
   assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });"));
   assert.ok(html.includes("adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1);"));
-  assert.ok(html.includes("if (++seen === adAt) { var ac = UI.boardAd('event'); if (ac) g.appendChild(ac); }"));
+  assert.ok(html.includes("if (adAt > n0 && adAt <= seen) { var ac = UI.boardAd('event'); if (ac) list.appendChild(ac); }"));
   assert.deepStrictEqual([...html.matchAll(/UI\.boardAd\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", 'kind'], 'placed in exactly two spots (boards, Events); the News feed ad is a story row (UI.adRow, ship74)');
   // ship75: boardAd draws our own ads (campaign or sample) as rows and leaves the house unit to adCard (its only caller)
   assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]), ['kind']);

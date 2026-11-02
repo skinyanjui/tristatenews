@@ -12,6 +12,15 @@
     d.forEach(function (x) { var p = document.createElementNS(ns, x[0]); Object.keys(x[1]).forEach(function (k) { p.setAttribute(k, x[1][k]); }); n.appendChild(p); });
     return n;
   }
+  // ship83: visible labels spell things out: state codes after a town, "Co." and "Mt." (accessible names use the same text).
+  var STATES = { IN: 'Indiana', KY: 'Kentucky', IL: 'Illinois' };
+  function spell(s) {
+    if (typeof s !== 'string') return s;
+    return s.replace(/,\s*(IN|KY|IL)\b\.?/g, function (m, a) { return ', ' + STATES[a]; }).replace(/\bCo\.(?=\s|$)/g, 'County').replace(/\bMt\.\s/g, 'Mount ')
+      .replace(/\s*\/\s*hr\b\.?/gi, ' an hour').replace(/\s*\/\s*(yr|year)\b\.?/gi, ' a year').replace(/\s*\/\s*wk\b\.?/gi, ' a week');
+  }
+  // ship83: one heart glyph (symmetric, centred in the 24 box, same reach as the flag and share glyphs).
+  var ICON_HEART = [['path', { d: 'M12 21C6.5 17.2 2.5 13.6 2.5 8.8A5 5 0 0 1 12 6.4a5 5 0 0 1 9.5 2.4c0 4.8-4 8.4-9.5 12.2Z' }]];
   // A short message at the bottom of the screen (screen readers hear it too).
   var toastEl = null, toastT = 0;
   function toast(msg) {
@@ -151,7 +160,7 @@
           b.setAttribute('aria-label', (s.on ? 'Unlike: ' : 'Like: ') + s.label + (s.n ? ' (' + s.n + ' like' + (s.n === 1 ? '' : 's') + ')' : ''));
           cnt.textContent = s.n > 0 ? String(s.n) : '';
         }
-        b.appendChild(svg([['path', { d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z' }]]));
+        b.appendChild(svg(ICON_HEART));
         b.appendChild(cnt);
         paint();
         b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); o.toggle(); if (o.after) o.after(); else paint(); });
@@ -163,7 +172,7 @@
       share: function (title, url) {
         var b = el('button', 'share'); b.type = 'button';
         b.setAttribute('aria-label', 'Share: ' + title); b.title = 'Share';
-        b.appendChild(svg([['circle', { cx: 18, cy: 5, r: 3 }], ['circle', { cx: 6, cy: 12, r: 3 }], ['circle', { cx: 18, cy: 19, r: 3 }], ['path', { d: 'M8.6 13.5l6.8 4M15.4 6.5l-6.8 4' }]]));
+        b.appendChild(svg([['circle', { cx: 17.5, cy: 5.25, r: 2.75 }], ['circle', { cx: 6.5, cy: 12, r: 2.75 }], ['circle', { cx: 17.5, cy: 18.75, r: 2.75 }], ['path', { d: 'M8.9 13.4l6.2 3.9M15.1 6.7l-6.2 3.9' }]]));
         b.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           var data = { title: title, url: url };
@@ -254,7 +263,7 @@
           a.appendChild(im);
         } else a.classList.add('noimg');
         var bd = el('div', 'bd');
-        if (o.kicker) { var k = el('span', 'kicker'); if (typeof o.kicker === 'string') k.textContent = o.kicker; else k.appendChild(o.kicker); bd.appendChild(k); }
+        if (o.kicker) { var k = el('span', 'kicker'); if (typeof o.kicker === 'string') k.textContent = spell(o.kicker); else k.appendChild(o.kicker); bd.appendChild(k); }
         var h = el('h2'); h.title = o.title || '';
         if (o.titleHref && !o.href) { var ta = el('a', null, o.title); ta.href = safeHref(o.titleHref); ta.target = '_blank'; ta.rel = 'noopener noreferrer'; h.appendChild(ta); } else h.textContent = o.title || '';
         bd.appendChild(h);
@@ -324,7 +333,7 @@
     var d = new Date(), z = 'America/Chicago';
     var t = d.toLocaleTimeString('en-US', { timeZone: z, hour: 'numeric', minute: '2-digit' });
     var zone = (d.toLocaleTimeString('en-US', { timeZone: z, timeZoneName: 'short' }).match(/[A-Z]{3,4}$/) || [''])[0];
-    var day = d.toLocaleDateString('en-US', { timeZone: z, weekday: 'short', month: 'short', day: 'numeric' });
+    var day = d.toLocaleDateString('en-US', { timeZone: z, weekday: 'long', month: 'long', day: 'numeric' });
     clkEl.textContent = '';
     clkEl.appendChild(document.createTextNode(t));
     clkEl.appendChild(el('small', null, zone + ' · ' + day));
@@ -845,7 +854,7 @@
           var bar = el('span', 'bar'); bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', Math.round(left * 100) + '% of the alert period left');
           var fill = el('i'); fill.style.width = Math.round(left * 100) + '%'; bar.appendChild(fill); rt.appendChild(bar);
         }
-        rt.appendChild(el('span', null, new Date(endMs).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+        rt.appendChild(el('span', null, new Date(endMs).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' })));
         tg.appendChild(rt);
       }
       hd.appendChild(tg);
@@ -1270,7 +1279,7 @@
   var SHOW_SUBSCRIBERS_AT = 100; // the Advertise newsletter line shows "N of 1,500 subscribers" from this many on
   function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
-  var ICON_FLAG = [['path', { d: 'M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5' }]], ICON_TRASH = [['path', { d: 'M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6' }]];
+  var ICON_FLAG = [['path', { d: 'M5.5 21.5V3h13l-3 4.75 3 4.75h-13' }]], ICON_TRASH = [['path', { d: 'M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6' }]];
   // A community post's own controls, for its row: Report (or Remove on your own post) as a 24px icon button in the
   // bottom row, and, on your own unfeatured post, the "Feature" checkout button (returned separately; the row puts it
   // under the preview). Feed items have neither.
@@ -1305,14 +1314,14 @@
   }
   // Labels for a row: only parts that add information, joined with " · "; "Featured · Paid" first on a paid post (FTC).
   function kick(it, parts) { var k = (it.featured ? ['Featured \u00B7 Paid'] : []).concat(DD.parts(parts, it.title)).filter(Boolean).join(' \u00B7 '); return k; } // ship80: no part twice, none already in the title
-  function postDay(at) { return at ? new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }) : ''; }
+  function postDay(at) { return at ? new Date(at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/Chicago' }) : ''; }
   // A community post's contact (phone or email) as a link where it can be one.
   function contactNode(c, label) { var href = applyHref(c); if (!c) return null; var n = href ? el('a', 'cl-contact', label || c) : el('span', 'cl-contact', c); if (href) n.href = href; return n; }
   function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
   function dealCard(it, b) {
     var ac = actions(it, 'deal', b);
     var code = null; if (it.code) { code = el('span', 'deal-code'); code.appendChild(el('span', null, 'Code ')); code.appendChild(el('code', null, it.code)); }
-    return UI.row({ cls: 'row-deal', pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '']),
+    return UI.row({ cls: 'row-deal', pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '']),
       title: it.title, text: it.desc, avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [contactNode(it.contact)], right: [code], acts: ac.acts, extra: [ac.feature] });
   }
   var EV_HUE = { 'Music': 'music', 'Food & drink': 'food', 'Family': 'family', 'Sports': 'sports', 'Arts': 'arts', 'Community': 'community' };
@@ -1354,7 +1363,7 @@
   };
   function flowersLink(it, tag) {
     var F = window.TSNFlowers; if (!F) return null;
-    var acts = [['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]];
+    var acts = [['Send flowers', 'Send flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Plant a tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]];
     var p = el(tag || 'div', 'ob-flw ob-acts');
     acts.forEach(function (x) {
       var f = x[3]; if (!f) return;
@@ -1373,7 +1382,7 @@
   function obitCard(it, b) {
     var ac = actions(it, 'obit', b), fl = flowersLink(it, 'span');
     var bits = [];
-    if (it.svc) bits.push('Service ' + new Date(it.svc + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }));
+    if (it.svc) bits.push('Service ' + new Date(it.svc + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
     if (it.place) bits.push(it.place);
     var k = el('span'); k.appendChild(document.createTextNode(kick(it, [it.business, it.town])));
     var cn = contactNode(it.contact, it.contact); if (cn) { k.appendChild(document.createTextNode(' \u00B7 ')); cn.setAttribute('aria-label', 'Contact ' + (it.business || '') + ': ' + it.contact); k.appendChild(cn); }
@@ -1474,7 +1483,7 @@
   var ICON_L = [['path', { d: 'M15 18l-6-6 6-6' }]], ICON_R = [['path', { d: 'M9 18l6-6-6-6' }]];
   function evxDate(date, o) { return new Date(date + 'T12:00:00').toLocaleDateString('en-US', o); }
   function evxDayLabel(date) {
-    var o = { weekday: 'short', month: 'short', day: 'numeric' }; if (date.slice(0, 4) !== inDays(0).slice(0, 4)) o.year = 'numeric';
+    var o = { weekday: 'long', month: 'long', day: 'numeric' }; if (date.slice(0, 4) !== inDays(0).slice(0, 4)) o.year = 'numeric';
     return evxDate(date, o);
   }
   function evxRel(date) { return date === inDays(0) ? 'Today' : date === inDays(1) ? 'Tomorrow' : ''; }
@@ -1482,19 +1491,19 @@
   function evxWhere(it) {
     var place = it.place || '', town = townOf(it), bits = [place];
     if (DD.part(town, place)) bits.push(town); // ship80: a venue that already names the town keeps it once
-    return bits.filter(Boolean).join(' \u00B7 ');
+    return spell(bits.filter(Boolean).join(' \u00B7 '));
   }
   function evxBadge(it) {
     var t = el('div', 'evx-badge'); t.setAttribute('aria-hidden', 'true'); // the date is read from the day line
-    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'short' })));
+    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'long' })));
     t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
     return t;
   }
   function evxTile(it) {
     var t = el('div', 'evx-tile'); t.setAttribute('aria-hidden', 'true');
-    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'short' })));
+    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'long' })));
     t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
-    t.appendChild(el('span', 'evx-wd', evxDate(it.date, { weekday: 'short' })));
+    t.appendChild(el('span', 'evx-wd', evxDate(it.date, { weekday: 'long' })));
     return t;
   }
   // The picture slot: the event photo with a month/day badge on its corner, or a big date tile when there is no photo.
@@ -1595,7 +1604,7 @@
     // names the day: the day line shows only what they don't ("Today", "Tomorrow", or the weekday beside a photo badge),
     // and the full date stays in it for screen readers.
     var hasPic = !!(photoSrc(it) || it.image), rel = evxRel(it.date), dl = el('div', 'evt-when');
-    var dvis = inDay ? '' : rel || (hasPic ? evxDate(it.date, { weekday: 'short' }) : '');
+    var dvis = inDay ? '' : rel || (hasPic ? evxDate(it.date, { weekday: 'long' }) : '');
     if (dvis) dl.appendChild(el('span', null, dvis)); else dl.classList.add('sr-only'); // nothing new to show: no empty line
     dl.appendChild(el('span', 'sr-only', evxDate(it.date, { weekday: 'long', month: 'long', day: 'numeric' })));
     body.appendChild(dl);
@@ -1671,7 +1680,7 @@
     var towns = Object.keys(counts).sort(function (x, y) { return counts[y] - counts[x] || (x < y ? -1 : 1); });
     var place = b.town ? b.town + ' (' + counts[b.town] + ')' : 'All towns';
     // one compact town dropdown: a native select laid over a chip-style label (towns and counts live in the menu)
-    var lab = el(towns.length > 1 ? 'label' : 'span', 'evx-near'); lab.appendChild(svg(ICON_PIN)); lab.appendChild(el('span', null, place));
+    var lab = el(towns.length > 1 ? 'label' : 'span', 'evx-near'); lab.appendChild(svg(ICON_PIN)); lab.appendChild(el('span', null, spell(place)));
     if (towns.length > 1) {
       lab.appendChild(svg([['path', { d: 'M6 9l6 6 6-6' }]]));
       var sel = el('select'); sel.setAttribute('aria-label', 'Filter events by town');
@@ -2298,15 +2307,15 @@
 
   var logoMap = {};
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
-  // Short relative time for card meta ("12m ago", "5h ago", "Yesterday", "Oct 15"); the full date is in the tooltip.
+  // Relative time for card meta, spelled out ("12 minutes ago", "5 hours ago", "Yesterday", "October 15"); the full date is in the tooltip.
   function shortWhen(iso) {
     var t = Date.parse(iso); if (!iso || isNaN(t)) return '';
     var m = Math.round((Date.now() - t) / 6e4);
-    if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';
-    if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
+    if (m < 1) return 'Just now'; if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
+    var hr = Math.round(m / 60); if (m < 24 * 60) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
     var z = 'America/Chicago', day = function (x) { return new Date(x).toLocaleDateString('en-US', { timeZone: z }); };
     if (day(t + 864e5) === day(Date.now())) return 'Yesterday';
-    return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: z });
+    return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: z });
   }
   // The first picture of a list is usually the largest thing on screen (LCP): it loads at once with high priority;
   // every later one waits until it is near the screen. renderList and renderEvents set leadPic before building cards.

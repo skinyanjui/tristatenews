@@ -90,7 +90,7 @@ test('keyword tiers for official items (and cancellations never show)', () => {
 
 test('"until" line is America/Chicago', () => {
   assert.equal(B.untilText(Date.parse('2026-10-18T02:45:00Z'), NOW), 'until 9:45 PM CT');
-  assert.equal(B.untilText(Date.parse('2026-10-18T13:00:00Z'), NOW), 'until Sun 8:00 AM CT');
+  assert.equal(B.untilText(Date.parse('2026-10-18T13:00:00Z'), NOW), 'until Sunday 8:00 AM CT');
   assert.equal(B.untilText(null, NOW), '');
 });
 

@@ -24,11 +24,11 @@ function safeHref(u) {
 function shortWhen(iso, now) {
   const t = Date.parse(iso); if (!iso || isNaN(t)) return '';
   const m = Math.round((now - t) / 6e4);
-  if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';
-  if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
+  if (m < 1) return 'Just now'; if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
+  const hr = Math.round(m / 60); if (m < 24 * 60) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
   const day = x => new Date(x).toLocaleDateString('en-US', { timeZone: TZ });
   if (day(t + 864e5) === day(now)) return 'Yesterday';
-  return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: TZ });
+  return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: TZ });
 }
 function timeAgo(iso) {
   if (!iso || isNaN(Date.parse(iso))) return '';

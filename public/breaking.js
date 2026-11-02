@@ -119,7 +119,7 @@
     if (end == null) return '';
     now = now == null ? Date.now() : now;
     var sameDay = chi(end, { year: 'numeric', month: 'numeric', day: 'numeric' }) === chi(now, { year: 'numeric', month: 'numeric', day: 'numeric' });
-    return 'until ' + (sameDay ? '' : chi(end, { weekday: 'short' }) + ' ') + chi(end, { hour: 'numeric', minute: '2-digit' }) + ' CT';
+    return 'until ' + (sameDay ? '' : chi(end, { weekday: 'long' }) + ' ') + chi(end, { hour: 'numeric', minute: '2-digit' }) + ' CT';
   }
 
   return { HOUR: HOUR, NO_END_MS: NO_END_MS, TIERS: TIERS, NWS: NWS, RULES: RULES, fromNws: fromNws, classifyOfficial: classifyOfficial,

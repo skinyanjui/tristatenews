@@ -58,7 +58,7 @@
   }
   // "Tue, Oct 20" for the day a capped period covers (the day before its end moment).
   function dayLabel(until) {
-    return new Date(until - 1).toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+    return new Date(until - 1).toLocaleDateString('en-US', { timeZone: TZ, weekday: 'long', month: 'long', day: 'numeric' });
   }
   return { DAY: DAY, MIN_HOURS: MIN_HOURS, dayEnd: dayEnd, boundDate: boundDate, window: window_, dayLabel: dayLabel, offsetMin: offsetMin };
 });

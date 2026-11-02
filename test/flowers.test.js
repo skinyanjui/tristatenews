@@ -112,7 +112,7 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   const html = require('./_page.js')();
   assert.ok(html.includes('<script src="/flowers.js"></script>'));
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
-  assert.ok(fn.includes("['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
+  assert.ok(fn.includes("['Send flowers', 'Send flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Plant a tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
   assert.ok(fn.includes("a.rel = f.paid ? F.REL_PAID : f.rel;") && fn.includes("if (f.paid) { w.appendChild(el('span', 'ob-paid', F.LABEL_PAID));"), '"paid link" only when paid');
   assert.ok(fn.includes('return p.children.length ? p : null;'), 'no empty row');
   assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');

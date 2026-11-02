@@ -1554,10 +1554,12 @@
   // The horizontal side-scroller (ship77: shared by "Featured & popular" and every day on the Events tab): a heading
   // row with back / forward arrows (640px and up), then a snapping rail of event cards that scrolls by touch, trackpad,
   // the arrows or the keyboard (the rail is focusable; arrow keys scroll it, Tab walks its cards' links).
-  function evxScroller(cls, heading, label, list, b) {
+  function evxScroller(cls, heading, label, list, b, count) {
     var sec = el('section', cls), sh = el('div', 'evx-sh');
     sec.setAttribute('aria-label', label);
     sh.appendChild(heading);
+    // ship84: the rail's total, number first ("1 event", "12 events"), at the right end of the header, just left of the arrows
+    if (count != null) sh.appendChild(el('span', 'evx-ct', evxCount(count)));
     var rail = el('div', 'evx-rail'), ar = el('div', 'evx-arrows');
     rail.tabIndex = 0; rail.setAttribute('role', 'group'); rail.setAttribute('aria-label', label + ', scroll sideways');
     [[ICON_L, -1, 'Scroll back'], [ICON_R, 1, 'Scroll forward']].forEach(function (a) { var bt = el('button'); bt.type = 'button'; bt.setAttribute('aria-label', a[2] + ': ' + label); bt.appendChild(svg(a[0])); bt.addEventListener('click', function () { rail.scrollBy({ left: a[1] * rail.clientWidth * 0.8, behavior: 'smooth' }); }); ar.appendChild(bt); });
@@ -1566,6 +1568,7 @@
     sec.appendChild(rail);
     return sec;
   }
+  function evxCount(n) { return n + (n === 1 ? ' event' : ' events'); }
   // A card in the horizontal Featured / Popular row: picture on top, the same template below.
   // ship78/ship79: THE event card, the one template for every event (feed or community post, featured, Popular, each
   // day scroller and search): picture or date tile with the date badge on top, category, a 2-line title, the day, the
@@ -1765,8 +1768,7 @@
       var h = el('h3'), rel = evxRel(d);
       if (rel) h.appendChild(el('span', 'evx-rel', rel));
       h.appendChild(document.createTextNode(evxDayLabel(d)));
-      h.appendChild(el('small', null, String(dayCount[d])));
-      var g = evxScroller('evx-day', h, (rel ? rel + ', ' : '') + evxDayLabel(d), byDay[d], b);
+      var g = evxScroller('evx-day', h, (rel ? rel + ', ' : '') + evxDayLabel(d) + ', ' + evxCount(dayCount[d]), byDay[d], b, dayCount[d]);
       list.appendChild(g);
       var n0 = seen; seen += byDay[d].length;
       if (adAt > n0 && adAt <= seen) { var ac = UI.boardAd('event'); if (ac) list.appendChild(ac); } // the one board ad: after the day it falls in, never inside a scroller

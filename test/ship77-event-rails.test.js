@@ -22,7 +22,7 @@ test('one shared scroller: popular and each day use evxScroller with evxCard, ar
 test('day scrollers: filtered items only, empty days skipped, the ad sits between scrollers', () => {
   const r = fn('renderEvents');
   assert.ok(r.includes('groups.forEach(function (d) {'));
-  assert.ok(r.includes('byDay[d], b)'));
+  assert.ok(r.includes('byDay[d], b, dayCount[d])'));
   assert.ok(!/rail\.appendChild\(ac\)|g\.appendChild\(ac\)/.test(r), 'never inside a scroller');
 });
 

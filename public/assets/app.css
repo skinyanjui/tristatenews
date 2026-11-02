@@ -619,7 +619,6 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 /* date groups and rows */
 .evx-day { display:grid; gap:10px; min-width:0; } /* ship77: a day = heading row + side-scroller, like .evx-pop */
 .evx-day h3 { position:sticky; top:calc(env(safe-area-inset-top, 0px) + 80px); z-index:2; margin:0; padding:var(--sp-1) 0; display:flex; align-items:baseline; gap:8px; background:color-mix(in srgb, var(--background) 94%, transparent); font-size:15px; line-height:20px; font-weight:600; }
-.evx-day h3 small { font:500 12px/16px var(--font-mono); color:var(--text-muted); }
 .evx-day h3 .evx-rel { color:var(--c-events); }
 /* the card template: every Events card has the same five slots in the same place, filled or empty */
 .evt { display:grid; row-gap:4px; min-width:0; min-height:0; }
@@ -726,6 +725,9 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 article.card.row.row:has(> .ca) .acts.acts .like > span { font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; }
 .evc.evc .evc-pic > .like.evc-like::before { background:rgba(255,255,255,.92); }
 .evc.evc .evc-pic > .like.evc-like:not([aria-pressed="true"]) { color:#111; }
+
+/* ship84: a rail's event total ("1 event", "12 events") in the header's own colour family, quiet and one line. */
+.evx-sh .evx-ct { font-size:13px; font-weight:500; color:var(--text-muted); }
 
 /* ---------- ship81: compact event cards on big screens ----------
    The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
@@ -982,3 +984,8 @@ article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) > :not(.ob-acts) { min-
 @media (min-width:1024px) {
   .evx-rail .evc.evc .evc-foot.evc-foot > .evc-right { gap:var(--sp-1); }
 }
+/* ship84: rail header = heading | total | arrows. The total sits at the right end, on the rail's right edge and page
+   gutter on phones (no arrows), just left of the arrows from 640px, all on one centre line; never wraps or truncates. */
+.evx-sh.evx-sh { grid-template-columns:minmax(0, 1fr) auto auto; align-items:center; }
+.evx-sh > .evx-ct { justify-self:end; white-space:nowrap; line-height:var(--sp-6); font-variant-numeric:tabular-nums; }
+@media (max-width:639px) { .evx-sh.evx-sh { grid-template-columns:minmax(0, 1fr) auto; } } /* no arrows on phones: the total takes the gutter edge */

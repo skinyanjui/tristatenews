@@ -17,6 +17,7 @@ const { SOURCES, DISABLED_SOURCES } = require('./_sources.js');
 
 const { inTriState } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
+const ET = require('../public/eventtime.js');
 const FLAGS = require('./_flags.js');
 // Every publisher request goes through safeFetch (http/https only, no private or metadata addresses after DNS, at most
 // 3 redirects, each re-checked) and every body through readCapped (PR 1.3). Caps are about 3x the largest body seen
@@ -1069,7 +1070,8 @@ function background(promise) {
 // there are older ones, which ?before=<that ISO time> returns, NEWS_PAGE at a time, stories only. The page fetches
 // them when the reader reaches the end of News. isEvent/isObit are left out: the page tells kinds by source.
 const NEWS_PAGE = 200;
-function page(snap, before) {
+function page(snap, before, now) {
+  if (now == null) now = Date.now();
   if (!snap || !Array.isArray(snap.items)) return snap;
   const kinds = {}; (snap.sources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind; });
   const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits';
@@ -1084,7 +1086,10 @@ function page(snap, before) {
   const shown = stories.slice(0, NEWS_PAGE);
   const more = stories.length > NEWS_PAGE ? { before: new Date(t(shown[shown.length - 1])).toISOString() } : null;
   const keep = new Set(shown);
-  const items = before != null ? shown : snap.items.filter(it => boardKind(it) || keep.has(it));
+  // ship76: an event leaves 58 minutes after its start (or at its end) at the moment of the answer, so a stored or
+  // CDN-cached snapshot never serves a stale one (public/eventtime.js; the page checks again on every draw)
+  const evGone = it => (it.isEvent || kinds[it.sourceId] === 'events') && ET.status({ start: it.published, end: it.end }, now).hide;
+  const items = before != null ? shown : snap.items.filter(it => (boardKind(it) && !evGone(it)) || keep.has(it));
   const out = Object.assign({}, snap, { items: items.map(strip) });
   if (before != null) delete out.sources;
   if (more) out.more = more;

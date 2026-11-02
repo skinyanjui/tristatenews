@@ -161,7 +161,7 @@ test('/api/news paging: every event and obituary, the newest NEWS_PAGE stories, 
   for (let i = 0; i < N + 50; i++) items.push({ id: 's' + i, link: 'l' + i, sourceId: i % 2 ? 'p' : 'n', published: new Date(t0 - i * 6e4).toISOString(), isEvent: false });
   for (let i = 0; i < 30; i++) items.push({ id: 'o' + i, sourceId: 'o', isObit: true, published: new Date(t0 - i * 864e5).toISOString() });
   for (let i = 0; i < 20; i++) items.push({ id: 'e' + i, sourceId: 'e', isEvent: true, published: new Date(t0 + i * 864e5).toISOString() });
-  const first = news.page({ updatedAt: 'x', sources, items });
+  const first = news.page({ updatedAt: 'x', sources, items }, undefined, t0); // ship76: answered at t0 (events trim at the answer's time)
   assert.equal(first.items.filter(i => /^s/.test(i.id)).length, N);
   assert.equal(first.items.filter(i => /^o/.test(i.id)).length, 30); assert.equal(first.items.filter(i => /^e/.test(i.id)).length, 20);
   assert.ok(first.items.every(i => !('isEvent' in i) && !('isObit' in i)));

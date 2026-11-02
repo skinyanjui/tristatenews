@@ -2,7 +2,7 @@
 // The home page's CSS and JS are cacheable files under public/assets (a year, immutable, vercel.json), each loaded
 // from data/pages/index.html with ?v=<content hash> so a change is picked up at once:
 //   assets/app.css   the page's styles (with the self-hosted Geist @font-face rules, assets/fonts)
-//   assets/lib.js    LIBS (breaking, routes, featured, adslots, adsizes, flowers) in that order, then the call that
+//   assets/lib.js    LIBS (breaking, routes, featured, adslots, adsizes, flowers, eventtime) in that order, then the call that
 //                    points the head at the current tab; built from those files, which stay in public/ for the other
 //                    pages and the tests. Loaded with defer in <head>, before app.js.
 //   assets/app.js    the page script, defer in <head> (runs after the document is parsed, as at the end of <body>)
@@ -17,7 +17,7 @@ const INDEX = path.join(__dirname, '..', 'data', 'pages', 'index.html');
 const CSS = path.join(PUB, 'assets', 'app.css');
 const JS = path.join(PUB, 'assets', 'app.js');
 const LIB = path.join(PUB, 'assets', 'lib.js');
-const LIBS = ['breaking.js', 'routes.js', 'featured.js', 'adslots.js', 'adsizes.js', 'flowers.js'];
+const LIBS = ['breaking.js', 'routes.js', 'featured.js', 'adslots.js', 'adsizes.js', 'flowers.js', 'eventtime.js'];
 const APPLY = '/* each tab has its own URL: set this one\'s title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));';
 
 const hash = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 10);

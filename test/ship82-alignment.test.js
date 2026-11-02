@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert');const css=require('fs').readFileSync(__dirname+'/../public/assets/app.css','utf8');
+test('ship82 alignment block uses tokens only',()=>{const i=css.indexOf('/* ship82:');assert.ok(i>0);const b=css.slice(i);assert.ok(!/\d+px/.test(b.replace(/\/\*[\s\S]*?\*\//g,'')));assert.match(b,/evc-body > \* \+ \* \{ margin-top:var\(--sp-1\)/);assert.match(b,/like\.evc-like::before \{ inset:var\(--sp-1\)/);assert.match(b,/\.evx-badge \{ top:var\(--sp-2\); left:var\(--sp-2\)/);});

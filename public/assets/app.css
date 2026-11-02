@@ -938,3 +938,10 @@ main { max-width:var(--content-max); padding-left:var(--gutter); padding-right:v
 .legal-foot { display:grid; gap:var(--sp-2); margin:var(--sp-8) 0 0; padding:var(--sp-3) 0 0; }
 .legal-links { gap:0 var(--sp-2); margin-left:calc(-1 * var(--sp-2)); }
 .legal-link { padding:0 var(--sp-2); }
+
+/* ship82: alignment — one token rhythm inside event cards, heart chip on the same corner inset as the date badge */
+.evc.evc .evc-body > * + * { margin-top:var(--sp-1); }
+.evc.evc .evc-body > .evc-foot { margin-top:auto; }
+.evc.evc .evc-pic > .like.evc-like { top:var(--sp-1); right:var(--sp-1); }
+.evc.evc .evc-pic > .like.evc-like::before { inset:var(--sp-1); }
+.evx-badge { top:var(--sp-2); left:var(--sp-2); }

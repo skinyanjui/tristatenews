@@ -565,6 +565,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 @media (min-width:640px) { .evx-arrows { display:flex; } }
 .evx-rail { display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-padding-inline:16px; margin:0 -16px; padding:4px 16px 8px; scrollbar-width:none; }
 .evx-rail::-webkit-scrollbar { display:none; }
+.evx-rail:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 @media (min-width:640px) { .evx-rail { margin:0; padding:4px 0 8px; scroll-padding-inline:0; } }
 /* carousel card */
 .evc { position:relative; flex:none; width:min(232px, 68vw); scroll-snap-align:start; display:grid; grid-template-rows:auto 1fr; overflow:hidden; border:1px solid var(--gray-200); border-radius:16px; background:var(--background); box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04); }
@@ -585,7 +586,7 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evc .evx-tile { border-right:0; }
 .evx-paid { display:inline-flex; align-items:center; align-self:flex-start; height:20px; padding:0 6px; border-radius:var(--radius-sm); background:var(--amber); color:#1a1200; font-size:11px; line-height:16px; font-weight:600; white-space:nowrap; }
 /* date groups and rows */
-.evx-day { display:grid; gap:10px; min-width:0; }
+.evx-day { display:grid; gap:10px; min-width:0; } /* ship77: a day = heading row + side-scroller, like .evx-pop */
 .evx-day h3 { position:sticky; top:calc(env(safe-area-inset-top, 0px) + 80px); z-index:2; margin:0 -4px; padding:6px 4px; display:flex; align-items:baseline; gap:8px; background:color-mix(in srgb, var(--background) 94%, transparent); font-size:15px; line-height:20px; font-weight:600; }
 .evx-day h3 small { font:500 12px/16px var(--font-mono); color:var(--text-muted); }
 .evx-day h3 .evx-rel { color:var(--c-events); }
@@ -876,8 +877,7 @@ article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico.on { color:var(--fo
   /* News stays one story per row at every width. The column is capped at --news-max and centered in the wider page,
      so a headline and its two-line summary keep a readable line length; the side ads stay at the page edges. */
   .list.news-one { grid-template-columns:1fr; max-width:var(--news-max); margin-left:auto; margin-right:auto; }
-  .evx-day { grid-template-columns:1fr 1fr; }
-  .evx-day > h3, .evx-day > :not(.evr) { grid-column:1 / -1; }
+  .evx-day { grid-template-columns:minmax(0, 1fr); }
 }
 @media (min-width:1920px) {
   .deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }

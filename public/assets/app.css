@@ -729,6 +729,12 @@ article.card.row.row:has(> .ca) .acts.acts .like > span { font-size:13px; font-w
 /* ship84: a rail's event total ("1 event", "12 events") in the header's own colour family, quiet and one line. */
 .evx-sh .evx-ct { font-size:13px; font-weight:500; color:var(--text-muted); }
 
+/* ship85: the date badge is one pill, "NOVEMBER 1": month and day share a row and a size step, so the pill is as tall as
+   the heart's circle and sits on one line with it across the card top. */
+.evx-badge.evx-badge .evx-mo { font-size:11px; line-height:16px; letter-spacing:.06em; }
+.evx-badge.evx-badge .evx-dd { font-size:15px; line-height:16px; font-weight:700; }
+.evx-tile .evx-md .evx-dd { font-size:30px; line-height:34px; }
+
 /* ---------- ship81: compact event cards on big screens ----------
    The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
    and Tickets/Details) in a narrower, tighter version from 1024px, so each side-scroller (Popular, every day) shows more
@@ -989,3 +995,7 @@ article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) > :not(.ob-acts) { min-
 .evx-sh.evx-sh { grid-template-columns:minmax(0, 1fr) auto auto; align-items:center; }
 .evx-sh > .evx-ct { justify-self:end; white-space:nowrap; line-height:var(--sp-6); font-variant-numeric:tabular-nums; }
 @media (max-width:639px) { .evx-sh.evx-sh { grid-template-columns:minmax(0, 1fr) auto; } } /* no arrows on phones: the total takes the gutter edge */
+/* ship85: the badge pill and the tile's month/day row. 32px tall (the heart circle), 8px corner inset like the heart,
+   centred contents; never reaches the heart on a 240px card (max-width leaves the heart's 48px corner free). */
+.evx-badge.evx-badge { flex-direction:row; align-items:center; gap:var(--sp-1); box-sizing:border-box; height:var(--sp-8); min-width:0; max-width:calc(100% - var(--sp-12) - var(--sp-2)); padding:0 var(--sp-3); border-radius:9999px; white-space:nowrap; top:var(--sp-2); left:var(--sp-2); }
+.evx-tile .evx-md { display:flex; align-items:baseline; gap:var(--sp-2); white-space:nowrap; }

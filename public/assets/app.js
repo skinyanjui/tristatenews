@@ -1501,8 +1501,10 @@
   }
   function evxTile(it) {
     var t = el('div', 'evx-tile'); t.setAttribute('aria-hidden', 'true');
-    t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'long' })));
-    t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
+    var md = el('span', 'evx-md'); // ship85: month and day on one row ("NOVEMBER 1"), the weekday under it
+    md.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'long' })));
+    md.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
+    t.appendChild(md);
     t.appendChild(el('span', 'evx-wd', evxDate(it.date, { weekday: 'long' })));
     return t;
   }

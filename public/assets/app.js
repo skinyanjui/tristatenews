@@ -1585,11 +1585,32 @@
     return sec;
   }
   // A card in the horizontal Featured / Popular row: picture on top, the same template below.
+  // ship78: the event card keeps its own design (picture or date tile with the date badge on top, category, a 2-line
+  // title, the day, venue and town) and borrows only the shared bottom row: one fixed, non-wrapping row pinned to the
+  // card's bottom (cards in a scroller are equal height) with the time or "Happening now", heart, share and Tickets/Details.
   function evxCard(it, b) {
     var c = el('article', 'evc' + (it.featured ? ' evr-feat' : ''));
     c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
     c.appendChild(evxPic(it, 'evc-pic'));
-    c.appendChild(evxBody(it, b, 'evc-body', true, false));
+    var body = el('div', 'evt evc-body'), top = el('div', 'evt-top');
+    if (it.featured) top.appendChild(evxPaid());
+    if (it.category) top.appendChild(el('span', 'evr-cat', it.category));
+    body.appendChild(top);
+    var h = evxTitle(it, 'h4'); h.className = 'evt-title'; h.title = it.title; body.appendChild(h);
+    body.appendChild(el('div', 'evt-when', evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' })));
+    var via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
+    var wl = [evxWhere(it), via].filter(Boolean).join(' \u00B7 '), w = el('div', 'evt-where', wl); if (wl) w.title = wl;
+    body.appendChild(w);
+    var feed = it.feed && it.link, ac = feed ? { acts: evxReact(it), feature: null } : actions(it, 'event', b);
+    if (!feed && it.contact) body.appendChild(el('div', 'evt-where cl-contact', it.contact));
+    if (ac.feature) body.appendChild(ac.feature);
+    var foot = el('div', 'evt-foot evc-foot'), tm = el('span', 'evc-time');
+    if (evStatus(it).live) tm.appendChild(liveTag()); else tm.textContent = evxTime(it) || 'All day';
+    foot.appendChild(tm);
+    if (ac.acts) foot.appendChild(ac.acts);
+    if (feed) foot.appendChild(evxGo(it));
+    body.appendChild(foot);
+    c.appendChild(body);
     return c;
   }
   // Featured posts first (paid, any date), then this week's most-hearted events; ties go to ticketed shows, then to ones with a photo.

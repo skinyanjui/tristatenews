@@ -84,6 +84,6 @@ test('layout: News is one column at every width, centered at a readable max widt
   assert.ok(css.includes('.list.news-one { grid-template-columns:1fr; max-width:var(--news-max); margin-left:auto; margin-right:auto; }'));
   assert.ok(html.includes('--news-max:960px;'));
   assert.ok(css.includes('.deal-grid, .job-grid { grid-template-columns:1fr 1fr 1fr; }'), 'jobs/deals unchanged');
-  assert.ok(css.includes('.evx-day { grid-template-columns:1fr 1fr; }'), 'events unchanged');
+  assert.ok(css.includes('.evx-day { grid-template-columns:minmax(0, 1fr); }'), 'events: one full-width side-scroller per day (ship77)');
   assert.ok(!read('public/legal.html').includes('two columns') && !read('README.md').includes('every 10th'));
 });

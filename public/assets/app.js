@@ -1569,6 +1569,21 @@
       text: [where, it.desc].filter(Boolean).join(' \u2014 '), avatar: it.feed ? bizAvatar(it.source || '', it.logo) : null, name: it.feed ? it.source : '',
       left: [it.feed ? null : contactNode(it.contact)], right: right, acts: ac.acts, extra: [ac.feature] });
   }
+  // The horizontal side-scroller (ship77: shared by "Featured & popular" and every day on the Events tab): a heading
+  // row with back / forward arrows (640px and up), then a snapping rail of event cards that scrolls by touch, trackpad,
+  // the arrows or the keyboard (the rail is focusable; arrow keys scroll it, Tab walks its cards' links).
+  function evxScroller(cls, heading, label, list, b) {
+    var sec = el('section', cls), sh = el('div', 'evx-sh');
+    sec.setAttribute('aria-label', label);
+    sh.appendChild(heading);
+    var rail = el('div', 'evx-rail'), ar = el('div', 'evx-arrows');
+    rail.tabIndex = 0; rail.setAttribute('role', 'group'); rail.setAttribute('aria-label', label + ', scroll sideways');
+    [[ICON_L, -1, 'Scroll back'], [ICON_R, 1, 'Scroll forward']].forEach(function (a) { var bt = el('button'); bt.type = 'button'; bt.setAttribute('aria-label', a[2] + ': ' + label); bt.appendChild(svg(a[0])); bt.addEventListener('click', function () { rail.scrollBy({ left: a[1] * rail.clientWidth * 0.8, behavior: 'smooth' }); }); ar.appendChild(bt); });
+    sh.appendChild(ar); sec.appendChild(sh);
+    list.forEach(function (it) { rail.appendChild(evxCard(it, b)); });
+    sec.appendChild(rail);
+    return sec;
+  }
   // A card in the horizontal Featured / Popular row: picture on top, the same template below.
   function evxCard(it, b) {
     var c = el('article', 'evc' + (it.featured ? ' evr-feat' : ''));
@@ -1685,14 +1700,9 @@
     if (plain && items.length) {
       var pop = evxPopular(items);
       if (pop.length) {
-        var sec = el('section', 'evx-sec evx-pop'), sh = el('div', 'evx-sh'), hasF = pop.some(function (x) { return x.featured; });
-        sec.setAttribute('aria-label', hasF ? 'Featured and popular this week' : 'Popular this week');
-        sh.appendChild(el('h3', null, hasF ? 'Featured & popular this week' : 'Popular this week'));
-        var rail = el('div', 'evx-rail'), ar = el('div', 'evx-arrows');
-        [[ICON_L, -1, 'Scroll back'], [ICON_R, 1, 'Scroll forward']].forEach(function (a) { var bt = el('button'); bt.type = 'button'; bt.setAttribute('aria-label', a[2]); bt.appendChild(svg(a[0])); bt.addEventListener('click', function () { rail.scrollBy({ left: a[1] * rail.clientWidth * 0.8, behavior: 'smooth' }); }); ar.appendChild(bt); });
-        sh.appendChild(ar); sec.appendChild(sh);
-        pop.forEach(function (it) { rail.appendChild(evxCard(it, b)); });
-        sec.appendChild(rail); root.appendChild(sec);
+        var hasF = pop.some(function (x) { return x.featured; });
+        var sec = evxScroller('evx-sec evx-pop', el('h3', null, hasF ? 'Featured & popular this week' : 'Popular this week'), hasF ? 'Featured and popular this week' : 'Popular this week', pop, b);
+        root.appendChild(sec);
       }
     }
     if (!items.length) { root.appendChild(evxEmpty(b, postedEvents().concat(feedEvents()))); return root; }
@@ -1702,14 +1712,15 @@
     var dayCount = {}; rows.forEach(function (it) { dayCount[it.date] = (dayCount[it.date] || 0) + 1; });
     var list = el('div', 'evx-sec'), seen = 0, adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1); // one ad card per board view
     groups.forEach(function (d) {
-      var g = el('section', 'evx-day'), h = el('h3'), rel = evxRel(d);
+      // ship77: each day is its own side-scroller, the same component as "Featured & popular" (evxScroller)
+      var h = el('h3'), rel = evxRel(d);
       if (rel) h.appendChild(el('span', 'evx-rel', rel));
       h.appendChild(document.createTextNode(evxDayLabel(d)));
       h.appendChild(el('small', null, String(dayCount[d])));
-      g.setAttribute('aria-label', (rel ? rel + ', ' : '') + evxDayLabel(d));
-      g.appendChild(h);
-      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b, true)); if (++seen === adAt) { var ac = UI.boardAd('event'); if (ac) g.appendChild(ac); } });
+      var g = evxScroller('evx-day', h, (rel ? rel + ', ' : '') + evxDayLabel(d), byDay[d], b);
       list.appendChild(g);
+      var n0 = seen; seen += byDay[d].length;
+      if (adAt > n0 && adAt <= seen) { var ac = UI.boardAd('event'); if (ac) list.appendChild(ac); } // the one board ad: after the day it falls in, never inside a scroller
     });
     root.appendChild(list);
     if (rows.length > shown.length) {

@@ -9,7 +9,7 @@ const js = read('public/assets/app.js'), css = read('public/assets/app.css');
 const fn = (name) => { const i = js.indexOf('  function ' + name + '('); assert.ok(i > 0, name); return js.slice(i, js.indexOf('\n  }\n', i)); };
 
 test('every event surface draws evxCard: scrollers, search and the board card', () => {
-  assert.ok(fn('evxScroller').includes('rail.appendChild(evxCard(it, b))'));
+  assert.ok(fn('evxScroller').includes("rail.appendChild(evxCard(it, b, cls === 'evx-day'))"));
   assert.match(fn('eventCard'), /var c = evxCard\(it, b\); c\.classList\.add\('evc-solo'\)/);
   assert.ok(fn('cardBase').includes("if (kind === 'event') return eventCard(it, b);"));
   for (const gone of ['evxRow', 'evxBody', 'evxFoot']) assert.ok(!js.includes('function ' + gone + '('), gone + ' removed');

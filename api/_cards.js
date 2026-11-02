@@ -10,6 +10,7 @@
 'use strict';
 const BK = require('../public/breaking.js');
 const RT = require('../public/routes.js');
+const DD = require('../public/dedupe.js'); // ship80: no repeated copy (the page's makeCard uses the same rules)
 
 const PAGE = 24; // app.js PAGE: the first screenful of a tab
 const BREAKING_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\b|\bbreaking( news)?\s*[:|\u2013\u2014-]|[\[(]breaking[\])]/i;
@@ -87,18 +88,19 @@ function card(it, o) {
   let src = '<div class="src">';
   if (logo) src += '<img class="av" src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
   src += '<b>' + esc(it.source) + '</b>';
-  if (it.place && o.places) src += '<span class="place">' + esc(it.place) + '</span>';
+  if (it.place && o.places && DD.part(it.place, title, it.source)) src += '<span class="place">' + esc(it.place) + '</span>';
   src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" title="' + esc(timeAgo(it.published)) + '"' : '') + '>' + esc(shortWhen(it.published, o.now)) + '</time></div>';
   let body = '<div class="bd">';
   const tag = '<span class="pill pill-red' + (big && pic ? ' pill-over' : '') + '"><i></i>Breaking</span>';
   if (big && !pic) body += '<div class="bk-head">' + tag + '</div>';
   // ship74 story rows: bold section label, headline, then the source line (the Breaking card keeps source first)
-  const kick = big ? '' : RT.sectionLabel(kd, it.cat);
+  const kick = big ? '' : DD.part(RT.sectionLabel(kd, it.cat), o.tab); // no label that repeats the tab it is on
   body += big ? src + '<h2>' + esc(title) + '</h2>' : (kick ? '<span class="kicker">' + esc(kick) + '</span>' : '') + '<h2 title="' + esc(title) + '">' + esc(title) + '</h2>';
   if (big && (o.brk.label || o.brk.end != null)) {
     body += '<div class="bk-meta">' + (o.brk.label ? '<b>' + esc(o.brk.label) + '</b>' : '') + (o.more ? '<span>+' + o.more + ' more active</span>' : '') + '</div>';
   }
-  if (it.summary) body += '<p>' + esc(it.summary) + '</p>';
+  const sum = DD.preview(title, it.summary); // a preview never repeats the headline
+  if (sum) body += '<p>' + esc(sum) + '</p>';
   if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
   if (!big) body += src; // News rows: headline, preview, then the source + time line last
   body += '</div>';
@@ -115,10 +117,10 @@ function card(it, o) {
 }
 
 // The list's inner HTML for pick()'s result.
-function cards(p, now) {
+function cards(p, now, tab) {
   now = now == null ? Date.now() : now;
   const logos = {}; p.data.sources.forEach(s => { logos[s.id] = s.logo; });
-  const o = { kindOf: p.kindOf, logos, places: p.places, now, lead: { left: true } };
+  const o = { kindOf: p.kindOf, logos, places: p.places, now, lead: { left: true }, tab: tab || '' };
   let h = '';
   const top = p.brk.top && p.brk.top.item;
   if (top) h += card(top, Object.assign({}, o, { brk: p.brk.top, more: p.brk.more }));

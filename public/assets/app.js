@@ -20,6 +20,8 @@
     clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 2000);
   }
   // Heart and share side by side in the card's top-right corner (every card type uses this one row).
+  // ship80: repeated copy on cards goes (public/dedupe.js); without it, text passes through unchanged
+  var DD = window.TSNDedupe || { preview: function (t, x) { return x || ''; }, part: function (x) { return x || ''; }, parts: function (l) { return (l || []).filter(Boolean); }, lead: function (x) { return x || ''; }, same: function () { return false; }, has: function () { return false; } };
   function actRow(heartBtn, it) { var g = el('div', 'acts'); g.appendChild(heartBtn); g.appendChild(shareFor(it)); return g; }
   // The share button for a story or event, or nothing when it has no usable link.
   function shareFor(it) { var u = it.link ? safeHref(it.link) : '#'; return u === '#' ? document.createDocumentFragment() : UI.share(it.title, u); }
@@ -121,7 +123,7 @@
         if (!window.TSNAds || !TSNAds.validAd(ad)) return null;
         var a = UI.adLink('rail-ad', ad);
         if (!ad.img) a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
-        if (ad.text) a.appendChild(el('span', 'rail-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
+        if (UI.adText(ad, 'Sponsored')) a.appendChild(el('span', 'rail-tx', UI.adText(ad, 'Sponsored'))); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
         return UI.sized(a, 'rail:left', ad);
       },
       // Side ads (public/adslots.js railFill): tall, vertical units in the margins on wide screens, only on the board tabs
@@ -187,12 +189,12 @@
         var sp = window.TSNAds && SPONSORS ? TSNAds.pick(SPONSORS[slot], Date.now()) : null;
         if (sp) {
           var a = UI.adLink('spon', sp);
-          a.appendChild(el('b', null, sp.name)); if (sp.text) a.appendChild(el('span', null, sp.text));
+          a.appendChild(el('b', null, sp.name)); if (UI.adText(sp, 'Sponsored')) a.appendChild(el('span', null, UI.adText(sp, 'Sponsored')));
           return a;
         }
         if (!houseAd) return null;
         var sm = window.TSNAds ? UI.sample((TSNAds.OFFSET[slot] || 0) + 1) : null;
-        if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (sm.text) s2.appendChild(el('span', null, sm.text)); s2.appendChild(el('span', 'sr-only', 'A sample, not a real business.')); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
+        if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (UI.adText(sm, 'Sample ad')) s2.appendChild(el('span', null, UI.adText(sm, 'Sample ad'))); s2.appendChild(el('span', 'sr-only', 'A sample, not a real business.')); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
         var h = el('button', 'spon spon-house'); h.type = 'button';
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with Tri-State News.')); h.appendChild(el('b', null, 'Learn more'));
         h.addEventListener('click', openAd);
@@ -222,7 +224,7 @@
         if (im) { im.className = 'th'; im.width = 112; im.height = 112; a.insertBefore(im, a.firstChild); } else a.classList.add('noimg');
         var bd = el('div', 'bd'), h = el('h2', null, ad.name || ''); h.title = ad.name || '';
         bd.appendChild(h);
-        var tx = isS ? (ad.text ? ad.text + ' ' : '') + 'A sample, not a real business. Your ad could be here.' : ad.text;
+        var at = UI.adText(ad, isS ? 'Sample ad' : 'Sponsored'), tx = isS ? (at ? at + ' ' : '') + 'A sample, not a real business. Your ad could be here.' : at;
         if (tx) bd.appendChild(el('p', null, tx));
         var src = el('div', 'src');
         src.appendChild(el('b', 'ad-lab', isS ? 'Sample ad' : 'Sponsored'));
@@ -238,6 +240,8 @@
       // o: { sec, cls, href (the whole row links there) | titleHref (only the headline links; the bottom row may
       // then hold links of its own), pic, picRef, kicker (text or node), title, text, notes [], left [nodes],
       // avatar, name, when (node or text), right [nodes], acts (div.acts), extra [nodes, under the preview] }
+      // ship80: an ad's words without its name or its label repeated (public/dedupe.js)
+      adText: function (ad, label) { var DX = window.TSNDedupe, t = ad && ad.text || ''; return DX ? DX.lead(DX.preview(ad.name, t), label) : t; },
       row: function (o) {
         var c = el('article', 'card row' + (o.cls ? ' ' + o.cls : '')); if (o.sec) c.dataset.sec = o.sec;
         var a;
@@ -254,7 +258,8 @@
         var h = el('h2'); h.title = o.title || '';
         if (o.titleHref && !o.href) { var ta = el('a', null, o.title); ta.href = safeHref(o.titleHref); ta.target = '_blank'; ta.rel = 'noopener noreferrer'; h.appendChild(ta); } else h.textContent = o.title || '';
         bd.appendChild(h);
-        if (o.text) bd.appendChild(el('p', null, o.text));
+        var DX = window.TSNDedupe, otx = typeof o.text === 'string' && DX ? DX.preview(o.title, o.text) : o.text; // ship80: a preview never repeats the headline
+        if (otx) bd.appendChild(el('p', null, otx));
         (o.notes || []).forEach(function (n) { bd.appendChild(el('p', 'cl-note', n)); });
         (o.extra || []).forEach(function (n) { if (n) bd.appendChild(n); });
         var src = el('div', 'src');
@@ -279,18 +284,19 @@
       },
       adCard: function (kind) {
         var place = kind === 'news' ? 'card:news' : 'card:' + kind;
+        var adT = function (ad, l) { var DX = window.TSNDedupe, t = ad && ad.text || ''; return DX ? DX.lead(DX.preview(ad.name, t), l) : t; }; // as UI.adText (this method is also used on its own)
         var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
         if (!f) return null;
         if (f.type === 'sample') {
           var sa = UI.sampleAd('ad-card', f.ad); sa.appendChild(el('b', null, f.ad.name));
-          if (f.ad.text) sa.appendChild(el('span', 'ad-tx', f.ad.text));
+          if (adT(f.ad, 'Sample ad')) sa.appendChild(el('span', 'ad-tx', adT(f.ad, 'Sample ad')));
           sa.appendChild(el('span', 'ad-tx ad-note', 'A sample, not a real business. Your ad could be here.')); sa.appendChild(el('span', 'rail-cta', 'Advertise here'));
           return UI.sized(sa, place);
         }
         if (f.type === 'direct') {
           var ad = f.ad, a = UI.adLink('ad-card', ad);
           a.appendChild(el('b', null, ad.name));
-          if (ad.text) a.appendChild(el('span', 'ad-tx', ad.text)); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
+          if (adT(ad, 'Sponsored')) a.appendChild(el('span', 'ad-tx', adT(ad, 'Sponsored'))); a.appendChild(el('span', 'rail-cta', ad.cta || 'Learn more'));
           return UI.sized(a, place, ad);
         }
         var h = el('button', 'ad-card ad-house'); h.type = 'button';
@@ -1298,7 +1304,7 @@
     return out;
   }
   // Labels for a row: only parts that add information, joined with " · "; "Featured · Paid" first on a paid post (FTC).
-  function kick(it, parts) { var k = (it.featured ? ['Featured \u00B7 Paid'] : []).concat(parts).filter(Boolean).join(' \u00B7 '); return k; }
+  function kick(it, parts) { var k = (it.featured ? ['Featured \u00B7 Paid'] : []).concat(DD.parts(parts, it.title)).filter(Boolean).join(' \u00B7 '); return k; } // ship80: no part twice, none already in the title
   function postDay(at) { return at ? new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }) : ''; }
   // A community post's contact (phone or email) as a link where it can be one.
   function contactNode(c, label) { var href = applyHref(c); if (!c) return null; var n = href ? el('a', 'cl-contact', label || c) : el('span', 'cl-contact', c); if (href) n.href = href; return n; }
@@ -1475,11 +1481,11 @@
   function evxTime(it) { return it.time ? fmtTime(it.time) + ' CT' : ''; }
   function evxWhere(it) {
     var place = it.place || '', town = townOf(it), bits = [place];
-    if (town && place.toLowerCase().indexOf(town.toLowerCase()) < 0) bits.push(town);
+    if (DD.part(town, place)) bits.push(town); // ship80: a venue that already names the town keeps it once
     return bits.filter(Boolean).join(' \u00B7 ');
   }
   function evxBadge(it) {
-    var t = el('div', 'evx-badge');
+    var t = el('div', 'evx-badge'); t.setAttribute('aria-hidden', 'true'); // the date is read from the day line
     t.appendChild(el('span', 'evx-mo', evxDate(it.date, { month: 'short' })));
     t.appendChild(el('span', 'evx-dd', String(new Date(it.date + 'T12:00:00').getDate())));
     return t;
@@ -1513,14 +1519,27 @@
     go.setAttribute('aria-label', (t ? 'Tickets for ' : 'Details for ') + it.title + (it.source ? ' on ' + it.source : ''));
     return go;
   }
-  function evxReact(it) {
+  // ship80: the heart alone (it sits on the card's picture); the like count stays in its accessible name.
+  function evxHeart(it) {
     var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
     var sb = UI.heart({
       get: function () { return { on: isSaved(it.link), n: likeCount(news), label: it.title }; },
       toggle: function () { toggleSaved(news); },
       after: function () { sb.paint(); renderTabs(); }
     });
-    return actRow(sb, it);
+    sb.classList.add('evc-like');
+    return sb;
+  }
+  // ship80: Report on a feed event (not a community post, so there is no listing to flag): opens "Send us news" as a
+  // Correction, prefilled with the event, so every card has the same flag in the same place.
+  function evxFlag(it) {
+    var f = el('button', 'cl-ico evc-flag'); f.type = 'button'; f.title = 'Report a problem'; f.setAttribute('aria-label', 'Report a problem with this listing: ' + it.title); f.appendChild(svg(ICON_FLAG));
+    f.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      SN_PREFILL = { type: 'Correction', headline: ('Event listing: ' + it.title).slice(0, 120), details: ['Event: ' + it.title, it.link ? 'Link: ' + it.link : '', it.source ? 'Source: ' + it.source : '', 'What is wrong: '].filter(Boolean).join('\n') };
+      SN_VIEW = 'news'; openSubmit();
+    });
+    return f;
   }
   function liveTag() { var t = el('span', 'ev-live', ET ? ET.LABEL : 'Happening now'); return t; }
   // The horizontal side-scroller (ship77: shared by "Featured & popular" and every day on the Events tab): a heading
@@ -1534,7 +1553,7 @@
     rail.tabIndex = 0; rail.setAttribute('role', 'group'); rail.setAttribute('aria-label', label + ', scroll sideways');
     [[ICON_L, -1, 'Scroll back'], [ICON_R, 1, 'Scroll forward']].forEach(function (a) { var bt = el('button'); bt.type = 'button'; bt.setAttribute('aria-label', a[2] + ': ' + label); bt.appendChild(svg(a[0])); bt.addEventListener('click', function () { rail.scrollBy({ left: a[1] * rail.clientWidth * 0.8, behavior: 'smooth' }); }); ar.appendChild(bt); });
     sh.appendChild(ar); sec.appendChild(sh);
-    list.forEach(function (it) { rail.appendChild(evxCard(it, b)); });
+    list.forEach(function (it) { rail.appendChild(evxCard(it, b, cls === 'evx-day')); });
     sec.appendChild(rail);
     return sec;
   }
@@ -1562,7 +1581,7 @@
     if (d.showModal) d.showModal(); else d.setAttribute('open', '');
     return d;
   }
-  function evxCard(it, b) {
+  function evxCard(it, b, inDay) {
     var c = el('article', 'evc' + (it.featured ? ' evr-feat' : '') + (it.feed ? '' : ' evc-post'));
     if (it.id) c.id = 'ev-' + it.id;
     c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
@@ -1572,8 +1591,15 @@
     if (it.category) top.appendChild(el('span', 'evr-cat', it.category));
     body.appendChild(top);
     var h = evxTitle(it, 'h4'); h.className = 'evt-title'; h.title = it.title; body.appendChild(h);
-    body.appendChild(el('div', 'evt-when', evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' })));
-    var via = it.feed && it.source && (it.place || '').indexOf(it.source) < 0 ? 'via ' + it.source : '';
+    // ship80: the date badge / tile already shows the date (and the tile the weekday), and a day scroller's heading
+    // names the day: the day line shows only what they don't ("Today", "Tomorrow", or the weekday beside a photo badge),
+    // and the full date stays in it for screen readers.
+    var hasPic = !!(photoSrc(it) || it.image), rel = evxRel(it.date), dl = el('div', 'evt-when');
+    var dvis = inDay ? '' : rel || (hasPic ? evxDate(it.date, { weekday: 'short' }) : '');
+    if (dvis) dl.appendChild(el('span', null, dvis)); else dl.classList.add('sr-only'); // nothing new to show: no empty line
+    dl.appendChild(el('span', 'sr-only', evxDate(it.date, { weekday: 'long', month: 'long', day: 'numeric' })));
+    body.appendChild(dl);
+    var via = it.feed && DD.part(it.source, it.place, evxWhere(it), it.title) ? 'via ' + it.source : '';
     var wl = [evxWhere(it), via].filter(Boolean).join(' \u00B7 '), w = el('div', 'evt-where', wl); if (wl) w.title = wl;
     body.appendChild(w);
     var ac = actions(it, 'event', b); // community posts: Report (or Remove on your own) and Feature; nothing for feed events
@@ -1582,8 +1608,12 @@
     if (evStatus(it).live) tm.appendChild(liveTag()); else tm.textContent = evxTime(it) || 'All day';
     foot.appendChild(tm);
     var href = it.link || evxPostHref(it);
-    var acts = href ? evxReact(it.link ? it : Object.assign({}, it, { link: href, source: it.source || 'Community events' })) : el('div', 'acts');
-    if (ac.acts) while (ac.acts.firstChild) acts.appendChild(ac.acts.firstChild); // Report joins heart and share
+    var rt = it.link ? it : Object.assign({}, it, { link: href, source: it.source || 'Community events' });
+    if (href) c.firstChild.appendChild(evxHeart(rt)); // ship80: the heart on the picture's top-right corner
+    var acts = el('div', 'acts');
+    if (ac.acts) while (ac.acts.firstChild) acts.appendChild(ac.acts.firstChild); // community post: Report (or Remove on your own)
+    else acts.appendChild(evxFlag(it)); // feed event: Report a problem (a prefilled correction)
+    if (href) acts.appendChild(shareFor(rt));
     right.appendChild(acts);
     var go;
     if (it.link) go = evxGo(it);
@@ -1762,7 +1792,7 @@
 
   /* ---------- submit news ---------- */
   var snEl = document.getElementById('sn'), SN_TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
-  var SN_DONE = '', SN_VIEW = 'news';
+  var SN_DONE = '', SN_VIEW = 'news', SN_PREFILL = null;
   function icoCheck() { var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('fill', 'none'); n.setAttribute('stroke-width', '2'); n.setAttribute('stroke-linecap', 'round'); n.setAttribute('stroke-linejoin', 'round'); n.setAttribute('aria-hidden', 'true'); var p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M20 6 9 17l-5-5'); n.appendChild(p); return n; }
   function openSubmit() { SN_DONE = ''; state.prevCat = state.cat === 'submit' ? (state.prevCat || 'news') : state.cat; state.cat = 'submit'; resetPaging(); render(); window.scrollTo(0, 0); }
   function closeSubmit() { state.cat = state.prevCat || 'news'; resetPaging(); render(); window.scrollTo(0, 0); }
@@ -1788,6 +1818,11 @@
     els.headline = input('text', 'headline', 120, 'Road closed on Highway 41 after crash'); F.headline = field('Headline', els.headline, { req: true, hint: 'A short summary, like a newspaper headline.' });
     els.details = el('textarea'); els.details.name = 'details'; els.details.id = 'f-details' + (++uidSeq); els.details.rows = 6; els.details.maxLength = 3000; els.details.placeholder = 'Who, what, where, when. Include names, spellings and anything we can check.';
     F.details = field('What happened', els.details, { req: true }); F.details.appendChild(counter(els.details, 3000));
+    if (SN_PREFILL) { // ship80: Report on an event card arrives as a prefilled Correction
+      var pf = SN_PREFILL; SN_PREFILL = null;
+      Array.prototype.forEach.call(els.type.children, function (x) { if (x.textContent === pf.type) x.click(); });
+      els.headline.value = pf.headline; els.details.value = pf.details;
+    }
     els.town = townSelect(); F.town = field('Nearest town', els.town, { req: true });
     els.when = input('date', 'when', 10); els.when.max = inDays(0); F.when = field('Date it happened', els.when);
     els.ph1 = photoPicker('Add a photo', { edge: 1000, cap: 190000 }); els.ph2 = photoPicker('Add another', { edge: 1000, cap: 190000 });
@@ -2295,6 +2330,8 @@
     var hTitle = big ? (it.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]\s*/i, '') || it.title) : it.title;
     // Story rows (ship74): bold section label, headline, then the source + time line; the Breaking card keeps its layout.
     var kick = !big && RT && RT.sectionLabel ? RT.sectionLabel(kd, it.cat) : '';
+    var tabL = (CATS.filter(function (x) { return x.id === state.cat; })[0] || {}).label;
+    kick = DD.part(kick, tabL); // ship80: no label that repeats the tab it is on
     if (kick) body.appendChild(el('span', 'kicker', kick));
     var h2 = el('h2', null, hTitle); if (!big) h2.title = hTitle; // one line in a News row: the full headline stays in title (and the text)
     body.appendChild(h2);
@@ -2305,7 +2342,7 @@
       if (state.brk.more) bm.appendChild(el('span', null, '+' + state.brk.more + ' more active'));
       body.appendChild(bm);
     }
-    if (it.summary) body.appendChild(el('p', null, it.summary));
+    var sum = DD.preview(hTitle, it.summary); if (sum) body.appendChild(el('p', null, sum));
     if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));
     // source + short time: one small line with the outlet's icon
     var src = el('div', 'src');
@@ -2315,7 +2352,7 @@
       src.appendChild(av);
     }
     src.appendChild(el('b', null, it.source));
-    if (it.place && SC.on && !/^county:/.test(SC.key)) src.appendChild(el('span', 'place', it.place)); // one locality label, only when the classifier is confident
+    if (it.place && SC.on && !/^county:/.test(SC.key)) { if (DD.part(it.place, hTitle, it.source)) src.appendChild(el('span', 'place', it.place)); } // ship80: not when the title or source already names it // one locality label, only when the classifier is confident
     var w = el('time', 'when', shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); }
     src.appendChild(w);
     var sb = UI.heart({

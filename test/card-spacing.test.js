@@ -11,13 +11,13 @@ const css = html.slice(html.indexOf('/* ---------- card spacing'), html.indexOf(
 test('index.html: shared tokens, used by every card type', () => {
   assert.ok(css.includes(':root { --card-pad:16px; --card-gap:16px; --card-stack:6px; --card-tap:40px; }'));
   assert.ok(css.includes('@media (max-width:639px) { :root { --card-pad:12px; --card-gap:12px; } }'));
-  for (const sel of ['.card a.ca .bd', '.evr-body', '.cl-item', '.ob {', '.ad-card {', '.rail-ad {', '.spon {', '.ev-body'])
+  for (const sel of ['.card a.ca .bd', '.evc-body', '.cl-item', '.ob {', '.ad-card {', '.rail-ad {', '.spon {', '.ev-body'])
     assert.ok(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^}]*var\\(--card-pad\\)').test(css), sel);
   assert.ok(/\.list, \.cl-list, \.evx-day[^}]*gap:var\(--card-gap\)/.test(css));
 });
 
 test('Events: no fixed card height or row heights; 40px foot and buttons', () => {
-  assert.ok(css.includes('.evr { height:auto; min-height:164px; }'));
+  assert.ok(!/\.evr(?![\w-])/.test(css), 'the old event row (.evr) is gone with its markup (ship80)');
   assert.ok(css.includes('grid-template-rows:auto;'));
   assert.ok(css.includes('.evt-foot { height:auto; min-height:var(--card-tap);'));
   assert.ok(css.includes('.ev-go, .evt-foot .ev-go { min-height:var(--card-tap); }'));

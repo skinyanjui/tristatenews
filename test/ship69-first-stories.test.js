@@ -68,7 +68,7 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
 test('Police & courts cards: no photo, the not-convicted note, safety section', async t => {
   t.mock.method(news, 'homeView', async () => view());
   const list = listOf((await call({ p: '/' })).body);
-  const m = /<article class="card" data-sec="safety">([\s\S]*?)<\/article>/.exec(list);
+  const m = /<article class="card row" data-sec="safety">([\s\S]*?)<\/article>/.exec(list);
   assert.ok(m, 'police card rendered');
   assert.ok(!m[1].includes('mug.jpg') && !m[1].includes('class="th"'), 'no photo');
   assert.match(m[1], /<a class="ca noimg"/);

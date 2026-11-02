@@ -60,10 +60,13 @@ test('one card per board view: after the 6th post, at the end of a shorter board
   assert.deepStrictEqual([0, 1, 5, 6, 7, 60, -1, NaN, '3'].map(A.position), [-1, 1, 5, 6, 6, 6, -1, -1, 3]);
   // the page places it with that rule, once, in the board list and in the Events day list, never during a search
   assert.ok(html.includes("var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1);"));
-  assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.adCard(kind); if (ac) list.appendChild(ac); } });"));
+  assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });"));
   assert.ok(html.includes("adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1);"));
-  assert.ok(html.includes("if (++seen === adAt) { var ac = UI.adCard('event'); if (ac) g.appendChild(ac); }"));
-  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", 'kind'], 'placed in exactly two spots (boards, Events); the News feed ad is a story row (UI.adRow, ship74)');
+  assert.ok(html.includes("if (++seen === adAt) { var ac = UI.boardAd('event'); if (ac) g.appendChild(ac); }"));
+  assert.deepStrictEqual([...html.matchAll(/UI\.boardAd\(([^)]*)\)/g)].map(m => m[1]).sort(), ["'event'", 'kind'], 'placed in exactly two spots (boards, Events); the News feed ad is a story row (UI.adRow, ship74)');
+  // ship75: boardAd draws our own ads (campaign or sample) as rows and leaves the house unit to adCard (its only caller)
+  assert.deepStrictEqual([...html.matchAll(/UI\.adCard\(([^)]*)\)/g)].map(m => m[1]), ['kind']);
+  assert.match(html, /boardAd: function \(kind\) \{[\s\S]{0,300}return f\.type === 'house' \? UI\.adCard\(kind\) : UI\.adRow\(f\);/);
   // drawBody also draws Obituaries; the module answers null there, so no card (checked above). Breaking and news
   // cards are drawn by other functions that never call adCard.
   const brk = html.slice(html.indexOf('function renderBreaking'), html.indexOf('function renderBreaking') + 4000);

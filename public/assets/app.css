@@ -716,6 +716,23 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .ev-live { display:inline-flex; align-items:center; gap:6px; font-weight:700; color:var(--red); white-space:nowrap; }
 .ev-live::before { content:""; width:8px; height:8px; flex:none; border-radius:9999px; background:currentColor; }
 
+/* ---------- ship81: compact event cards on big screens ----------
+   The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
+   and Tickets/Details) in a narrower, tighter version from 1024px, so each side-scroller (Popular, every day) shows more
+   cards: about 3.6 at 1280px (was 3.0) and 4 whole cards at 1440-1679px (was 3.3), 5 at 1680px+. The width is the
+   narrowest that still fits "Happening now" or a time plus the controls without truncation; spacing stays on the scale. */
+@media (min-width:1024px) {
+  .evx-rail { gap:var(--sp-2); }
+  .evc.evc { width:240px; }
+  .evx-rail .evc.evc > .evc-body { padding:var(--sp-2); } /* (beats the later ship80 layout rule) */
+  .evx-rail .evc.evc > .evc-body > .evc-foot { gap:var(--sp-1); } /* the time column takes the right group's margin-left:auto slack */
+  .evc.evc .evc-foot > .evc-right { gap:var(--sp-2); }
+  .evc.evc .evc-foot .acts { gap:var(--sp-1); }
+  .evc.evc .evc-foot .ev-go { padding:0 var(--sp-2); font-size:12px; }
+  .evc.evc .evt-title { font-size:14px; line-height:20px; }
+  .evc.evc .evc-pic { aspect-ratio:3/2; }
+}
+
 /* ---------- ship74/ship75: THE shared row (UI.row in app.js; api/_cards.js) for every card list ----------
    Every rule starts with article.card.row.row:not(.breaking):has(> .ca) (one selector, specific enough to win over the older per-card rules).
    One story per row at every width: a small rounded square picture on the left only when the story has one (Police &
@@ -921,4 +938,3 @@ main { max-width:var(--content-max); padding-left:var(--gutter); padding-right:v
 .legal-foot { display:grid; gap:var(--sp-2); margin:var(--sp-8) 0 0; padding:var(--sp-3) 0 0; }
 .legal-links { gap:0 var(--sp-2); margin-left:calc(-1 * var(--sp-2)); }
 .legal-link { padding:0 var(--sp-2); }
-

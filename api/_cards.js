@@ -109,7 +109,7 @@ function card(it, o) {
   }
   const href = safeHref(it.link);
   const share = href === '#' ? '' : '<button class="share" type="button" aria-label="' + esc('Share: ' + it.title) + '" title="Share">' + SHARE + '</button>';
-  return '<article class="card' + (big ? ' breaking' : '') + '" data-sec="' + sec + '"><a class="ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + img + body + '</a>' +
+  return '<article class="card' + (big ? ' breaking' : ' row') + '" data-sec="' + sec + '"><a class="ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + img + body + '</a>' +
     '<div class="cf"><div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + share + '</div></div>' +
     (big && pic ? tag : '') + '</article>';
 }

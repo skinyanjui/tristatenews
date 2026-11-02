@@ -57,16 +57,16 @@ test('app.js builds the same order and sizes (non-Breaking rows), keeping the Br
   assert.ok(app.includes("var pic = safe ? '' : it.image;"), 'no photos on police items');
 });
 
-test('CSS: rows only in the News list; square rounded thumbnail; dividers; no fixed footer', () => {
+test('CSS: one shared row (ship75: every list); square rounded thumbnail; dividers; no fixed footer', () => {
   const css = read('public/assets/app.css');
-  const blk = css.slice(css.indexOf('/* ---------- ship74:'), css.indexOf('/* ---------- card spacing'));
+  const blk = css.slice(css.indexOf('/* ---------- ship74/ship75:'), css.indexOf('/* ---------- card spacing'));
   assert.ok(blk.length > 200);
-  for (const line of blk.split('\n').filter(l => /^\s*\./.test(l))) assert.match(line, /^\s*\.list\.news-one/, line);
-  assert.match(blk, /a\.ca > \.th \{[^}]*width:var\(--pic\); height:var\(--pic\); aspect-ratio:1\/1; border-radius:8px; object-fit:cover;/);
+  for (const line of blk.split('\n').filter(l => /^\s*[.a:]/.test(l) && l.includes('{') && !/^\s*@/.test(l))) assert.match(line, /^\s*(article\.card\.row\.row(\.ad-row)?:not\(\.breaking\):has\(> \.ca\)|:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\))/, line);
+  assert.match(blk, /\.ca > \.th \{[^}]*width:var\(--pic\); height:var\(--pic\); aspect-ratio:1\/1; border-radius:8px; object-fit:cover;/);
   assert.match(blk, /--pic:96px/); assert.match(blk, /--pic:112px/);
   assert.match(blk, /border-bottom:1px solid var\(--gray-200\)/);
-  assert.match(blk, /a\.ca\.noimg \{ grid-template-columns:minmax\(0, 1fr\); \}/);
-  assert.match(blk, /h2 \{ font-size:19px; line-height:28px; font-weight:400;[^}]*min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; \}/);
+  assert.match(blk, /\.ca\.noimg \{ grid-template-columns:minmax\(0, 1fr\); \}/);
+  assert.match(blk, /h2 \{ font-size:19px; line-height:28px; font-weight:500;[^}]*min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; \}/);
   assert.match(blk, /\.bd p:not\(\.cl-note\) \{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden;/);
   assert.match(blk, /\.kicker \{[^}]*font-weight:700;/);
   assert.doesNotMatch(css, /footer[^{]*\{[^}]*position:\s*fixed/);
@@ -74,7 +74,7 @@ test('CSS: rows only in the News list; square rounded thumbnail; dividers; no fi
   // one fixed-height meta row at the bottom of every row: source left, time + heart + share right, one center axis
   assert.match(blk, /--meta-h:40px;/);
   assert.match(blk, /grid-template-rows:auto; row-gap:0;/, 'one grid row, so the text column reaches the bottom at every width');
-  assert.match(blk, /\.src \{ box-sizing:border-box; height:var\(--meta-h\); min-height:var\(--meta-h\); margin-top:auto; padding-right:calc\(2 \* var\(--ico\) \+ 2 \* var\(--act-gap\)\); display:flex; align-items:center; flex-wrap:nowrap; min-width:0; overflow:hidden; \}/);
+  assert.match(blk, /\.src \{ box-sizing:border-box; height:var\(--meta-h\); min-height:var\(--meta-h\); margin-top:auto; padding-right:calc\(var\(--nact, 2\) \* \(var\(--ico\) \+ var\(--act-gap\)\)\); display:flex; align-items:center; flex-wrap:nowrap; min-width:0; overflow:hidden; \}/);
   assert.match(blk, /\.cf \{ position:absolute; right:0; bottom:12px;[^}]*display:flex; align-items:center;[^}]*height:var\(--meta-h\);/);
   assert.match(blk, /padding:16px 0 12px;/, 'the meta row and the buttons share the same bottom edge (12px)');
   assert.match(blk, /\.src b \{ flex:0 1000 auto; min-width:min\(5\.5em, 40%\);/, 'the source name truncates first');
@@ -87,7 +87,7 @@ test('News ads (our own: campaigns and samples) are drawn as story rows; no outs
   assert.match(app, /if \(!f \|\| f\.type === 'house'\) return null;\s*return UI\.adRow\(f\);/, 'News feed ads go through adRow');
   const m = /adRow: function \(f\) \{[\s\S]*?\n      \},/.exec(app); assert.ok(m, 'adRow exists');
   const fn = m[0];
-  assert.match(fn, /el\('article', 'card ad-row ad-feed'\)/);
+  assert.match(fn, /el\('article', 'card row ad-row ad-feed'\)/);
   assert.match(fn, /UI\.sampleAd\('ca', ad\) : UI\.adLink\('ca', ad\)/, 'same link rules (rel=sponsored, counting) as before');
   assert.match(fn, /im\.className = 'th'; im\.width = 112; im\.height = 112;/, 'square sized thumbnail');
   assert.match(fn, /else a\.classList\.add\('noimg'\)/, 'no empty box without a picture');
@@ -95,9 +95,9 @@ test('News ads (our own: campaigns and samples) are drawn as story rows; no outs
   assert.match(fn, /el\('b', 'ad-lab', isS \? 'Sample ad' : 'Sponsored'\)/, 'labeled where the source name goes');
   assert.doesNotMatch(fn, /UI\.sized|TSNSizes/, 'not forced into IAB banner sizes');
   // the row CSS applies to ad rows too (same selectors), with the label and call to action in the fixed bottom row
-  const blk = css.slice(css.indexOf('/* ---------- ship74:'), css.indexOf('/* ---------- card spacing'));
-  assert.match(blk, /\.card\.ad-row:has\(> a\.ca\) \.src \{ padding-right:0; \}/);
-  assert.match(blk, /\.ad-row:has\(> a\.ca\) \.src \.ad-cta \{ flex:none; margin-left:auto;/);
+  const blk = css.slice(css.indexOf('/* ---------- ship74/ship75:'), css.indexOf('/* ---------- card spacing'));
+  assert.match(fn, /row\.style\.setProperty\('--nact', '0'\)/, 'no buttons to make room for');
+  assert.match(blk, /\.ad-row:not\(\.breaking\):has\(> \.ca\) \.src \.ad-cta \{ flex:none; margin-left:auto;/);
   // placement rules unchanged: never next to Police & courts or Breaking, none in search, none on Obituaries
   assert.match(app, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ var k = kindOf\(it\.sourceId\); return k === 'police' \|\| k === 'courts'; \}\), TSNAds\.NEWS_EVERY\)/);
   assert.match(app, /if \(state\.cat === 'news' && !state\.q\.trim\(\) && window\.TSNAds\)/);
@@ -109,20 +109,20 @@ test('News ads (our own: campaigns and samples) are drawn as story rows; no outs
 
 test('News rows: picture in its own centered column; heart and share are the logo size with even spacing on one fixed row', () => {
   const css = read('public/assets/app.css');
-  const blk = css.slice(css.indexOf('/* ---------- ship74:'), css.indexOf('/* ---------- card spacing'));
-  const S = '.list.news-one .card:not(.breaking):has(> a.ca)';
+  const blk = css.slice(css.indexOf('/* ---------- ship74/ship75:'), css.indexOf('/* ---------- card spacing'));
+  const S = 'article.card.row.row:not(.breaking):has(> .ca)';
   const rule = sel => { const i = blk.indexOf(S + sel + ' {'); assert.ok(i >= 0, sel); return blk.slice(i, blk.indexOf('}', i)); };
   assert.match(rule(''), /--ico:24px; --act-gap:12px;/);
-  assert.match(rule(' a.ca'), /grid-template-columns:var\(--pic\) minmax\(0, 1fr\)/, 'own picture column');
-  assert.match(rule(' a.ca.noimg'), /grid-template-columns:minmax\(0, 1fr\)/, 'full width text without a picture');
-  assert.match(rule(' a.ca > .th'), /align-self:center;/, 'picture vertically centered in the row');
+  assert.match(rule(' .ca'), /grid-template-columns:var\(--pic\) minmax\(0, 1fr\)/, 'own picture column');
+  assert.match(rule(' .ca.noimg'), /grid-template-columns:minmax\(0, 1fr\)/, 'full width text without a picture');
+  assert.match(rule(' .ca > .th'), /align-self:center;/, 'picture vertically centered in the row');
   assert.match(rule(' .av'), /width:var\(--ico\); height:var\(--ico\)/, 'logo size');
   const btn = rule(' .acts :is(.like, .share)');
   assert.match(btn, /width:var\(--ico\); min-width:var\(--ico\); height:var\(--ico\); padding:0;/, 'heart and share = logo size');
   assert.match(rule(' .acts .like span'), /display:none/, 'no count widening the heart (it stays in the aria-label)');
   assert.match(rule(' .acts'), /gap:var\(--act-gap\); flex-wrap:nowrap;/, 'even gap heart-share');
   assert.match(rule(' .src .when'), /padding-left:var\(--act-gap\)/, 'same gap time-heart');
-  assert.match(blk.slice(blk.indexOf(S + ' .src { box-sizing')), /^[^}]*padding-right:calc\(2 \* var\(--ico\) \+ 2 \* var\(--act-gap\)\); display:flex; align-items:center; flex-wrap:nowrap;/, 'room for exactly two buttons and the gaps, one row');
+  assert.match(blk.slice(blk.indexOf(S + ' .src { box-sizing')), /^[^}]*padding-right:calc\(var\(--nact, 2\) \* \(var\(--ico\) \+ var\(--act-gap\)\)\); display:flex; align-items:center; flex-wrap:nowrap;/, 'room for exactly the row\'s buttons (--nact, set by UI.row) and their gaps, one row');
   assert.match(rule(' .cf'), /height:var\(--meta-h\)/);
   assert.match(blk, /@media \(max-width:389\.98px\) \{[^@]*--pic:72px; --act-gap:10px;/, 'small phones: smaller picture so the row still fits from 320px');
   assert.match(rule(' .acts :is(.like, .share)'), /inset:auto; transform:none; margin:0;/, 'not pulled out of the row by the base heart position');

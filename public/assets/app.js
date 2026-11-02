@@ -215,7 +215,7 @@
       adRow: function (f) {
         var ad = f.ad || {}, isS = f.type === 'sample';
         if (!isS && !(window.TSNAds && TSNAds.validAd(ad))) return null;
-        var row = el('article', 'card ad-row ad-feed'); row.dataset.sec = 'ad';
+        var row = el('article', 'card row ad-row ad-feed'); row.dataset.sec = 'ad'; row.style.setProperty('--nact', '0');
         var a = isS ? UI.sampleAd('ca', ad) : UI.adLink('ca', ad);
         var tag = a.querySelector('.spon-tag'); if (tag) tag.remove(); // the label moves to the bottom row
         var im = a.querySelector('img.ad-img');
@@ -229,6 +229,53 @@
         src.appendChild(el('span', 'ad-cta', isS ? 'Advertise here' : (ad.cta || 'Learn more')));
         bd.appendChild(src); a.appendChild(bd); row.appendChild(a);
         return row;
+      },
+      // ship75: THE row, shared by every card list on the site (News, boards, events, obituaries, institutions,
+      // search, county/state pages, saved): an optional square picture in its own column (vertically centered; no
+      // empty box without one), an optional label (only when it adds information), a one-line headline (full text in
+      // its title), at most two lines of preview, and one fixed, non-wrapping 40px bottom row: a 24px logo or avatar
+      // with a name on the left (or the type's own links), the time on the right next to 24px action buttons.
+      // o: { sec, cls, href (the whole row links there) | titleHref (only the headline links; the bottom row may
+      // then hold links of its own), pic, picRef, kicker (text or node), title, text, notes [], left [nodes],
+      // avatar, name, when (node or text), right [nodes], acts (div.acts), extra [nodes, under the preview] }
+      row: function (o) {
+        var c = el('article', 'card row' + (o.cls ? ' ' + o.cls : '')); if (o.sec) c.dataset.sec = o.sec;
+        var a;
+        if (o.href) { a = el('a', 'ca'); a.href = safeHref(o.href); a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+        else a = el('div', 'ca');
+        if (o.pic) {
+          var im = el('img', 'th'); picLoading(im); if (o.picRef) im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = '';
+          im.width = 112; im.height = 112; im.src = o.pic;
+          im.addEventListener('error', function () { im.remove(); a.classList.add('noimg'); });
+          a.appendChild(im);
+        } else a.classList.add('noimg');
+        var bd = el('div', 'bd');
+        if (o.kicker) { var k = el('span', 'kicker'); if (typeof o.kicker === 'string') k.textContent = o.kicker; else k.appendChild(o.kicker); bd.appendChild(k); }
+        var h = el('h2'); h.title = o.title || '';
+        if (o.titleHref && !o.href) { var ta = el('a', null, o.title); ta.href = safeHref(o.titleHref); ta.target = '_blank'; ta.rel = 'noopener noreferrer'; h.appendChild(ta); } else h.textContent = o.title || '';
+        bd.appendChild(h);
+        if (o.text) bd.appendChild(el('p', null, o.text));
+        (o.notes || []).forEach(function (n) { bd.appendChild(el('p', 'cl-note', n)); });
+        (o.extra || []).forEach(function (n) { if (n) bd.appendChild(n); });
+        var src = el('div', 'src');
+        if (o.avatar) { o.avatar.classList.add('av'); src.appendChild(o.avatar); }
+        if (o.name) src.appendChild(el('b', null, o.name));
+        (o.left || []).forEach(function (n) { if (n) src.appendChild(n); });
+        var right = (o.right || []).filter(Boolean);
+        if (o.when) { var w = typeof o.when === 'string' ? el('span', 'when', o.when) : o.when; w.classList.add('when'); src.appendChild(w); }
+        right.forEach(function (n, i) { if (i === 0 && !o.when) n.classList.add('when'); n.classList.add('rt'); src.appendChild(n); });
+        bd.appendChild(src); a.appendChild(bd); c.appendChild(a);
+        var nact = o.acts ? o.acts.querySelectorAll('button, a').length : 0;
+        c.style.setProperty('--nact', String(nact));
+        if (o.acts) { var f = el('div', 'cf'); f.appendChild(o.acts); c.appendChild(f); }
+        return c;
+      },
+      // ship75: a board's in-listing ad: our own ads (a booked campaign or a sample) are rows like the posts around them;
+      // the house "Advertise with us" unit stays the card from adCard. Obituaries: none (adCard and fill say so).
+      boardAd: function (kind) {
+        var f = window.TSNAds ? TSNAds.fill(kind, SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
+        if (!f) return null;
+        return f.type === 'house' ? UI.adCard(kind) : UI.adRow(f);
       },
       adCard: function (kind) {
         var place = kind === 'news' ? 'card:news' : 'card:' + kind;
@@ -1211,17 +1258,22 @@
   var SHOW_SUBSCRIBERS_AT = 100; // the Advertise newsletter line shows "N of 1,500 subscribers" from this many on
   function money(c) { c = Number(c) || 0; return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
   function priceText(p) { return /^free$/i.test(p) ? 'Free' : (p.charAt(0) === '$' ? p : '$' + p); }
-  function actions(it, kind, b, foot) {
-    if (it.feed) return;
-    var mine = b.mine.indexOf(it.id) >= 0;
-    var act = el('button', 'cl-link', mine ? 'Remove' : 'Report'); act.type = 'button';
+  var ICON_FLAG = [['path', { d: 'M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5' }]], ICON_TRASH = [['path', { d: 'M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6' }]];
+  // A community post's own controls, for its row: Report (or Remove on your own post) as a 24px icon button in the
+  // bottom row, and, on your own unfeatured post, the "Feature" checkout button (returned separately; the row puts it
+  // under the preview). Feed items have neither.
+  function actions(it, kind, b) {
+    var out = { acts: null, feature: null };
+    if (it.feed) return out;
+    var mine = b.mine.indexOf(it.id) >= 0, lab = mine ? 'Remove' : 'Report';
+    var act = el('button', 'cl-ico'); act.type = 'button'; act.title = lab; act.setAttribute('aria-label', lab + ': ' + it.title); act.appendChild(svg(mine ? ICON_TRASH : ICON_FLAG));
     act.addEventListener('click', function () {
       act.disabled = true;
       var req = mine ? fetch('/api/listings?kind=' + kind + '&id=' + encodeURIComponent(it.id) + '&uid=' + encodeURIComponent(uid), { method: 'DELETE' })
                      : fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: kind, action: 'report', id: it.id, uid: uid }) });
-      req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); renderTabs(); drawBoard(kind); } else { act.textContent = 'Reported'; } }).catch(function () { act.disabled = false; });
+      req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); renderTabs(); drawBoard(kind); } else { act.title = 'Reported'; act.setAttribute('aria-label', 'Reported'); act.classList.add('on'); } }).catch(function () { act.disabled = false; });
     });
-    foot.appendChild(act);
+    out.acts = el('div', 'acts'); out.acts.appendChild(act);
     var pr = PAY.prices[kind];
     // The period the server will sell (public/featured.js, shared with checkout): "for N days", or "until <day>" for an
     // event or a deal with an end date; no button when less than a day would remain.
@@ -1235,28 +1287,21 @@
           .catch(function () { ft.disabled = false; ft.textContent = 'Try again'; });
       });
       ft.setAttribute('aria-label', 'Feature this post ' + period + ', ' + money(pr.cents));
-      foot.appendChild(ft);
+      out.feature = ft;
     }
+    return out;
   }
+  // Labels for a row: only parts that add information, joined with " · "; "Featured · Paid" first on a paid post (FTC).
+  function kick(it, parts) { var k = (it.featured ? ['Featured \u00B7 Paid'] : []).concat(parts).filter(Boolean).join(' \u00B7 '); return k; }
+  function postDay(at) { return at ? new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }) : ''; }
+  // A community post's contact (phone or email) as a link where it can be one.
+  function contactNode(c, label) { var href = applyHref(c); if (!c) return null; var n = href ? el('a', 'cl-contact', label || c) : el('span', 'cl-contact', c); if (href) n.href = href; return n; }
   function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
   function dealCard(it, b) {
-    var c = el('article', 'deal');
-    var src = photoSrc(it);
-    if (src) { var im = el('img', 'deal-img'); im.src = src; im.alt = ''; im.loading = 'lazy'; c.appendChild(im); }
-    var body = el('div', 'deal-body');
-    var head = el('div', 'deal-head');
-    head.appendChild(bizAvatar(it.business || it.title, it.logo));
-    head.appendChild(el('span', 'deal-biz', it.business || ''));
-    head.appendChild(catPill(it));
-    body.appendChild(head);
-    body.appendChild(el('h3', 'deal-offer', it.title));
-    if (it.desc) body.appendChild(el('p', 'cl-desc', it.desc));
-    var meta = [it.town]; if (it.ends) meta.push('Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    body.appendChild(el('div', 'cl-meta', meta.filter(Boolean).join(' · ')));
-    if (it.code) { var cd = el('div', 'deal-code'); cd.appendChild(el('span', null, 'Use code')); cd.appendChild(el('code', null, it.code)); body.appendChild(cd); }
-    var foot = el('div', 'cl-foot'); foot.appendChild(el('span', 'cl-contact', it.contact)); actions(it, 'deal', b, foot); body.appendChild(foot);
-    c.appendChild(body);
-    return c;
+    var ac = actions(it, 'deal', b);
+    var code = null; if (it.code) { code = el('span', 'deal-code'); code.appendChild(el('span', null, 'Code ')); code.appendChild(el('code', null, it.code)); }
+    return UI.row({ cls: 'row-deal', pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '']),
+      title: it.title, text: it.desc, avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [contactNode(it.contact)], right: [code], acts: ac.acts, extra: [ac.feature] });
   }
   var EV_HUE = { 'Music': 'music', 'Food & drink': 'food', 'Family': 'family', 'Sports': 'sports', 'Arts': 'arts', 'Community': 'community' };
   var EV_ICON = {
@@ -1272,101 +1317,8 @@
   var ICON_PIN = [['path', { d: 'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z' }], ['circle', { cx: 12, cy: 10, r: 3 }]];
   var ICON_GO = [['path', { d: 'M5 12h14M13 5l7 7-7 7' }]];
   function ticketLink(u) { return /ticketmaster|gopurpleaces|tickets?\b|eventbrite/i.test(u || ''); }
-  function eventCard(it, b) {
-    var evSrc = photoSrc(it) || it.image || '';
-    if (!evSrc) return plainEventCard(it, b);
-    var c = el('article', 'ev');
-    var hero = el('div', 'ev-hero');
-    var eim = el('img', 'ev-img'); eim.src = evSrc || artUri(it.category); eim.alt = ''; eim.loading = 'lazy'; eim.decoding = 'async'; if (it.image) eim.referrerPolicy = 'no-referrer';
-    eim.addEventListener('error', function () { eim.src = artUri(it.category); });
-    hero.appendChild(eim);
-    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, tone: 'over', hue: EV_HUE[it.category] || 'other' });
-    hero.appendChild(cp);
-    if (it.feed && it.link) {
-      var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
-      var sb = UI.heart({
-        get: function () { return { on: isSaved(it.link), n: likeCount(news), label: it.title }; },
-        toggle: function () { toggleSaved(news); },
-        after: function () { sb.paint(); renderTabs(); }
-      });
-    }
-    c.appendChild(hero);
-    var body = el('div', 'ev-body');
-    var h = el('h3', 'ev-title');
-    if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
-    body.appendChild(h);
-    var d = new Date(it.date + 'T12:00:00');
-    var when = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + (it.time ? ' · ' + fmtTime(it.time) : '');
-    var r1 = el('div', 'ev-row'); r1.appendChild(svg(ICON_CAL)); r1.appendChild(el('span', null, when)); body.appendChild(r1);
-    var where = [it.place, it.town].filter(Boolean).join(' · ');
-    if (where) { var r2 = el('div', 'ev-row'); r2.appendChild(svg(ICON_PIN)); r2.appendChild(el('span', null, where)); body.appendChild(r2); }
-    if (it.desc) body.appendChild(el('p', 'ev-desc', it.desc));
-    if (it.feed) {
-      var foot = el('div', 'ev-foot');
-      if (it.fromPrice) { var pr = el('div', 'ev-price'); pr.appendChild(el('small', null, 'From')); pr.appendChild(el('b', null, it.fromPrice)); foot.appendChild(pr); }
-      else { var sr = el('div', 'ev-src'); sr.appendChild(bizAvatar(it.source, it.logo)); sr.appendChild(el('span', null, it.source)); foot.appendChild(sr); }
-      if (it.link) {
-        var go = el('a', 'ev-go', ticketLink(it.link) ? 'Get tickets' : 'Details'); go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer'; go.appendChild(svg(ICON_GO));
-        go.setAttribute('aria-label', (ticketLink(it.link) ? 'Get tickets for ' : 'Details for ') + it.title);
-        if (sb) foot.appendChild(actRow(sb, it));
-        foot.appendChild(go);
-      }
-      body.appendChild(foot);
-    } else {
-      var f2 = el('div', 'cl-foot');
-      if (it.contact) f2.appendChild(el('span', 'cl-contact', it.contact));
-      actions(it, 'event', b, f2);
-      body.appendChild(f2);
-    }
-    c.appendChild(body);
-    return c;
-  }
-  // No photo: the compact card with a date tile instead of a picture.
-  function plainEventCard(it, b) {
-    var c = el('article', 'ev ev-plain');
-    var d = new Date(it.date + 'T12:00:00');
-    var tile = el('div', 'ev-date');
-    tile.appendChild(el('span', 'ev-mo', d.toLocaleDateString('en-US', { month: 'short' })));
-    tile.appendChild(el('span', 'ev-day', String(d.getDate())));
-    tile.appendChild(el('span', 'ev-wd', d.toLocaleDateString('en-US', { weekday: 'long' })));
-    if (it.time) tile.appendChild(el('span', 'ev-tm', fmtTime(it.time)));
-    c.appendChild(tile);
-    var body = el('div', 'ev-body');
-    var h = el('h3', 'ev-title');
-    if (it.link) { var a = el('a', null, it.title); a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer'; h.appendChild(a); } else h.textContent = it.title;
-    body.appendChild(h);
-    var meta = el('div', 'ev-meta');
-    var cp = UI.pill({ label: it.category || 'Other', icon: EV_ICON[it.category] || EV_ICON.Other, hue: EV_HUE[it.category] || 'other' });
-    meta.appendChild(cp);
-    var where = [it.place, it.town].filter(Boolean).join(' \u00B7 ');
-    if (where) meta.appendChild(el('span', 'ev-where', where));
-    body.appendChild(meta);
-    if (it.desc) body.appendChild(el('p', 'ev-desc', it.desc));
-    var foot = el('div', 'ev-foot');
-    if (it.feed) {
-      var sr = el('div', 'ev-src'); sr.appendChild(bizAvatar(it.source, it.logo)); sr.appendChild(el('span', null, it.source)); foot.appendChild(sr);
-      var acts = el('div', 'ev-acts');
-      if (it.link) {
-        var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: '' };
-        var sb = UI.heart({
-          get: function () { return { on: isSaved(it.link), n: likeCount(news), label: it.title }; },
-          toggle: function () { toggleSaved(news); },
-          after: function () { sb.paint(); renderTabs(); }
-        });
-        acts.appendChild(actRow(sb, it));
-        var go = el('a', 'ev-go', ticketLink(it.link) ? 'Get tickets' : 'Details'); go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer'; go.appendChild(svg(ICON_GO));
-        go.setAttribute('aria-label', (ticketLink(it.link) ? 'Get tickets for ' : 'Details for ') + it.title);
-        acts.appendChild(go);
-      }
-      foot.appendChild(acts);
-    } else {
-      if (it.contact) foot.appendChild(el('span', 'cl-contact', it.contact));
-      actions(it, 'event', b, foot);
-    }
-    body.appendChild(foot);
-    c.appendChild(body);
-    return c;
-  }
+  // An event anywhere outside the Events tab (search results): the same row as on the Events tab.
+  function eventCard(it, b) { return evxRow(it, b); }
   // "Send flowers" (public/flowers.js; Advertising Policy section 8): a quiet text link under an obituary, never an
   // ad. GET /api/flowers says where it goes: the funeral home's own florist page when we know it, otherwise the
   // affiliate link labeled "paid link" (rel="sponsored noopener"), otherwise the unpaid fallbackUrl (no label,
@@ -1403,74 +1355,36 @@
     });
     return p.children.length ? p : null;
   }
+  // A community obituary: no picture; the funeral home (and how to reach it) as the label; service details and the
+  // notice as the preview; Send flowers / Plant a tree / Donate on the left of the one bottom row and the post's
+  // Report on the right. Never an ad (Advertising policy).
   function obitCard(it, b) {
-    var c = el('article', 'ob');
-    c.appendChild(el('span', 'ob-home', it.business || ''));
-    c.appendChild(el('h3', null, it.title));
+    var ac = actions(it, 'obit', b), fl = flowersLink(it, 'span');
     var bits = [];
     if (it.svc) bits.push('Service ' + new Date(it.svc + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }));
     if (it.place) bits.push(it.place);
-    if (bits.length) c.appendChild(el('div', 'ob-svc', bits.join(' · ')));
-    if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
-    c.appendChild(el('div', 'cl-meta', [it.town, 'Posted ' + new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ')));
-    var foot = el('div', 'cl-foot'), href = applyHref(it.contact);
-    if (href) { var a = el('a', 'cl-contact', 'Contact ' + it.business + ': ' + it.contact); a.href = href; foot.appendChild(a); } else foot.appendChild(el('span', 'cl-contact', it.contact));
-    actions(it, 'obit', b, foot); c.appendChild(foot);
-    var fl = flowersLink(it); if (fl) c.appendChild(fl); // the action row is always the card's last row
-    return c;
+    var k = el('span'); k.appendChild(document.createTextNode(kick(it, [it.business, it.town])));
+    var cn = contactNode(it.contact, it.contact); if (cn) { k.appendChild(document.createTextNode(' \u00B7 ')); cn.setAttribute('aria-label', 'Contact ' + (it.business || '') + ': ' + it.contact); k.appendChild(cn); }
+    return UI.row({ cls: 'row-obit', sec: 'obits', kicker: k, title: it.title, text: [bits.join(' \u00B7 '), it.desc].filter(Boolean).join('. '),
+      left: [fl], when: el('span', null, postDay(it.at)), acts: ac.acts, extra: [ac.feature] });
   }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
-    var c = el('article', 'job');
-    var head = el('div', 'job-head');
-    head.appendChild(bizAvatar(it.business || it.title, it.logo));
-    head.appendChild(el('span', 'job-co', it.business || ''));
-    if (it.jobType) { var jt = UI.pill({ label: it.jobType, tone: 'blue' }); jt.classList.add('job-type'); head.appendChild(jt); }
-    c.appendChild(head);
-    c.appendChild(el('h3', 'job-title', it.title));
-    var meta = el('div', 'cl-meta');
-    var pay = it.pay ? el('span', 'job-pay', it.pay) : null;
-    var rest = [it.town, new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })].filter(Boolean).join(' · ');
-    var line = el('span'); if (pay) { line.appendChild(pay); line.appendChild(document.createTextNode(' · ')); } line.appendChild(document.createTextNode(rest));
-    meta.appendChild(catPill(it)); meta.appendChild(line);
-    c.appendChild(meta);
-    if (it.desc) c.appendChild(el('p', 'cl-desc', it.desc));
-    var foot = el('div', 'job-foot'), ap = el('div', 'job-apply'), href = applyHref(it.contact);
-    if (href) { var a = el('a', null, 'Apply: ' + it.contact); a.href = href; a.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); ap.appendChild(a); }
-    else ap.appendChild(el('span', 'cl-contact', it.contact));
-    foot.appendChild(ap); actions(it, 'job', b, foot);
-    c.appendChild(foot);
-    return c;
+    var ac = actions(it, 'job', b), href = applyHref(it.contact), ap = null;
+    if (href) { ap = el('a', 'ad-cta', 'Apply'); ap.href = href; ap.title = it.contact; ap.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); }
+    return UI.row({ cls: 'row-job', kicker: kick(it, [it.jobType, it.pay, it.category, it.town]), title: it.title, text: it.desc,
+      avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [href ? null : contactNode(it.contact)], when: el('span', null, postDay(it.at)), right: [ap], acts: ac.acts, extra: [ac.feature] });
   }
   function card(it, kind, b) {
-    var c = kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b);
-    if (it.featured) { c.classList.add('is-featured'); c.appendChild(UI.badge('Featured \u00B7 Paid')); } // paid placement is disclosed (FTC)
-    return c;
+    return kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b); // a paid placement says "Featured · Paid" in its label (FTC)
   }
   function cardBase(it, kind, b) {
     if (kind === 'job') return jobCard(it, b);
     if (kind === 'deal') return dealCard(it, b);
     if (kind === 'event') return eventCard(it, b);
-    var c = el('article', 'cl-item');
-    var th = el('div', 'cl-th'), ti = el('img'); ti.src = photoSrc(it) || artUri(it.category); ti.alt = ''; ti.loading = 'lazy'; th.appendChild(ti); c.appendChild(th);
-    var main = el('div', 'cl-main');
-    var top = el('div', 'cl-top');
-    top.appendChild(el('b', null, it.title));
-    if (it.price) top.appendChild(el('span', 'cl-price', priceText(it.price)));
-    main.appendChild(top);
-    var meta = el('div', 'cl-meta');
-    var bits = [it.town]; if (it.condition) bits.push(it.condition);
-    bits.push(new Date(it.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }));
-    meta.textContent = bits.filter(Boolean).join(' · ');
-    meta.insertBefore(catPill(it), meta.firstChild);
-    main.appendChild(meta);
-    if (it.desc) main.appendChild(el('p', 'cl-desc', it.desc));
-    var foot = el('div', 'cl-foot');
-    foot.appendChild(el('span', 'cl-contact', it.contact));
-    actions(it, 'item', b, foot);
-    main.appendChild(foot);
-    c.appendChild(main);
-    return c;
+    var ac = actions(it, 'item', b);
+    return UI.row({ cls: 'row-item', pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.condition]), title: it.title, text: it.desc,
+      left: [it.price ? el('b', 'cl-price', priceText(it.price)) : null, contactNode(it.contact)], when: el('span', null, postDay(it.at)), acts: ac.acts, extra: [ac.feature] });
   }
   function chips(b, kind) {
     var present = {}; b.items.concat(kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
@@ -1517,7 +1431,7 @@
     if (kind !== 'obit') { var cr = chips(b, kind); if (cr.children.length > 1) root.appendChild(cr); } // no lone "All" chip on an empty board
     var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
     var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1); // one ad card per board view
-    items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.adCard(kind); if (ac) list.appendChild(ac); } });
+    items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });
     if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
     if (!items.length) {
       var emp = el('div', 'cl-empty');
@@ -1611,7 +1525,7 @@
       foot.appendChild(evxReact(it));
     } else {
       if (it.contact) foot.appendChild(el('span', 'cl-contact', it.contact));
-      actions(it, 'event', b, foot);
+      var ac = actions(it, 'event', b); if (ac.acts) foot.appendChild(ac.acts); if (ac.feature) foot.appendChild(ac.feature);
     }
     return foot;
   }
@@ -1632,12 +1546,19 @@
     return body;
   }
   // One event in the date-grouped list: picture (or date tile) in a fixed-width column on the left, the template on the right.
-  function evxRow(it, b) {
-    var c = el('article', 'evr' + (it.featured ? ' evr-feat' : ''));
-    c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
-    c.appendChild(evxPic(it, 'evr-pic'));
-    c.appendChild(evxBody(it, b, 'evr-body', false, true));
-    return c;
+  // One event in the date-grouped list (and in search): the shared row. Picture only when the event has one; the
+  // label carries the date, time and category; the preview the place and description; the bottom row the source
+  // (or the poster's contact), then Tickets/Details (+ "From" price) and the heart and share.
+  function evxRow(it, b, inDay) {
+    var day = inDay ? '' : evxRel(it.date) || evxDate(it.date, { weekday: 'short', month: 'short', day: 'numeric' }); // under a day heading the date would repeat it
+    var feed = it.feed && it.link, ac = feed ? { acts: evxReact(it), feature: null } : actions(it, 'event', b);
+    var right = [];
+    if (feed) { if (it.fromPrice) { var fp = el('span', 'evr-from', 'From '); fp.appendChild(el('b', null, it.fromPrice)); right.push(fp); } var go = evxGo(it); go.classList.add('ad-cta'); right.push(go); }
+    var where = evxWhere(it);
+    return UI.row({ cls: 'row-event' + (it.featured ? ' row-feat' : ''), sec: 'events', pic: photoSrc(it) || it.image || '', picRef: !!it.image,
+      kicker: kick(it, [[day, evxTime(it)].filter(Boolean).join(' '), it.category]), title: it.title, titleHref: it.link,
+      text: [where, it.desc].filter(Boolean).join(' \u2014 '), avatar: it.feed ? bizAvatar(it.source || '', it.logo) : null, name: it.feed ? it.source : '',
+      left: [it.feed ? null : contactNode(it.contact)], right: right, acts: ac.acts, extra: [ac.feature] });
   }
   // A card in the horizontal Featured / Popular row: picture on top, the same template below.
   function evxCard(it, b) {
@@ -1778,7 +1699,7 @@
       h.appendChild(el('small', null, String(dayCount[d])));
       g.setAttribute('aria-label', (rel ? rel + ', ' : '') + evxDayLabel(d));
       g.appendChild(h);
-      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b)); if (++seen === adAt) { var ac = UI.adCard('event'); if (ac) g.appendChild(ac); } });
+      byDay[d].forEach(function (it) { g.appendChild(evxRow(it, b, true)); if (++seen === adAt) { var ac = UI.boardAd('event'); if (ac) g.appendChild(ac); } });
       list.appendChild(g);
     });
     root.appendChild(list);
@@ -2329,8 +2250,9 @@
     leadPic = false; im.loading = 'eager'; im.setAttribute('fetchpriority', 'high');
   }
   function makeCard(it, big, bk) {
-    var card = el('article', big ? 'card breaking' : 'card');
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
+    if (!big && kd === 'obits') return obitRow(it);
+    var card = el('article', big ? 'card breaking' : 'card row');
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
     // Police & courts cards never show photos (no mugshots).
     var pic = safe ? '' : it.image;
@@ -2387,7 +2309,6 @@
     // Obituaries: Send flowers / Plant a tree / Donate and the heart and share share ONE row, the card's last, at every
     // width (outside the card's link; ship59). Links first (left), reactions last (right), in reading and focus order;
     // CSS keeps it on one line: short labels and icon reactions when narrow.
-    var fl = kd === 'obits' ? flowersLink(it, 'div') : null; if (fl) { foot.classList.add('cf-ob'); foot.appendChild(fl); }
     foot.appendChild(actRow(sb, it));
     card.appendChild(foot);
     if (big) {
@@ -2397,6 +2318,20 @@
       else { tag.classList.add('pill-over'); card.appendChild(tag); }
     }
     return card;
+  }
+
+  // A newspaper obituary: the shared row with the paper as its label and Send flowers / Plant a tree / Donate on the
+  // left of the one bottom row, the time, heart and share on the right. Only the headline links (the bottom row has
+  // links of its own). Never an ad.
+  function obitRow(it) {
+    var sb = UI.heart({
+      get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
+      toggle: function () { toggleSaved(it); },
+      after: function () { sb.paint(); renderTabs(); }
+    });
+    var w = el('time', null, shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); }
+    return UI.row({ cls: 'row-obit', sec: 'obits', pic: it.image || '', picRef: true, kicker: it.source, title: it.title, titleHref: it.link, text: it.summary,
+      left: [flowersLink(it, 'span')], when: w, acts: actRow(sb, it) });
   }
 
   var brkTimer = null;

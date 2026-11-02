@@ -117,11 +117,13 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   assert.ok(fn.includes('return p.children.length ? p : null;'), 'no empty row');
   assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');
   assert.ok(!/<img|ad-card|spon|Sponsored|Advertise/.test(fn), 'not an ad unit');
-  assert.ok(html.includes("var fl = kd === 'obits' ? flowersLink(it, 'div') : null; if (fl) { foot.classList.add('cf-ob'); foot.appendChild(fl); }"), 'feed cards: only obituaries, in the footer, not inside the card link');
-  const mk = html.slice(html.indexOf('function makeCard('), html.indexOf('var brkTimer'));
-  assert.ok(mk.indexOf("flowersLink(it, 'div')") < mk.indexOf('foot.appendChild(actRow(sb, it));'), 'ship59: links then heart and share in one row, in reading and focus order');
+  // ship75: both obituary rows (newspaper and posted) put the links on the left of the row's one bottom row; only the
+  // headline is a link there, so the links are never inside another link
+  assert.ok(html.includes("if (!big && kd === 'obits') return obitRow(it);"), 'feed obituaries are obituary rows');
+  const orow = html.slice(html.indexOf('function obitRow('), html.indexOf('var brkTimer'));
+  assert.ok(orow.includes("titleHref: it.link,") && orow.includes("left: [flowersLink(it, 'span')], when: w, acts: actRow(sb, it)"), 'links, then time, heart and share, in reading and focus order');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
-  assert.ok(ob.includes('flowersLink(it)'), 'posted obituaries too');
+  assert.ok(ob.includes("fl = flowersLink(it, 'span')") && ob.includes('left: [fl]'), 'posted obituaries too');
   assert.strictEqual((html.match(/flowersLink\(/g) || []).length, 3, 'defined once, used on the two obituary cards only');
   assert.ok(html.includes("if (state.cat === 'obits') { loadFlowers();"), 'fetched only on the Obituaries tab');
   assert.ok(/'paid link'/.test(read('public/flowers.js')) && /'sponsored noopener'/.test(read('public/flowers.js')));
@@ -171,14 +173,13 @@ test('Donate: a home donateUrl, or the obituary asks for donations; never an inv
 test('action row (ship59): links, heart and share in ONE row at the bottom of the card at every width, never wrapping', () => {
   const html = require('./_page.js')();
   const css = html.slice(html.indexOf('/* Obituary action row'), html.indexOf('/* in-listing Sponsored card'));
-  assert.ok(css.includes('.ob { display:flex; flex-direction:column; }') && css.includes('.ob > .ob-acts { margin-top:auto;'), 'pinned to the bottom');
-  assert.ok(css.includes('.card:has(.cf-ob) > .cf { margin-top:auto; }'), 'feed obituary cards too');
-  assert.ok(css.includes('.ob-acts { display:flex; flex-wrap:nowrap;') && css.includes('.card .cf.cf-ob { flex-wrap:nowrap;'), 'one line: neither the links nor the row wrap');
-  assert.ok(!/order:2|flex:1 0 100%|flex-direction:column; align-items:flex-start/.test(css), 'no second row (ship56) and no stacking on narrow phones');
-  assert.ok(css.includes('.card .cf.cf-ob > .ob-acts { flex:1 1 0;') && css.includes('.card .cf.cf-ob > .acts { flex:none;'), 'links take the space the reactions leave');
+  const rows = html.slice(html.indexOf('/* ---------- ship74/ship75:'), html.indexOf('/* ---------- card spacing'));
+  // ship75: the links sit in the shared row's fixed 40px, non-wrapping bottom row (time, heart and share on the right)
+  assert.ok(css.includes('.ob-acts { display:flex; flex-wrap:nowrap;'), 'the links never wrap');
+  assert.ok(rows.includes(':not(.breaking):has(> .ca) .src .ob-acts { flex:1 1 0; min-width:0; }'), 'links take the space the time and reactions leave');
+  assert.match(rows, /\.src \{ box-sizing:border-box; height:var\(--meta-h\);[^}]*flex-wrap:nowrap;/, 'one fixed row');
   assert.ok(css.includes('container:obacts / inline-size') && /@container obacts \(min-width:\d+px\)/.test(css), 'labels follow the row\'s own width');
   assert.ok(css.includes('.ob-flw .ob-long { display:none; }'), 'short labels by default (narrowest), the full label with room');
-  assert.ok(css.includes('.card .cf.cf-ob .like, .card .cf.cf-ob .share { min-width:32px; height:32px;'), 'icon reactions, 32px targets (>= 24px)');
   assert.ok(css.includes('.ob-flw a, .card .ob-flw a { display:inline-flex; align-items:center; gap:4px; min-height:32px;'), 'link targets 32px tall');
   assert.ok(css.includes('var(--card-pad)') && css.includes('var(--card-stack)'), 'shared tokens');
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
@@ -186,7 +187,7 @@ test('action row (ship59): links, heart and share in ONE row at the bottom of th
   assert.ok(fn.includes("a.appendChild(el('span', 'ob-long', x[0])); a.appendChild(el('span', 'ob-short', x[1]));") && !/setAttribute\('aria-label'/.test(fn));
   assert.ok(fn.includes('a.appendChild(svg(OB_ICON[x[2]]))'), 'icon (aria-hidden, from svg())');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
-  assert.ok(ob.indexOf('flowersLink(it)') > ob.indexOf("actions(it, 'obit', b, foot)"), 'the row is the last thing in the card');
+  assert.ok(ob.includes("left: [fl], when: el('span', null, postDay(it.at)), acts: ac.acts"), 'the links are in the bottom row, the last row of the card');
   assert.ok(!/UI\.sponsor\('obits'|UI\.adCard\('obit/.test(html), 'still no ads on Obituaries');
 });
 

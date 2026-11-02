@@ -120,7 +120,7 @@
     if (end == null) return '';
     now = now == null ? Date.now() : now;
     var sameDay = chi(end, { year: 'numeric', month: 'numeric', day: 'numeric' }) === chi(now, { year: 'numeric', month: 'numeric', day: 'numeric' });
-    return 'until ' + (sameDay ? '' : chi(end, { weekday: 'short' }) + ' ') + chi(end, { hour: 'numeric', minute: '2-digit' }) + ' CT';
+    return 'until ' + (sameDay ? '' : chi(end, { weekday: 'long' }) + ' ') + chi(end, { hour: 'numeric', minute: '2-digit' }) + ' CT';
   }
 
   return { HOUR: HOUR, NO_END_MS: NO_END_MS, TIERS: TIERS, NWS: NWS, RULES: RULES, fromNws: fromNws, classifyOfficial: classifyOfficial,
@@ -269,7 +269,7 @@
   }
   // "Tue, Oct 20" for the day a capped period covers (the day before its end moment).
   function dayLabel(until) {
-    return new Date(until - 1).toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+    return new Date(until - 1).toLocaleDateString('en-US', { timeZone: TZ, weekday: 'long', month: 'long', day: 'numeric' });
   }
   return { DAY: DAY, MIN_HOURS: MIN_HOURS, dayEnd: dayEnd, boundDate: boundDate, window: window_, dayLabel: dayLabel, offsetMin: offsetMin };
 });

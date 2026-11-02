@@ -716,6 +716,17 @@ button.legal-link { border:0; background:none; font-family:inherit; cursor:point
 .ev-live { display:inline-flex; align-items:center; gap:6px; font-weight:700; color:var(--red); white-space:nowrap; }
 .ev-live::before { content:""; width:8px; height:8px; flex:none; border-radius:9999px; background:currentColor; }
 
+/* ship83: one action button for every card (Tickets, Details, Apply, Send flowers, Plant a tree, Donate): the same
+   font, ink and outline everywhere; its size, padding and radius are in the ship83 block at the end of the file. */
+.evc.evc .evc-foot.evc-foot .ev-go, article.card.row.row:has(> .ca) .src.src .ev-go, article.card.row.row:has(> .ca) .src.src .ad-cta, article.card.row.row.ad-row:not(.breaking):has(> .ca) .src.src .ad-cta, .ob-acts.ob-acts .ob-act > a, .card .ob-flw.ob-flw .ob-act > a { font-family:inherit; font-size:13px; font-weight:500; color:var(--foreground); background:transparent; border-color:currentColor; text-decoration:none; }
+.evc.evc .evc-foot.evc-foot .ev-go:hover, article.card.row.row:has(> .ca) .src.src .ev-go:hover, article.card.row.row:has(> .ca) .src.src .ad-cta:hover, article.card.row.row.ad-row:not(.breaking):has(> .ca) .src.src .ad-cta:hover, .ob-acts.ob-acts .ob-act > a:hover, .card .ob-flw.ob-flw .ob-act > a:hover { background:var(--gray-100); color:var(--foreground); text-decoration:none; }
+/* ship83: one liked look for every heart (bottom rows and the picture corner): filled in --react-on. A visible count
+   uses the time text's size so it sits on the same line. */
+.like.like[aria-pressed="true"], .evc.evc .evc-pic > .like.evc-like[aria-pressed="true"] { color:var(--react-on); }
+article.card.row.row:has(> .ca) .acts.acts .like > span { font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; }
+.evc.evc .evc-pic > .like.evc-like::before { background:rgba(255,255,255,.92); }
+.evc.evc .evc-pic > .like.evc-like:not([aria-pressed="true"]) { color:#111; }
+
 /* ---------- ship81: compact event cards on big screens ----------
    The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
    and Tickets/Details) in a narrower, tighter version from 1024px, so each side-scroller (Popular, every day) shows more
@@ -778,7 +789,7 @@ article.card.row.row:not(.breaking):has(> .ca) .ca:hover h2 { color:var(--blue);
 
 article.card.row.row.ad-row:not(.breaking):has(> .ca) .src { padding-right:0; } /* no heart or share on an ad */
 article.card.row.row.ad-row:not(.breaking):has(> .ca) .src .ad-lab { flex:none; min-width:0; font-size:12px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--text-muted); }
-article.card.row.row.ad-row:not(.breaking):has(> .ca) .src .ad-cta { flex:none; margin-left:auto; padding-left:var(--sp-2); white-space:nowrap; font-weight:600; color:var(--blue); }
+article.card.row.row.ad-row:not(.breaking):has(> .ca) .src .ad-cta { flex:none; margin-left:auto; padding-left:var(--sp-2); white-space:nowrap; }
 
 @media (max-width:639.98px) { article.card.row.row:not(.breaking):has(> .ca) .src .place { display:none; } } /* phones: no county tag in the bottom row (the desktop row keeps it) */
 article.card.row.row:not(.breaking):has(> .ca) h2 a { display:inline; padding:0; margin:0; font:inherit; background:none; }
@@ -806,7 +817,7 @@ article.card.row.row:not(.breaking):has(> .ca) .src .cl-contact { flex:0 1 auto;
 article.card.row.row:not(.breaking):has(> .ca) .src a.cl-contact::after { content:""; position:absolute; inset:-10px 0; } /* a 40px tap target without a taller line */
 article.card.row.row:not(.breaking):has(> .ca) .src .rt { flex:none; }
 article.card.row.row:not(.breaking):has(> .ca) .src .when ~ .rt { padding-left:var(--act-gap); }
-article.card.row.row:not(.breaking):has(> .ca) .src .ad-cta { font-weight:600; color:var(--blue); text-decoration:none; }
+article.card.row.row:not(.breaking):has(> .ca) .src .ad-cta { text-decoration:none; } /* ship83: ink and weight from the shared action button */
 article.card.row.row:not(.breaking):has(> .ca) .src .ev-go svg { display:none; }
 article.card.row.row:not(.breaking):has(> .ca) .src .ob-acts { flex:1 1 0; min-width:0; }
 article.card.row.row:not(.breaking):has(> .ca) .bd > .cl-feature { align-self:flex-start; margin-top:var(--sp-1); }
@@ -945,3 +956,29 @@ main { max-width:var(--content-max); padding-left:var(--gutter); padding-right:v
 .evc.evc .evc-pic > .like.evc-like { top:var(--sp-1); right:var(--sp-1); }
 .evc.evc .evc-pic > .like.evc-like::before { inset:var(--sp-1); }
 .evx-badge { top:var(--sp-2); left:var(--sp-2); }
+
+/* ship83: one icon family. Flag, share and heart (bottom rows and the heart on an event picture) draw the same 20px
+   glyph at the same 2px stroke, centred in the same 24px box, on the bottom row's centre line with the time and source. */
+:is(article.card.row.row:has(> .ca) .acts.acts, .evc.evc .evc-foot.evc-foot .acts, .card .cf.cf-ob.cf-ob) :is(.like, .share, .cl-ico) { box-sizing:border-box; width:var(--ico, 24px); min-width:var(--ico, 24px); height:var(--ico, 24px); min-height:0; padding:0; display:inline-flex; align-items:center; justify-content:center; align-self:center; }
+:is(article.card.row.row:has(> .ca) .acts.acts, .evc.evc .evc-foot.evc-foot .acts, .card .cf.cf-ob.cf-ob) :is(.like, .share, .cl-ico) svg, .evc.evc .evc-pic.evc-pic > .like.evc-like svg { width:20px; height:20px; stroke-width:2; fill:none; flex:none; }
+:is(.like, .like.like)[aria-pressed="true"] svg, .evc.evc .evc-pic.evc-pic > .like.evc-like[aria-pressed="true"] svg { fill:currentColor; }
+article.card.row.row:has(> .ca) .acts.acts .like:has(> span:not(:empty)) { width:auto; gap:var(--sp-1); }
+article.card.row.row:has(> .ca) .acts.acts .like > span:not(:empty) { display:inline; line-height:var(--ico, 24px); }
+.evc.evc .evc-pic.evc-pic > .like.evc-like::before { inset:var(--sp-1); }
+/* ship83: the shared action button: as tall as the icons, one padding and a pill radius; a 40px tap area around it. */
+.evc.evc .evc-foot.evc-foot .ev-go, article.card.row.row:has(> .ca) .src.src .ev-go, article.card.row.row:has(> .ca) .src.src .ad-cta, article.card.row.row.ad-row:not(.breaking):has(> .ca) .src.src .ad-cta, .ob-acts.ob-acts .ob-act > a, .card .ob-flw.ob-flw .ob-act > a { position:relative; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; height:var(--ico, 24px); min-height:0; margin:0; padding:0 var(--sp-2); gap:0; border:1.5px solid; border-radius:9999px; line-height:1; white-space:nowrap; flex:none; }
+.evc.evc .evc-foot.evc-foot .ev-go svg, article.card.row.row:has(> .ca) .src.src .ev-go svg, article.card.row.row:has(> .ca) .src.src .ad-cta svg, article.card.row.row.ad-row:not(.breaking):has(> .ca) .src.src .ad-cta svg, .ob-acts.ob-acts .ob-act > a svg, .card .ob-flw.ob-flw .ob-act > a svg { display:none; }
+.evc.evc .evc-foot.evc-foot .ev-go::after, article.card.row.row:has(> .ca) .src.src .ev-go::after, article.card.row.row:has(> .ca) .src.src .ad-cta::after, article.card.row.row.ad-row:not(.breaking):has(> .ca) .src.src .ad-cta::after, .ob-acts.ob-acts .ob-act > a::after, .card .ob-flw.ob-flw .ob-act > a::after { content:""; position:absolute; inset:calc(var(--sp-2) * -1) calc(var(--sp-1) * -1); }
+.ob-acts.ob-acts { flex-wrap:wrap; gap:var(--sp-2); }
+.ob-acts.ob-acts .ob-long { display:inline; }
+.ob-acts.ob-acts .ob-short { display:none; }
+/* ship83: obituary rows: the full-name buttons (Send flowers, Plant a tree, Donate) wrap onto their own lines when the
+   row is narrow, so none is cut; the time stays on the last line, centred with the heart and share. */
+article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) { height:auto; flex-wrap:wrap; row-gap:var(--sp-2); padding-top:var(--sp-2); }
+article.card.row.row:has(> .ca) .src.src > .ob-acts { flex:1 0 100%; min-width:0; } /* the buttons line(s), then the time on the heart and share line */
+article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) > :not(.ob-acts) { min-height:var(--meta-h); display:inline-flex; align-items:center; }
+/* ship83: on the 240px cards (1024px and up) "Happening now" keeps its whole label beside flag, share and the button:
+   the controls sit one small step apart. */
+@media (min-width:1024px) {
+  .evx-rail .evc.evc .evc-foot.evc-foot > .evc-right { gap:var(--sp-1); }
+}

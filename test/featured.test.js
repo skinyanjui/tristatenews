@@ -28,11 +28,11 @@ test('window: events and deals with an end date stop at the end of that day, and
   const now = Date.parse('2026-10-18T15:00:00Z'); // Sun 10:00 AM CT
   const ev = F.window({ kind: 'event', date: '2026-10-20' }, 7, now);
   assert.deepStrictEqual(ev, { ok: true, from: now, until: Date.parse('2026-10-21T05:00:00Z'), capped: true, bound: '2026-10-20' });
-  assert.strictEqual(F.dayLabel(ev.until), 'Tue, Oct 20');
+  assert.strictEqual(F.dayLabel(ev.until), 'Tuesday, October 20');
   const far = F.window({ kind: 'event', date: '2026-12-01' }, 7, now);
   assert.deepStrictEqual([far.capped, far.until], [false, now + 7 * DAY], 'an event far enough out gets the full days');
   const deal = F.window({ kind: 'deal', ends: '2026-10-25' }, 14, now);
-  assert.deepStrictEqual([deal.capped, F.dayLabel(deal.until)], [true, 'Sun, Oct 25']);
+  assert.deepStrictEqual([deal.capped, F.dayLabel(deal.until)], [true, 'Sunday, October 25']);
   assert.strictEqual(F.window({ kind: 'job', date: '2026-10-19', ends: '2026-10-19' }, 30, now).capped, false, 'only events and deals are tied to a date');
 });
 

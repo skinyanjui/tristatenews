@@ -51,7 +51,7 @@ test('wired in: shared row, news cards (page and server), kicker labels, events,
   assert.ok(read('api/_tabpage.js').includes("C.cards(p, now, { news: 'News', institution: 'Institutions', obits: 'Obituaries' }[r.cat] || '')"));
   assert.ok(js.includes('if (DD.part(town, place)) bits.push(town);'), 'venue already names the town');
   assert.ok(js.includes("it.feed && DD.part(it.source, it.place, evxWhere(it), it.title) ? 'via ' + it.source : ''"), 'via only when new');
-  assert.ok(js.includes("var dvis = inDay ? '' : rel || (hasPic ? evxDate(it.date, { weekday: 'short' }) : '');"), 'the day line skips what the badge/tile and heading show');
+  assert.ok(js.includes("var dvis = inDay ? '' : rel || (hasPic ? evxDate(it.date, { weekday: 'long' }) : '');"), 'the day line skips what the badge/tile and heading show');
   assert.ok(js.includes("el('span', 'sr-only', evxDate(it.date, { weekday: 'long', month: 'long', day: 'numeric' }))"), 'full date kept for screen readers');
   assert.ok(js.includes("t.setAttribute('aria-hidden', 'true'); // the date is read from the day line"));
   for (const k of ["UI.adText(ad, 'Sponsored')", "UI.adText(sp, 'Sponsored')", "UI.adText(sm, 'Sample ad')", "UI.adText(ad, isS ? 'Sample ad' : 'Sponsored')", "adT(f.ad, 'Sample ad')", "adT(ad, 'Sponsored')"]) assert.ok(js.includes(k), k);

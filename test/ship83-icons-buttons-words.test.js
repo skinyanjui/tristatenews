@@ -38,8 +38,7 @@ test('one action button: Tickets/Details, Apply and the obituary buttons share f
 test('words: relative times, dates, states and pay are spelled out in visible copy', () => {
   for (const f of ['public/assets/app.js', 'api/_cards.js']) {
     const s = read(f);
-    assert.ok(s.includes("' minute ago' : ' minutes ago'") && s.includes("' hour ago' : ' hours ago'"), f);
-    assert.ok(!/'m ago'|'h ago'/.test(s), f);
+    assert.ok(s.includes("m + 'm ago'") && s.includes("+ 'h ago'") && s.includes("d + 'd ago'"), f + ' (ship88: posted times short again)');
   }
   for (const f of ['public/assets/app.js', 'public/assets/lib.js', 'public/featured.js', 'public/breaking.js', 'api/_cards.js'])
     assert.ok(!/(weekday|month): 'short'/.test(read(f)), f);

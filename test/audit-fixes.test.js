@@ -52,7 +52,9 @@ test('(a) Paxton Beckham Luttrell: a name-only title over a "passed away" summar
   const spencerco = { id: 'spencerco', name: 'Spencer County Online', area: 'Rockport', url: 'https://spencercountyonline.com/feed/' };
   assert.equal(N.passesFilters(LUTTRELL, spencerco, false), false, 'kept out at fetch time');
   const out = N.combine([{ source: spencerco, items: [Object.assign({}, LUTTRELL, { published: ago(3) }), item(spencerco, 'Rockport council approves sewer project', { summary: 'The council voted 4-1.' })] }], Date.now());
-  assert.deepEqual(out.map(i => i.title), ['Rockport council approves sewer project'], 'and when stored stories are rebuilt');
+  assert.deepEqual(out.filter(i => !i.isObit).map(i => i.title), ['Rockport council approves sewer project'], 'and when stored stories are rebuilt');
+  // ship91: it is not lost: it goes to Obituaries under ob-spencerco
+  assert.deepEqual(out.filter(i => i.isObit).map(i => i.title + ' ' + i.sourceId), ['Paxton Beckham Luttrell ob-spencerco']);
 });
 
 test('(a) other death notices with only a name: nickname, maiden name, initials, suffix, funeral or visitation or obituary wording', () => {

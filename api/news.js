@@ -114,14 +114,41 @@ const OBIT_NAME_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,5}[A
 // Radio stations' notices put the age another way: "Patricia Ann Dial, age 79 of McLeansboro", "Betty Lamb (82) of
 // Olney", "Nancy I. Stevens (77) of Olney, formerly of Effingham", "Mary Lou (Rogers) Elliston, 88, McLeansboro,".
 const OBIT_AGE_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,6}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?(?:,\s*age\s+\d{1,3},?|\s+\(\d{1,3}\)|,\s*\d{1,3},?)\s+(?:of\s+)?[A-Z][A-Za-z.'\u2019 -]{1,40}(?:,\s*formerly of [A-Z][A-Za-z.,'\u2019 -]{1,60})?,?$/;
+// ship91: county weeklies (Spencer County Online, The Posey County News, Leader-News) post death notices in their news
+// feeds with even barer headlines: "Martha Nell DeWitt, 81", "William A. Stewart, 73, Hawesville, KY", "Rita E. McKinney",
+// "Gayle Travis Parson, Sr.". A name and an age (and a place) is a notice on its own; a bare name needs its summary to read
+// like one (see nameWithNoticeSummary).
+function nameShaped(t) {
+  if (!t || t.length > 70 || !NAME_ONLY_RE.test(t)) return false;
+  const words = t.replace(/["\u201c\u201d(),]/g, ' ').split(/\s+/).filter(Boolean).map(w => w.toLowerCase().replace(/\.$/, ''));
+  return words.length >= 2 && !words.some(w => w.length > 1 && HEADLINE_WORDS.has(w));
+}
+const NAME_AGE_TAIL_RE = /^(.+?),\s*(\d{1,3})(?:,\s*(?:of\s+)?[A-Z][A-Za-z.'\u2019 -]{1,40}(?:,\s*[A-Z][A-Za-z.]{1,12})?)?$/;
+function nameAgeObit(title) {
+  const m = NAME_AGE_TAIL_RE.exec(title);
+  return !!m && Number(m[2]) > 0 && Number(m[2]) <= 120 && nameShaped(m[1].trim());
+}
+const NOTICE_DEATH_RE = /\b(?:passed away|passed on|died|went home to be with|entered (?:into )?(?:eternal )?rest|funeral|visitation|obituar(?:y|ies)|survived by|preceded in death)\b/i;
+const NOTICE_NEWS_RE = /\b(?:arrest(?:ed|s)?|charged|sentenced|indicted|police|sheriff'?s?|crash|shooting|killed|elected|candidate|council|commissioners?|announced|named|hired|award(?:ed)?|wins?|won)\b/i;
+function nameWithNoticeSummary(item) {
+  const title = String(item.title || '').trim();
+  if (!nameShaped(title)) return false;
+  const head = String(item.summary || '').slice(0, 220);
+  const last = title.replace(/,?\s+(?:Jr|Sr|II|III|IV)\.?$/i, '').split(/\s+/).pop().toLowerCase().replace(/[^a-z'-]/g, '');
+  if (!last || last.length < 2 || !head.toLowerCase().includes(last)) return false;
+  if (NOTICE_NEWS_RE.test(head)) return false;
+  // "Rita E. Reich McKinney, 92, of Mt. Vernon, Ind., passed away...", "..., 43, of Poseyville, Ind., born December 9..."
+  return /,\s*\d{1,3},\s*(?:of\s+)?[A-Z]/.test(head) && (NOTICE_DEATH_RE.test(item.summary || '') || /\bborn\b/i.test(head));
+}
 function looksLikeObit(item) {
   if (/\bobituar(?:y|ies)\b/i.test(item.title)) return true;
+  if (nameAgeObit(String(item.title || '').trim()) || nameWithNoticeSummary(item)) return true;
   if (OBIT_AGE_RE.test(String(item.title || '').trim())) return true;
   // A headline that is only a name, an age and a hometown ("John Henry Adams, 61, of Mill Shoals") is a death notice;
   // a news story about a person says what happened ("..., 45, of Henderson, arrested").
   if (OBIT_NAME_RE.test(String(item.title || '').trim())) return true;
   if (nameOnlyObit(item)) return true;
-  try { return /\/obituar/i.test(new URL(item.link).pathname); } catch (_) { return false; }
+  try { return /\/(?:obituar[a-z]*|obits?)(?:\/|$|-)/i.test(new URL(item.link).pathname); } catch (_) { return false; }
 }
 
 // A headline that is only a person's name ("Paxton Beckham Luttrell", Spencer County Online, 2026-10-22) over a summary
@@ -175,6 +202,17 @@ function passesFilters(it, source, viaGoogle) {
   else if ((source.geo || (viaGoogle && news && !source.localSection)) && !inRegion(it, source.geoTerms)) return false;
   return !news || (!looksLikeObit(it) && !outOfArea(it, source.geoTerms) && !STANDING_RE.test(it.title.trim()));
 }
+// ship91: a death notice in a news source's feed goes to Obituaries instead of being dropped. It is filed under
+// "ob-<source id>" (the page reads any ob- id as an obituary source), keeps its paper's name, and is deduped by name
+// against the obituary feeds (Messenger-Inquirer's ob-messinq and the funeral homes).
+function obitRoute(it, source) {
+  const news = !source.kind || source.kind === 'news';
+  if (!news || !looksLikeObit(it) || isWire(it)) return null;
+  const viaGoogle = isGoogleNews(it.link || '');
+  if (source.strictGeo) { if (!inTriState(it, source.strictGeo)) return null; }
+  else if ((source.geo || (viaGoogle && !source.localSection)) && !inRegion(it, source.geoTerms)) return null;
+  return { ...it, sourceId: 'ob-' + source.id, isObit: true, isEvent: false, image: '', maxAgeDays: Math.max(it.maxAgeDays || 0, 21) };
+}
 
 // ---------- Police & courts policy ----------
 // The tab carries official sources only (kind 'police' / 'courts'); crime stories from news outlets stay in News.
@@ -210,7 +248,8 @@ function safetyView(it, source) {
 function obitKey(title) {
   const words = title.toLowerCase().replace(/^obituary:?\s*/, '').replace(/["\u201c\u201d].*?["\u201c\u201d]|\(.*?\)|,.*$/g, ' ')
     .replace(/[^a-z\s'-]/g, ' ').split(/\s+/).filter(w => w && !/^(?:jr|sr|ii|iii|iv|mrs?|dr)$/.test(w));
-  return words.length > 1 ? words[0] + ' ' + words[words.length - 1] : words.join(' ');
+  // (a last name with and without a final "s" is one person: "Gayle Travis Parson, Sr." / "Gayle Travis Parsons Sr.")
+  return words.length > 1 ? words[0] + ' ' + words[words.length - 1].replace(/(?<=..)s$/, '') : words.join(' ');
 }
 
 const MAX_ITEMS = 240;
@@ -683,7 +722,7 @@ function combine(results, now, pool) {
   results = results.slice().sort((a, b) => (b.source && b.source.funeralHome ? 1 : 0) - (a.source && a.source.funeralHome ? 1 : 0));
   for (const r of results) {
     for (const raw of r.items) {
-      const it = !r.source ? raw : passesFilters(raw, r.source) ? safetyView(raw, r.source) : null;
+      const it = !r.source ? raw : passesFilters(raw, r.source) ? safetyView(raw, r.source) : obitRoute(raw, r.source);
       if (!it) continue;
       const ts = it.published ? Date.parse(it.published) : null;
       const key = normKey(it);
@@ -1074,7 +1113,7 @@ function page(snap, before, now) {
   if (now == null) now = Date.now();
   if (!snap || !Array.isArray(snap.items)) return snap;
   const kinds = {}; (snap.sources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind; });
-  const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits';
+  const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits' || /^ob-/.test(it.sourceId || '');
   const strip = it => { const o = Object.assign({}, it); delete o.isEvent; delete o.isObit; return o; };
   const t = it => Date.parse(it.published) || 0;
   let cut = Infinity;
@@ -1216,6 +1255,8 @@ module.exports.homeView = homeView;
 module.exports.NEWS_CACHE = NEWS_CACHE;
 module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
+module.exports.obitRoute = obitRoute;
+module.exports.obitKey = obitKey;
 module.exports.outOfArea = outOfArea;
 module.exports.titleWords = titleWords;
 module.exports.sameStory = sameStory;

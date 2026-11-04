@@ -81,14 +81,24 @@
   var OFFSET = { classifieds: 0, deals: 2, events: 4, jobs: 6, news: 5 };
   // What fills the card on a board: { type: 'direct', ad } | { type: 'sample', ad } | { type: 'house' }, or null where
   // no ad may appear. A real ad always comes first; samples only stand in for an unsold spot.
+  // ship90: the nth in-feed card on one page gets the next sample, so a feed never repeats the same sample; offsets
+  // the side ads use are skipped, so a feed sample never matches a side ad either (with enough samples).
+  function nthOffset(base, nth, len) {
+    var o = Number(base) || 0, k = Math.max(0, Math.floor(Number(nth) || 0));
+    if (!k || !len) return o;
+    var rail = [RAIL_OFFSET.left, RAIL_OFFSET.right].map(function (x) { return ((x % len) + len) % len; });
+    for (var guard = 0; k > 0 && guard < len * 4; guard++) { o++; if (len <= rail.length + 1 || rail.indexOf(((o % len) + len) % len) < 0) k--; }
+    return o;
+  }
   function fill(kind, cards, now, samples) {
+    var nth = arguments[4]; // ship90: optional position on the page (0, 1, 2...), never anything about the reader
     var own = Object.prototype.hasOwnProperty;
     var key = own.call(BOARDS, kind) ? BOARDS[kind] : own.call(FEED, kind) ? FEED[kind] : null;
     if (!key) return null;
     var v = cards && own.call(cards, key) ? cards[key] : null;
     var ad = pick(v, now);
     if (ad) return { type: 'direct', ad: ad };
-    var sm = sample(samples, OFFSET[key], now);
+    var sm = sample(samples, nthOffset(OFFSET[key], nth, sampleList(samples).length), now);
     if (sm) return { type: 'sample', ad: sm };
     return { type: 'house' }; // unsold, or a reserved network entry (no network is connected)
   }
@@ -125,5 +135,5 @@
     count = Number(count) || 0;
     return count <= 0 ? -1 : Math.min(count, AFTER);
   }
-  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position, railFill: railFill, RAIL_OFFSET: RAIL_OFFSET, FEED: FEED, newsSlots: newsSlots, NEWS_EVERY: NEWS_EVERY };
+  return { BOARDS: BOARDS, AD_TABS: AD_TABS, AFTER: AFTER, CTAS: CTAS, validAd: validAd, pick: pick, order: order, validSample: validSample, sampleList: sampleList, sample: sample, OFFSET: OFFSET, dayNumber: dayNumber, turn: turn, TURN_MIN: TURN_MIN, fill: fill, position: position, railFill: railFill, RAIL_OFFSET: RAIL_OFFSET, nthOffset: nthOffset, FEED: FEED, newsSlots: newsSlots, NEWS_EVERY: NEWS_EVERY };
 });

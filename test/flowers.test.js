@@ -112,7 +112,7 @@ test('the page: a text link on obituaries only, "paid link" and rel="sponsored n
   const html = require('./_page.js')();
   assert.ok(html.includes('<script src="/flowers.js"></script>'));
   const fn = html.slice(html.indexOf('function flowersLink('), html.indexOf('function obitCard('));
-  assert.ok(fn.includes("['Send flowers', 'Send flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Plant a tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
+  assert.ok(fn.includes("['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]") && fn.includes("a.target = '_blank'"));
   assert.ok(fn.includes("a.rel = f.paid ? F.REL_PAID : f.rel;") && fn.includes("if (f.paid) { w.appendChild(el('span', 'ob-paid', F.LABEL_PAID));"), '"paid link" only when paid');
   assert.ok(fn.includes('return p.children.length ? p : null;'), 'no empty row');
   assert.ok(html.includes('FLOWERS.fallbackUrl'), 'the fallback alone re-renders the tab');
@@ -187,7 +187,7 @@ test('action row (ship59): links, heart and share in ONE row at the bottom of th
   assert.ok(fn.includes("a.appendChild(el('span', 'ob-long', x[0])); a.appendChild(el('span', 'ob-short', x[1]));") && !/setAttribute\('aria-label'/.test(fn));
   assert.ok(fn.includes('a.appendChild(svg(OB_ICON[x[2]]))'), 'icon (aria-hidden, from svg())');
   const ob = html.slice(html.indexOf('function obitCard('), html.indexOf('function applyHref('));
-  assert.ok(ob.includes("left: [fl], when: el('span', null, postDay(it.at)), acts: ac.acts"), 'the links are in the bottom row, the last row of the card');
+  assert.ok(ob.includes("left: [fl], when: (function () { var w = el('span', null, shortWhen(it.at) || postDay(it.at)); if (it.at) w.title = postDay(it.at); return w; })(), acts: ac.acts"), 'the links are in the bottom row, the last row of the card');
   assert.ok(!/UI\.sponsor\('obits'|UI\.adCard\('obit/.test(html), 'still no ads on Obituaries');
 });
 

@@ -423,7 +423,7 @@
       render(); repaintHearts(); // ship89: also the event picture hearts, which render() does not rebuild
     }).catch(function () {});
   }
-  function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : 'news'; }
+  function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : /^ob-/.test(id || '') ? 'obits' : 'news'; } // ship91: ob-<news source> = a notice routed from a paper's news feed
   var CATS = [
     { id: 'news', label: 'News' },
     { id: 'institution', label: 'Institutions' },

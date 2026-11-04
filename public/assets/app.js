@@ -216,8 +216,8 @@
       // "Advertise with us" unit, which opens the inquiry form. Same for every reader: nothing about the reader is used.
       // The News in-feed card: a real campaign (card:news) or, while unsold, a sample ad; nothing otherwise (no house unit
       // in the feed). Same markup and spacing as the boards' in-listing card.
-      newsAd: function () {
-        var f = window.TSNAds ? TSNAds.fill('news', SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples) : null;
+      newsAd: function (nth) {
+        var f = window.TSNAds ? TSNAds.fill('news', SPONSORS && SPONSORS.__cards, Date.now(), SPONSORS && SPONSORS.__samples, nth) : null;
         if (!f || f.type === 'house') return null;
         return UI.adRow(f);
       },
@@ -1601,7 +1601,7 @@
   }
   function evxCard(it, b, inDay) {
     var c = el('article', 'evc' + (it.featured ? ' evr-feat' : '') + (it.feed ? '' : ' evc-post'));
-    if (it.id) c.id = 'ev-' + it.id;
+    if (it.id && inDay !== false) c.id = 'ev-' + it.id; // ship90: the copy in "Popular this week" has no id, so the day card's id is unique
     c.style.setProperty('--c', 'var(--h-' + (EV_HUE[it.category] || 'other') + ')');
     c.appendChild(evxPic(it, 'evc-pic'));
     var body = el('div', 'evt evc-body'), top = el('div', 'evt-top');
@@ -2509,8 +2509,9 @@
     if (state.cat === 'news' && !state.q.trim() && window.TSNAds) {
       TSNAds.newsSlots(shown.map(function (it) { var k = kindOf(it.sourceId); return k === 'police' || k === 'courts'; }), TSNAds.NEWS_EVERY).forEach(function (i) { slots[i] = 1; });
     }
+    var adN = 0; // ship90: each in-feed card gets the next sample, so the same sample never repeats down the feed
     shown.forEach(function (it, i) {
-      if (slots[i]) { var ac = UI.newsAd(); if (ac) listEl.appendChild(ac); }
+      if (slots[i]) { var ac = UI.newsAd(adN++); if (ac) listEl.appendChild(ac); }
       listEl.appendChild(makeCard(it, false));
     });
     if (rest.length > shown.length) {

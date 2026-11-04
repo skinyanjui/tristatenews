@@ -1025,3 +1025,23 @@ article.card.row.row:has(> .ca) .acts.acts .like > span { display:inline-block; 
 /* ship89: the fixed like slot takes 4ch more on the meta line, so a long source name gives way (ellipsis) before the
    posted time is pushed under the heart. */
 article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src b { min-width:2.5em; }
+
+/* ship93: obituary cards below 1024px: Send flowers, Plant a tree (and Donate), the posted time, the heart and share
+   all on ONE row, everywhere an obituary card appears (Obituaries, search, News fallbacks). The row runs the card's full
+   width, under the picture too (the picture sits at the top, the text column keeps room for it), the buttons use their
+   short labels ("Flowers", "Tree") and may shorten with an ellipsis, never wrap and are never hidden; the time keeps
+   its short form and the fixed heart slot (ship89) so nothing shifts. */
+@media (max-width:1023.98px) {
+  article.card.row.row.row-obit:has(> .ca) .ca { column-gap:var(--sp-3); }
+  article.card.row.row.row-obit:has(> .ca) .ca > .th { align-self:start; }
+  article.card.row.row.row-obit:has(> .ca) .ca:has(> .th) .bd { min-height:calc(var(--pic) + var(--sp-2) + var(--meta-h)); }
+  article.card.row.row.row-obit:has(> .ca) .ca:has(> .th) .src.src { margin-left:calc((var(--pic) + var(--sp-3)) * -1); }
+  article.card.row.row.row-obit:has(> .ca) .src.src:has(> .ob-acts) { height:var(--meta-h); flex-wrap:nowrap; padding-top:0; row-gap:0; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts { container-type:normal; flex:0 1 auto; flex-wrap:nowrap; min-width:0; gap:var(--sp-2); overflow:hidden; } /* (no size container here: it would measure the buttons as 0 wide) */
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-act { flex:0 1 auto; min-width:0; display:inline-flex; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-act > a { flex:0 1 auto; min-width:0; max-width:100%; overflow:hidden; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-act > a > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-long { display:none; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-short { display:inline; }
+  article.card.row.row.row-obit:has(> .ca) .src.src > :not(.ob-acts) { flex:none; white-space:nowrap; }
+}

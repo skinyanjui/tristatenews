@@ -1367,7 +1367,7 @@
   };
   function flowersLink(it, tag) {
     var F = window.TSNFlowers; if (!F) return null;
-    var acts = [['Send flowers', 'Send flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Plant a tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]];
+    var acts = [['Send flowers', 'Flowers', 'flowers', F.linkFor(it, FLOWERS)], ['Plant a tree', 'Tree', 'tree', F.treeFor(it, FLOWERS)], ['Donate', 'Donate', 'donate', F.donateFor(it, FLOWERS)]]; // ship93: short labels for the one-row phone layout (title keeps the full one)
     var p = el(tag || 'div', 'ob-flw ob-acts');
     acts.forEach(function (x) {
       var f = x[3]; if (!f) return;
@@ -1391,7 +1391,7 @@
     var k = el('span'); k.appendChild(document.createTextNode(kick(it, [it.business, it.town])));
     var cn = contactNode(it.contact, it.contact); if (cn) { k.appendChild(document.createTextNode(' \u00B7 ')); cn.setAttribute('aria-label', 'Contact ' + (it.business || '') + ': ' + it.contact); k.appendChild(cn); }
     return UI.row({ cls: 'row-obit', sec: 'obits', kicker: k, title: it.title, text: [bits.join(' \u00B7 '), it.desc].filter(Boolean).join('. '),
-      left: [fl], when: el('span', null, postDay(it.at)), acts: ac.acts, extra: [ac.feature] });
+      left: [fl], when: (function () { var w = el('span', null, shortWhen(it.at) || postDay(it.at)); if (it.at) w.title = postDay(it.at); return w; })(), acts: ac.acts, extra: [ac.feature] });
   }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {

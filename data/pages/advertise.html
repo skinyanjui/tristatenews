@@ -93,6 +93,7 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
     <div id="rate-card" hidden>
       <h3>Featured posts</h3>
       <p class="m">Keep your post at the top of its board, with a “Featured · Paid” badge.</p>
+      <p class="m" id="featured-soon" hidden>Post for free now; paid Featured spots open soon.</p>
       <div class="grid" id="featured" style="margin:12px 0 24px"></div>
       <h3>Packages</h3>
       <p class="m">30-day spots in the ad between News stories, the Sponsored card inside a board’s list, the sponsor line at the top of a board, and side ads on wide screens. Each spot rotates among at most three businesses (two on side ads), with no targeting. Order A, B or C online: pick your start date, send your ad, then pay. Your ad runs only after we approve it and it’s paid.</p>
@@ -177,10 +178,12 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
   }
   fetch('/api/catalog').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (cat) {
     var f = cat.featured || {}, pk = cat.packages || {};
+    // ship90: the "opening soon" line is said once above the grid, not repeated on every card
     FEATURED_ORDER.forEach(function (k) {
       var x = f[k]; if (!x) return;
+      if (!x.purchasable) $('featured-soon').hidden = false;
       $('featured').appendChild(card(x.label, money(x.cents), 'for ' + x.days + ' days', x.purchasable ? 'Buy from your post' : 'Opening soon',
-        x.purchasable ? 'Post on the board, then tap “Feature” on your post.' : 'Post for free now; paid Featured spots open soon.', null));
+        x.purchasable ? 'Post on the board, then tap “Feature” on your post.' : '', null));
     });
     ['A', 'B', 'C', 'D'].forEach(function (k) {
       var x = pk[k]; if (!x) return;

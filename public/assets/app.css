@@ -738,6 +738,9 @@ article.card.row.row:has(> .ca) .acts.acts .like > span { font-size:13px; font-w
 /* ship87: the like count on an event picture, beside the heart inside its backdrop (only when there is a count). */
 .evc.evc .evc-pic > .like.evc-like > span { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; color:inherit; }
 
+/* ship89: the bottom-row heart's count uses the time's size with fixed-width digits. */
+article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-numeric:tabular-nums; }
+
 /* ---------- ship81: compact event cards on big screens ----------
    The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
    and Tickets/Details) in a narrower, tighter version from 1024px, so each side-scroller (Popular, every day) shows more
@@ -973,7 +976,7 @@ main { max-width:var(--content-max); padding-left:var(--gutter); padding-right:v
 :is(article.card.row.row:has(> .ca) .acts.acts, .evc.evc .evc-foot.evc-foot .acts, .card .cf.cf-ob.cf-ob) :is(.like, .share, .cl-ico) { box-sizing:border-box; width:var(--ico, 24px); min-width:var(--ico, 24px); height:var(--ico, 24px); min-height:0; padding:0; display:inline-flex; align-items:center; justify-content:center; align-self:center; }
 :is(article.card.row.row:has(> .ca) .acts.acts, .evc.evc .evc-foot.evc-foot .acts, .card .cf.cf-ob.cf-ob) :is(.like, .share, .cl-ico) svg, .evc.evc .evc-pic.evc-pic > .like.evc-like svg { width:20px; height:20px; stroke-width:2; fill:none; flex:none; }
 :is(.like, .like.like)[aria-pressed="true"] svg, .evc.evc .evc-pic.evc-pic > .like.evc-like[aria-pressed="true"] svg { fill:currentColor; }
-article.card.row.row:has(> .ca) .acts.acts .like:has(> span:not(:empty)) { width:auto; gap:var(--sp-1); }
+article.card.row.row:has(> .ca) .acts.acts .like:has(> span:not(:empty)) { gap:var(--sp-1); } /* ship89: width fixed below */
 article.card.row.row:has(> .ca) .acts.acts .like > span:not(:empty) { display:inline; line-height:var(--ico, 24px); }
 .evc.evc .evc-pic.evc-pic > .like.evc-like::before { inset:var(--sp-1); }
 /* ship83: the shared action button: as tall as the icons, one padding and a pill radius; a 40px tap area around it. */
@@ -1014,4 +1017,11 @@ article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) > :not(.ob-acts) { min-
 .evc.evc .evc-pic.evc-pic > .like.evc-like > span:not(:empty) { position:relative; width:auto; height:auto; overflow:visible; clip:auto; line-height:var(--sp-4); }
 /* ship88: a heart with a visible count is wider than the 24px icon box; the row's meta line reserves that extra width
    (the count's own room, up to 4 digits) so the posted time and source never sit under the count. */
-article.card.row.row:not(.breaking):has(> .ca):has(.acts .like > span:not(:empty)) .src.src { padding-right:calc(var(--nact, 2) * (var(--ico) + var(--act-gap)) + var(--sp-1) + 4ch); }
+article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src.src { padding-right:calc(var(--nact, 2) * (var(--ico) + var(--act-gap)) + var(--sp-1) + 4ch); } /* ship89: always, so a count appearing moves nothing */
+/* ship89: the bottom-row heart is one fixed slot (icon + room for a 4-digit count) whether or not it has a count, and
+   the count never changes the slot, so liking, unliking or 9 -> 10 moves nothing; no transitions on it either. */
+article.card.row.row:has(> .ca) .acts.acts .like { box-sizing:border-box; width:calc(var(--ico) + var(--sp-1) + 4ch); min-width:calc(var(--ico) + var(--sp-1) + 4ch); justify-content:flex-start; gap:var(--sp-1); padding:0; transition:none; }
+article.card.row.row:has(> .ca) .acts.acts .like > span { display:inline-block; width:4ch; min-width:4ch; text-align:left; line-height:var(--ico); white-space:nowrap; }
+/* ship89: the fixed like slot takes 4ch more on the meta line, so a long source name gives way (ellipsis) before the
+   posted time is pushed under the heart. */
+article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src b { min-width:2.5em; }

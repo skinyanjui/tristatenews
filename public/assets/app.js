@@ -154,11 +154,13 @@
       heart: function (o) {
         var b = el('button', 'like'); b.type = 'button';
         var cnt = el('span');
+        // ship89: paint touches only what changed (pressed state, label, the count's text); the button, its icon and the
+        // row are never rebuilt, so liking never flashes or moves anything.
         function paint() {
-          var s = o.get();
-          b.setAttribute('aria-pressed', String(s.on));
-          b.setAttribute('aria-label', (s.on ? 'Unlike: ' : 'Like: ') + s.label + (s.n ? ' (' + s.n + ' like' + (s.n === 1 ? '' : 's') + ')' : ''));
-          cnt.textContent = s.n > 0 ? String(s.n) : '';
+          var s = o.get(), pr = String(s.on), lab = (s.on ? 'Unlike: ' : 'Like: ') + s.label + (s.n ? ' (' + s.n + ' like' + (s.n === 1 ? '' : 's') + ')' : ''), tx = s.n > 0 ? String(s.n) : '';
+          if (b.getAttribute('aria-pressed') !== pr) b.setAttribute('aria-pressed', pr);
+          if (b.getAttribute('aria-label') !== lab) b.setAttribute('aria-label', lab);
+          if (cnt.textContent !== tx) cnt.textContent = tx;
         }
         b.appendChild(svg(ICON_HEART));
         b.appendChild(cnt);
@@ -406,17 +408,19 @@
     if (state.shared) {
       state.counts[id] = Math.max(0, (state.counts[id] || 0) + (on ? 1 : -1));
       fetch('/api/react', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: id, uid: uid, liked: on }) })
-        .then(function (r) { return r.json(); }).then(function (d) { if (d && typeof d.count === 'number') { state.counts[id] = d.count; render(); } })
+        .then(function (r) { return r.json(); }).then(function (d) { if (d && typeof d.count === 'number' && d.count !== state.counts[id]) { state.counts[id] = d.count; repaintHearts(); } }) // ship89: no re-render
         .catch(function () {});
     }
   }
+  // ship89: refresh every heart's pressed state and count in place (no list re-render, no node replacement).
+  function repaintHearts() { Array.prototype.forEach.call(document.querySelectorAll('button.like'), function (x) { if (x.paint) x.paint(); }); }
   function loadCounts() {
     var ids = state.items.map(function (i) { return storyId(i.link); }).concat(state.saved.map(function (i) { return storyId(i.link); }));
     ids = ids.filter(function (x, k) { return ids.indexOf(x) === k; }).slice(0, 300);
     if (!ids.length) return;
     fetch('/api/react?ids=' + ids.join(','), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       state.shared = !!(d && d.configured); state.counts = (d && d.counts) || {};
-      render();
+      render(); repaintHearts(); // ship89: also the event picture hearts, which render() does not rebuild
     }).catch(function () {});
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : 'news'; }

@@ -42,7 +42,8 @@ test('words: relative times, dates, states and pay are spelled out in visible co
   }
   for (const f of ['public/assets/app.js', 'public/assets/lib.js', 'public/featured.js', 'public/breaking.js', 'api/_cards.js'])
     assert.ok(!/(weekday|month): 'short'/.test(read(f)), f);
-  assert.ok(!/'Flowers', 'flowers'|'Tree', 'tree'/.test(js));
+  // ship93: the short "Flowers" / "Tree" only replace the spelled-out labels on the one-row phone/tablet obituary row
+  assert.ok(js.includes("['Send flowers', 'Flowers', 'flowers'") && js.includes("['Plant a tree', 'Tree', 'tree'"));
   const m = js.match(/function spell\(s\) \{[\s\S]*?\n  \}/);
   assert.ok(m);
   const STATES = { IN: 'Indiana', KY: 'Kentucky', IL: 'Illinois' };

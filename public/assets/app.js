@@ -2311,14 +2311,14 @@
 
   var logoMap = {};
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
-  // Relative time for card meta, spelled out ("12 minutes ago", "5 hours ago", "Yesterday", "October 15"); the full date is in the tooltip.
+  // Relative time for card meta, short ("12m ago", "5h ago", "3d ago", then "October 15"); the full date is in the tooltip and label.
   function shortWhen(iso) {
     var t = Date.parse(iso); if (!iso || isNaN(t)) return '';
     var m = Math.round((Date.now() - t) / 6e4);
-    if (m < 1) return 'Just now'; if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
-    var hr = Math.round(m / 60); if (m < 24 * 60) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
-    var z = 'America/Chicago', day = function (x) { return new Date(x).toLocaleDateString('en-US', { timeZone: z }); };
-    if (day(t + 864e5) === day(Date.now())) return 'Yesterday';
+    // ship88: posted times are short again ("Just now", "12m ago", "8h ago", "3d ago"); the full date is the title/label
+    if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';
+    if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
+    var z = 'America/Chicago', d = Math.floor(m / 1440); if (d < 7) return d + 'd ago';
     return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: z });
   }
   // The first picture of a list is usually the largest thing on screen (LCP): it loads at once with high priority;
@@ -2366,7 +2366,7 @@
     }
     src.appendChild(el('b', null, it.source));
     if (it.place && SC.on && !/^county:/.test(SC.key)) { if (DD.part(it.place, hTitle, it.source)) src.appendChild(el('span', 'place', it.place)); } // ship80: not when the title or source already names it // one locality label, only when the classifier is confident
-    var w = el('time', 'when', shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); }
+    var w = el('time', 'when', shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); w.setAttribute('aria-label', w.title); }
     src.appendChild(w);
     var sb = UI.heart({
       get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
@@ -2410,7 +2410,7 @@
       toggle: function () { toggleSaved(it); },
       after: function () { sb.paint(); renderTabs(); }
     });
-    var w = el('time', null, shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); }
+    var w = el('time', null, shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); w.setAttribute('aria-label', w.title); }
     return UI.row({ cls: 'row-obit', sec: 'obits', pic: it.image || '', picRef: true, kicker: it.source, title: it.title, titleHref: it.link, text: it.summary,
       left: [flowersLink(it, 'span')], when: w, acts: actRow(sb, it) });
   }

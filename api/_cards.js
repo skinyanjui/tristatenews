@@ -24,10 +24,9 @@ function safeHref(u) {
 function shortWhen(iso, now) {
   const t = Date.parse(iso); if (!iso || isNaN(t)) return '';
   const m = Math.round((now - t) / 6e4);
-  if (m < 1) return 'Just now'; if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
-  const hr = Math.round(m / 60); if (m < 24 * 60) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
-  const day = x => new Date(x).toLocaleDateString('en-US', { timeZone: TZ });
-  if (day(t + 864e5) === day(now)) return 'Yesterday';
+  if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago'; // ship88: short posted times again
+  if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
+  const d = Math.floor(m / 1440); if (d < 7) return d + 'd ago';
   return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: TZ });
 }
 function timeAgo(iso) {
@@ -89,7 +88,7 @@ function card(it, o) {
   if (logo) src += '<img class="av" src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
   src += '<b>' + esc(it.source) + '</b>';
   if (it.place && o.places && DD.part(it.place, title, it.source)) src += '<span class="place">' + esc(it.place) + '</span>';
-  src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" title="' + esc(timeAgo(it.published)) + '"' : '') + '>' + esc(shortWhen(it.published, o.now)) + '</time></div>';
+  src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" title="' + esc(timeAgo(it.published)) + '" aria-label="' + esc(timeAgo(it.published)) + '"' : '') + '>' + esc(shortWhen(it.published, o.now)) + '</time></div>';
   let body = '<div class="bd">';
   const tag = '<span class="pill pill-red' + (big && pic ? ' pill-over' : '') + '"><i></i>Breaking</span>';
   if (big && !pic) body += '<div class="bk-head">' + tag + '</div>';

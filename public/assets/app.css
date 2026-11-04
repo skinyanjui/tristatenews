@@ -1012,3 +1012,6 @@ article.card.row.row:has(> .ca) .src.src:has(> .ob-acts) > :not(.ob-acts) { min-
    corner inset, same centre line as the date pill); the number sits right of the glyph. No count = the circle as before. */
 .evc.evc .evc-pic.evc-pic > .like.evc-like:has(> span:not(:empty)) { width:auto; min-width:var(--card-tap); padding:0 var(--sp-3) 0 var(--sp-2); gap:var(--sp-1); }
 .evc.evc .evc-pic.evc-pic > .like.evc-like > span:not(:empty) { position:relative; width:auto; height:auto; overflow:visible; clip:auto; line-height:var(--sp-4); }
+/* ship88: a heart with a visible count is wider than the 24px icon box; the row's meta line reserves that extra width
+   (the count's own room, up to 4 digits) so the posted time and source never sit under the count. */
+article.card.row.row:not(.breaking):has(> .ca):has(.acts .like > span:not(:empty)) .src.src { padding-right:calc(var(--nact, 2) * (var(--ico) + var(--act-gap)) + var(--sp-1) + 4ch); }

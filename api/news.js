@@ -15,7 +15,7 @@
 // also drops disabled entries and applies EXTRA_FEEDS (plan PR 3.1).
 const { SOURCES, DISABLED_SOURCES } = require('./_sources.js');
 
-const { inTriState } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
+const { inTriState, PLACES: PLACE_LISTS } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
 const ET = require('../public/eventtime.js');
 const FLAGS = require('./_flags.js');
@@ -693,20 +693,61 @@ function sameStory(a, b) {
   let shared = 0; small.forEach(w => { if (big.has(w)) shared++; });
   return shared / (a.size + b.size - shared) >= 0.8 || (small.size >= 6 && shared / small.size >= 0.9);
 }
+// ship92: outlets word the same story differently ("Foster to continue as PVA" / "Foster wins re-election as Daviess
+// County PVA"; "Kuegel upsets Castlen for judge-executive seat" / "Kuegel defeats Castlen to become Daviess County
+// judge-executive"), so the word overlap above misses them. They share the story's names: capitalised words that are
+// not places, offices or headline furniture. Two stories within NAME_DUP_HOURS that share at least two such names, and
+// whose name sets mostly overlap, are one story. Title Case headlines (every word capitalised) carry no such signal and
+// are left to the word overlap.
+const NAME_DUP_HOURS = 36;
+const GEO_WORDS = (() => {
+  const set = new Set('indiana kentucky illinois ind ky ill tri state tristate county counties city town township parish'.split(' '));
+  const walk = o => { if (typeof o === 'string') o.toLowerCase().split(/[^a-z]+/).forEach(w => { if (w) set.add(w); }); else if (o && typeof o === 'object') Object.values(o).forEach(walk); };
+  walk(PLACE_LISTS);
+  ['owensboro', 'henderson', 'daviess', 'evansville', 'vanderburgh', 'warrick', 'posey', 'gibson', 'dubois', 'spencer', 'perry', 'vincennes', 'knox', 'princeton', 'madisonville', 'hopkins', 'muhlenberg', 'ohio', 'union', 'webster', 'mclean', 'hancock', 'wabash', 'white', 'gallatin', 'edwards', 'wayne', 'hamilton', 'saline', 'carmi', 'mount', 'mt', 'vernon', 'newburgh', 'boonville', 'jasper', 'tell', 'rockport', 'mcleansboro', 'fairfield', 'olney', 'harrisburg', 'paducah', 'ky', 'in', 'il', 'us', 'u', 's'].forEach(w => set.add(w));
+  return set;
+})();
+const NAME_STOP = new Set(('judge executive commissioner commissioners commission council councilman councilwoman mayor sheriff deputy school schools ' +
+  'board police fire election elections general primary governor gov senator sen senate house representative rep coroner clerk jailer ' +
+  'attorney prosecutor superintendent president chief director coach team district court circuit state federal department dept office ' +
+  'new news update updated breaking live watch photos video exclusive report weekend today tonight tomorrow monday tuesday wednesday ' +
+  'thursday friday saturday sunday january february march april may june july august september october november december ' +
+  'republican republicans democrat democrats gop voters vote votes results race seat seats win wins won').split(' '));
+function titleNames(title) {
+  const raw = String(title || '').replace(/[\u2018\u2019']s\b/g, '').split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const longs = raw.filter(w => w.length > 3);
+  if (longs.length >= 3 && longs.filter(w => /^[A-Z]/.test(w)).length / longs.length >= 0.7) return new Set(); // Title Case
+  const out = new Set();
+  for (const w of raw) {
+    if (!/^[A-Z]/.test(w) || /^\d/.test(w)) continue;
+    const l = w.toLowerCase();
+    if (l.length < 3 || DUP_STOP.has(l) || GEO_WORDS.has(l) || NAME_STOP.has(l)) continue;
+    out.add(l);
+  }
+  return out;
+}
+function sameNames(a, b) {
+  if (a.size < 2 || b.size < 2) return false;
+  let shared = 0; a.forEach(w => { if (b.has(w)) shared++; });
+  return shared >= 2 && shared / (a.size + b.size - shared) >= 0.75; // (a roundup naming more people is not merged into one of its parts)
+}
 // Remembers the words of every kept story, indexed by word, so each new story is compared only with stories that
 // share a word with it.
 function nearIndex() {
   const kept = [], byWord = new Map();
   return {
-    dupOf(words, sourceId) {
+    dupOf(words, sourceId, names, ts) {
       const seen = new Set();
       for (const w of words) for (const i of byWord.get(w) || []) {
         if (seen.has(i)) continue; seen.add(i);
-        if (kept[i].sourceId !== sourceId && sameStory(words, kept[i].words)) return kept[i];
+        const k = kept[i];
+        if (k.sourceId !== sourceId && sameStory(words, k.words)) return k;
+        // (the names rule also catches one outlet's rewrite of its own story)
+        if (names && k.names && sameNames(names, k.names) && ts != null && k.ts != null && Math.abs(ts - k.ts) <= NAME_DUP_HOURS * 36e5) return k;
       }
       return null;
     },
-    add(words, sourceId) { const i = kept.push({ words, sourceId }) - 1; words.forEach(w => { if (!byWord.has(w)) byWord.set(w, []); byWord.get(w).push(i); }); },
+    add(words, sourceId, names, ts, ref) { const k = { words, sourceId, names, ts, ref }; const i = kept.push(k) - 1; words.forEach(w => { if (!byWord.has(w)) byWord.set(w, []); byWord.get(w).push(i); }); return k; },
   };
 }
 
@@ -752,11 +793,19 @@ function combine(results, now, pool) {
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
       if (seen.has(key) || seen.has(it.link)) continue;
-      const words = titleWords(it.title);
-      if (near.dupOf(words, it.sourceId)) continue;
-      near.add(words, it.sourceId);
+      const words = titleWords(it.title), names = titleNames(it.title);
+      const dup = near.dupOf(words, it.sourceId, names, ts);
+      if (dup) {
+        // ship92: one card per story: the earliest report wins (the first outlet to have it); its place in the list
+        // takes the earlier story's time
+        if (dup.ref && ts != null && dup.ts != null && ts < dup.ts) { dup.ref.arr[dup.ref.i] = it; dup.ts = ts; dup.sourceId = it.sourceId; }
+        seen.add(key); seen.add(it.link);
+        continue;
+      }
       seen.add(key); seen.add(it.link);
-      (r.source && (r.source.kind === 'police' || r.source.kind === 'courts') ? safety : all).push(it);
+      const arr = r.source && (r.source.kind === 'police' || r.source.kind === 'courts') ? safety : all;
+      near.add(words, it.sourceId, names, ts, { arr, i: arr.length });
+      arr.push(it);
     }
   }
   const byDate = (a, b) => (Date.parse(b.published) || 0) - (Date.parse(a.published) || 0);
@@ -1260,6 +1309,8 @@ module.exports.obitKey = obitKey;
 module.exports.outOfArea = outOfArea;
 module.exports.titleWords = titleWords;
 module.exports.sameStory = sameStory;
+module.exports.titleNames = titleNames;
+module.exports.sameNames = sameNames;
 module.exports.retryAfterMs = retryAfterMs;
 module.exports.cooldownMs = cooldownMs;
 module.exports.RATE_GROUPS = RATE_GROUPS;

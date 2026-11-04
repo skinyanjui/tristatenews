@@ -17,7 +17,7 @@ test('legal: entity, address, county filled; DMCA agent still a placeholder', ()
 
 test('like count reserves its own room on the meta line', () => {
   const css = read('public/assets/app.css');
-  assert.ok(css.includes('article.card.row.row:not(.breaking):has(> .ca):has(.acts .like > span:not(:empty)) .src.src { padding-right:calc(var(--nact, 2) * (var(--ico) + var(--act-gap)) + var(--sp-1) + 4ch); }'));
+  assert.ok(css.includes('article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src.src { padding-right:calc(var(--nact, 2) * (var(--ico) + var(--act-gap)) + var(--sp-1) + 4ch); }'));
 });
 
 test('posted time: short text, full date in title and aria-label (page and server)', () => {

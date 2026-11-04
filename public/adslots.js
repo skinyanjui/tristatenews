@@ -83,12 +83,14 @@
   // no ad may appear. A real ad always comes first; samples only stand in for an unsold spot.
   // ship90: the nth in-feed card on one page gets the next sample, so a feed never repeats the same sample; offsets
   // the side ads use are skipped, so a feed sample never matches a side ad either (with enough samples).
+  // ship92: and never twice on one page: once every sample not on a side ad has had a card, the rest get none (null).
   function nthOffset(base, nth, len) {
     var o = Number(base) || 0, k = Math.max(0, Math.floor(Number(nth) || 0));
     if (!k || !len) return o;
-    var rail = [RAIL_OFFSET.left, RAIL_OFFSET.right].map(function (x) { return ((x % len) + len) % len; });
-    for (var guard = 0; k > 0 && guard < len * 4; guard++) { o++; if (len <= rail.length + 1 || rail.indexOf(((o % len) + len) % len) < 0) k--; }
-    return o;
+    var mod = function (x) { return ((x % len) + len) % len; };
+    var rail = len > 3 ? [mod(RAIL_OFFSET.left), mod(RAIL_OFFSET.right)] : [];
+    var free = []; for (var j = 0; j < len; j++) { var r = mod(o + j); if (j === 0 || rail.indexOf(r) < 0) free.push(o + j); }
+    return k < free.length ? free[k] : null;
   }
   function fill(kind, cards, now, samples) {
     var nth = arguments[4]; // ship90: optional position on the page (0, 1, 2...), never anything about the reader
@@ -98,7 +100,9 @@
     var v = cards && own.call(cards, key) ? cards[key] : null;
     var ad = pick(v, now);
     if (ad) return { type: 'direct', ad: ad };
-    var sm = sample(samples, nthOffset(OFFSET[key], nth, sampleList(samples).length), now);
+    var off = nthOffset(OFFSET[key], nth, sampleList(samples).length);
+    var sm = off === null ? null : sample(samples, off, now);
+    if (off === null) return { type: 'none' }; // ship92: samples used up on this page: an empty slot, not a repeat
     if (sm) return { type: 'sample', ad: sm };
     return { type: 'house' }; // unsold, or a reserved network entry (no network is connected)
   }

@@ -2341,7 +2341,10 @@
   // picture (none for Police & courts or crime stories, as on the card), source and time, the headline, the feed's
   // summary (we only have the RSS summary, never the article) and one "Continue to <publisher>" link that opens the
   // story in a new tab. Esc, the backdrop and Close dismiss it; focus returns to the card.
-  function storySheet(it, pic, logo, title) {
+  // ship96: the feed's longer text when it gives more than the card's blurb (it.more, never fetched from the article);
+  // the heart and share in the sheet (the card row's own buttons: same state, same calls, the card's heart repaints);
+  // Continue is the main action, with the outlet's logo; "Why this is here" only when the story has a place label.
+  function storySheet(it, pic, logo, title, cardHeart) {
     var back = document.activeElement;
     var d = el('dialog', 'st-sheet'); d.setAttribute('aria-labelledby', 'st-sheet-h');
     var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
@@ -2354,9 +2357,18 @@
     if (it.published) { var w = el('time', null, shortWhen(it.published)); w.dateTime = it.published; w.title = timeAgo(it.published); src.appendChild(w); }
     bd.appendChild(src);
     var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
-    var sm = String(it.summary || '').trim(); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
+    var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
+    if (it.place) bd.appendChild(el('p', 'st-why', 'Why this is here: local to ' + spell(it.place)));
+    var sh = UI.heart({
+      get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
+      toggle: function () { toggleSaved(it); },
+      after: function () { sh.paint(); if (cardHeart && cardHeart.paint) cardHeart.paint(); renderTabs(); }
+    });
+    var ar = actRow(sh, it); ar.classList.add('st-acts'); bd.appendChild(ar);
     if (kindOf(it.sourceId) === 'police' || kindOf(it.sourceId) === 'courts') { if (it.arrest) bd.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.')); }
-    var go = el('a', 'st-go', 'Continue to ' + (it.source || 'the story'));
+    var go = el('a', 'st-go');
+    if (logo) { var gl = el('img', 'av'); gl.src = logo; gl.alt = ''; gl.referrerPolicy = 'no-referrer'; gl.addEventListener('error', function () { gl.remove(); }); go.appendChild(gl); }
+    go.appendChild(el('span', null, 'Continue to ' + (it.source || 'the story')));
     go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
     go.addEventListener('click', function () { setTimeout(function () { if (d.open) d.close(); }, 0); });
     bd.appendChild(go);
@@ -2434,7 +2446,7 @@
     // a modified or middle click still opens the publisher's page directly. Heart, flag and share sit outside the link.
     a.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault(); storySheet(it, pic, logo, hTitle);
+      e.preventDefault(); storySheet(it, pic, logo, hTitle, sb);
     });
     var foot = el('div', 'cf');
     // Obituaries: Send flowers / Plant a tree / Donate and the heart and share share ONE row, the card's last, at every

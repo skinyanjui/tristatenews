@@ -751,6 +751,27 @@ function nearIndex() {
   };
 }
 
+// ship94: two listings of one event (Ticketmaster and the venue's own calendar: "University of Evansville Aces Mens
+// Basketball vs. Chicago State Cougars" / "UE Aces Men's Basketball vs Chicago State", same start, Ford Center) are one
+// event: the same start (within EV_DUP_MIN minutes), the same venue (its first part, folded) and mostly the same title
+// words (at least 3 shared, and 60% of the shorter title's words). The listing with a photo and/or a ticket link wins.
+const EV_DUP_MIN = 15;
+const EV_STOP = new Set('a an and the of at in on vs v with featuring feat ft presents tour live night'.split(' '));
+function eventWords(title) {
+  const t = String(title || '').toLowerCase().replace(/[\u2018\u2019']s\b/g, 's').replace(/[^a-z0-9]+/g, ' ');
+  return new Set(t.split(' ').filter(w => w && !EV_STOP.has(w)));
+}
+function venueKey(v) { return String(v || '').split('\u00B7')[0].toLowerCase().replace(/^\s*the\s+/, '').replace(/[^a-z0-9]+/g, ''); }
+function sameEvent(a, b) {
+  if (a.ts == null || b.ts == null || Math.abs(a.ts - b.ts) > EV_DUP_MIN * 6e4) return false;
+  if (!a.venue || !b.venue || !(a.venue === b.venue || a.venue.includes(b.venue) || b.venue.includes(a.venue))) return false;
+  const small = a.words.size <= b.words.size ? a.words : b.words, big = small === a.words ? b.words : a.words;
+  let shared = 0; small.forEach(w => { if (big.has(w)) shared++; });
+  return shared >= 3 && shared / small.size >= 0.6;
+}
+const TICKET_RE = /^https:\/\/(?:[a-z0-9-]+\.)*(?:ticketmaster\.com|livenation\.com|etix\.com|eventbrite\.com|axs\.com|seetickets\.us|tixr\.com)\//i;
+function eventScore(it) { return (it.image ? 2 : 0) + (it.fromPrice || TICKET_RE.test(it.link || '') ? 1 : 0); }
+
 function combine(results, now, pool) {
   const seen = new Set();
   const all = [];
@@ -759,6 +780,7 @@ function combine(results, now, pool) {
   const safety = [];
   const obitAt = new Map();
   const near = nearIndex();
+  const evKept = []; // ship94: events kept so far, for sameEvent
   // Funeral homes go first, so when a paper and a funeral home list the same person the funeral home's card wins.
   results = results.slice().sort((a, b) => (b.source && b.source.funeralHome ? 1 : 0) - (a.source && a.source.funeralHome ? 1 : 0));
   for (const r of results) {
@@ -774,6 +796,10 @@ function combine(results, now, pool) {
         const ekey = key + '|' + chicagoDate(ts);
         if (seen.has(ekey)) continue;
         seen.add(ekey);
+        const ev = { ts, venue: venueKey(it.venue), words: eventWords(it.title) };
+        const twin = evKept.find(k => sameEvent(ev, k));
+        if (twin) { if (eventScore(it) > eventScore(events[twin.i])) events[twin.i] = it; continue; } // ship94
+        evKept.push(Object.assign(ev, { i: events.length }));
         events.push(it);
         continue;
       }

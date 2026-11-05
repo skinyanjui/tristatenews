@@ -105,7 +105,9 @@ test('rate card: Featured prices and packages A–C from the catalog, D by propo
     assert.ok(feat.some(t => t.includes(f.label) && t.includes(money(f.cents)) && t.includes(f.days + ' days')), k);
   }
   assert.deepStrictEqual(Object.values(C.FEATURED).map(f => f.cents).sort((a, b) => a - b), [1900, 5900, 7900, 9900], 'the $19, $59, $79 and $99 Featured posts');
-  assert.ok(feat.every(t => t.includes('Opening soon')), 'without checkout, Featured says it opens soon');
+  // ship94: without checkout the page says once that Featured spots open soon; the cards carry no "Opening soon" tag
+  assert.ok(feat.every(t => !/opening soon/i.test(t)), 'no per-card Opening soon tag');
+  assert.strictEqual(nodes['featured-soon'] ? nodes['featured-soon'].hidden : false, false, 'the one page-level line shows');
   const pk = cardText(nodes.packages);
   assert.strictEqual(pk.length, 4);
   for (const k of ['A', 'B', 'C']) assert.ok(pk.some(t => t.startsWith(C.PACKAGES[k].label) && t.includes(money(C.PACKAGES[k].cents)) && t.includes('Order online')), k);

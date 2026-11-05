@@ -787,6 +787,13 @@ article.card.row.row:not(.breaking):has(> .ca) .src { box-sizing:border-box; hei
 article.card.row.row:not(.breaking):has(> .ca) .src b { flex:0 1000 auto; min-width:min(5.5em, 40%); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 article.card.row.row:not(.breaking):has(> .ca) .src .place { flex:0 1 auto; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 article.card.row.row:not(.breaking):has(> .ca) .src .av { flex:none; }
+/* ship94: on phones a story headline gets up to three lines instead of one cut-off line; a step smaller so a long one
+   stays compact, and the preview gives way to one line so the row is never much taller than before. Source names still
+   truncate in the bottom row. */
+@media (max-width:599.98px) {
+  article.card.row.row:not(.breaking):has(> .ca) h2 { font-size:17px; line-height:22px; white-space:normal; overflow:hidden; text-overflow:clip; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; line-clamp:3; overflow-wrap:anywhere; }
+  article.card.row.row:not(.breaking):has(> .ca) .bd p:not(.cl-note) { -webkit-line-clamp:1; line-clamp:1; }
+}
 :is(.list, .cl-list, .evx-day, .evx-sec):has(> .card.row) > .card.breaking { margin-bottom:var(--sp-2); }
 @media (max-width:389.98px) { /* the smallest phones: a smaller picture so logo, source, time, heart and share still fit on one row */
   article.card.row.row:not(.breaking):has(> .ca) { --pic:72px; --act-gap:10px; }

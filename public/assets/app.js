@@ -2343,40 +2343,93 @@
   // story in a new tab. Esc, the backdrop and Close dismiss it; focus returns to the card.
   // ship96: the feed's longer text when it gives more than the card's blurb (it.more, never fetched from the article);
   // the heart and share in the sheet (the card row's own buttons: same state, same calls, the card's heart repaints);
-  // Continue is the main action, with the outlet's logo; "Why this is here" only when the story has a place label.
-  function storySheet(it, pic, logo, title, cardHeart) {
+  // Continue is the main action, with the outlet's logo.
+  // ship98: swipe left / right (phones) or the arrow keys and the small Previous / Next buttons (desktop) move to the
+  // next / previous news story of the list that opened the sheet (the cards in it, in order; ads and other kinds are
+  // skipped). It stops at either end with a little resistance. A swipe only counts once it is clearly sideways, so
+  // scrolling a long summary never turns the page.
+  var ST_SWIPE_LOCK = 12, ST_SWIPE_GO = 60;
+  function storySheet(it, pic, logo, title, cardHeart, card) {
     var back = document.activeElement;
+    var list = card && card.parentElement ? [].filter.call(card.parentElement.children, function (c) { return !!c._story; }) : [];
+    var at = list.indexOf(card);
+    if (at < 0) { list = []; at = 0; } // the Breaking card opens on its own
+    if (!list.length) list = [{ _story: { it: it, pic: pic, logo: logo, title: title, heart: cardHeart } }];
     var d = el('dialog', 'st-sheet'); d.setAttribute('aria-labelledby', 'st-sheet-h');
     var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
-    d.appendChild(x);
-    if (pic) { var im = el('img', 'st-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.addEventListener('error', function () { im.remove(); }); d.appendChild(im); }
-    var bd = el('div', 'st-bd');
-    var src = el('div', 'st-src');
-    if (logo) { var av = el('img', 'av'); av.src = logo; av.alt = ''; av.referrerPolicy = 'no-referrer'; av.addEventListener('error', function () { av.remove(); }); src.appendChild(av); }
-    src.appendChild(el('b', null, it.source || ''));
-    if (it.published) { var w = el('time', null, shortWhen(it.published)); w.dateTime = it.published; w.title = timeAgo(it.published); src.appendChild(w); }
-    bd.appendChild(src);
-    var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
-    var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
-    if (it.place) bd.appendChild(el('p', 'st-why', 'Why this is here: local to ' + spell(it.place)));
-    var sh = UI.heart({
-      get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
-      toggle: function () { toggleSaved(it); },
-      after: function () { sh.paint(); if (cardHeart && cardHeart.paint) cardHeart.paint(); renderTabs(); }
+    function navBtn(cls, label, path) { var b = el('button', 'st-nav ' + cls); b.type = 'button'; b.setAttribute('aria-label', label); b.appendChild(svg([['path', { d: path, fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }]])); return b; }
+    var prev = navBtn('st-prev', 'Previous story', 'M15 5l-7 7 7 7'), next = navBtn('st-next', 'Next story', 'M9 5l7 7-7 7');
+    var page = el('div', 'st-page'), go = null;
+    d.appendChild(x); d.appendChild(page); d.appendChild(prev); d.appendChild(next);
+    function show(i) {
+      at = i; var S = list[i]._story, it = S.it, pic = S.pic, logo = S.logo, title = S.title, cardHeart = S.heart;
+      while (page.firstChild) page.removeChild(page.firstChild);
+      d.scrollTop = 0;
+      if (pic) { var im = el('img', 'st-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.addEventListener('error', function () { im.remove(); }); page.appendChild(im); }
+      d.classList.toggle('st-nopic', !pic);
+      var bd = el('div', 'st-bd');
+      var src = el('div', 'st-src');
+      if (logo) { var av = el('img', 'av'); av.src = logo; av.alt = ''; av.referrerPolicy = 'no-referrer'; av.addEventListener('error', function () { av.remove(); }); src.appendChild(av); }
+      src.appendChild(el('b', null, it.source || ''));
+      if (it.published) { var w = el('time', null, shortWhen(it.published)); w.dateTime = it.published; w.title = timeAgo(it.published); src.appendChild(w); }
+      bd.appendChild(src);
+      var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
+      var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
+      var sh = UI.heart({
+        get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
+        toggle: function () { toggleSaved(it); },
+        after: function () { sh.paint(); if (cardHeart && cardHeart.paint) cardHeart.paint(); renderTabs(); }
+      });
+      var ar = actRow(sh, it); ar.classList.add('st-acts'); bd.appendChild(ar);
+      if (kindOf(it.sourceId) === 'police' || kindOf(it.sourceId) === 'courts') { if (it.arrest) bd.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.')); }
+      go = el('a', 'st-go');
+      if (logo) { var gl = el('img', 'av'); gl.src = logo; gl.alt = ''; gl.referrerPolicy = 'no-referrer'; gl.addEventListener('error', function () { gl.remove(); }); go.appendChild(gl); }
+      go.appendChild(el('span', null, 'Continue to ' + (it.source || 'the story')));
+      go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
+      go.addEventListener('click', function () { setTimeout(function () { if (d.open) d.close(); }, 0); });
+      bd.appendChild(go);
+      bd.appendChild(el('p', 'st-note', 'Opens ' + (hostName(it.link) || 'the publisher\u2019s site') + ' in a new tab.'));
+      if (list.length > 1) bd.appendChild(el('p', 'st-pos', (i + 1) + ' of ' + list.length));
+      page.appendChild(bd);
+      prev.disabled = i === 0; next.disabled = i === list.length - 1;
+      prev.hidden = next.hidden = list.length < 2;
+    }
+    function step(n) {
+      var i = at + n; if (i < 0 || i >= list.length) { nudge(n); return false; }
+      show(i); if (go && d.open) go.focus({ preventScroll: true }); return true;
+    }
+    function nudge(n) { page.style.transition = 'transform .18s ease-out'; page.style.transform = 'translateX(' + (n > 0 ? -16 : 16) + 'px)'; setTimeout(function () { page.style.transform = ''; }, 180); }
+    prev.addEventListener('click', function () { step(-1); });
+    next.addEventListener('click', function () { step(1); });
+    d.addEventListener('keydown', function (e) {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     });
-    var ar = actRow(sh, it); ar.classList.add('st-acts'); bd.appendChild(ar);
-    if (kindOf(it.sourceId) === 'police' || kindOf(it.sourceId) === 'courts') { if (it.arrest) bd.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.')); }
-    var go = el('a', 'st-go');
-    if (logo) { var gl = el('img', 'av'); gl.src = logo; gl.alt = ''; gl.referrerPolicy = 'no-referrer'; gl.addEventListener('error', function () { gl.remove(); }); go.appendChild(gl); }
-    go.appendChild(el('span', null, 'Continue to ' + (it.source || 'the story')));
-    go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
-    go.addEventListener('click', function () { setTimeout(function () { if (d.open) d.close(); }, 0); });
-    bd.appendChild(go);
-    bd.appendChild(el('p', 'st-note', 'Opens ' + (hostName(it.link) || 'the publisher\u2019s site') + ' in a new tab.'));
-    d.appendChild(bd);
+    // touch: sideways only after ST_SWIPE_LOCK px and clearly more sideways than down (touch-action: pan-y in CSS
+    // leaves vertical scrolling to the browser); past ST_SWIPE_GO px it turns the page, else it springs back.
+    var t0 = null;
+    d.addEventListener('touchstart', function (e) { if (e.touches.length !== 1) { t0 = null; return; } t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY, side: null }; }, { passive: true });
+    d.addEventListener('touchmove', function (e) {
+      if (!t0) return; var dx = e.touches[0].clientX - t0.x, dy = e.touches[0].clientY - t0.y;
+      if (t0.side === null) { if (Math.abs(dx) < ST_SWIPE_LOCK && Math.abs(dy) < ST_SWIPE_LOCK) return; t0.side = Math.abs(dx) > Math.abs(dy) * 1.5; }
+      if (!t0.side) return;
+      var end = (dx < 0 && at === list.length - 1) || (dx > 0 && at === 0);
+      page.style.transition = 'none'; page.style.transform = 'translateX(' + Math.round(end ? dx * 0.25 : dx) + 'px)';
+    }, { passive: true });
+    d.addEventListener('touchend', function (e) {
+      if (!t0) return; var side = t0.side, dx = (e.changedTouches[0] || {}).clientX - t0.x; t0 = null;
+      page.style.transition = 'transform .18s ease-out'; page.style.transform = '';
+      if (side && Math.abs(dx) >= ST_SWIPE_GO) { var n = dx < 0 ? 1 : -1, i = at + n; if (i >= 0 && i < list.length) { show(i); if (go) go.focus({ preventScroll: true }); } }
+    });
+    d.addEventListener('touchcancel', function () { t0 = null; page.style.transform = ''; });
     x.addEventListener('click', function () { d.close(); });
     d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
-    d.addEventListener('close', function () { d.remove(); document.documentElement.classList.remove('st-open'); if (back && back.focus) back.focus(); });
+    d.addEventListener('close', function () {
+      d.remove(); document.documentElement.classList.remove('st-open');
+      var c = list[at] && list[at].querySelector && list[at].querySelector('a.ca'); // focus the story the reader ended on
+      if (c && c !== back && c.focus) { c.focus({ preventScroll: true }); c.scrollIntoView({ block: 'nearest' }); } else if (back && back.focus) back.focus();
+    });
+    show(at);
     document.body.appendChild(d); document.documentElement.classList.add('st-open');
     if (d.showModal) d.showModal(); else d.setAttribute('open', '');
     go.focus();
@@ -2442,11 +2495,12 @@
     else body.appendChild(src); // News rows: headline, preview, then the source + time line last
     a.appendChild(body);
     card.appendChild(a);
+    if (!big) card._story = { it: it, pic: pic, logo: logo, title: hTitle, heart: sb }; // ship98: the sheet's previous / next
     // ship95: a tap on the story opens its sheet over the feed (picture, headline, summary, "Continue to <publisher>");
     // a modified or middle click still opens the publisher's page directly. Heart, flag and share sit outside the link.
     a.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault(); storySheet(it, pic, logo, hTitle, sb);
+      e.preventDefault(); storySheet(it, pic, logo, hTitle, sb, card);
     });
     var foot = el('div', 'cf');
     // Obituaries: Send flowers / Plant a tree / Donate and the heart and share share ONE row, the card's last, at every

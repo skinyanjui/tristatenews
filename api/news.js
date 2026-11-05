@@ -328,8 +328,12 @@ function parseFeed(xml, source) {
 
     const rawDesc = tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || tag(b, 'content');
     let summary = stripHtml(rawDesc);
+    // ship96: the story sheet shows more of the feed's own text when it gives more than the card's blurb: up to
+    // SHEET_TEXT_MAX characters, cut at a word. Never fetched from the article; filters and the card still use summary.
+    let more = summary.length > 220 ? summary : '';
+    if (more.length > SHEET_TEXT_MAX) more = more.slice(0, SHEET_TEXT_MAX - 3).replace(/\s+\S*$/, '') + '\u2026';
     if (summary.length > 220) summary = summary.slice(0, 217).replace(/\s+\S*$/, '') + '\u2026';
-    if (viaGoogle || summary.toLowerCase() === title.toLowerCase() || /^continue reading\b/i.test(summary)) summary = '';
+    if (viaGoogle || summary.toLowerCase() === title.toLowerCase() || /^continue reading\b/i.test(summary)) summary = '', more = '';
 
     let image =
       attr(b, 'media:content', 'url') ||
@@ -342,7 +346,7 @@ function parseFeed(xml, source) {
     }
     image = safeUrl(image, true);
 
-    items.push({ title, link, summary, image, published, source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events', isObit: source.kind === 'obits' });
+    items.push({ title, link, summary, ...(more && source.kind !== 'events' && source.kind !== 'obits' ? { more } : {}), image, published, source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events', isObit: source.kind === 'obits' });
   }
   return items;
 }
@@ -482,6 +486,7 @@ const hostOf = u => { try { return new URL(u).hostname; } catch (_) { return '';
 const SITEMAP_DETAILS = 6;
 const SITEMAP_SCAN = 40;
 const SUMMARY_MAX = 220;
+const SHEET_TEXT_MAX = 700; // ship96: the story sheet's longer text (news feeds only)
 const OBIT_BOILERPLATE_RE = /\b(?:leave (?:your )?condolences|send flowers|share (?:memories|a memory)|sign the guestbook|view obituary|service information)\b/i;
 
 function metaContent(html, key) {

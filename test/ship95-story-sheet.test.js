@@ -12,7 +12,7 @@ const mk = app.slice(app.indexOf('function makeCard('), app.indexOf('function ob
 test('ship95: a plain click on a news card opens the sheet; modified or middle clicks still go straight to the publisher', () => {
   assert.ok(mk.includes("a.addEventListener('click', function (e) {"));
   assert.ok(mk.includes('if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;'));
-  assert.ok(mk.includes('e.preventDefault(); storySheet(it, pic, logo, hTitle);'));
+  assert.ok(mk.includes('e.preventDefault(); storySheet(it, pic, logo, hTitle, sb);'));
   assert.ok(mk.includes("a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';"), 'the card is still a real link');
   // reactions live in the footer, outside the card link, so they never open the sheet
   assert.ok(mk.indexOf("var foot = el('div', 'cf');") > mk.indexOf('card.appendChild(a);'));

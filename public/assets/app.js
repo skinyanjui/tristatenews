@@ -2337,6 +2337,40 @@
   // story that merely mentions police keeps its picture; "shooting" in a sports headline (guard, percentage) is not a crime.
   var CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say)\b/i;
   function crimeStory(it) { return CRIME_RE.test(String(it && it.title || '')); }
+  // ship95 (experiment): the story sheet. A news story opens over the feed before the reader leaves the site: its
+  // picture (none for Police & courts or crime stories, as on the card), source and time, the headline, the feed's
+  // summary (we only have the RSS summary, never the article) and one "Continue to <publisher>" link that opens the
+  // story in a new tab. Esc, the backdrop and Close dismiss it; focus returns to the card.
+  function storySheet(it, pic, logo, title) {
+    var back = document.activeElement;
+    var d = el('dialog', 'st-sheet'); d.setAttribute('aria-labelledby', 'st-sheet-h');
+    var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
+    d.appendChild(x);
+    if (pic) { var im = el('img', 'st-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.addEventListener('error', function () { im.remove(); }); d.appendChild(im); }
+    var bd = el('div', 'st-bd');
+    var src = el('div', 'st-src');
+    if (logo) { var av = el('img', 'av'); av.src = logo; av.alt = ''; av.referrerPolicy = 'no-referrer'; av.addEventListener('error', function () { av.remove(); }); src.appendChild(av); }
+    src.appendChild(el('b', null, it.source || ''));
+    if (it.published) { var w = el('time', null, shortWhen(it.published)); w.dateTime = it.published; w.title = timeAgo(it.published); src.appendChild(w); }
+    bd.appendChild(src);
+    var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
+    var sm = String(it.summary || '').trim(); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
+    if (kindOf(it.sourceId) === 'police' || kindOf(it.sourceId) === 'courts') { if (it.arrest) bd.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.')); }
+    var go = el('a', 'st-go', 'Continue to ' + (it.source || 'the story'));
+    go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
+    go.addEventListener('click', function () { setTimeout(function () { if (d.open) d.close(); }, 0); });
+    bd.appendChild(go);
+    bd.appendChild(el('p', 'st-note', 'Opens ' + (hostName(it.link) || 'the publisher\u2019s site') + ' in a new tab.'));
+    d.appendChild(bd);
+    x.addEventListener('click', function () { d.close(); });
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+    d.addEventListener('close', function () { d.remove(); document.documentElement.classList.remove('st-open'); if (back && back.focus) back.focus(); });
+    document.body.appendChild(d); document.documentElement.classList.add('st-open');
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    go.focus();
+    return d;
+  }
+  function hostName(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
   function makeCard(it, big, bk) {
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
     if (!big && kd === 'obits') return obitRow(it);
@@ -2396,6 +2430,12 @@
     else body.appendChild(src); // News rows: headline, preview, then the source + time line last
     a.appendChild(body);
     card.appendChild(a);
+    // ship95: a tap on the story opens its sheet over the feed (picture, headline, summary, "Continue to <publisher>");
+    // a modified or middle click still opens the publisher's page directly. Heart, flag and share sit outside the link.
+    a.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault(); storySheet(it, pic, logo, hTitle);
+    });
     var foot = el('div', 'cf');
     // Obituaries: Send flowers / Plant a tree / Donate and the heart and share share ONE row, the card's last, at every
     // width (outside the card's link; ship59). Links first (left), reactions last (right), in reading and focus order;

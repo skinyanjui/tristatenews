@@ -604,6 +604,29 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evx-dlg p { margin:0 0 var(--sp-2); }
 .evx-dlg-desc { white-space:pre-line; overflow-wrap:anywhere; }
 .evx-dlg-x { display:block; margin:var(--sp-3) 0 0 auto; min-height:40px; padding:0 var(--sp-4); border:1px solid var(--gray-200); border-radius:9999px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+/* ship95 (experiment): the story sheet over the feed. A bottom sheet on phones, a centred card from 600px. */
+.st-sheet { box-sizing:border-box; width:min(560px, calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow:auto; overscroll-behavior:contain; padding:0; border:1px solid var(--gray-200); border-radius:16px; background:var(--background); color:var(--foreground); box-shadow:0 12px 40px rgba(0,0,0,.25); }
+.st-sheet::backdrop { background:rgba(0,0,0,.45); }
+html.st-open { overflow:hidden; }
+.st-x { position:absolute; top:var(--sp-3); right:var(--sp-3); z-index:1; display:grid; place-items:center; width:40px; height:40px; padding:0; border:0; border-radius:9999px; background:rgba(0,0,0,.55); color:#fff; cursor:pointer; }
+.st-x svg { width:20px; height:20px; }
+.st-pic { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--gray-200); }
+.st-bd { padding:var(--sp-6) var(--sp-6) var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-3); }
+.st-sheet:not(:has(> .st-pic)) .st-bd { padding-top:var(--sp-6); padding-right:calc(var(--sp-12) + var(--sp-2)); }
+.st-src { display:flex; align-items:center; gap:var(--sp-2); min-width:0; font-size:13px; line-height:20px; color:var(--text-muted); }
+.st-src .av { width:24px; height:24px; flex:none; border-radius:9999px; }
+.st-src b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--foreground); font-weight:600; }
+.st-src time { flex:none; }
+.st-src time::before { content:"\00B7"; margin-right:var(--sp-2); }
+.st-sheet h2 { margin:0; font-size:22px; line-height:28px; font-weight:600; overflow-wrap:anywhere; }
+.st-sum { margin:0; font-size:16px; line-height:24px; color:var(--text-muted); overflow-wrap:anywhere; }
+.st-go { display:flex; align-items:center; justify-content:center; min-height:48px; margin-top:var(--sp-2); padding:0 var(--sp-6); border-radius:9999px; background:var(--brand); color:var(--brand-fg); font-weight:600; font-size:16px; text-decoration:none; text-align:center; }
+.st-go:hover { filter:brightness(1.08); }
+.st-go:focus-visible, .st-x:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+.st-note { margin:0; font-size:13px; line-height:18px; color:var(--text-muted); text-align:center; }
+@media (max-width:599.98px) {
+  .st-sheet { width:100vw; max-width:100vw; max-height:90dvh; margin:auto 0 0; border-radius:16px 16px 0 0; border-bottom:0; }
+}
 .evc.evc .evc-foot .acts :is(.like, .share, .cl-ico) { position:relative; inset:auto; transform:none; margin:0; flex:none; box-sizing:border-box; width:var(--ico); min-width:var(--ico); height:var(--ico); min-height:0; padding:0; gap:0; color:var(--row-ink); }
 .evc.evc .evc-foot .acts .like[aria-pressed="true"] { color:var(--red); }
 .evc.evc .evc-foot .acts .like span { display:none; }

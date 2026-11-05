@@ -12,7 +12,7 @@ const mk = app.slice(app.indexOf('function makeCard('), app.indexOf('function ob
 test('ship95: a plain click on a news card opens the sheet; modified or middle clicks still go straight to the publisher', () => {
   assert.ok(mk.includes("a.addEventListener('click', function (e) {"));
   assert.ok(mk.includes('if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;'));
-  assert.ok(mk.includes('e.preventDefault(); storySheet(it, pic, logo, hTitle, sb);'));
+  assert.ok(mk.includes('e.preventDefault(); storySheet(it, pic, logo, hTitle, sb, card);'));
   assert.ok(mk.includes("a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';"), 'the card is still a real link');
   // reactions live in the footer, outside the card link, so they never open the sheet
   assert.ok(mk.indexOf("var foot = el('div', 'cf');") > mk.indexOf('card.appendChild(a);'));
@@ -30,7 +30,7 @@ test('ship95: the sheet: card picture rules, headline, RSS summary, one Continue
 });
 
 test('ship95: sheet styles: bottom sheet on phones, centred card from 600px, spacing tokens', () => {
-  const blk = css.slice(css.indexOf('/* ship95'), css.indexOf('/* ship95') + 4000);
+  const blk = css.slice(css.indexOf('/* ship95'), css.indexOf('/* ship95') + 6000);
   assert.ok(blk.includes('.st-sheet::backdrop {') && blk.includes('html.st-open { overflow:hidden; }'));
   assert.ok(/@media \(max-width:599\.98px\) \{\s*\.st-sheet \{ width:100vw;[^}]*margin:auto 0 0; border-radius:16px 16px 0 0;/.test(blk));
   assert.ok(!/var\(--sp-5\)/.test(blk), 'only defined spacing tokens');

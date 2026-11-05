@@ -624,7 +624,18 @@ html.st-open { overflow:hidden; }
 .st-go .av { width:28px; height:28px; flex:none; border-radius:9999px; background:#fff; object-fit:contain; }
 .st-go span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .st-sheet .st-sum { white-space:pre-line; } /* ship96: the longer feed text wraps as written; the sheet scrolls inside */
-.st-why { margin:0; font-size:13px; line-height:18px; color:var(--text-muted); }
+.st-sheet { touch-action:pan-y; } /* ship98: vertical scrolling stays the browser's; sideways is the swipe */
+.st-page { will-change:transform; }
+.st-pos { margin:0; font-size:12px; line-height:16px; color:var(--text-muted); text-align:center; font-variant-numeric:tabular-nums; }
+.st-nav { position:fixed; top:50%; z-index:2; display:none; place-items:center; width:44px; height:44px; padding:0; border:1px solid var(--gray-200); border-radius:9999px; background:var(--background); color:var(--foreground); box-shadow:0 2px 8px rgba(0,0,0,.18); cursor:pointer; transform:translateY(-50%); }
+.st-nav svg { width:22px; height:22px; }
+.st-nav:disabled { opacity:.35; cursor:default; }
+.st-nav[hidden] { display:none !important; }
+@media (min-width:600px) and (hover:hover) {
+  .st-nav { display:grid; }
+  .st-prev { left:calc(50% - 280px - 64px); }
+  .st-next { right:calc(50% - 280px - 64px); }
+}
 .st-acts.st-acts { display:flex; align-items:center; gap:var(--sp-4); margin:0; }
 .st-acts.st-acts .like { box-sizing:border-box; display:inline-flex; align-items:center; justify-content:flex-start; gap:var(--sp-1); width:calc(24px + var(--sp-1) + 4ch); min-width:calc(24px + var(--sp-1) + 4ch); padding:0; font-size:13px; font-variant-numeric:tabular-nums; transition:none; } /* the card's fixed heart slot: a count never moves anything */
 .st-acts.st-acts .like > span { display:inline-block; width:4ch; min-width:4ch; text-align:left; white-space:nowrap; }

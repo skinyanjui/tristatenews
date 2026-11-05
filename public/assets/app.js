@@ -2332,13 +2332,19 @@
     if (!leadPic) { im.loading = 'lazy'; return; }
     leadPic = false; im.loading = 'eager'; im.setAttribute('fetchpriority', 'high');
   }
+  // ship94: an outlet's crime story ("Convicted Evansville murderer...", "Registered sex offender arrested...") is shown
+  // without its photo, as official Police & courts items are: the photo is usually a mugshot. Headline words only, so a
+  // story that merely mentions police keeps its picture; "shooting" in a sports headline (guard, percentage) is not a crime.
+  var CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say)\b/i;
+  function crimeStory(it) { return CRIME_RE.test(String(it && it.title || '')); }
   function makeCard(it, big, bk) {
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
     if (!big && kd === 'obits') return obitRow(it);
     var card = el('article', big ? 'card breaking' : 'card row');
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
-    // Police & courts cards never show photos (no mugshots).
+    // Police & courts cards never show photos (no mugshots); ship94: nor does an outlet's crime story (CRIME_RE).
     var pic = safe ? '' : it.image;
+    if (crimeStory(it)) pic = '';
     var logo = logoMap[it.sourceId] || '';
     var a = el('a', 'ca');
     a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';

@@ -171,18 +171,18 @@ footer { border-top:1px solid var(--border); padding-top:16px; display:flex; fle
   function card(title, price, per, tag, text, button) {
     var c = el('div', 'card'); c.appendChild(el('h3', null, title));
     if (price) { var p = el('div', 'price', price); if (per) p.appendChild(el('span', 'm', ' ' + per)); c.appendChild(p); }
-    c.appendChild(el('span', 'tag', tag));
+    if (tag) c.appendChild(el('span', 'tag', tag)); // ship94: no tag when there is nothing to say (a Featured spot not on sale yet)
     if (text) c.appendChild(el('p', 'm', text));
     if (button) { var b = el('button', 'ghost', button[0]); b.type = 'button'; b.addEventListener('click', button[1]); c.appendChild(b); }
     return c;
   }
   fetch('/api/catalog').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (cat) {
     var f = cat.featured || {}, pk = cat.packages || {};
-    // ship90: the "opening soon" line is said once above the grid, not repeated on every card
+    // ship90/ship94: the "opening soon" line is said once above the grid; the cards carry no "Opening soon" tag
     FEATURED_ORDER.forEach(function (k) {
       var x = f[k]; if (!x) return;
       if (!x.purchasable) $('featured-soon').hidden = false;
-      $('featured').appendChild(card(x.label, money(x.cents), 'for ' + x.days + ' days', x.purchasable ? 'Buy from your post' : 'Opening soon',
+      $('featured').appendChild(card(x.label, money(x.cents), 'for ' + x.days + ' days', x.purchasable ? 'Buy from your post' : '',
         x.purchasable ? 'Post on the board, then tap “Feature” on your post.' : '', null));
     });
     ['A', 'B', 'C', 'D'].forEach(function (k) {

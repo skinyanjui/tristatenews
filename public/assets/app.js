@@ -2360,7 +2360,7 @@
     function navBtn(cls, label, path) { var b = el('button', 'st-nav ' + cls); b.type = 'button'; b.setAttribute('aria-label', label); b.appendChild(svg([['path', { d: path, fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }]])); return b; }
     var prev = navBtn('st-prev', 'Previous story', 'M15 5l-7 7 7 7'), next = navBtn('st-next', 'Next story', 'M9 5l7 7-7 7');
     var page = el('div', 'st-page'), go = null;
-    d.appendChild(x); d.appendChild(page); d.appendChild(prev); d.appendChild(next);
+    d.appendChild(el('div', 'st-grab')); d.appendChild(x); d.appendChild(page); d.appendChild(prev); d.appendChild(next);
     function show(i) {
       at = i; var S = list[i]._story, it = S.it, pic = S.pic, logo = S.logo, title = S.title, cardHeart = S.heart;
       while (page.firstChild) page.removeChild(page.firstChild);
@@ -2380,7 +2380,11 @@
         toggle: function () { toggleSaved(it); },
         after: function () { sh.paint(); if (cardHeart && cardHeart.paint) cardHeart.paint(); renderTabs(); }
       });
-      var ar = actRow(sh, it); ar.classList.add('st-acts'); bd.appendChild(ar);
+      // ship99: one row above Continue: heart and share on the left, "N of M" on the right
+      var ar = actRow(sh, it); ar.classList.add('st-acts');
+      var bar = el('div', 'st-bar'); bar.appendChild(ar);
+      if (list.length > 1) { var pos = el('span', 'st-pos'); pos.appendChild(el('b', null, String(i + 1))); pos.appendChild(document.createTextNode(' of ' + list.length)); pos.setAttribute('aria-label', 'Story ' + (i + 1) + ' of ' + list.length); bar.appendChild(pos); }
+      bd.appendChild(bar);
       if (kindOf(it.sourceId) === 'police' || kindOf(it.sourceId) === 'courts') { if (it.arrest) bd.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.')); }
       go = el('a', 'st-go');
       if (logo) { var gl = el('img', 'av'); gl.src = logo; gl.alt = ''; gl.referrerPolicy = 'no-referrer'; gl.addEventListener('error', function () { gl.remove(); }); go.appendChild(gl); }
@@ -2389,16 +2393,32 @@
       go.addEventListener('click', function () { setTimeout(function () { if (d.open) d.close(); }, 0); });
       bd.appendChild(go);
       bd.appendChild(el('p', 'st-note', 'Opens ' + (hostName(it.link) || 'the publisher\u2019s site') + ' in a new tab.'));
-      if (list.length > 1) bd.appendChild(el('p', 'st-pos', (i + 1) + ' of ' + list.length));
       page.appendChild(bd);
       prev.disabled = i === 0; next.disabled = i === list.length - 1;
       prev.hidden = next.hidden = list.length < 2;
     }
+    // ship99: the page slides: the old story leaves the way the finger (or arrow) points and fades, the next one
+    // eases in from the other side with a little overshoot; reduced motion swaps at once. One move at a time.
+    var busy = false, REDUCE = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var EASE_OUT = 'cubic-bezier(.4,0,1,1)', SPRING = 'cubic-bezier(.22,1.18,.36,1)';
+    function setT(tr, op, tx) { page.style.transition = tr; page.style.transform = tx ? 'translate3d(' + tx + 'px,0,0)' : ''; page.style.opacity = op === 1 ? '' : String(op); }
     function step(n) {
       var i = at + n; if (i < 0 || i >= list.length) { nudge(n); return false; }
-      show(i); if (go && d.open) go.focus({ preventScroll: true }); return true;
+      if (busy) return false;
+      if (REDUCE) { show(i); setT('none', 1, 0); if (go && d.open) go.focus({ preventScroll: true }); return true; }
+      busy = true; var w = page.offsetWidth || d.clientWidth || 360;
+      setT('transform .18s ' + EASE_OUT + ', opacity .18s ' + EASE_OUT, 0, (n > 0 ? -1 : 1) * Math.round(w * 0.5));
+      setTimeout(function () {
+        show(i);
+        setT('none', 0, (n > 0 ? 1 : -1) * Math.round(w * 0.3));
+        void page.offsetWidth; // start the entrance from there
+        setT('transform .44s ' + SPRING + ', opacity .24s ease-out', 1, 0);
+        if (go && d.open) go.focus({ preventScroll: true });
+        setTimeout(function () { busy = false; }, 160);
+      }, 170);
+      return true;
     }
-    function nudge(n) { page.style.transition = 'transform .18s ease-out'; page.style.transform = 'translateX(' + (n > 0 ? -16 : 16) + 'px)'; setTimeout(function () { page.style.transform = ''; }, 180); }
+    function nudge(n) { setT('transform .12s ease-out', 1, n > 0 ? -18 : 18); setTimeout(function () { setT('transform .4s ' + SPRING, 1, 0); }, 120); }
     prev.addEventListener('click', function () { step(-1); });
     next.addEventListener('click', function () { step(1); });
     d.addEventListener('keydown', function (e) {
@@ -2414,14 +2434,20 @@
       if (t0.side === null) { if (Math.abs(dx) < ST_SWIPE_LOCK && Math.abs(dy) < ST_SWIPE_LOCK) return; t0.side = Math.abs(dx) > Math.abs(dy) * 1.5; }
       if (!t0.side) return;
       var end = (dx < 0 && at === list.length - 1) || (dx > 0 && at === 0);
-      page.style.transition = 'none'; page.style.transform = 'translateX(' + Math.round(end ? dx * 0.25 : dx) + 'px)';
+      if (busy) return;
+      var w = page.offsetWidth || 360, tx = Math.round(end ? dx * 0.25 : dx); // follow the finger; resistance at the ends
+      t0.lastX = e.touches[0].clientX; t0.lastT = Date.now();
+      setT('none', end ? 1 : Math.max(0.55, 1 - Math.abs(dx) / w * 0.45), tx);
     }, { passive: true });
     d.addEventListener('touchend', function (e) {
-      if (!t0) return; var side = t0.side, dx = (e.changedTouches[0] || {}).clientX - t0.x; t0 = null;
-      page.style.transition = 'transform .18s ease-out'; page.style.transform = '';
-      if (side && Math.abs(dx) >= ST_SWIPE_GO) { var n = dx < 0 ? 1 : -1, i = at + n; if (i >= 0 && i < list.length) { show(i); if (go) go.focus({ preventScroll: true }); } }
+      if (!t0) return; var T = t0, side = T.side, dx = (e.changedTouches[0] || {}).clientX - T.x; t0 = null;
+      if (!side || busy) { if (side) setT('transform .4s ' + SPRING, 1, 0); return; }
+      var dt = Math.max(1, Date.now() - (T.lastT || Date.now())), v = T.lastT ? ((e.changedTouches[0] || {}).clientX - T.lastX) / dt : 0;
+      var n = dx < 0 ? 1 : -1, i = at + n, flick = Math.abs(v) > 0.5 && Math.abs(dx) > ST_SWIPE_LOCK * 2;
+      if ((Math.abs(dx) >= ST_SWIPE_GO || flick) && i >= 0 && i < list.length) step(n);
+      else setT('transform .42s ' + SPRING + ', opacity .2s ease-out', 1, 0); // spring back
     });
-    d.addEventListener('touchcancel', function () { t0 = null; page.style.transform = ''; });
+    d.addEventListener('touchcancel', function () { t0 = null; setT('transform .3s ' + SPRING, 1, 0); });
     x.addEventListener('click', function () { d.close(); });
     d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
     d.addEventListener('close', function () {

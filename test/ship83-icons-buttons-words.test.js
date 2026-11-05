@@ -51,6 +51,8 @@ test('words: relative times, dates, states and pay are spelled out in visible co
   assert.equal(spell('Evansville, IN'), 'Evansville, Indiana');
   assert.equal(spell('Henderson, KY · Marion, IL'), 'Henderson, Kentucky · Marion, Illinois');
   assert.equal(spell('Vanderburgh Co. fair'), 'Vanderburgh County fair');
+  assert.equal(spell('Gibson Co., IN'), 'Gibson County, Indiana', 'ship97: before a comma too');
+  assert.equal(spell('Gibson Co., Indiana'), 'Gibson County, Indiana');
   assert.equal(spell('Mt. Vernon, IN'), 'Mount Vernon, Indiana');
   assert.equal(spell('$16/hr · Full-time'), '$16 an hour · Full-time');
   assert.equal(spell('DRIVE IN movie'), 'DRIVE IN movie', 'only a state after a comma');

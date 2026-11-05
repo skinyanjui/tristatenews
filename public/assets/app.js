@@ -16,7 +16,7 @@
   var STATES = { IN: 'Indiana', KY: 'Kentucky', IL: 'Illinois' };
   function spell(s) {
     if (typeof s !== 'string') return s;
-    return s.replace(/,\s*(IN|KY|IL)\b\.?/g, function (m, a) { return ', ' + STATES[a]; }).replace(/\bCo\.(?=\s|$)/g, 'County').replace(/\bMt\.\s/g, 'Mount ')
+    return s.replace(/,\s*(IN|KY|IL)\b\.?/g, function (m, a) { return ', ' + STATES[a]; }).replace(/\bCo\.(?=[\s,]|$)/g, 'County').replace(/\bMt\.\s/g, 'Mount ')
       .replace(/\s*\/\s*hr\b\.?/gi, ' an hour').replace(/\s*\/\s*(yr|year)\b\.?/gi, ' a year').replace(/\s*\/\s*wk\b\.?/gi, ' a week');
   }
   // ship83: one heart glyph (symmetric, centred in the 24 box, same reach as the flag and share glyphs).

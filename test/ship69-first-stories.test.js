@@ -50,7 +50,7 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
   const h = out.body, list = listOf(h);
   assert.match(h, /<meta name="google-site-verification" content="[^"]+"/);
   assert.match(h, /<title>TRISTATENOW<\/title>/);
-  assert.match(h, /<link rel="canonical" href="https:\/\/tristatenewss\.vercel\.app\/">/);
+  assert.match(h, /<link rel="canonical" href="https:\/\/www\.tristatenow\.com\/">/);
   assert.ok(!h.includes('<link rel="preload" href="/api/news"'), 'data is in the page: no preload');
   assert.match(h, /<link rel="preload" href="\/assets\/fonts\/geist-1\.8\.2-latin\.woff2"/);
   assert.match(list, /^<div id="list" class="list news-one" aria-busy="false">/, 'one story per row');

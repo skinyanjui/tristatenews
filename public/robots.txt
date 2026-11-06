@@ -6,5 +6,5 @@ Disallow: /api/
 Allow: /api/news
 Allow: /api/listings
 
-Sitemap: https://tristatenewss.vercel.app/sitemap.xml
-Sitemap: https://tristatenewss.vercel.app/sitemap-regions.xml
+Sitemap: https://www.tristatenow.com/sitemap.xml
+Sitemap: https://www.tristatenow.com/sitemap-regions.xml

@@ -17,6 +17,7 @@
 // email -> time). Tokens are random; only their SHA-256 is stored.
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const { ORIGIN } = require('../public/routes.js'); // the canonical origin, when SITE_URL is unset
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
@@ -31,7 +32,7 @@ const MESSAGES = {
   saved: 'Thanks! We’ve saved your sign-up. Our confirmation emails aren’t switched on yet, so we’ll email you a link to confirm before you get any newsletter.',
 };
 const hash = t => crypto.createHash('sha256').update(String(t)).digest('hex');
-const site = () => String(process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/$/, '');
+const site = () => String(process.env.SITE_URL || ORIGIN).replace(/\/$/, '');
 const norm = e => String(e || '').trim().toLowerCase().slice(0, 80);
 const validEmail = e => EMAIL_RE.test(e) && !/[<>"'\s,;]/.test(e);
 // What sending needs. Confirmation emails need the first two; issues need all (api/newsletter.js missingForSend).

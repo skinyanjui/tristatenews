@@ -9,7 +9,7 @@
   else root.TSNRoutes = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  var ORIGIN = 'https://tristatenewss.vercel.app';
+  var ORIGIN = 'https://www.tristatenow.com'; // the canonical origin: one source for every canonical, og:url, sitemap and email link
   var SITE = 'TRISTATENOW';
   // cat: the page's tab id (CATS in index.html). index: listed in sitemap.xml and indexable.
   var ROUTES = [

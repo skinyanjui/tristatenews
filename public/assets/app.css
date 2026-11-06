@@ -1145,3 +1145,18 @@ article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src b { min-wid
   article.card.row.row.row-obit:has(> .ca) .src.src > .ob-acts .ob-short { display:inline; }
   article.card.row.row.row-obit:has(> .ca) .src.src > :not(.ob-acts) { flex:none; white-space:nowrap; }
 }
+/* ship100: town, dates, Add an event and categories are one grid (.evx-head is display:contents). Below 1024px the dates
+   keep their own row under the town (the head-to-dates gap stays --card-gap). From 1024px the column is at least 896px
+   wide (the side ads sit in the margins), room for town + dates (~550px) + Add an event, so the dates join the town row;
+   a long town ellipsizes, and a long picked date wraps the chips inside their own column rather than clipping them. */
+.evx-filters { grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"town add" "dates dates" "cats cats"; column-gap:var(--sp-3); }
+.evx-filters > .evx-head { display:contents; }
+.evx-filters .evx-ht { grid-area:town; }
+.evx-filters .evx-head > .cl-go { grid-area:add; justify-self:end; }
+.evx-filters > [aria-label="When"] { grid-area:dates; margin-top:calc(var(--card-gap) - var(--sp-2)); }
+.evx-filters > [aria-label="Category"] { grid-area:cats; }
+@media (min-width:1024px) {
+  .evx-filters { grid-template-columns:minmax(0, max-content) minmax(0, 1fr) auto; grid-template-areas:"town dates add" "cats cats cats"; align-items:start; }
+  .evx-filters .evx-ht { max-width:14rem; }
+  .evx-filters > [aria-label="When"] { margin-top:0; flex-wrap:wrap; }
+}

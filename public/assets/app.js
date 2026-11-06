@@ -1742,8 +1742,7 @@
     leadPic = true;
     root.textContent = ''; root.classList.add('evx');
     root.appendChild(el('h2', 'sr-only', 'Upcoming events'));
-    root.appendChild(evxHeader(b));
-    var fl = el('div', 'evx-filters'); fl.appendChild(evxDateChips(b));
+    var fl = el('div', 'evx-filters'); fl.appendChild(evxHeader(b)); fl.appendChild(evxDateChips(b));
     var cats = chips(b, 'event'); cats.setAttribute('role', 'group'); cats.setAttribute('aria-label', 'Category');
     Array.prototype.forEach.call(cats.children, function (c) { c.addEventListener('click', function () { b.lim = EVX_PAGE; }, true); });
     fl.appendChild(cats); root.appendChild(fl);

@@ -60,7 +60,7 @@ test('ship107: server-built tab and county pages carry the shared image and thei
 });
 
 test('ship107: the wordmark is TRISTATE + NOW with an accessible name, on every page header', () => {
-  assert.match(read('data/pages/index.html'), /<a class="brand" id="home" href="\/" aria-label="TRISTATENOW home">TRISTATE<span class="brand-now">NOW<\/span><\/a>/);
+  assert.match(read('data/pages/index.html'), /<a class="brand" id="home" href="\/" aria-label="TRISTATENOW home">TRISTATE<span class="brand-now">NOW<\/span><svg class="brand-card" [^>]*aria-hidden="true"[^>]*>.*?<\/svg><\/a>/);
   for (const f of ['public/legal.html', 'public/newsletter.html', 'public/unsubscribe.html', 'data/pages/404.html'])
     assert.ok(read(f).includes('<a class="lg-brand" href="/">TRISTATE<span class="brand-now">NOW</span></a>'), f);
   assert.ok(read('data/pages/advertise.html').includes('<a class="brand" href="/">TRISTATE<span class="brand-now">NOW</span></a>'));

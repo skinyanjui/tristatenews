@@ -1,4 +1,4 @@
-// The advertising catalog: every price Tri-State News charges or quotes, in integer cents, with a price version.
+// The advertising catalog: every price TristateNow charges or quotes, in integer cents, with a price version.
 // The server reads prices only from here (api/_checkout.js); the page shows the same numbers from GET /api/catalog
 // (vercel.json rewrites it to /api/listings?__route=catalog; no new function). A price the browser sends is ignored.
 //

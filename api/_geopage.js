@@ -40,7 +40,7 @@ function indexable(scope, gate) {
 }
 function meta(scope, gate) {
   const where = scope.label;
-  const title = where + ' news · Tri-State News';
+  const title = where + ' news · TristateNow';
   const desc = scope.kind === 'state'
     ? 'Local news from ' + where + ' counties we cover, gathered from local newsrooms and official sources.'
     : 'Local news from ' + where + ', gathered from local newsrooms and official sources in the region.';

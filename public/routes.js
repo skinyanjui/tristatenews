@@ -10,7 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   var ORIGIN = 'https://tristatenewss.vercel.app';
-  var SITE = 'Tri-State News';
+  var SITE = 'TristateNow';
   // cat: the page's tab id (CATS in index.html). index: listed in sitemap.xml and indexable.
   var ROUTES = [
     { cat: 'news', path: '/', index: true, title: SITE,

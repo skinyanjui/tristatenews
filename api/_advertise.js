@@ -14,7 +14,7 @@ const { PACKAGES, budgetBands } = require('./_catalog.js');
 const BUDGETS = budgetBands();
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', TO = process.env.TIPS_TO_EMAIL || '';
-const FROM = process.env.TIPS_FROM_EMAIL || 'Tri-State News <onboarding@resend.dev>';
+const FROM = process.env.TIPS_FROM_EMAIL || 'TristateNow <onboarding@resend.dev>';
 const INTERESTS = ['Featured job or deal', 'Section sponsorship', 'Newsletter sponsorship', 'Something else'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;

@@ -123,7 +123,7 @@ test('the card: house unit "Advertise with us" (no business, price or number) op
     const h = p.UI.adCard(kind);
     // named by its visible text, no aria-label (axe label-content-name-mismatch, audit 2026-10-22)
     assert.deepStrictEqual([h.tag, tagOf(h), h.attrs['aria-label']], ['button', 'Advertise with us', undefined], kind);
-    assert.ok(h.textContent.includes('Advertise with Tri-State News'), kind);
+    assert.ok(h.textContent.includes('Advertise with TristateNow'), kind);
     assert.ok(!/sponsored|\$|\d/i.test(h.textContent), h.textContent);
     h.listeners.click();
   }

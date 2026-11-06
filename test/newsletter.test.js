@@ -80,14 +80,14 @@ test('format=html answers the email itself', async () => {
 });
 
 test('send=1 refuses unless enabled and configured', async () => {
-  const { nl, calls } = setup({ RESEND_API_KEY: 're_x', NEWSLETTER_FROM: 'Tri-State News <news@example.com>', NEWSLETTER_POSTAL_ADDRESS: 'PO Box 1, Evansville, IN' });
+  const { nl, calls } = setup({ RESEND_API_KEY: 're_x', NEWSLETTER_FROM: 'TristateNow <news@example.com>', NEWSLETTER_POSTAL_ADDRESS: 'PO Box 1, Evansville, IN' });
   const r = await call(nl, { send: '1' }, 'POST');
   assert.equal(r.code, 409); assert.deepEqual(r.body.missing, ['NEWSLETTER_ENABLED=true']); assert.equal(calls.resend.length, 0);
   assert.equal((await call(nl, { send: '1' }, 'GET')).code, 405);
 });
 
 test('send: one email per subscriber with its own unsubscribe link, once per week', async () => {
-  const { nl, unsub, calls } = setup({ NEWSLETTER_ENABLED: 'true', RESEND_API_KEY: 're_x', NEWSLETTER_FROM: 'Tri-State News <news@example.com>', NEWSLETTER_POSTAL_ADDRESS: 'PO Box 1, Evansville, IN 47708' });
+  const { nl, unsub, calls } = setup({ NEWSLETTER_ENABLED: 'true', RESEND_API_KEY: 're_x', NEWSLETTER_FROM: 'TristateNow <news@example.com>', NEWSLETTER_POSTAL_ADDRESS: 'PO Box 1, Evansville, IN 47708' });
   const r = await call(nl, { send: '1' }, 'POST');
   assert.equal(r.code, 200, JSON.stringify(r.body)); assert.equal(r.body.sent, 2);
   assert.equal(calls.resend.length, 1);

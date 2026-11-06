@@ -1,4 +1,4 @@
-// Google Search Console verification for https://tristatenewss.vercel.app/ (URL-prefix property): the meta tag in the
+// Google Search Console verification for https://www.tristatenow.com/ (URL-prefix property): the meta tag in the
 // head of the home page (and the other public content pages), the static HTML verification file, and robots.txt
 // pointing at both sitemaps. Static files in public/ are served before vercel.json rewrites, so the catch-all
 // not-found rewrite never sees /googlebe8f034f797fc4e7.html.
@@ -40,8 +40,8 @@ test('the HTML verification file is static, exact, and not shadowed by a rewrite
 
 test('robots.txt lists both sitemaps, which stay routed', () => {
   const r = read('public/robots.txt');
-  assert.match(r, /^Sitemap: https:\/\/tristatenewss\.vercel\.app\/sitemap\.xml$/m);
-  assert.match(r, /^Sitemap: https:\/\/tristatenewss\.vercel\.app\/sitemap-regions\.xml$/m);
+  assert.match(r, /^Sitemap: https:\/\/www\.tristatenow\.com\/sitemap\.xml$/m);
+  assert.match(r, /^Sitemap: https:\/\/www\.tristatenow\.com\/sitemap-regions\.xml$/m);
   assert.ok(fs.existsSync(path.join(root, 'public/sitemap.xml')));
   const vj = JSON.parse(read('vercel.json')), rw = vj.rewrites.map(x => x.source);
   assert.ok(rw.indexOf('/sitemap-regions.xml') >= 0 && rw.indexOf('/sitemap-regions.xml') < rw.indexOf('/:path*'));

@@ -17,13 +17,14 @@
 // One issue per ISO week (Chicago time): recipients are recorded in tsn:nl:issue:<week>:sent as each batch of up to
 // 100 is accepted by Resend, so a retry or a second call that week only mails whoever was not reached yet.
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const { ORIGIN } = require('../public/routes.js'); // the canonical origin, when SITE_URL is unset
 const { same } = require('./_safe.js');
 const unsub = require('./unsubscribe.js');
 
 const TZ = 'America/Chicago';
 const HEADLINES = 10, PER_SOURCE = 2, EVENTS = 8, BATCH = 100;
 const { esc } = require('./_html.js');
-const site = () => String(process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/$/, '');
+const site = () => String(process.env.SITE_URL || ORIGIN).replace(/\/$/, '');
 const safeUrl = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (e) { return ''; } };
 
 const redis = async commands => (await STORE.pipeline(commands)).map(x => x && x.result);

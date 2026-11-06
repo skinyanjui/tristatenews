@@ -25,7 +25,7 @@ test('ship102: header, titles, social and structured metadata say TRISTATENOW', 
   assert.match(index, /<title>TRISTATENOW<\/title>/);
   assert.match(index, /<meta property="og:site_name" content="TRISTATENOW">/);
   assert.match(index, /<meta property="og:title" content="TRISTATENOW">/);
-  assert.match(index, /"@type":"WebSite","name":"TRISTATENOW","url":"https:\/\/tristatenewss\.vercel\.app/);
+  assert.match(index, /"@type":"WebSite","name":"TRISTATENOW","url":"https:\/\/www\.tristatenow\.com/);
   assert.match(index, /<p>© 2026 TRISTATENOW\. /);
   const m = JSON.parse(read('public/manifest.webmanifest'));
   assert.strictEqual(m.name, 'TRISTATENOW'); assert.strictEqual(m.short_name, 'TRISTATENOW');
@@ -41,14 +41,14 @@ test('ship102: legal pages and emails use the brand and the TristateNow.com enti
   const legal = read('public/legal.html');
   assert.match(legal, /entity:\s+'TristateNow\.com'/);
   assert.match(legal, /<title>Legal · TRISTATENOW<\/title>/);
-  assert.match(legal, /operates TRISTATENOW at https:\/\/tristatenewss\.vercel\.app/);
+  assert.match(legal, /operates TRISTATENOW at https:\/\/www\.tristatenow\.com/);
   assert.match(read('api/_subscribe.js'), /subject: 'Confirm your TRISTATENOW subscription'/);
   assert.match(read('api/_submit.js'), /'TRISTATENOW <onboarding@resend\.dev>'/);
   assert.match(read('api/newsletter.js'), /'TRISTATENOW, week of '/);
 });
 
 test('ship102: branding only — domain, identifiers and geographic Tri-State are unchanged', () => {
-  assert.match(read('data/pages/index.html'), /https:\/\/tristatenewss\.vercel\.app/);
+  assert.match(read('data/pages/index.html'), /https:\/\/www\.tristatenow\.com/);
   assert.match(read('api/news.js'), /TriStateNews\/1\.1; \+https:\/\/tristatenewss\.vercel\.app/);
   assert.match(read('api/_scope.js'), /label: 'Tri-State'/);
   assert.match(read('api/_submit.js'), /'TSN-'/);

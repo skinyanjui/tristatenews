@@ -158,7 +158,7 @@ test('county pages: 404 with REGIONAL_ROUTES_ENABLED off; on, head points at the
   const ok = await call(on, 'news.js', { __route: 'geopage', p: '/news/indiana/dubois' }, '/news/indiana/dubois');
   assert.strictEqual(ok.code, 200);
   assert.match(ok.body, /<title>Dubois County, IN news · TRISTATENOW<\/title>/);
-  assert.match(ok.body, /<link rel="canonical" href="https:\/\/tristatenewss\.vercel\.app\/news\/indiana\/dubois">/);
+  assert.match(ok.body, /<link rel="canonical" href="https:\/\/www\.tristatenow\.com\/news\/indiana\/dubois">/);
   const G = require('../api/_geopage.js');
   const cov = require('../data/geography/coverage.json');
   assert.strictEqual(/name="robots" content="noindex"/.test(ok.body), !(cov.depth['in-dubois'] >= cov.min));

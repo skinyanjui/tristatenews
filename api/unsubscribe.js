@@ -10,6 +10,7 @@
 // page; someone who types their address on the page doesn't need one.
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const { ORIGIN } = require('../public/routes.js'); // the canonical origin, when SITE_URL is unset
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DAILY_PER_IP = 5;
@@ -24,7 +25,7 @@ function validToken(email, t) {
   return crypto.timingSafeEqual(Buffer.from(t), Buffer.from(want));
 }
 function link(email, site) {
-  const base = String(site || process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/$/, '');
+  const base = String(site || process.env.SITE_URL || ORIGIN).replace(/\/$/, '');
   const t = tokenFor(email);
   return base + '/unsubscribe.html?email=' + encodeURIComponent(norm(email)) + (t ? '&token=' + t : '');
 }

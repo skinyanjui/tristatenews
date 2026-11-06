@@ -95,7 +95,7 @@ A scheduled job calls `/api/refresh`, which fetches every feed, merges the stori
 Setup (about five minutes):
 1. Add the Upstash Redis integration in Vercel (see Shared heart counts) if you haven't.
 2. Add an environment variable `CRON_SECRET` in Vercel (any long random string) and redeploy.
-3. In this GitHub repo add the secrets `CRON_SECRET` (same value) and `SITE_URL` (for example `https://tristatenews.vercel.app`). The workflow in `.github/workflows/refresh-news.yml` then runs on schedule. You can also run it by hand from the Actions tab.
+3. In this GitHub repo add the secrets `CRON_SECRET` (same value) and `SITE_URL` (`https://www.tristatenow.com`). The workflow in `.github/workflows/refresh-news.yml` then runs on schedule. You can also run it by hand from the Actions tab.
 4. On Vercel Pro you can use Vercel Cron instead: add `"crons": [{ "path": "/api/refresh?tier=all", "schedule": "*/30 * * * *" }]` to `vercel.json`. On the Hobby plan Vercel rejects crons that run more than once a day, which is why the repo uses GitHub Actions.
 
 Check it works: `curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=all"` returns how many stories were stored, how many sources answered 304, and which sources are failing.

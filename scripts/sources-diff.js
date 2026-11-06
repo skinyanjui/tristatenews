@@ -7,13 +7,13 @@
 //   node scripts/sources-diff.js --save before.json  the same, and save the live answer to before.json
 //   node scripts/sources-diff.js before.json         a saved answer vs live (run after the deploy)
 //   node scripts/sources-diff.js a.json b.json       two saved answers
-// SITE_URL overrides https://tristatenewss.vercel.app. Exit 0: 0 sources changed; 1: differences; 2: error.
+// SITE_URL overrides https://www.tristatenow.com. Exit 0: 0 sources changed; 1: differences; 2: error.
 // Note: GET /api/news starts a visitor refresh only when the stored snapshot is more than 3 hours old.
 const fs = require('fs');
 const path = require('path');
 
 const FIELDS = ['id', 'name', 'area', 'kind', 'logo'];
-const SITE = (process.env.SITE_URL || 'https://tristatenewss.vercel.app').replace(/\/+$/, '');
+const SITE = (process.env.SITE_URL || 'https://www.tristatenow.com').replace(/\/+$/, '');
 
 // logoFor() as api/news.js had it at ba8b34a (the snapshot this check compares against). Since ship56 news.js
 // self-hosts twelve icons (LOGOS) and reads a Google News URL's site: domain; this historical check keeps the old rule.

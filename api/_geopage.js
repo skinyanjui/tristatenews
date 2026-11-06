@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const FLAGS = require('./_flags.js');
 const S = require('./_scope.js');
-const ORIGIN = 'https://tristatenewss.vercel.app';
+const { ORIGIN } = require('../public/routes.js'); // the canonical origin (one source for the site)
 const INDEX = path.join(__dirname, '..', 'data', 'pages', 'index.html');
 const D = require('./_depthrec.js');
 let html = null, cached = null;

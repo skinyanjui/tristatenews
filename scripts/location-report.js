@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Shadow county-classification report (plan stage B), read-only. Classifies the stories in a news snapshot with
 // api/_location.js and prints counts; with --labels, also precision and recall against a hand-labeled sample.
-//   node scripts/location-report.js                         public https://tristatenewss.vercel.app/api/news (GET only)
+//   node scripts/location-report.js                         public https://www.tristatenow.com/api/news (GET only)
 //   node scripts/location-report.js --file snap.json        a saved /api/news body
 //   node scripts/location-report.js --labels labels.json    labels: [{ id, expected: { countyIds: ["ky-daviess"] } }]
 //   node scripts/location-report.js --sample 200 --out labels-todo.json
@@ -18,7 +18,7 @@ function arg(name) { const i = process.argv.indexOf('--' + name); return i > 0 ?
 async function load() {
   const file = arg('file');
   if (file) return JSON.parse(fs.readFileSync(file, 'utf8'));
-  const url = arg('url') || 'https://tristatenewss.vercel.app/api/news';
+  const url = arg('url') || 'https://www.tristatenow.com/api/news';
   const r = await fetch(url, { headers: { 'User-Agent': 'tsn-location-report' } });
   if (!r.ok) throw new Error('GET ' + url + ' ' + r.status);
   return r.json();

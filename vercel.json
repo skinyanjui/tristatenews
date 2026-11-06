@@ -63,6 +63,10 @@
       "destination": "/api/listings?__route=orders"
     },
     {
+      "source": "/api/market",
+      "destination": "/api/listings?__route=market"
+    },
+    {
       "source": "/api/subscribe",
       "destination": "/api/unsubscribe?__route=subscribe"
     },

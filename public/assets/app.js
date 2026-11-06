@@ -1412,7 +1412,7 @@
       left: [it.price ? el('b', 'cl-price', priceText(it.price)) : null, contactNode(it.contact)], when: el('span', null, postDay(it.at)), acts: ac.acts, extra: [ac.feature] });
   }
   function chips(b, kind) {
-    var present = {}; b.items.concat(kind === 'event' ? feedEvents() : []).forEach(function (x) { present[x.category] = 1; });
+    var present = {}; b.items.concat(kind === 'event' ? feedEvents() : kind === 'item' ? mkItems() : []).forEach(function (x) { present[x.category] = 1; });
     var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
     return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
   }
@@ -1428,7 +1428,7 @@
   }
   // The heading of every board is its town picker.
   function townPicker(b, kind, title) {
-    var real = kind === 'event' ? postedEvents().concat(feedEvents()) : b.items.slice();
+    var real = kind === 'event' ? postedEvents().concat(feedEvents()) : kind === 'item' ? b.items.concat(mkItems()) : b.items.slice();
     var pool = real, counts = {};
     pool.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
     if (b.town && !counts[b.town]) counts[b.town] = 0;
@@ -1468,8 +1468,47 @@
     root.appendChild(list);
     return root;
   }
+  // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
+  // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
+  var MK = null, mkAsked = false;
+  function loadMarket() {
+    if (mkAsked) return;
+    mkAsked = true;
+    fetch('/api/market').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] };
+    }).catch(function () { MK = { ok: false, items: [] }; }).then(function () { drawBoard('item'); });
+  }
+  function mkKey(x) { return String(x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + '|' + townOf(x).toLowerCase(); }
+  function mkItems() {
+    if (!MK || !MK.ok) return [];
+    var own = {}; boards.item.items.forEach(function (x) { own[mkKey(x)] = 1; });
+    return MK.items.filter(function (x) { return x && x.url && x.title && !own[mkKey(x)]; });
+  }
+  function marketSection(b) {
+    var sec = el('section', 'mk-sec'); sec.setAttribute('aria-labelledby', 'mk-h');
+    var sh = el('div', 'evx-sh'), h = el('h3', null, 'From tristatemarketplace.com'); h.id = 'mk-h'; sh.appendChild(h);
+    var all = mkItems(), items = all.filter(function (x) { return (!b.town || townOf(x) === b.town) && (!b.filter || x.category === b.filter); });
+    if (items.length) sh.appendChild(el('span', 'evx-ct', items.length + (items.length === 1 ? ' listing' : ' listings')));
+    sec.appendChild(sh);
+    sec.appendChild(el('p', 'cl-note mk-note', 'Test listings from tristatemarketplace.com, shown while we test the site. Some are samples, and TRISTATENOW hasn\u2019t verified any of them. Prices and details are as posted there.'));
+    if (!MK) { sec.appendChild(el('p', 'cl-note', 'Loading listings from tristatemarketplace.com\u2026')); return sec; }
+    if (!MK.ok) {
+      var p = el('p', 'cl-note', 'Listings from tristatemarketplace.com aren\u2019t available right now. '), a = el('a', null, 'Browse them there');
+      a.href = 'https://www.tristatemarketplace.com/'; a.target = '_blank'; a.rel = 'noopener'; p.appendChild(a); sec.appendChild(p); return sec;
+    }
+    if (MK.stale && MK.fetchedAt) sec.appendChild(el('p', 'cl-note', 'Couldn\u2019t refresh just now. Showing listings as of ' + new Date(MK.fetchedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.'));
+    if (!items.length) { sec.appendChild(el('p', 'cl-note', all.length ? 'No tristatemarketplace.com listings match these filters.' : 'No listings on tristatemarketplace.com right now.')); return sec; }
+    var list = el('div', 'cl-list');
+    items.forEach(function (x) {
+      list.appendChild(UI.row({ cls: 'row-item row-mk', href: x.url, pic: x.image || '', picRef: true, kicker: [x.srcCategory, x.town].filter(Boolean).join(' \u00B7 '), title: x.title, text: x.desc,
+        left: [x.price ? el('b', 'cl-price', x.price) : null, el('span', 'mk-tag', 'Test listing')], when: el('span', null, 'tristatemarketplace.com') }));
+    });
+    sec.appendChild(list);
+    return sec;
+  }
   function renderClassifieds() {
     var root = drawBody('item', 'For sale', 'Post an item');
+    root.appendChild(marketSection(boards.item));
     var more = el('div', 'cl-more');
     more.appendChild(el('div', 'cl-label', 'More local classifieds'));
     var links = el('div', 'cl-links');
@@ -2608,7 +2647,7 @@
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
-    if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); return; }
+    if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); loadMarket(); return; }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
     if (state.cat === 'obits') { loadFlowers(); if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
     if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }

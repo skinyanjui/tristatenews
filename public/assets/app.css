@@ -747,6 +747,13 @@ html.st-open { overflow:hidden; }
   .st-sheet.st-sheet:not(:has(.st-pic)) .st-bd { padding-top:var(--sp-8); }
 }
 @media (prefers-reduced-motion: reduce) { .st-page.st-page, .st-sheet .st-go, .st-sheet .st-nav { transition:none !important; } }
+/* ship105: tristatemarketplace.com test listings on Classifieds: their own section after the posts, a disclosure under
+   the heading and a "Test listing" tag on every card (beside the price, in the card's bottom row). */
+.mk-sec { display:grid; grid-template-columns:minmax(0, 1fr); gap:var(--sp-2); min-width:0; margin-top:var(--sp-4); }
+.mk-sec .evx-sh h3 { overflow-wrap:anywhere; }
+.mk-note { margin:0; }
+.mk-tag { display:inline-flex; align-items:center; flex:none; height:20px; padding:0 var(--sp-2); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--background-subtle); color:var(--text-muted); font-size:11px; line-height:16px; font-weight:600; white-space:nowrap; }
+@media (max-width:639.98px) { .row-mk .src .when { display:none; } } /* phones: no room beside price and tag; the section heading names the source */
 @media (max-width:374px) { .card:not(.breaking):has(a.ca > .th) .bd p:not(.cl-note) { display:none; } } /* too narrow for a description */
 @media (min-width:640px) {
   /* picture flush left for the card's full height; text, then the link/reaction row, on the right */

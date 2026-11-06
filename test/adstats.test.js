@@ -163,7 +163,7 @@ test('wiring and policy: 8 functions, the rewrite, admin page, Privacy and Adver
   const lg = read('public/legal.html');
   assert.ok(lg.includes('For a paid ad we count how often it’s seen and clicked, in daily totals only'));
   assert.ok(lg.includes('No cookie, ID, page address or anything about you goes with it'));
-  assert.ok(lg.includes('we keep only a scrambled, one-way code made from the address and the date, never the address itself'));
+  assert.ok(lg.includes('We keep only a scrambled, one-way code made from the address (for ad counts, from the address and the date), never the address itself'));
   assert.ok(lg.includes('Those are counts on our own pages, not people') && lg.includes('we don’t estimate reach or audiences from them'));
   assert.ok(read('docs/legal-review.md').includes('## Ads PR 5.3: cookie-free ad counts'));
   assert.ok(read('README.md').includes('/api/adstats') && read('README.md').includes('Ad counts.'));

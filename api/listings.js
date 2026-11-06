@@ -17,7 +17,8 @@ const { removalCmds } = require('./_orders.js'); // a post removed while Feature
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const DAYS = 30, JOB_DAYS = 45, MAX_SHOWN = 60, DAILY_PER_UID = 3, DAILY_PER_IP = 8, REPORTS_TO_HIDE = 3, REPORTS_PER_IP = 10;
 const REVIEW = 'tsn:ls:review';
-const { clientIp, ipHash } = require('./_ip.js');
+const { clientIp, ipHash, rlId } = require('./_ip.js');
+const { clean: cleanImage, cleanDataUrl } = require('./_imgmeta.js');
 const ID_RE = /^[a-z0-9]{6,20}$/;
 const UID_RE = /^[a-zA-Z0-9_-]{8,48}$/;
 // Each index expires a margin after the longest any of its listings can live, and that clock restarts on every
@@ -33,13 +34,13 @@ const rec = id => 'tsn:ls:' + id;
 const imgKey = id => 'tsn:ls:img:' + id;
 const JPEG_RE = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/;
 const MAX_PHOTO = 190000, MAX_LOGO = 14000; // base64 characters
-// A photo or logo must be a JPEG data URL (the page re-encodes uploads through a canvas) of limited size.
+// A photo or logo must be a well-formed JPEG data URL (the page re-encodes uploads through a canvas) of limited size.
+// What's stored is the file without its metadata (location, camera, comments: api/_imgmeta.js).
 function goodImage(v, max) {
   if (typeof v !== 'string' || v.length > max) return '';
   const m = JPEG_RE.exec(v);
   if (!m || m[1].length < 100) return '';
-  const head = Buffer.from(m[1].slice(0, 8), 'base64');
-  return head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff ? v : '';
+  return cleanDataUrl(v);
 }
 
 const pipeline = STORE.pipeline;
@@ -152,9 +153,11 @@ async function handler(req, res) {
       const g = await pipeline([['GET', imgKey(id)]]);
       const m = g[0] && g[0].result ? JPEG_RE.exec(g[0].result) : null;
       if (!m) { res.setHeader('Cache-Control', 'no-store'); return res.status(404).end(); }
+      // Photos stored before uploads were cleaned on the server lose their metadata on the way out too.
+      const raw = Buffer.from(m[1], 'base64'), out = cleanImage('jpeg', raw) || raw;
       res.setHeader('Content-Type', 'image/jpeg');
       res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-      return res.status(200).send(Buffer.from(m[1], 'base64'));
+      return res.status(200).send(out);
     }
 
     if (req.method === 'GET') {
@@ -207,8 +210,8 @@ async function handler(req, res) {
       if (body.adult !== true) return send(400, { error: 'Please confirm you’re 18 or older.', field: 'adult' }); // Terms: posters must be 18+
       const v = validate(body, kind);
       if (v.error) return send(400, { error: v.error, field: v.field });
-      const ip = require('./_ip.js').clientIp(req) || 'x';
-      const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400', 'NX'], ['INCR', 'tsn:ls:rlip:' + ip], ['EXPIRE', 'tsn:ls:rlip:' + ip, '86400', 'NX']]);
+      const ipKey = 'tsn:ls:rlip:' + rlId(clientIp(req) || 'x', 'listings');
+      const rl = await pipeline([['INCR', 'tsn:ls:rl:' + kind + body.uid], ['EXPIRE', 'tsn:ls:rl:' + kind + body.uid, '86400', 'NX'], ['INCR', ipKey], ['EXPIRE', ipKey, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_UID || (Number(rl[2] && rl[2].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve posted a few items today. Try again tomorrow.' });
       const id = now.toString(36) + Math.random().toString(36).slice(2, 8);
       const photo = goodImage(body.img, MAX_PHOTO), logo = kind === 'deal' || kind === 'job' ? goodImage(body.logo, MAX_LOGO) : '';

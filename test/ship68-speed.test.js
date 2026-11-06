@@ -16,7 +16,7 @@ test('no parser-blocking scripts: lib.js (the six libraries + the head call) and
   assert.equal(read('public/assets/lib.js'), B.libSource(), 'lib.js is current: run node scripts/build-assets.js');
   for (const f of B.LIBS) assert.ok(!html.includes('<script src="/' + f + '"'), f + ' is bundled, not loaded on its own');
   const srcs = [...html.matchAll(/<script\b([^>]*)\bsrc="([^"]+)"/g)];
-  assert.deepEqual(srcs.map(m => m[2].split('?')[0]), ['/assets/lib.js', '/assets/app.js']);
+  assert.deepEqual(srcs.map(m => m[2].split('?')[0]), ['/assets/lib.js', '/assets/app.js', '/assets/speed-insights.js']);
   assert.ok(srcs.every(m => /\bdefer\b/.test(m[1])), 'all defer');
   assert.ok(!/<script>[^<]/.test(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '')), 'no inline script left');
   assert.ok(B.libSource().indexOf('public/routes.js') < B.libSource().indexOf(B.APPLY), 'the head call runs after routes.js');

@@ -43,6 +43,7 @@ var LEGAL = {
 try{var t=localStorage.getItem('tsn.theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark');}catch(e){}
 document.documentElement.className+=' js';
 </script>
+<script defer src="/assets/speed-insights.js?v=95b2fa932d"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -167,7 +168,7 @@ document.documentElement.className+=' js';
 </section>
 <section class="lg-panel" id="privacy" aria-labelledby="privacy-title">
 <h2 id="privacy-title">Privacy Policy</h2>
-<p class="lg-meta">Effective October 17, 2026 · Last updated October 23, 2026</p>
+<p class="lg-meta">Effective October 17, 2026 · Last updated November 6, 2026</p>
 
 <div class="lg-sum">
 <p><b>The short version.</b></p>
@@ -196,20 +197,21 @@ document.documentElement.className+=' js';
 <tr><td>Order records: the Stripe checkout and payment IDs, the post ID and board, the price, period and price version sold, the amount and currency paid, and any refund or dispute (amount, status and the reason Stripe gives). We don’t store your name, email or card details from Stripe. When a post that is still Featured is removed, we also keep its ID, title and Featured end date</td><td>When you start a checkout, pay, are refunded or dispute a charge</td><td>To deliver what you bought, handle refunds and disputes, and keep business and tax records</td><td>An unpaid checkout is deleted after 30 days. Records of payments, refunds, disputes and removals have no automatic expiry; we keep them as long as we need them for our business and tax records. Stripe event IDs are kept 30 days to avoid processing one twice</td></tr>
 <tr><td>IP address</td><td>When you post, submit, report, sign up or unsubscribe, and when a paid ad is counted</td><td>To limit spam and abuse (for example a few posts a day per connection), to count each report once, and to stop one connection from inflating ad counts (for ad counts we keep only a scrambled, one-way code made from the address and the date, never the address itself)</td><td>Rate-limit counters expire after 24 hours; the list of connections that reported a post expires 30 days after the last report</td></tr>
 <tr><td>Standard server logs (IP address, browser type, page requested, time)</td><td>Every visit</td><td>Kept by our host to run and secure the site</td><td>For the host’s short log-retention period</td></tr>
+<tr id="privacy-speed"><td>Page-speed measurements (Vercel Speed Insights): how quickly the page loaded and responded to taps and clicks (Core Web Vitals), the page address with anything after “?” or “#” removed (so no search terms), the kind of page (for example “/news/[state]/[county]”), network speed (for example “4g”), browser, device type and operating system. Vercel adds the country from the connection</td><td>When you view a page, unless your browser blocks the script</td><td>To find and fix slow pages. It sets no cookie, stores nothing in your browser, uses no ID and isn’t used to identify you or follow you from page to page</td><td>As Vercel keeps Speed Insights data</td></tr>
 </tbody></table>
 <p>We don’t ask for your precise location. The weather uses the town you pick, or Evansville by default.</p>
-<p><b>Ads.</b> Our own ads (sponsor lines, the in-listing sponsored card and side ads) use no information about you: every reader of a board sees the same ads, and when several sponsors share a spot they take equal turns by the clock, the same for everyone at the same moment. They set no cookies, store nothing in your browser, and we don’t record who sees or clicks them. For a paid ad we count how often it’s seen and clicked, in daily totals only: when at least half of the ad is on screen (once per page load) or when you click it, your browser tells us which campaign and which spot, and nothing else. No cookie, ID, page address or anything about you goes with it, and we don’t keep it per person. When you click one, the advertiser’s site may collect information under its own policy. We don’t use analytics tools.</p>
+<p><b>Ads.</b> Our own ads (sponsor lines, the in-listing sponsored card and side ads) use no information about you: every reader of a board sees the same ads, and when several sponsors share a spot they take equal turns by the clock, the same for everyone at the same moment. They set no cookies, store nothing in your browser, and we don’t record who sees or clicks them. For a paid ad we count how often it’s seen and clicked, in daily totals only: when at least half of the ad is on screen (once per page load) or when you click it, your browser tells us which campaign and which spot, and nothing else. No cookie, ID, page address or anything about you goes with it, and we don’t keep it per person. When you click one, the advertiser’s site may collect information under its own policy. We don’t use visitor analytics tools; the only measurement on the site is the anonymous page-speed measurement described above.</p>
 
 <h3 id="privacy-cookies">3. Cookies and similar technologies</h3>
-<p>TRISTATENOW itself doesn’t set cookies, and we don’t use analytics, tracking pixels or advertising cookies. We use your browser’s local storage only for the settings above, which are needed for features you choose to use. You can clear them at any time in your browser settings.</p>
-<p>We don’t use any third-party ad network today, and the site has no ad-network or analytics code. If we ever add an advertising network such as Google AdSense, or an analytics tool, we’ll update this policy and our Advertising Policy first and show a consent notice where the law requires one. A network may personalize its ads under its own rules and your choices; our own ads are never targeted.</p>
+<p>TRISTATENOW itself doesn’t set cookies, and we don’t use visitor analytics, tracking pixels or advertising cookies. Vercel Speed Insights (page speed, above) sets no cookies either. We use your browser’s local storage only for the settings above, which are needed for features you choose to use. You can clear them at any time in your browser settings.</p>
+<p>We don’t use any third-party ad network today, and the site has no ad-network code and no visitor analytics code (Vercel Speed Insights measures page speed only, as described above). If we ever add an advertising network such as Google AdSense, or a visitor analytics tool, we’ll update this policy and our Advertising Policy first and show a consent notice where the law requires one. A network may personalize its ads under its own rules and your choices; our own ads are never targeted.</p>
 <p><b>Affiliate links.</b> The only affiliate link we may use is the “Send flowers” link on obituaries, once we’ve joined a flower-delivery affiliate program (see our <a href="#advertising-affiliate">Advertising Policy</a>). Clicking it takes you to that service’s site, which may use its own cookies to credit the sale under its own privacy policy. The link carries only our affiliate code, nothing about you or the obituary, and the link on our site adds no script, cookie or tracking pixel. We don’t record who clicks it. A “Send flowers” link that isn’t marked “paid link” (to a funeral home’s own florist page, or to a flower-delivery service’s public page) isn’t an affiliate link and carries no code at all.</p>
 <p><b>Do Not Track and Global Privacy Control.</b> We don’t track you across other sites, so a browser’s Do Not Track signal has nothing to turn off. We treat a Global Privacy Control signal as a request to opt out of any sale or sharing of your personal information; we don’t do either.</p>
 
 <h3 id="privacy-third">4. Services your browser connects to</h3>
 <p>To show the site, your browser connects directly to some other services, which receive your IP address and browser details under their own privacy policies:</p>
 <ul>
-<li><b>Hosting:</b> Vercel (runs the site and keeps server logs).</li>
+<li><b>Hosting:</b> Vercel (runs the site, keeps server logs and receives the <a href="#privacy-speed">page-speed measurements</a> described above).</li>
 <li><b>Fonts:</b> Google Fonts.</li>
 <li><b>Weather:</b> Open-Meteo (current conditions, and the town names you search for) and the U.S. National Weather Service (alerts).</li>
 <li><b>Event listings:</b> some events come from Ticketmaster; their “Get tickets” links take you to Ticketmaster’s site.</li>

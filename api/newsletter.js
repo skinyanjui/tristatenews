@@ -137,7 +137,7 @@ function render(issue, email, opts) {
     '<body style="margin:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#171717">' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border:1px solid #e0e0e0;border-radius:6px"><tr><td style="padding:24px">' +
-    '<div style="font-weight:600;font-size:20px;color:#0b6b86">' + a(base + '/', 'Tri-State News', 'color:#0b6b86') + '</div>' +
+    '<div style="font-weight:600;font-size:20px;color:#0b6b86">' + a(base + '/', 'TristateNow', 'color:#0b6b86') + '</div>' +
     '<div style="color:#666;font-size:13px;margin:4px 0 16px">Week of ' + esc(issue.weekOf) + '</div>' +
     (h ? '<h2 style="font-size:15px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.04em;color:#444">Top headlines</h2><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + h + '</table>' : '') +
     sponsorBlock(opts.sponsor) +
@@ -148,7 +148,7 @@ function render(issue, email, opts) {
     '<p style="max-width:600px;color:#666;font-size:12px;line-height:18px;margin:16px auto 0">Headlines link to the original publishers. You get this because you signed up at ' + a(base + '/', base.replace(/^https?:\/\//, '')) + '.<br>' +
     a(u, 'Unsubscribe', 'color:#666;text-decoration:underline') + ' \u00b7 ' + a(base + '/legal', 'Privacy and terms', 'color:#666;text-decoration:underline') +
     (postal ? '<br>' + esc(postal) : '') + '</p></td></tr></table></body></html>';
-  const text = 'Tri-State News, week of ' + issue.weekOf + '\n\nTOP HEADLINES\n' + issue.headlines.map(x => '- ' + x.title + ' (' + x.source + ')\n  ' + x.link).join('\n') +
+  const text = 'TristateNow, week of ' + issue.weekOf + '\n\nTOP HEADLINES\n' + issue.headlines.map(x => '- ' + x.title + ' (' + x.source + ')\n  ' + x.link).join('\n') +
     (issue.events.length ? '\n\nCOMING UP\n' + issue.events.map(x => '- ' + fmtDay(x.at) + (x.timed ? ' ' + fmtTime(x.at) : '') + ': ' + x.title + (x.place ? ', ' + x.place : '') + '\n  ' + x.link).join('\n') : '') +
     '\n\nUnsubscribe: ' + u + (postal ? '\n' + postal : '') + '\n';
   const oneClick = base + '/api/unsubscribe?' + u.split('?')[1];

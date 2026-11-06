@@ -86,7 +86,7 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
     const src = read('public/' + f);
     assert.ok(!/document\.cookie|sessionStorage|googletagmanager|google-analytics|gtag\(|_vercel\/insights|adsbygoogle|pagead2/.test(src), f);
   }
-  assert.ok(t.includes('Tri-State News itself doesn’t set cookies') && t.includes('We don’t use analytics tools') && t.includes('We don’t use any third-party ad network today'));
+  assert.ok(t.includes('TristateNow itself doesn’t set cookies') && t.includes('We don’t use analytics tools') && t.includes('We don’t use any third-party ad network today'));
 });
 
 test('Privacy: order records are described as stored, and the payment code never keeps card or contact details from Stripe', () => {
@@ -104,7 +104,7 @@ test('Advertising Policy §7 and Privacy: creative standards, the review process
   const t = legal.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
   for (const s of ['7. Ad images, words and review', 'Nobody can upload an ad anonymously', 'one still JPEG, PNG or WebP image, at least 300×150 pixels', '300 KB or smaller', 'No animation, video or sound',
     'up to 60 characters', 'up to 140 characters', '“Visit website,” “Shop now,” “Learn more,” “Call now” or “Get directions.”', 'not a link shortener or a redirect',
-    'A person at Tri-State News reviews every ad before it runs', 'nothing uploaded appears on the site until it’s approved', 'recorded reason', 'Rejected and withdrawn images are deleted',
+    'A person at TristateNow reviews every ad before it runs', 'nothing uploaded appears on the site until it’s approved', 'recorded reason', 'Rejected and withdrawn images are deleted',
     'Ad uploads (advertisers)', 'Waiting for review: 60 days', 'one still image with a short headline and text', 'signups and ad uploads',
     'Sizes: we use standard (IAB) ad sizes', '728×90 (leaderboard) for the sponsored card in News', '320×100 (large mobile banner) on phones', '300×250 (medium rectangle) for the sponsored card on the Events, Jobs, Deals and Classifieds boards',
     '160×600 (wide skyscraper) for side ads, and 300×600 (half page)', 'The sponsor line is a line of text, not a sized unit', 'Banners for a size (optional)', 'Square picture (optional)', 'at least 600×600 pixels (1,200×1,200 is best)', 'whichever of the two pictures its picture area crops less', 'exactly that shape', 'deleted when the ad is rejected or withdrawn'])

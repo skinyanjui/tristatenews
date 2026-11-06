@@ -218,7 +218,7 @@
       ]
     },
     {
-      "source": "/(favicon.svg|icon-512.png|og.png)",
+      "source": "/(favicon.svg|icon-512.png|og.png|og-image.jpg)",
       "headers": [
         {
           "key": "Cache-Control",

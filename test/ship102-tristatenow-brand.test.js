@@ -21,7 +21,7 @@ test('ship102: the old brand is gone everywhere readers or emails can see it', (
 
 test('ship102: header, titles, social and structured metadata say TRISTATENOW', () => {
   const index = read('data/pages/index.html');
-  assert.match(index, /<a class="brand" id="home" href="\/" aria-label="TRISTATENOW home">TRISTATENOW<\/a>/);
+  assert.match(index, /<a class="brand" id="home" href="\/" aria-label="TRISTATENOW home">TRISTATE<span class="brand-now">NOW<\/span><\/a>/);
   assert.match(index, /<title>TRISTATENOW<\/title>/);
   assert.match(index, /<meta property="og:site_name" content="TRISTATENOW">/);
   assert.match(index, /<meta property="og:title" content="TRISTATENOW">/);

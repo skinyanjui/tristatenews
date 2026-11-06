@@ -24,7 +24,7 @@ test('ship106: every static head points canonical, og:url, og:image and JSON-LD 
   for (const f of HEADS) for (const u of urlsIn(read(f))) { n++; assert.ok(u.startsWith(WWW + '/'), f + ': ' + u); }
   assert.ok(n >= 15, 'found the heads (' + n + ')');
   const index = read('data/pages/index.html');
-  for (const tag of ['<link rel="canonical" href="https://www.tristatenow.com/">', '<meta property="og:url" content="https://www.tristatenow.com/">', '<meta property="og:image" content="https://www.tristatenow.com/og.png">', '"url":"https://www.tristatenow.com/"'])
+  for (const tag of ['<link rel="canonical" href="https://www.tristatenow.com/">', '<meta property="og:url" content="https://www.tristatenow.com/">', '<meta property="og:image" content="https://www.tristatenow.com/og-image.jpg" />', '"url":"https://www.tristatenow.com/"'])
     assert.ok(index.includes(tag), tag);
 });
 

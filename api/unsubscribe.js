@@ -1,8 +1,9 @@
 // Newsletter unsubscribe (the /unsubscribe.html page, and one-click links in newsletter emails).
 //   POST /api/unsubscribe {email, token?, website}            -> { ok, message }
 //   POST /api/unsubscribe?email=..&token=..  body "List-Unsubscribe=One-Click"   (RFC 8058 one-click from mail apps)
-// Removes the address from the Redis sets tsn:nl:subs and tsn:nl:confirmed and the pending signups (adding it to
-// tsn:nl:unsubs if it was there) (written by /api/subscribe, api/_subscribe.js) and, when RESEND_API_KEY and
+// Removes the address from the Redis sets tsn:nl:subs and tsn:nl:confirmed and the pending signups, and deletes its
+// confirmation record tsn:nl:sub:<email> (all written by /api/subscribe, api/_subscribe.js). Only the address itself
+// stays, on the do-not-email list tsn:nl:unsubs, if it was there. And, when RESEND_API_KEY and
 // RESEND_AUDIENCE_ID are set, marks it unsubscribed in that Resend audience. The answer is the same whether or not
 // the address was on the list, so the endpoint can't be used to check who subscribes.
 // Tokens: link(email) builds https://<site>/unsubscribe.html?email=..&token=.. with an HMAC of the address keyed by
@@ -10,6 +11,7 @@
 // page; someone who types their address on the page doesn't need one.
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const { clientIp, rlId } = require('./_ip.js');
 const { ORIGIN } = require('../public/routes.js'); // the canonical origin, when SITE_URL is unset
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -46,10 +48,10 @@ async function handler(req, res) {
     if (!EMAIL_RE.test(email) || /[<>"'\s,;]/.test(email)) return send(400, { error: 'Enter a valid email address.' });
     // A mail app's one-click request has no person behind it, so it must carry a valid token.
     if (oneClick && !validToken(email, b.token || q.token)) return send(400, { error: 'This unsubscribe link isn’t valid. Enter your email on the page instead.' });
-    const ip = require('./_ip.js').clientIp(req) || 'x';
-    const rl = await pipeline([['INCR', 'tsn:nl:unrl:' + ip], ['EXPIRE', 'tsn:nl:unrl:' + ip, '86400', 'NX']]);
+    const rlKey = 'tsn:nl:unrl:' + rlId(clientIp(req) || 'x', 'unsubscribe');
+    const rl = await pipeline([['INCR', rlKey], ['EXPIRE', rlKey, '86400', 'NX']]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'Too many attempts today. Try again tomorrow, or email us.' });
-    const rm = await pipeline([['SREM', 'tsn:nl:subs', email], ['SREM', 'tsn:nl:confirmed', email], ['ZREM', 'tsn:nl:pending', email]]);
+    const rm = await pipeline([['SREM', 'tsn:nl:subs', email], ['SREM', 'tsn:nl:confirmed', email], ['ZREM', 'tsn:nl:pending', email], ['DEL', 'tsn:nl:sub:' + email]]);
     // Remember who left (for the admin's count), but only addresses that were on the list or pending.
     if (rm.some(x => Number(x && x.result) === 1)) await pipeline([['SADD', 'tsn:nl:unsubs', email]]);
     // Done for every address (listed or not) so the response time doesn't hint either way.

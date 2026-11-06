@@ -7,6 +7,8 @@
 // With neither configured the endpoint answers 503 and the page says submissions aren't open yet.
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
+const { clientIp, rlId } = require('./_ip.js');
+const { cleanDataUrl } = require('./_imgmeta.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', TO = process.env.TIPS_TO_EMAIL || '';
 const FROM = process.env.TIPS_FROM_EMAIL || 'TRISTATENOW <onboarding@resend.dev>';
@@ -20,12 +22,12 @@ const one = (v, n) => clean(v, n).replace(/\s+/g, ' ');
 const todayChi = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
 const { esc } = require('./_html.js');
 
+// A well-formed JPEG data URL of limited size, kept and emailed without its metadata (api/_imgmeta.js).
 function goodImage(v) {
   if (typeof v !== 'string' || v.length > MAX_PHOTO) return '';
   const m = JPEG_RE.exec(v);
   if (!m || m[1].length < 100) return '';
-  const h = Buffer.from(m[1].slice(0, 8), 'base64');
-  return h[0] === 0xff && h[1] === 0xd8 && h[2] === 0xff ? v : '';
+  return cleanDataUrl(v);
 }
 function validate(b) {
   const type = TYPES.includes(b.type) ? b.type : 'News tip';
@@ -67,9 +69,9 @@ async function handler(req, res) {
     if (body.website) return send(200, { ok: true, ref: 'TSN-' + Date.now().toString(36).toUpperCase().slice(-6) }); // honeypot: pretend success
     const v = validate(body);
     if (v.error) return send(400, { error: v.error, field: v.field });
-    const ip = require('./_ip.js').clientIp(req) || 'x';
     if (stored) {
-      const rl = await pipeline([['INCR', 'tsn:tip:rl:' + ip], ['EXPIRE', 'tsn:tip:rl:' + ip, '86400', 'NX']]);
+      const rlKey = 'tsn:tip:rl:' + rlId(clientIp(req) || 'x', 'submit');
+      const rl = await pipeline([['INCR', rlKey], ['EXPIRE', rlKey, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve sent a few submissions today. Try again tomorrow.' });
     }
     const ref = 'TSN-' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(2, 4).toUpperCase();

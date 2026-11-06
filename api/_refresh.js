@@ -8,6 +8,7 @@
 // tsn:runs:<runId> for 7 days.
 const { same } = require('./_safe.js');
 const { refreshAll, stored, redis } = require('./news.js');
+const newsletter = require('./_subscribe.js');
 
 module.exports = async function (req, res) {
   const secret = process.env.CRON_SECRET || '';
@@ -21,6 +22,11 @@ module.exports = async function (req, res) {
     const { snapshot, report, store, runId, run, locations } = await refreshAll({ tier });
     // Community boards: expired ids out of every index (their GETs are read-only and CDN-cached, api/listings.js).
     try { await redis(require('./listings.js').pruneCmds(Date.now())); store.requests++; store.commands += 5; } catch (e) { console.error('board prune failed', e && e.message); }
+    // Newsletter retention: unconfirmed signups older than 7 days, and a batch of records left by earlier unsubscribes.
+    try {
+      await redis(newsletter.pruneCmds(Date.now())); store.requests++; store.commands++;
+      const sw = await newsletter.sweep(); store.requests += sw.requests; store.commands += sw.commands;
+    } catch (e) { console.error('newsletter prune failed', e && e.message); }
     const bad = report.filter(r => r.result.startsWith('fail'));
     send(200, { ok: true, tier, runId, ms: Date.now() - t0, stories: snapshot.items.length, sourcesWithStories: snapshot.sources.filter(s => s.count > 0).length, notModified: report.filter(r => r.result === '304').length, failing: bad, statuses: run.statusCounts, store, locations: locations ? { total: locations.total, assigned: locations.assigned, requiresReview: locations.requiresReview } : undefined });
   } catch (e) {

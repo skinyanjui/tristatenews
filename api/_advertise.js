@@ -9,6 +9,7 @@
 // email goes only to our own inbox; nothing here ever emails the advertiser.
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
+const { clientIp, rlId } = require('./_ip.js');
 const L = require('./_leads.js');
 const { PACKAGES, budgetBands } = require('./_catalog.js');
 const BUDGETS = budgetBands();
@@ -70,9 +71,9 @@ async function handler(req, res) {
     if (body.website) return send(200, { ok: true, ref: 'AD-' + Date.now().toString(36).toUpperCase().slice(-6) });
     const v = validate(body);
     if (v.error) return send(400, { error: v.error, field: v.field });
-    const ip = require('./_ip.js').clientIp(req) || 'x';
     if (stored) {
-      const rl = await pipeline([['INCR', 'tsn:ad:rl:' + ip], ['EXPIRE', 'tsn:ad:rl:' + ip, '86400', 'NX']]);
+      const rlKey = 'tsn:ad:rl:' + rlId(clientIp(req) || 'x', 'advertise');
+      const rl = await pipeline([['INCR', rlKey], ['EXPIRE', rlKey, '86400', 'NX']]);
       if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve sent a few already today. Try again tomorrow.' });
     }
     const ref = 'AD-' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(2, 4).toUpperCase();

@@ -1,4 +1,5 @@
-// ship107: the TRISTATE + red NOW wordmark in light and dark (home and Legal), its fit at 320px, and the shared social
+// ship107: the TRISTATE + red NOW wordmark in light and dark (home and Legal), its fit at 320px (on phones the home
+// header shows the icon instead, still named by the wordmark), and the shared social
 // image tags as served. TSN_SHOTS=<dir> also saves screenshots of the header in each state.
 const { test, expect } = require('@playwright/test');
 const path = require('path');
@@ -26,7 +27,8 @@ for (const theme of ['light', 'dark']) {
       const c = await page.evaluate(() => {
         const a = document.querySelector('a.brand'), n = a.querySelector('.brand-now'), r = a.getBoundingClientRect(), nav = document.querySelector('.nav-in');
         return { tri: getComputedStyle(a).color, now: getComputedStyle(n).color, bg: getComputedStyle(document.body).backgroundColor,
-          fits: r.left >= 0 && r.right <= innerWidth, oneLine: r.height <= 32, over: [nav.scrollWidth - nav.clientWidth, document.documentElement.scrollWidth - innerWidth] };
+          fits: r.left >= 0 && r.right <= innerWidth, oneLine: innerWidth < 640 ? r.width === 44 && r.height === 44 : r.height <= 32, // phones: the 44px icon link (e2e/mobile-logo.spec.js)
+          over: [nav.scrollWidth - nav.clientWidth, document.documentElement.scrollWidth - innerWidth] };
       });
       expect([c.tri, c.now]).toEqual(COLORS[theme]);
       expect(c.bg).toBe(theme === 'dark' ? 'rgb(10, 10, 10)' : 'rgb(255, 255, 255)');

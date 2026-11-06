@@ -478,6 +478,20 @@ body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
 [data-theme="dark"] { --wordmark:#fff; --wordmark-now:#ff2b2b; }
 .brand { color:var(--wordmark); }
 .brand-now { color:var(--wordmark-now); }
+/* Phones: the home link is the site icon (scripts/build-icons.js: the T in a circle with a red line above it, in the
+   wordmark red) instead of the wordmark; the time sits under the borderless temperature, inside the weather
+   button's 40px tap area (it lets taps through to the button). From 640px the wordmark and layout are unchanged. */
+.brand-card { display:none; }
+.bc-bg { fill:#111; } .bc-t { fill:#fff; } .bc-acc { fill:var(--wordmark-now); }
+@media (max-width:639px) {
+  .nav-in { position:relative; }
+  .nav-in .brand { width:44px; height:44px; margin-left:-6px; justify-content:center; font-size:0; line-height:0; border-radius:50%; }
+  .nav-in .brand-now { display:none; }
+  .brand-card { display:block; width:32px; height:32px; border-radius:50%; }
+  [data-theme="dark"] .brand-card { box-shadow:0 0 0 1px var(--border); }
+  .nav-in .clk { position:absolute; top:29px; right:calc(var(--gutter) + 4px); pointer-events:none; }
+  .wx-btn { height:40px; min-height:40px; min-width:64px; justify-content:flex-end; align-items:flex-start; padding:2px 4px 0; border:0; background:transparent; }
+}
 :focus-visible { outline-color:var(--brand); }
 .tab { padding:0 8px; gap:6px; }
 .tab::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--c); flex:none; }

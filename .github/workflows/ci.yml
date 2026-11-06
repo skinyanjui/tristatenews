@@ -40,6 +40,6 @@ jobs:
       - name: Generated files are current
         run: |
           node scripts/build-assets.js
-          git diff --exit-code -- data/pages/index.html public/assets || { echo "::error::Run node scripts/build-assets.js and commit the result."; exit 1; }
+          git diff --exit-code -- data/pages/index.html data/pages/advertise.html public/legal.html public/newsletter.html public/assets || { echo "::error::Run node scripts/build-assets.js and commit the result."; exit 1; }
       - name: Tests
         run: npm test

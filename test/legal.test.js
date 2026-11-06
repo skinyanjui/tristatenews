@@ -86,13 +86,13 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
     const src = read('public/' + f);
     assert.ok(!/document\.cookie|sessionStorage|googletagmanager|google-analytics|gtag\(|_vercel\/insights|adsbygoogle|pagead2/.test(src), f);
   }
-  assert.ok(t.includes('TRISTATENOW itself doesn’t set cookies') && t.includes('We don’t use analytics tools') && t.includes('We don’t use any third-party ad network today'));
+  assert.ok(t.includes('TRISTATENOW itself doesn’t set cookies') && t.includes('We don’t use visitor analytics tools') && t.includes('Page-speed measurements (Vercel Speed Insights)') && t.includes('We don’t use any third-party ad network today'));
 });
 
 test('Privacy: order records are described as stored, and the payment code never keeps card or contact details from Stripe', () => {
   const t = text(privacy);
   for (const s of ['Order records', 'We don’t store your name, email or card details from Stripe', 'An unpaid checkout is deleted after 30 days', 'have no automatic expiry',
-    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated October 23, 2026'])
+    'what you’re interested in', 'the package and budget you pick (optional)', 'our own status for the inquiry (new, contacted, proposal sent, won, lost or spam)', 'kept 400 days after the last change', 'the change log keeps the latest 1,000 changes', 'Stripe receives the post’s ID, title and board', 'Last updated November 6, 2026'])
     assert.ok(t.includes(s), s);
   for (const f of ['api/stripe-webhook.js', 'api/_orders.js', 'api/_checkout.js'])
     assert.ok(!/customer_details|customer_email|receipt_email|billing_details|\.card\b|payment_method_details/.test(read(f)), f + ' stores no card or contact data');

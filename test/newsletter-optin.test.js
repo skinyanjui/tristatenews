@@ -11,7 +11,7 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const ADMIN = 'admin-placeholder-key';
 const NOW = Date.parse('2026-10-21T18:00:00Z');
 const NEWS = { sources: [{ id: 'wfie', kind: 'news' }], items: [1, 2, 3].map(n => ({ title: 'Story ' + n, link: 'https://www.14news.com/s' + n, source: '14 News', sourceId: 'wfie', published: new Date(NOW - n * 36e5).toISOString() })) };
-const PROVIDER = { RESEND_API_KEY: 're_placeholder', NEWSLETTER_FROM: 'TristateNow <news@example.com>' };
+const PROVIDER = { RESEND_API_KEY: 're_placeholder', NEWSLETTER_FROM: 'TRISTATENOW <news@example.com>' };
 const ALL = Object.assign({ NEWSLETTER_POSTAL_ADDRESS: 'PO Box 1, Evansville, IN 47708', NEWSLETTER_SECRET: 'nl-secret' }, PROVIDER);
 
 function world() {
@@ -95,7 +95,7 @@ test('with Resend: a confirmation email with a one-time link and List-Unsubscrib
   assert.deepStrictEqual([r.body.emailSent, r.body.message.startsWith('Almost done')], [true, true]);
   assert.strictEqual(w.mail.length, 1);
   const m = w.mail[0];
-  assert.deepStrictEqual([m.to, m.from, m.subject], [['reader@example.com'], PROVIDER.NEWSLETTER_FROM, 'Confirm your TristateNow subscription']);
+  assert.deepStrictEqual([m.to, m.from, m.subject], [['reader@example.com'], PROVIDER.NEWSLETTER_FROM, 'Confirm your TRISTATENOW subscription']);
   const token = /\/newsletter\?confirm=([0-9a-f]{64})/.exec(m.text)[1];
   assert.ok(!JSON.stringify([...w.kv]).includes(token), 'only the hash of the token is stored');
   assert.match(m.headers['List-Unsubscribe'], /^<https:\/\/site\.test\/api\/unsubscribe\?email=reader%40example\.com&token=[0-9a-f]{32}>$/);

@@ -51,12 +51,12 @@ function confirmEmail(email, token) {
   const unsub = require('./unsubscribe.js');
   const link = site() + '/newsletter?confirm=' + token, u = unsub.link(email, site()), postal = process.env.NEWSLETTER_POSTAL_ADDRESS || '';
   const html = '<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#171717;max-width:560px;margin:0 auto;padding:24px">' +
-    '<h1 style="font-size:20px">Confirm your TristateNow subscription</h1><p>Tap the button to start getting our weekly email of local headlines and events.</p>' +
+    '<h1 style="font-size:20px">Confirm your TRISTATENOW subscription</h1><p>Tap the button to start getting our weekly email of local headlines and events.</p>' +
     '<p><a href="' + esc(link) + '" style="display:inline-block;padding:12px 18px;background:#0b6b86;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Confirm my subscription</a></p>' +
     '<p style="color:#666;font-size:13px">The link works for ' + CONFIRM_DAYS + ' days. If you didn’t sign up, ignore this email and you won’t hear from us again.</p>' +
     '<p style="color:#666;font-size:12px"><a href="' + esc(u) + '" style="color:#666">Unsubscribe</a>' + (postal ? '<br>' + esc(postal) : '') + '</p></body></html>';
-  const text = 'Confirm your TristateNow subscription:\n' + link + '\n\nThe link works for ' + CONFIRM_DAYS + ' days. If you didn’t sign up, ignore this email.\n\nUnsubscribe: ' + u + (postal ? '\n' + postal : '') + '\n';
-  return { from: process.env.NEWSLETTER_FROM, to: [email], subject: 'Confirm your TristateNow subscription', html, text,
+  const text = 'Confirm your TRISTATENOW subscription:\n' + link + '\n\nThe link works for ' + CONFIRM_DAYS + ' days. If you didn’t sign up, ignore this email.\n\nUnsubscribe: ' + u + (postal ? '\n' + postal : '') + '\n';
+  return { from: process.env.NEWSLETTER_FROM, to: [email], subject: 'Confirm your TRISTATENOW subscription', html, text,
     headers: { 'List-Unsubscribe': '<' + site() + '/api/unsubscribe?' + u.split('?')[1] + '>', 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } };
 }
 async function resend(body) {

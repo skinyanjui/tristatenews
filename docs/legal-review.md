@@ -122,7 +122,7 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 
 ### Needs review (PR C)
 11. **Advertiser notice of decisions:** the policy says decisions have a recorded reason but doesn't promise to notify the advertiser; nothing emails them automatically today. Decide whether to promise a notice and a turnaround.
-12. **Rights in creatives (lawyer):** the policy makes the advertiser responsible for rights to images, logos and words. Consider an advertiser agreement or an upload checkbox granting TristateNow a license to display the creative, with an indemnity.
+12. **Rights in creatives (lawyer):** the policy makes the advertiser responsible for rights to images, logos and words. Consider an advertiser agreement or an upload checkbox granting TRISTATENOW a license to display the creative, with an indemnity.
 13. **Takedown standard:** "we can take an approved ad down at any time" — confirm how that interacts with any paid package (refund or make-good when an ad is withdrawn mid-run).
 
 ## Ads PR 4.2: placeholder sample ads (Advertising Policy §1 and §5)
@@ -173,7 +173,7 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 
 ### Needs review (ads PR 5.3)
 23. **Hashed address:** the code is an HMAC of the address and the date keyed by a server secret (`ADSTATS_SECRET`, else derived from `LISTINGS_ADMIN_KEY`/`CRON_SECRET`), so it can't be reversed by trying every address without the secret. Still treat it as personal data kept for 24 hours (that's how the table words it); confirm this is fine under the states' privacy laws we follow.
-24. **Quoting counts:** only quote measured counts from the admin report or its CSV, labeled "views" and "clicks on TristateNow pages". Don't turn them into "readers", "reach" or "impressions served" without saying how they were measured.
+24. **Quoting counts:** only quote measured counts from the admin report or its CSV, labeled "views" and "clicks on TRISTATENOW pages". Don't turn them into "readers", "reach" or "impressions served" without saying how they were measured.
 
 ## Obituary action row: "Plant a tree" and "Donate" (Advertising Policy §2 and §8)
 - **Advertising §8:** new paragraph. "Plant a tree": the home's own memorial-tree page (`treeUrl`, none confirmed yet), else One Tree Planted's public "Gift Trees In Memory" page, unpaid, rel="noopener nofollow". "Donate": only a home's own `donateUrl`, or when the obituary asks for donations (an https link in that sentence, else the full obituary page); otherwise hidden. We never choose a charity.
@@ -199,7 +199,7 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 - **Advertise page and panel:** previews of every size with a made-up business ("Sample ad" label, not a link).
 
 ### Needs review (ad sizes)
-29. **Finished banners and our label:** a banner fills the whole unit, with our "Sponsored" label laid over its top-left corner. Confirm in review that a banner doesn't imitate a news story or a TristateNow label (§7 already forbids it) and that the overlay label stays legible.
+29. **Finished banners and our label:** a banner fills the whole unit, with our "Sponsored" label laid over its top-left corner. Confirm in review that a banner doesn't imitate a news story or a TRISTATENOW label (§7 already forbids it) and that the overlay label stays legible.
 
 ## Square picture and collapsed size previews (Advertising Policy §7; /creative.html; /advertise and the Advertise panel)
 - **§7 Square picture (optional):** a second 1:1 picture (≥600×600, 1200×1200 best, same file rules). Each size uses whichever picture its area crops less; per-size banners still override. Reviewed with the ad, public only after approval, deleted on reject/withdraw (`tsn:cr:img:<id>:square`). Admin review shows it.

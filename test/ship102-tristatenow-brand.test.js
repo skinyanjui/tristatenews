@@ -1,5 +1,5 @@
 'use strict';
-// ship102: the reader-facing brand is TristateNow (legal entity TristateNow.com). Branding only: the domain, the
+// ship102: the reader-facing brand is TRISTATENOW (legal entity TristateNow.com). Branding only: the domain, the
 // tristate scope key, TSN identifiers, the crawler user agent and geographic "Tri-State" stay as they were.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -19,32 +19,32 @@ test('ship102: the old brand is gone everywhere readers or emails can see it', (
     assert.ok(!/>Tristate</.test(read(f)), f + ' wordmark');
 });
 
-test('ship102: header, titles, social and structured metadata say TristateNow', () => {
+test('ship102: header, titles, social and structured metadata say TRISTATENOW', () => {
   const index = read('data/pages/index.html');
-  assert.match(index, /<a class="brand" id="home" href="\/" aria-label="TristateNow home">TristateNow<\/a>/);
-  assert.match(index, /<title>TristateNow<\/title>/);
-  assert.match(index, /<meta property="og:site_name" content="TristateNow">/);
-  assert.match(index, /<meta property="og:title" content="TristateNow">/);
-  assert.match(index, /"@type":"WebSite","name":"TristateNow","url":"https:\/\/tristatenewss\.vercel\.app/);
-  assert.match(index, /<p>© 2026 TristateNow\. /);
+  assert.match(index, /<a class="brand" id="home" href="\/" aria-label="TRISTATENOW home">TRISTATENOW<\/a>/);
+  assert.match(index, /<title>TRISTATENOW<\/title>/);
+  assert.match(index, /<meta property="og:site_name" content="TRISTATENOW">/);
+  assert.match(index, /<meta property="og:title" content="TRISTATENOW">/);
+  assert.match(index, /"@type":"WebSite","name":"TRISTATENOW","url":"https:\/\/tristatenewss\.vercel\.app/);
+  assert.match(index, /<p>© 2026 TRISTATENOW\. /);
   const m = JSON.parse(read('public/manifest.webmanifest'));
-  assert.strictEqual(m.name, 'TristateNow'); assert.strictEqual(m.short_name, 'TristateNow');
-  assert.match(read('public/routes.js'), /var SITE = 'TristateNow';/);
-  assert.match(read('public/assets/lib.js'), /var SITE = 'TristateNow';/);
-  assert.match(read('api/_geopage.js'), / news · TristateNow'/);
-  assert.match(read('data/pages/404.html'), /<title>Page not found · TristateNow<\/title>/);
+  assert.strictEqual(m.name, 'TRISTATENOW'); assert.strictEqual(m.short_name, 'TRISTATENOW');
+  assert.match(read('public/routes.js'), /var SITE = 'TRISTATENOW';/);
+  assert.match(read('public/assets/lib.js'), /var SITE = 'TRISTATENOW';/);
+  assert.match(read('api/_geopage.js'), / news · TRISTATENOW'/);
+  assert.match(read('data/pages/404.html'), /<title>Page not found · TRISTATENOW<\/title>/);
   for (const f of ['public/terms.html', 'public/privacy.html', 'public/copyright.html', 'public/corrections.html', 'public/accessibility.html', 'public/advertising.html', 'public/newsletter.html', 'public/unsubscribe.html', 'public/order.html', 'public/creative.html', 'data/pages/advertise.html'])
-    assert.match(read(f), /<title>[^<]* · TristateNow<\/title>/, f);
+    assert.match(read(f), /<title>[^<]* · TRISTATENOW<\/title>/, f);
 });
 
 test('ship102: legal pages and emails use the brand and the TristateNow.com entity', () => {
   const legal = read('public/legal.html');
   assert.match(legal, /entity:\s+'TristateNow\.com'/);
-  assert.match(legal, /<title>Legal · TristateNow<\/title>/);
-  assert.match(legal, /operates TristateNow at https:\/\/tristatenewss\.vercel\.app/);
-  assert.match(read('api/_subscribe.js'), /subject: 'Confirm your TristateNow subscription'/);
-  assert.match(read('api/_submit.js'), /'TristateNow <onboarding@resend\.dev>'/);
-  assert.match(read('api/newsletter.js'), /'TristateNow, week of '/);
+  assert.match(legal, /<title>Legal · TRISTATENOW<\/title>/);
+  assert.match(legal, /operates TRISTATENOW at https:\/\/tristatenewss\.vercel\.app/);
+  assert.match(read('api/_subscribe.js'), /subject: 'Confirm your TRISTATENOW subscription'/);
+  assert.match(read('api/_submit.js'), /'TRISTATENOW <onboarding@resend\.dev>'/);
+  assert.match(read('api/newsletter.js'), /'TRISTATENOW, week of '/);
 });
 
 test('ship102: branding only — domain, identifiers and geographic Tri-State are unchanged', () => {
@@ -53,4 +53,12 @@ test('ship102: branding only — domain, identifiers and geographic Tri-State ar
   assert.match(read('api/_scope.js'), /label: 'Tri-State'/);
   assert.match(read('api/_submit.js'), /'TSN-'/);
   assert.match(read('public/legal.html'), /Tri-State area/);
+});
+
+test('ship102: the display brand is all caps; mixed-case TristateNow only names the legal entity', () => {
+  for (const f of FILES) {
+    const left = read(f).match(/TristateNow(?!\.com| LLC)/g);
+    assert.ok(!left, f + ': ' + (left || []).join(', '));
+  }
+  assert.match(read('data/pages/index.html'), /"name":"TRISTATENOW"/);
 });

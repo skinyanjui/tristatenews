@@ -260,7 +260,7 @@ app.all(['/api/advertise', '/api/creative', '/api/campaigns', '/api/adstats', '/
   Promise.resolve(inboxHandler(req, res)).catch(next);
 });
 
-app.all(['/api/checkout', '/api/catalog', '/api/orders', '/api/flowers'], (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
+app.all(['/api/checkout', '/api/catalog', '/api/orders', '/api/flowers', '/api/market'], (req, res, next) => { // served by api/listings.js (see vercel.json rewrites)
   Promise.resolve(listingsHandler(req, res)).catch(next);
 });
 
@@ -338,7 +338,7 @@ app.use((err, req, res, next) => {
 
 // Start listening
 const server = app.listen(PORT, HOST, () => {
-  console.log(`TristateNow server running at http://${HOST}:${PORT}`);
+  console.log(`TRISTATENOW server running at http://${HOST}:${PORT}`);
 
   // Warm up initial news snapshot in background so visitors get instant responses
   if (typeof newsHandler.refreshAll === 'function') {

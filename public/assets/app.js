@@ -128,7 +128,7 @@
       // is rel="sponsored". An unsold margin shows our own house unit instead: labeled "Advertise with us", it names no
       // business, price or number, and opens the advertising inquiry form.
       railAd: function (ad) {
-        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with TristateNow.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return UI.sized(h, 'rail:left'); }
+        if (!ad) { var h = el('button', 'rail-ad rail-house'); h.type = 'button'; h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here')); h.appendChild(el('span', 'rail-tx', 'Advertise with TRISTATENOW.')); h.appendChild(el('span', 'rail-cta', 'Learn more')); h.addEventListener('click', openAd); return UI.sized(h, 'rail:left'); }
         if (!window.TSNAds || !TSNAds.validAd(ad)) return null;
         var a = UI.adLink('rail-ad', ad);
         if (!ad.img) a.appendChild(bizAvatar(ad.name, '')); a.appendChild(el('b', null, ad.name));
@@ -207,7 +207,7 @@
         var sm = window.TSNAds ? UI.sample((TSNAds.OFFSET[slot] || 0) + 1) : null;
         if (sm) { var s2 = UI.sampleAd('spon', sm); s2.appendChild(el('b', null, sm.name)); if (UI.adText(sm, 'Sample ad')) s2.appendChild(el('span', null, UI.adText(sm, 'Sample ad'))); s2.appendChild(el('span', 'sr-only', 'A sample, not a real business.')); s2.appendChild(el('b', null, 'Advertise here')); return s2; }
         var h = el('button', 'spon spon-house'); h.type = 'button';
-        h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with TristateNow.')); h.appendChild(el('b', null, 'Learn more'));
+        h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('span', null, 'Your business here, advertise with TRISTATENOW.')); h.appendChild(el('b', null, 'Learn more'));
         h.addEventListener('click', openAd);
         return h;
       },
@@ -312,7 +312,7 @@
         }
         var h = el('button', 'ad-card ad-house'); h.type = 'button';
         h.appendChild(el('span', 'spon-tag', 'Advertise with us')); h.appendChild(el('b', null, 'Your business here'));
-        h.appendChild(el('span', 'ad-tx', 'Advertise with TristateNow.')); h.appendChild(el('span', 'rail-cta', 'Learn more'));
+        h.appendChild(el('span', 'ad-tx', 'Advertise with TRISTATENOW.')); h.appendChild(el('span', 'rail-cta', 'Learn more'));
         h.addEventListener('click', openAd);
         return UI.sized(h, place);
       },
@@ -1946,7 +1946,7 @@
   function openAd() { SN_VIEW = 'ad'; SN_DONE = ''; openSubmit(); }
   function renderAdvertise() {
     snEl.textContent = '';
-    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, 'Advertise with TristateNow'));
+    var bar = el('div', 'cl-bar'); bar.appendChild(el('b', null, 'Advertise with TRISTATENOW'));
     bar.appendChild(UI.button('Back', 'cl-go', closeSubmit)); snEl.appendChild(bar);
     if (SN_DONE) {
       var d = el('div', 'sn-done'); d.setAttribute('role', 'status');

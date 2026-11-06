@@ -9,7 +9,7 @@ const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', TO = process.env.TIPS_TO_EMAIL || '';
-const FROM = process.env.TIPS_FROM_EMAIL || 'TristateNow <onboarding@resend.dev>';
+const FROM = process.env.TIPS_FROM_EMAIL || 'TRISTATENOW <onboarding@resend.dev>';
 const DAILY_PER_IP = 5, MAX_KEEP = 500, MAX_PHOTO = 190000;
 const TYPES = ['News tip', 'Photo or video', 'Press release', 'Correction'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

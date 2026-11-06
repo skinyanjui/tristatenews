@@ -39,7 +39,7 @@ test('each tab is served with its own title, description, canonical and og tags,
     assert.ok(h.includes('name="google-site-verification"'), 'verification meta kept');
   }
   const jobs = await call(tab, { p: '/jobs/' });
-  assert.match(jobs.body, /<title>Jobs · TristateNow<\/title>/, 'trailing slash');
+  assert.match(jobs.body, /<title>Jobs · TRISTATENOW<\/title>/, 'trailing slash');
   assert.equal((await call(tab, { p: '/jobs' }, 'HEAD')).body, '');
   assert.equal((await call(tab, { p: '/jobs' }, 'POST')).status, 405);
 });

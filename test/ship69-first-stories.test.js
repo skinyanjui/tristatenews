@@ -49,7 +49,7 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
   assert.equal(out.headers['cache-control'], 'public, max-age=0, s-maxage=60, stale-while-revalidate=60');
   const h = out.body, list = listOf(h);
   assert.match(h, /<meta name="google-site-verification" content="[^"]+"/);
-  assert.match(h, /<title>TristateNow<\/title>/);
+  assert.match(h, /<title>TRISTATENOW<\/title>/);
   assert.match(h, /<link rel="canonical" href="https:\/\/tristatenewss\.vercel\.app\/">/);
   assert.ok(!h.includes('<link rel="preload" href="/api/news"'), 'data is in the page: no preload');
   assert.match(h, /<link rel="preload" href="\/assets\/fonts\/geist-1\.8\.2-latin\.woff2"/);

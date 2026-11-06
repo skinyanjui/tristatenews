@@ -26,7 +26,7 @@ const call = (h, url, method = 'GET', query = {}) => { const res = fakeRes(); h(
 // ---- the page ----
 test('the 404 page is noindex, links every section and offers search', () => {
   assert.match(page, /<meta name="robots" content="noindex, nofollow">/);
-  assert.match(page, /<title>Page not found · TristateNow<\/title>/);
+  assert.match(page, /<title>Page not found · TRISTATENOW<\/title>/);
   for (const [href, label] of [['/', 'News'], ['/events', 'Events'], ['/obituaries', 'Obituaries'], ['/jobs', 'Jobs'], ['/deals', 'Deals'], ['/classifieds', 'Classifieds']])
     assert.ok(page.includes(`<a href="${href}">${label}</a>`), label);
   assert.match(page, /<form class="nf-q" role="search" method="get" action="\/">/);

@@ -338,7 +338,7 @@ app.use((err, req, res, next) => {
 
 // Start listening
 const server = app.listen(PORT, HOST, () => {
-  console.log(`TristateNow server running at http://${HOST}:${PORT}`);
+  console.log(`TRISTATENOW server running at http://${HOST}:${PORT}`);
 
   // Warm up initial news snapshot in background so visitors get instant responses
   if (typeof newsHandler.refreshAll === 'function') {

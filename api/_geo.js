@@ -3,7 +3,7 @@
 module.exports = {
   manifestVersion: "2026-10-23.1",
   inputs: {
-    "data/geography/target-counties.json": "c4d15a43d2f8d590e6219fb228a12ac8baab37567ccb8e5a7c0368368af7a48f",
+    "data/geography/target-counties.json": "4ae514a1148f7e9fb6a871bd998545c35f73cb025c23497eb956d96b4b34bfd5",
     "data/geography/alias-review.json": "ab271342fa34768b6c5a13133bfd871777307393980baef0c4e2a54ce967bd1c",
     "data/geography/census/2025_Gaz_place_extract.txt": "f8361a1ee0e3246a6d6bdf66bb4addd5296bc9f1c9fb4fcee15e916ec290ad25",
     "data/geography/census/place_by_county2020_extract.txt": "ad0acd1216e7b07ca123f88193ada6814441fc177672be67cfc64364ba412146",
@@ -173,7 +173,7 @@ module.exports = {
         "retrieved": "2026-10-18"
       },
       "editorial-regions-2026-10": {
-        "publisher": "TristateNow (Sam Kinyanjui)",
+        "publisher": "TRISTATENOW (Sam Kinyanjui)",
         "title": "Editorial regions: county memberships chosen by editorial judgment from the brief's region guidance, county-seat geography and Census adjacency",
         "retrieved": "2026-10-18"
       },

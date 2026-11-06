@@ -144,7 +144,7 @@
       ]
     },
     "brief-2026-10": {
-      "publisher": "Sam Kinyanjui (TristateNow)",
+      "publisher": "Sam Kinyanjui (TRISTATENOW)",
       "title": "68-county expansion brief, exact county lists and tiers",
       "retrieved": "2026-10-18",
       "usedFor": [
@@ -169,7 +169,7 @@
       "extract": "census/county_adjacency2025_extract.txt"
     },
     "editorial-regions-2026-10": {
-      "publisher": "TristateNow (Sam Kinyanjui)",
+      "publisher": "TRISTATENOW (Sam Kinyanjui)",
       "title": "Editorial regions: county memberships chosen by editorial judgment from the brief's region guidance, county-seat geography and Census adjacency",
       "retrieved": "2026-10-18",
       "usedFor": [

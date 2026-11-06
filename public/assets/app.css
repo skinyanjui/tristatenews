@@ -472,7 +472,12 @@ body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
 [data-sec="news"] { --c:var(--c-news); } [data-sec="safety"] { --c:var(--c-safety); } [data-sec="institution"] { --c:var(--c-institution); }
 [data-sec="events"] { --c:var(--c-events); } [data-sec="obits"] { --c:var(--c-obits); } [data-sec="jobs"] { --c:var(--c-jobs); }
 [data-sec="deals"] { --c:var(--c-deals); } [data-sec="classifieds"] { --c:var(--c-classifieds); }
-.brand { color:var(--brand); }
+/* the wordmark follows the logo artwork: black TRISTATE, red NOW. Dark mode turns TRISTATE white and lifts the red
+   (same hue) so both keep at least 4.5:1. Only the wordmark uses these; --brand stays the site accent. */
+:root { --wordmark:#000; --wordmark-now:#e80101; }
+[data-theme="dark"] { --wordmark:#fff; --wordmark-now:#ff2b2b; }
+.brand { color:var(--wordmark); }
+.brand-now { color:var(--wordmark-now); }
 :focus-visible { outline-color:var(--brand); }
 .tab { padding:0 8px; gap:6px; }
 .tab::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--c); flex:none; }

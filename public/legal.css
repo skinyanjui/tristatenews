@@ -21,7 +21,10 @@ a:hover { text-decoration-thickness:2px; }
 .skip:focus { left:8px; }
 .lg-top { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--background) 94%, transparent); border-bottom:1px solid var(--border); backdrop-filter:saturate(1.4) blur(8px); }
 .lg-top-in { max-width:760px; margin:0 auto; padding:0 16px; min-height:56px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.lg-brand { color:var(--brand); font-weight:600; font-size:18px; text-decoration:none; }
+:root { --wordmark:#000; --wordmark-now:#e80101; }
+[data-theme="dark"] { --wordmark:#fff; --wordmark-now:#ff2b2b; }
+.lg-brand .brand-now { color:var(--wordmark-now); }
+.lg-brand { color:var(--wordmark); font-weight:600; font-size:18px; text-decoration:none; }
 .lg-back { display:inline-flex; align-items:center; min-height:40px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius); color:var(--foreground); font-size:14px; font-weight:500; text-decoration:none; }
 .lg-back:hover { background:var(--gray-100); }
 main { max-width:760px; margin:0 auto; padding:24px 16px 48px; }

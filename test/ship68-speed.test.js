@@ -16,9 +16,12 @@ test('no parser-blocking scripts: lib.js (the six libraries + the head call) and
   assert.equal(read('public/assets/lib.js'), B.libSource(), 'lib.js is current: run node scripts/build-assets.js');
   for (const f of B.LIBS) assert.ok(!html.includes('<script src="/' + f + '"'), f + ' is bundled, not loaded on its own');
   const srcs = [...html.matchAll(/<script\b([^>]*)\bsrc="([^"]+)"/g)];
-  assert.deepEqual(srcs.map(m => m[2].split('?')[0]), ['/assets/lib.js', '/assets/app.js']);
+  assert.deepEqual(srcs.map(m => m[2].split('?')[0]), ['/assets/lib.js', '/assets/app.js', '/_vercel/speed-insights/script.js']);
   assert.ok(srcs.every(m => /\bdefer\b/.test(m[1])), 'all defer');
-  assert.ok(!/<script>[^<]/.test(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '')), 'no inline script left');
+  // Allow inline script for Speed Insights initialization (window.si)
+  const htmlWithoutLdJson = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '');
+  const htmlWithoutSpeedInsights = htmlWithoutLdJson.replace(/<script>\s*window\.si\s*=[\s\S]*?<\/script>/, '');
+  assert.ok(!/<script>[^<]/.test(htmlWithoutSpeedInsights), 'no inline script left (except ld+json and Speed Insights)');
   assert.ok(B.libSource().indexOf('public/routes.js') < B.libSource().indexOf(B.APPLY), 'the head call runs after routes.js');
   // the other pages still load the standalone files
   assert.match(read('public/creative.html'), /<script src="\/adsizes\.js"><\/script>/);

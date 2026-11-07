@@ -109,6 +109,131 @@ test('stale-while-refreshing shows last-good listings without a failure line', a
   await expect(page.locator('.mk-sec')).not.toContainText('Couldn\u2019t refresh just now');
 });
 
+const FORTY = Array.from({ length: 40 }, (_, i) => ({
+  id: 'mk-f' + i, url: MK + '/listing/f' + i, title: 'Sample listing number ' + i, price: '$' + (20 + i),
+  town: i % 2 ? 'Newburgh, IN' : 'Evansville, IN', desc: 'Fixture listing ' + i + '.', srcCategory: 'Furniture', category: 'Furniture', image: ''
+}));
+const FRESH_FORTY = FORTY.concat([{
+  id: 'mk-new', url: MK + '/listing/new', title: 'Snow blower, like new', price: '$90',
+  town: 'Henderson, KY', desc: 'Runs.', srcCategory: 'Tools', category: 'Tools', image: ''
+}]);
+
+test('when the first /api/market is still refreshing, the open tab fetches once more and paints the new listings', async ({ page }) => {
+  await page.clock.install({ time: Date.parse('2026-11-07T18:00:00Z') });
+  let n = 0;
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, route => {
+    n += 1;
+    const first = n === 1;
+    return route.fulfill({ json: { ok: true, stale: first, refreshing: first, fetchedAt: first ? '2026-11-05T18:00:00Z' : '2026-11-07T18:00:10Z', source: { name: 'tristatemarketplace.com', url: MK + '/' }, items: first ? FORTY : FRESH_FORTY } });
+  });
+  await page.goto('/classifieds');
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
+  await expect(page.locator('.mk-sec')).toContainText('Showing listings as of November 5');
+  await expect(page.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com, shown while we test the site. Some are samples');
+  expect(n).toBe(1);
+  await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-stale-40.png', fullPage: true });
+  await page.clock.runFor(10000);
+  await expect(page.getByText('Snow blower, like new')).toBeVisible();
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(41);
+  expect(n).toBe(2);
+  await page.clock.runFor(20000);
+  expect(n, 'one follow-up, not a poll loop').toBe(2);
+  await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-after-followup.png', fullPage: true });
+});
+
+test('a hidden tab does not follow up a refreshing market; becoming visible does, once', async ({ page }) => {
+  await page.clock.install({ time: Date.parse('2026-11-07T18:00:00Z') });
+  let n = 0;
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, route => {
+    n += 1;
+    return route.fulfill({ json: { ok: true, stale: n === 1, refreshing: n === 1, fetchedAt: '2026-11-05T18:00:00Z', source: {}, items: ITEMS } });
+  });
+  await page.goto('/classifieds');
+  await expect(page.locator('.row-mk')).toHaveCount(2);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(10000);
+  expect(n, 'no follow-up while hidden').toBe(1);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect.poll(() => n).toBe(2);
+  await page.clock.runFor(10000);
+  expect(n, 'still one follow-up').toBe(2);
+});
+
+test('native first card with a 40-listing cold marketplace; empty native still shows market cards and filters', async ({ page }) => {
+  let release;
+  const gate = new Promise(r => { release = r; });
+  const timings = {};
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: [] } }));
+  await page.route(/\/api\/market$/, async route => {
+    await gate;
+    await route.fulfill({ json: { ok: true, stale: false, refreshing: false, fetchedAt: new Date().toISOString(), source: { name: 'tristatemarketplace.com', url: MK + '/' }, items: FORTY } });
+  });
+  const t0 = Date.now();
+  await page.goto('/classifieds');
+  await expect(page.locator('.mk-sec')).toContainText('Loading listings from tristatemarketplace.com');
+  timings.loadingNoteMs = Date.now() - t0;
+  expect(timings.loadingNoteMs, 'loading note must not wait on the crawl').toBeLessThan(1500);
+  await expect(page.locator('#cl .row-item:not(.row-mk)')).toHaveCount(0);
+  await expect(page.locator('.mk-note')).toContainText('Some are samples');
+  release();
+  const tM = Date.now();
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
+  timings.coldMarketCardsMs = Date.now() - t0;
+  timings.coldAfterReleaseMs = Date.now() - tM;
+  await expect(page.locator('#cl .cl-empty')).toContainText('Nothing posted yet');
+  await page.locator('#cl select').first().selectOption('Newburgh');
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(20);
+  await expect(page.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com');
+  await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-empty-native-40.png', fullPage: true });
+  console.log('TIMING empty-native cold-market', JSON.stringify(timings));
+});
+
+test('cached marketplace 40 listings paint at once; a no-store fetch is used; offline skips the request', async ({ page }) => {
+  const asked = [];
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, route => {
+    asked.push({ at: Date.now(), cache: route.request().headers()['cache-control'] || route.request().headers()['pragma'] || '' });
+    return route.fulfill({
+      json: { ok: true, stale: false, refreshing: false, fetchedAt: new Date().toISOString(), source: {}, items: FORTY },
+      headers: { 'cache-control': 'no-store' }
+    });
+  });
+  const t0 = Date.now();
+  await page.goto('/classifieds');
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
+  const cachedMs = Date.now() - t0;
+  expect(cachedMs, 'cached 40 listings should paint promptly').toBeLessThan(2000);
+  expect(asked.length).toBe(1);
+  await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-cached-40.png', fullPage: true });
+  await page.evaluate(() => { Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false }); window.dispatchEvent(new Event('offline')); });
+  await page.locator('#tabs [data-cat="news"]').click();
+  await page.locator('#tabs [data-cat="classifieds"]').click();
+  await page.waitForTimeout(200);
+  expect(asked.length, 'offline / already-asked does not refetch').toBe(1);
+  console.log('TIMING cached-40 first-card', cachedMs);
+});
+
+test('a failed market does not trap the loading note; native cards stay', async ({ page }) => {
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, route => route.fulfill({ status: 502, body: '' }));
+  await page.goto('/classifieds');
+  await expect(page.locator('#cl .row-item:not(.row-mk)', { hasText: 'Oak kitchen table' })).toBeVisible();
+  await expect(page.locator('.mk-sec')).toContainText('aren\u2019t available right now');
+  await expect(page.locator('.mk-sec')).not.toContainText('Loading listings from tristatemarketplace.com');
+  await expect(page.locator('.row-mk')).toHaveCount(0);
+  await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-market-error.png', fullPage: true });
+});
+
 test('320px: the TRISTATENOW wordmark and the footer link fit', async ({ page }) => {
   await open(page, 320, { ok: true, stale: false, fetchedAt: new Date().toISOString(), source: {}, items: ITEMS });
   await expect(page.locator('a.brand')).toHaveText('TRISTATENOW');

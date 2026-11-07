@@ -1474,7 +1474,8 @@
   }
   // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
   // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
-  var MK = null, mkAsked = false, mkBusy = false;
+  var MK = null, mkAsked = false, mkBusy = false, mkFollowed = false, mkFollowDue = false, mkFollowTimer = 0;
+  var MK_FOLLOW_MS = 10000;
   function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
   function paintMarket() {
     if (state.cat !== 'classifieds' || clEl.hidden) return;
@@ -1482,13 +1483,27 @@
     if (!old) { renderClassifieds(); return; }
     old.replaceWith(marketSection(boards.item));
   }
-  function loadMarket() {
-    if (mkAsked || mkBusy || !marketWanted()) return;
-    mkAsked = true; mkBusy = true;
-    fetch('/api/market').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] };
-    }).catch(function () { MK = { ok: false, items: [] }; }).then(function () { mkBusy = false; paintMarket(); });
+  function takeMarket(d) { MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] }; }
+  function askMarket(follow) {
+    if (mkBusy || !marketWanted()) return;
+    if (follow) { if (mkFollowed) return; mkFollowed = true; mkFollowDue = false; }
+    else { if (mkAsked) return; mkAsked = true; }
+    mkBusy = true;
+    fetch('/api/market', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      takeMarket(d);
+      if (!follow && MK && MK.refreshing) scheduleMarketFollow();
+    }).catch(function () { takeMarket(null); }).then(function () { mkBusy = false; paintMarket(); if (mkFollowDue) followMarket(); });
   }
+  function scheduleMarketFollow() {
+    if (mkFollowed || mkFollowTimer) return;
+    mkFollowTimer = setTimeout(function () { mkFollowTimer = 0; followMarket(); }, MK_FOLLOW_MS);
+  }
+  function followMarket() {
+    if (mkFollowed) return;
+    if (mkBusy || !marketWanted()) { mkFollowDue = true; return; }
+    askMarket(true);
+  }
+  function loadMarket() { askMarket(false); if (mkFollowDue) followMarket(); }
   function mkKey(x) { return String(x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + '|' + townOf(x).toLowerCase(); }
   function mkItems() {
     if (!MK || !MK.ok) return [];

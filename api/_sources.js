@@ -15,7 +15,8 @@
 //   geo          true: the outlet covers a wider region than ours, so only stories naming a REGION_TERMS place are kept
 //   strictGeo    ind | ky | ill: statewide publishers; items must name a Tri-State place in that state (api/_places.js)
 //   geoTerms     extra place names that are unambiguous inside this one publisher's area
-//   maxAgeDays   how long its stories stay on the page; everyMin: minimum minutes between fetches
+//   maxAgeDays   how long its stories stay on the page; everyMin: minutes between fetches (default 10, api/news.js planRun)
+//   tz           the publisher's IANA zone, for feed dates written without one (default America/Chicago)
 //   parser       sitemap | venue | ticketmaster (default: RSS, Atom or iCal)
 //   funeralHome  true for funeral homes (their card wins over a paper's for the same person)
 //   disabled     a reason string: the source stays listed here (easy to re-enable) but is never fetched or shown
@@ -39,6 +40,7 @@ const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review', 'fallb
 const KINDS = ['institution', 'courts', 'police', 'events', 'obits'];
 const STRICT = ['ind', 'ky', 'ill'];
 const HTTP = /^https?:\/\//;
+const validZone = tz => { if (typeof tz !== 'string' || !/^[A-Za-z]+\/[A-Za-z_/]+$/.test(tz)) return false; try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch (_) { return false; } };
 
 // Problems with the registry, as strings; [] when it is valid. Tests assert [], so a bad edit fails CI, not production.
 function validate(files) {
@@ -57,6 +59,8 @@ function validate(files) {
       if (s.kind !== undefined && !KINDS.includes(s.kind)) problems.push(where + ': unknown kind ' + s.kind);
       if (s.strictGeo !== undefined && !STRICT.includes(s.strictGeo)) problems.push(where + ': unknown strictGeo ' + s.strictGeo);
       if (s.geoTerms !== undefined && (!Array.isArray(s.geoTerms) || s.geoTerms.some(t => typeof t !== 'string'))) problems.push(where + ': geoTerms must be strings');
+      if (s.tz !== undefined && !validZone(s.tz)) problems.push(where + ': tz must be an IANA time zone');
+      if (s.everyMin !== undefined && !(Number.isInteger(s.everyMin) && s.everyMin >= 5 && s.everyMin <= 1440)) problems.push(where + ': everyMin must be 5-1440 minutes');
       // localSection skips the Google News geo filter, so it is only for a Google News search limited to one site path
       if (s.localSection !== undefined && (s.localSection !== true || !/^https:\/\/news\.google\.com\/rss\/search\?q=site%3A[a-z0-9.-]+%2F[a-z0-9_%-]+/i.test(s.url || ''))) problems.push(where + ': localSection needs a Google News site:host/path search');
       if (s.fallback !== undefined && (!['google_news_site', 'google_news_towns'].includes(s.fallback) || !/^https:\/\/news\.google\.com\//.test(s.url || ''))) problems.push(where + ': fallback must label a Google News url (google_news_site or google_news_towns)');

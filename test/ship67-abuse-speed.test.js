@@ -177,8 +177,9 @@ test('/api/news paging: every event and obituary, the newest NEWS_PAGE stories, 
 
 test('/api/news: stale -> served at once, refreshed in the background; missing + locked -> 503 Retry-After; short cache (ship71)', () => {
   const src = read('api/news.js');
-  assert.match(src, /if \(!snap && locked\) \{\s*res\.setHeader\('Cache-Control', 'no-store'\); res\.setHeader\('Retry-After', '15'\);/);
-  assert.match(src, /else if \(!locked\) background\(refreshAll\(\{\}\)/);
+  // ship110: the lock is refreshAll's own (shared with the scheduled refresh); a busy refresh with no snapshot is a 503
+  assert.match(src, /if \(r\.busy\) \{\s*res\.setHeader\('Cache-Control', 'no-store'\); res\.setHeader\('Retry-After', '15'\);/);
+  assert.match(src, /\} else background\(refreshAll\(\{\}\)/);
   assert.match(src, /Symbol\.for\('@vercel\/request-context'\)/);
   assert.match(src, /res\.setHeader\('Cache-Control', NEWS_CACHE\)/);
   const news = require('../api/news.js');

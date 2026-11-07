@@ -9,7 +9,7 @@ const API = path.join(__dirname, '..', 'api');
 const CLEAN = ['KV_REST_API_URL', 'KV_REST_API_TOKEN', 'KV_REST_API_READ_ONLY_TOKEN', 'KV_URL', 'REDIS_URL', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'CRON_SECRET', 'EXTRA_FEEDS', 'TICKETMASTER_API_KEY'];
 const STORE_ENV = { UPSTASH_REDIS_REST_URL: 'https://kv.test', UPSTASH_REDIS_REST_TOKEN: 'fake-token' };
 const CONTRACT = ['runId', 'sourceId', 'endpointId', 'attemptedAt', 'status', 'httpStatus', 'durationMs', 'notModified', 'itemsReceived', 'itemsAccepted', 'itemsRejected', 'rejectionReasons', 'warnings'];
-const RUN_ID_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\dZ-(fast|all)-[0-9a-f]{4}$/;
+const RUN_ID_RE = /^\d{4}-\d\d-\d\dT\d\d:\d\dZ-(due|all)-[0-9a-f]{4}$/;
 
 function load(env) {
   for (const k of Object.keys(require.cache)) if (k.startsWith(API + path.sep)) delete require.cache[k];
@@ -28,6 +28,7 @@ function store() {
     if (op === 'MGET') return { result: a.map(k => (kv.has(k) ? kv.get(k) : null)) };
     if (op === 'GET') return { result: kv.has(a[0]) ? kv.get(a[0]) : null };
     if (op === 'SET') { const [k, v, ...o] = a; if (o.includes('NX') && kv.has(k)) return { result: null }; kv.set(k, v); const ex = o.indexOf('EX'); if (ex >= 0) ttl.set(k, +o[ex + 1]); return { result: 'OK' }; }
+    if (op === 'DEL' && a.length === 1 && a[0] === 'tsn:news:lock') { const had = kv.delete(a[0]); return { result: had ? 1 : 0 }; }
     return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','ZREMRANGEBYSCORE','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'unsupported ' + op });
   };
   return { kv, ttl, log, handle: body => JSON.parse(body).map(run) };
@@ -154,8 +155,11 @@ test('refreshAll writes tsn:runs:<runId> (EX 7 days) in the same write request; 
     const rec = JSON.parse(st.kv.get(key));
     assert.deepEqual(rec, out.run);
     assert.equal(rec.tier, 'all');
-    assert.equal(rec.results.length, N.SOURCES.length);
-    assert.equal(rec.attempted, N.SOURCES.length);
+    // ship110: every source is due on a first run; Google News searches over GOOGLE_PER_RUN wait for the next run
+    assert.equal(rec.results.length, rec.fetched);
+    assert.equal(rec.attempted, rec.fetched);
+    assert.equal(rec.fetched + rec.deferred, N.SOURCES.length);
+    assert.equal(rec.deferredIds.length, rec.deferred);
     assert.ok(Date.parse(rec.finishedAt) >= Date.parse(rec.startedAt) && rec.durationMs >= 0);
     assert.equal(Object.values(rec.statusCounts).reduce((a, b) => a + b, 0), rec.results.length);
     for (const r of rec.results) {
@@ -164,16 +168,17 @@ test('refreshAll writes tsn:runs:<runId> (EX 7 days) in the same write request; 
     }
     const fbi = rec.results.filter(r => /^fbi/.test(r.sourceId));
     assert.ok(fbi.length >= 3 && fbi.every(r => r.status === 'temporary_failure' && r.httpStatus === 503 && r.detail === 'HTTP 503'), JSON.stringify(fbi));
-    assert.equal(st.log.filter(op => op === 'SET').length, N.SOURCES.length + 3); // + snapshot, run record, depth record
+    // + refresh lock (SET NX), snapshot, run record, depth record, schedule
+    assert.equal(st.log.filter(op => op === 'SET').length, rec.fetched + 5);
 
-    // fast tier through /api/refresh: runId in the answer, run record stored, statuses counted
+    // the old fast tier through /api/refresh is the due tier: runId in the answer, run record stored, statuses counted
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await mod('_refresh')({ query: { tier: 'fast' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    assert.match(res.body.runId, RUN_ID_RE); assert.ok(res.body.runId.includes('-fast-'));
+    assert.match(res.body.runId, RUN_ID_RE); assert.ok(res.body.runId.includes('-due-'));
     assert.notEqual(res.body.runId, out.runId);
     const fast = JSON.parse(st.kv.get('tsn:runs:' + res.body.runId));
-    assert.equal(fast.tier, 'fast');
+    assert.equal(fast.tier, 'due');
     assert.deepEqual(res.body.statuses, fast.statusCounts);
     assert.equal(st.ttl.get('tsn:runs:' + res.body.runId), 604800);
   } finally { io.restore(); }

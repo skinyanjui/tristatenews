@@ -14,7 +14,7 @@ const reg = require('../api/_sources.js');
 const FIXES = require('./fixtures/source-url-fixes.js'); // documented intentional URL changes since ba8b34a
 const FIX = FIXES.current;
 
-const FLAGS = ['id', 'name', 'area', 'url', 'altUrls', 'kind', 'geo', 'strictGeo', 'geoTerms', 'maxAgeDays', 'everyMin', 'parser', 'funeralHome', 'disabled'];
+const FLAGS = ['id', 'name', 'area', 'tz', 'url', 'altUrls', 'kind', 'geo', 'strictGeo', 'geoTerms', 'maxAgeDays', 'everyMin', 'parser', 'funeralHome', 'disabled'];
 
 test('SOURCES is byte-for-byte the ba8b34a list (same objects, same key order, same order)', () => {
   assert.strictEqual(JSON.stringify(news.SOURCES), JSON.stringify(FIX.active));
@@ -56,12 +56,11 @@ test('validate() reports a bad registry', () => {
   for (const m of ['duplicate seq', 'missing name', 'duplicate id', 'url must be http(s)', 'unknown kind', 'unknown strictGeo', 'altUrls']) assert.ok(p.includes(m), m);
 });
 
-test('every fast-tier id is a registry source', () => {
+test('ship110: no fixed fast tier; every documented tz / everyMin fix names a registry source', () => {
   const src = fs.readFileSync(path.join(ROOT, 'api/news.js'), 'utf8');
-  const m = src.match(/const FAST_IDS = new Set\(\[([^\]]*)\]\)/);
-  assert.ok(m, 'FAST_IDS found');
-  const ids = new Set(news.SOURCES.map(s => s.id));
-  for (const id of m[1].match(/'[^']+'/g).map(s => s.slice(1, -1))) assert.ok(ids.has(id), id);
+  assert.ok(!/const FAST_IDS\b/.test(src), 'sources are scheduled by planRun, not a fixed fast list');
+  const ids = new Set(news.SOURCES.concat(news.DISABLED_SOURCES).map(s => s.id));
+  for (const id of Object.keys(FIXES.TZ_FIXES).concat(Object.keys(FIXES.EVERY_FIXES))) assert.ok(ids.has(id), id);
 });
 
 test('news.js no longer defines sources inline', () => {

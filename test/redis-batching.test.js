@@ -25,7 +25,7 @@ const CLEAN = ['KV_REST_API_URL', 'KV_REST_API_TOKEN', 'KV_REST_API_READ_ONLY_TO
 // Minimal Upstash-style store: strings with TTLs, hashes, sorted sets. Records every command and request.
 function fakeStore() {
   const kv = new Map(), ttl = new Map(), zsets = new Map(), hashes = new Map();
-  const log = { requests: 0, commands: [] };
+  const log = { requests: 0, commands: [], sets: [] };
   const run = ([op, ...a]) => {
     log.commands.push(op);
     switch (op) {
@@ -33,6 +33,7 @@ function fakeStore() {
       case 'MGET': return a.length ? { result: a.map(k => (kv.has(k) ? kv.get(k) : null)) } : { error: "ERR wrong number of arguments for 'mget' command" };
       case 'SET': {
         const [k, v, ...o] = a, nx = o.includes('NX'), ex = o.indexOf('EX');
+        log.sets.push(k);
         if (nx && kv.has(k)) return { result: null };
         kv.set(k, v); if (ex >= 0) ttl.set(k, Number(o[ex + 1])); else ttl.delete(k);
         return { result: 'OK' };
@@ -46,11 +47,16 @@ function fakeStore() {
     }
   };
   const handle = body => { log.requests++; return JSON.parse(body).map(run); };
-  return { kv, ttl, zsets, hashes, log, handle, reset() { log.requests = 0; log.commands = []; } };
+  return { kv, ttl, zsets, hashes, log, handle, reset() { log.requests = 0; log.commands = []; log.sets = []; } };
 }
 
-const NOW_RSS = () => '<?xml version="1.0"?><rss><channel>' + ['Evansville council approves budget', 'Boil water notice issued for Henderson'].map((t, i) =>
-  '<item><title>' + t + '</title><link>https://example.com/' + i + '</link><pubDate>' + new Date(Date.now() - 6e5).toUTCString() + '</pubDate><description>' + t + '</description></item>').join('') + '</channel></rss>';
+// Frozen at load: Date.now() on every fetch used to tick across a UTC second between the first run and the due
+// rerun, so mergeOne stamped `updated` on the same two links and every RSS source record was rewritten
+// (CI: 41 SETs, expected 3). One timestamp for the file keeps alerts "now" and the news rerun identical.
+const RSS_PUB = new Date(Date.now() - 6e5).toUTCString();
+const rssXml = (pub, extra) => '<?xml version="1.0"?><rss><channel>' + ['Evansville council approves budget', 'Boil water notice issued for Henderson'].map((t, i) =>
+  '<item><title>' + t + '</title><link>https://example.com/' + i + '</link><pubDate>' + pub + '</pubDate><description>' + t + '</description></item>').join('') + (extra || '') + '</channel></rss>';
+const NOW_RSS = () => rssXml(RSS_PUB);
 
 // Feeds answer with RSS (JSON for NWS and WZDx), or fail when feedsDown is set; the store answers /pipeline.
 function install(store, opts = {}) {
@@ -64,7 +70,8 @@ function install(store, opts = {}) {
     }
     if (opts.feedsDown) return new Response('down', { status: 500 });
     if (/weather\.gov|wzdx|carsprogram/.test(url)) return new Response(JSON.stringify({ features: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
-    return new Response(NOW_RSS(), { status: 200, headers: { 'content-type': 'application/rss+xml' } });
+    const body = typeof opts.rss === 'function' ? opts.rss(url) : NOW_RSS();
+    return new Response(body, { status: 200, headers: { 'content-type': 'application/rss+xml' } });
   };
   global.setTimeout = (fn, ms, ...a) => realTimeout(fn, 0, ...a); // no real waiting (news.js pauses between same-host sources)
   return () => { global.fetch = realFetch; global.setTimeout = realTimeout; };
@@ -80,6 +87,15 @@ function load(env) {
 test.afterEach(() => CLEAN.forEach(k => delete process.env[k]));
 
 const count = (log, op) => log.commands.filter(c => c === op).length;
+function makeDue(store, news) {
+  const sched = JSON.parse(store.kv.get('tsn:news:sched'));
+  for (const id of Object.keys(sched.src || {})) sched.src[id].t = new Date(Date.now() - 36e5 * 3).toISOString();
+  store.kv.set('tsn:news:sched', JSON.stringify(sched));
+  for (const s of news.SOURCES) {
+    const st = JSON.parse(store.kv.get('tsn:src:' + s.id) || 'null');
+    if (st) { st.lastTry = new Date(Date.now() - 36e5 * 3).toISOString(); store.kv.set('tsn:src:' + s.id, JSON.stringify(st)); }
+  }
+}
 
 test('news refresh: one MGET reads every source state and the schedule; writes only what changed; 2 round trips per run', async () => {
   const store = fakeStore(), restore = install(store);
@@ -130,8 +146,42 @@ test('news refresh: one MGET reads every source state and the schedule; writes o
     const again = await news.refreshAll({ tier: 'due' });
     assert.ok(again.run.fetched >= N - 10, 'fetched ' + again.run.fetched);
     assert.equal(count(store.log, 'SET'), 3, 'lock, run record, schedule');
+    assert.deepEqual(store.log.sets.filter(k => k.startsWith('tsn:src:')), [], 'no per-source rewrite when stories did not change');
+    assert.ok(store.log.sets.includes('tsn:news:lock') && store.log.sets.includes('tsn:news:sched'));
+    assert.ok(store.log.sets.some(k => k.startsWith('tsn:runs:')));
     assert.equal(again.run.snapshotWritten, false);
     console.log('# measured news commands per run: first=' + (F + 13) + ', idle due=' + (4 + 3) + ', due with no changes=' + store.log.commands.length + ' (first idle run with leftovers wrote ' + idleSets + ' SETs)');
+  } finally { restore(); }
+});
+
+test('news refresh: a later pubDate on the same links does not rewrite source records; a new story does', async () => {
+  let rss = NOW_RSS;
+  const store = fakeStore(), restore = install(store, { rss: () => rss() });
+  try {
+    const news = load(STORE_ENV)('news');
+    await news.refreshAll({});
+    store.reset();
+    await news.refreshAll({ tier: 'due' });
+    store.reset();
+    await news.refreshAll({ tier: 'due' });
+
+    rss = () => rssXml(new Date(Date.parse(RSS_PUB) + 2000).toUTCString());
+    makeDue(store, news);
+    store.reset();
+    const tick = await news.refreshAll({ tier: 'due' });
+    assert.ok(tick.run.fetched > 0);
+    assert.equal(count(store.log, 'SET'), 3, 'lock, run record, schedule');
+    assert.deepEqual(store.log.sets.filter(k => k.startsWith('tsn:src:')), [], 'pubDate-only tick is not a source-record change');
+    assert.equal(tick.run.snapshotWritten, false);
+
+    rss = () => rssXml(RSS_PUB, '<item><title>New council vote tonight</title><link>https://example.com/new</link><pubDate>' + RSS_PUB + '</pubDate><description>New.</description></item>');
+    makeDue(store, news);
+    store.reset();
+    const changed = await news.refreshAll({ tier: 'due' });
+    const srcWrites = store.log.sets.filter(k => k.startsWith('tsn:src:'));
+    assert.ok(srcWrites.length > 0, 'a new story rewrites those source records (' + srcWrites.length + ')');
+    assert.equal(changed.run.snapshotWritten, true);
+    assert.ok(store.log.sets.includes('tsn:news:snapshot'));
   } finally { restore(); }
 });
 

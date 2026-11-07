@@ -1089,8 +1089,26 @@ function planRun(sources, states, now, mode) {
   }
   return { take, deferred, waiting };
 }
-// The parts of a source record that matter between runs (everything but the try and success times).
-const recordCore = st => { if (!st) return ''; const o = Object.assign({}, st); delete o.lastTry; delete o.lastOk; return JSON.stringify(o); };
+// The parts of a source record that matter between runs: stories, validators and failure state.
+// lastTry/lastOk live on tsn:news:sched so they are not a reason to rewrite tsn:src:<id>. firstSeen and updated
+// are merge-derived (a later pubDate on the same link is an edit stamp, not a new story) and are already stripped
+// from the public snapshot; treating them as changes used to rewrite every RSS source when a fixture (or a feed)
+// ticked the clock by a second.
+function recordCore(st) {
+  if (!st) return '';
+  const o = Object.assign({}, st);
+  delete o.lastTry;
+  delete o.lastOk;
+  if (Array.isArray(o.items)) {
+    o.items = o.items.map(it => {
+      const x = Object.assign({}, it);
+      delete x.firstSeen;
+      delete x.updated;
+      return x;
+    });
+  }
+  return JSON.stringify(o);
+}
 // What readers see changes only when this does (lastOk times and updatedAt are left out on purpose).
 function snapSig(snap) {
   const h = require('crypto').createHash('sha1');

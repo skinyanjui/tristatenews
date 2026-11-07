@@ -143,8 +143,144 @@ test('ship111: /api/market is still listings.js (8 functions); page fetches nati
   const js = read('public/assets/app.js');
   assert.ok(!/Promise\.all\(\s*\[[^\]]*(listings[^\]]*)market/.test(js));
   assert.match(js, /fetch\('\/api\/listings\?kind=' \+ kind/);
-  assert.match(js, /fetch\('\/api\/market'\)/);
+  assert.match(js, /fetch\('\/api\/market'/);
   assert.match(js, /if \(isCl\) \{ renderClassifieds\(\);/);
   assert.match(read('api/_market.js'), /waitUntil/);
   assert.match(read('api/_market.js'), /stale: true/);
+});
+
+function fortyMap() {
+  const slugs = Array.from({ length: 40 }, (_, i) => 'item-' + i);
+  const sitemap = '<?xml version="1.0"?><urlset>' + slugs.map(s => '<url><loc>' + SITE + '/listing/' + s + '</loc></url>').join('') + '</urlset>';
+  const map = { [SITE + '/sitemap.xml']: sitemap };
+  slugs.forEach((s, i) => { map[SITE + '/listing/' + s] = page({ title: 'Listing number ' + i, meta: '$' + i + ' · Evansville, IN.', cat: 'Furniture', town: 'Evansville, IN', price: '$' + i }); });
+  return map;
+}
+
+test('ship111: 40 listing pages at 250ms each: cold waits for the concurrent crawl; stale-good returns at once; waitUntil keeps the crawl', async () => {
+  M.reset();
+  const DELAY = 250, map = fortyMap(), calls = [];
+  const t0 = Date.parse('2026-11-06T12:00:00Z');
+  const tCold = Date.now();
+  const cold = await M.load({ fetch: fakeFetch(map, calls, DELAY), now: t0 });
+  const coldMs = Date.now() - tCold;
+  assert.equal(cold.ok, true); assert.equal(cold.stale, false); assert.equal(cold.items.length, 40);
+  assert.equal(calls.length, 41, 'sitemap + 40 pages');
+  assert.ok(coldMs >= DELAY * 2, 'cold waits for concurrent batches: ' + coldMs + 'ms');
+  assert.ok(coldMs < M.LIMITS.DEADLINE_MS, 'cold finishes inside the deadline: ' + coldMs + 'ms');
+
+  let bg = null;
+  const tStale = Date.now();
+  const stale = await M.load({ fetch: fakeFetch(map, [], DELAY), now: t0 + 31 * 60000, background: p => { bg = p; return p; } });
+  const staleMs = Date.now() - tStale;
+  assert.equal(stale.ok, true); assert.equal(stale.stale, true); assert.equal(stale.refreshing, true);
+  assert.equal(stale.items.length, 40);
+  assert.ok(staleMs < 80, 'stale-good of 40 listings is prompt: ' + staleMs + 'ms');
+  assert.ok(bg, 'the crawl was handed to waitUntil');
+  assert.ok(M.pending(), 'inflight is still running after the handler-equivalent return');
+  await bg;
+  assert.equal(M.pending(), null);
+  const warm = await M.load({ fetch: fakeFetch({}, []), now: t0 + 32 * 60000 });
+  assert.equal(warm.stale, false); assert.equal(warm.items.length, 40);
+  console.log('# classifieds 40-page timing delay=' + DELAY + 'ms: cold=' + coldMs + 'ms stale-good=' + staleMs + 'ms');
+});
+
+test('ship111: handler returns before a stale crawl finishes; Vercel waitUntil keeps it; stale answers are no-store', async () => {
+  M.reset();
+  const t0 = Date.parse('2026-11-06T12:00:00Z');
+  await M.load({ fetch: fakeFetch(GOOD), now: t0 });
+  let finished = false, waited = null;
+  const prev = globalThis[Symbol.for('@vercel/request-context')];
+  globalThis[Symbol.for('@vercel/request-context')] = { get: () => ({ waitUntil(p) { waited = p.then(v => { finished = true; return v; }); return waited; } }) };
+  const realFetch = global.fetch;
+  global.fetch = fakeFetch(GOOD, [], 400);
+  const res = { h: {}, setHeader(k, v) { this.h[k] = v; }, status(c) { this.code = c; return this; }, send(b) { this.body = b; return this; } };
+  try {
+    const tH = Date.now();
+    await M({ method: 'GET' }, res);
+    const handlerMs = Date.now() - tH;
+    const body = JSON.parse(res.body);
+    assert.equal(res.code, 200);
+    assert.equal(body.stale, true);
+    assert.equal(body.refreshing, true);
+    assert.equal(body.items.length, 2);
+    assert.equal(res.h['Cache-Control'], 'no-store');
+    assert.ok(handlerMs < 80, 'handler did not wait for the crawl: ' + handlerMs + 'ms');
+    assert.equal(finished, false, 'crawl still running after the handler returned');
+    assert.ok(waited);
+    await waited;
+    assert.equal(finished, true);
+    console.log('# classifieds handler-return-before-crawl: ' + handlerMs + 'ms');
+  } finally {
+    global.fetch = realFetch;
+    if (prev) globalThis[Symbol.for('@vercel/request-context')] = prev;
+    else delete globalThis[Symbol.for('@vercel/request-context')];
+  }
+});
+
+test('ship111: Redis read failure does not block a cold crawl; a held lock still serves last-good', async () => {
+  M.reset();
+  const t0 = Date.parse('2026-11-06T12:00:00Z');
+  await M.load({ fetch: fakeFetch(GOOD), now: t0 });
+
+  const kv = new Map();
+  kv.set('tsn:mk:lock', String(Date.now()));
+  const run = ([op, k]) => {
+    op = String(op).toUpperCase();
+    if (op === 'SET' && k === 'tsn:mk:lock') return { result: null };
+    if (op === 'GET' && k === 'tsn:mk:last') return { result: JSON.stringify({ at: t0, items: [{ id: 'mk-camry', title: 'cached' }] }) };
+    if (op === 'DEL') return { result: 1 };
+    return { result: null };
+  };
+  const srv = http.createServer((req, res) => { let b = ''; req.on('data', d => b += d); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(JSON.parse(b).map(run))); }); });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  process.env.UPSTASH_REDIS_REST_URL = 'http://127.0.0.1:' + srv.address().port;
+  process.env.UPSTASH_REDIS_REST_TOKEN = 't';
+  delete require.cache[require.resolve('../api/_store.js')];
+  delete require.cache[require.resolve('../api/_market.js')];
+  const M2 = require('../api/_market.js');
+  const calls = [];
+  try {
+    M2.reset();
+    const locked = await M2.load({ fetch: fakeFetch(GOOD, calls, 50), now: t0 + 31 * 60000 });
+    await M2.pending();
+    assert.equal(locked.ok, true); assert.equal(locked.stale, true); assert.equal(locked.refreshing, true);
+    assert.equal(calls.filter(u => String(u).includes('/listing/')).length, 0, 'lock holder does not scrape');
+
+    srv.close();
+    const down = http.createServer((req, res) => { res.statusCode = 500; res.end('no'); });
+    await new Promise(r => down.listen(0, '127.0.0.1', r));
+    process.env.UPSTASH_REDIS_REST_URL = 'http://127.0.0.1:' + down.address().port;
+    delete require.cache[require.resolve('../api/_store.js')];
+    delete require.cache[require.resolve('../api/_market.js')];
+    const M3 = require('../api/_market.js');
+    M3.reset();
+    const cold = await M3.load({ fetch: fakeFetch(GOOD), now: t0 });
+    assert.equal(cold.ok, true); assert.equal(cold.items.length, 2, 'crawl proceeds when Redis is down');
+    down.close();
+  } finally {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete require.cache[require.resolve('../api/_store.js')];
+    delete require.cache[require.resolve('../api/_market.js')];
+  }
+});
+
+test('ship111: a fresh answer is CDN-cacheable; stale and errors are no-store so last-good cannot trap the client', async () => {
+  M.reset();
+  const t0 = Date.parse('2026-11-06T12:00:00Z');
+  const res = { h: {}, setHeader(k, v) { this.h[k] = v; }, status(c) { this.code = c; return this; }, send(b) { this.body = b; return this; } };
+  const realFetch = global.fetch;
+  global.fetch = fakeFetch(GOOD);
+  try {
+    await M({ method: 'GET' }, res);
+    assert.match(res.h['Cache-Control'], /s-maxage=1800/);
+    M.reset();
+    global.fetch = fakeFetch({ [SITE + '/sitemap.xml']: new Error('down') });
+    const res2 = { h: {}, setHeader(k, v) { this.h[k] = v; }, status(c) { this.code = c; return this; }, send(b) { this.body = b; return this; } };
+    await M({ method: 'GET' }, res2);
+    assert.equal(res2.h['Cache-Control'], 'no-store');
+    const body = JSON.parse(res2.body);
+    assert.equal(body.ok, false); assert.equal(body.items.length, 0);
+  } finally { global.fetch = realFetch; M.reset(); }
 });

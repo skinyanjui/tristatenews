@@ -184,7 +184,9 @@ async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.setHeader('Cache-Control', 'no-store'); return res.status(405).send(JSON.stringify({ error: 'method' })); }
   const r = await load();
-  res.setHeader('Cache-Control', r.ok && !r.stale ? 'public, max-age=0, s-maxage=1800, stale-while-revalidate=86400, stale-if-error=86400' : 'public, max-age=0, s-maxage=60');
+  // Fresh last-good can live on the CDN for 30 minutes. Stale-while-refreshing and failures are no-store so a
+  // background crawl (and the client's one follow-up) is not trapped behind a cached refreshing payload.
+  res.setHeader('Cache-Control', r.ok && !r.stale ? 'public, max-age=0, s-maxage=1800, stale-while-revalidate=86400, stale-if-error=86400' : 'no-store');
   return res.status(200).send(JSON.stringify({ ok: r.ok, stale: r.stale, refreshing: !!r.refreshing, fetchedAt: r.at ? new Date(r.at).toISOString() : null, source: SOURCE, items: r.items }));
 }
 

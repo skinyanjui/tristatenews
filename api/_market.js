@@ -8,8 +8,10 @@
 // price, photo and description as printed there; nothing is invented and no seller name or contact is copied.
 // Bounded: at most MAX_LISTINGS pages, CONCURRENCY at a time, each with its own timeout, all within DEADLINE_MS.
 // Cached: the last good result is kept in memory and, with a store, in Redis (KEY) for STALE_DAYS; it is served as
-// is for FRESH_MS and, when the site fails, as stale data. With no good result at all the answer is ok:false and
-// an empty list (never sample or fixture data).
+// is for FRESH_MS. After that window a copy still younger than STALE_DAYS is returned at once (stale:true) and a
+// crawl continues after the answer (Vercel waitUntil, same hook as api/news.js) so the reader is not held for the
+// sitemap and listing pages. A crawl that fails keeps that copy as stale and is not retried for FRESH_MS. With no
+// good result at all the answer waits for the bounded crawl, then ok:false and an empty list (never sample data).
 'use strict';
 const STORE = require('./_store.js');
 
@@ -18,7 +20,7 @@ const SOURCE = { name: 'tristatemarketplace.com', url: ORIGIN + '/' };
 const HOSTS = ['www.tristatemarketplace.com', 'tristatemarketplace.com', 'tristatemarketplace.vercel.app'];
 const USER_AGENT = 'Mozilla/5.0 (compatible; TriStateNews/1.1; +https://tristatenewss.vercel.app)';
 const MAX_LISTINGS = 40, CONCURRENCY = 6, PAGE_TIMEOUT_MS = 5000, DEADLINE_MS = 9000, MAX_BYTES = 1500000;
-const FRESH_MS = 30 * 60 * 1000, STALE_DAYS = 3, KEY = 'tsn:mk:last';
+const FRESH_MS = 30 * 60 * 1000, STALE_DAYS = 3, KEY = 'tsn:mk:last', LOCK_KEY = 'tsn:mk:lock', LOCK_TTL_S = 20;
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/;
 
 // The site's category pills, mapped onto the Classifieds categories (api/listings.js CATS.item); the rest are Other.
@@ -108,7 +110,17 @@ async function crawl(fetchImpl) {
   } finally { clearTimeout(deadline); }
 }
 
-let mem = null, inflight = null;
+let mem = null, inflight = null, failAt = 0;
+
+function waitUntil(promise) {
+  try {
+    const ctx = globalThis[Symbol.for('@vercel/request-context')];
+    const c = ctx && typeof ctx.get === 'function' ? ctx.get() : null;
+    if (c && typeof c.waitUntil === 'function') return c.waitUntil(promise);
+  } catch (_) { /* fall through */ }
+  return promise;
+}
+
 async function readStored() {
   if (!STORE.stored()) return null;
   try { const g = await STORE.pipeline([['GET', KEY]]); const o = JSON.parse((g[0] && g[0].result) || 'null'); return o && Array.isArray(o.items) && o.at ? o : null; } catch (_) { return null; }
@@ -117,21 +129,54 @@ async function writeStored(o) {
   if (!STORE.stored()) return;
   try { await STORE.pipeline([['SET', KEY, JSON.stringify(o), 'EX', String(STALE_DAYS * 86400)]]); } catch (_) { /* the memory copy still serves */ }
 }
+async function takeLock() {
+  if (!STORE.stored()) return true;
+  try {
+    const out = await STORE.pipeline([['SET', LOCK_KEY, String(Date.now()), 'NX', 'EX', String(LOCK_TTL_S)]]);
+    return !!(out[0] && !out[0].error && out[0].result);
+  } catch (_) { return true; }
+}
+async function dropLock() {
+  if (!STORE.stored()) return;
+  try { await STORE.pipeline([['DEL', LOCK_KEY]]); } catch (_) { /* the TTL still frees it */ }
+}
 
-// { ok, stale, at, items } — fresh cache, else a live read, else the last good result marked stale, else ok:false.
+function startCrawl(fetchImpl, now) {
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const locked = await takeLock();
+    if (!locked) return mem;
+    try {
+      const items = await crawl(fetchImpl);
+      mem = { at: now, items };
+      failAt = 0;
+      await writeStored(mem);
+      return mem;
+    } finally { await dropLock(); }
+  })().catch(e => { failAt = now; require('./_log.js').fail('market', e); return null; })
+    .finally(() => { inflight = null; });
+  return inflight;
+}
+
+// { ok, stale, refreshing, at, items } — fresh cache; else last-good at once plus a background crawl; else wait for
+// a cold crawl; else ok:false.
 async function load(opts) {
   opts = opts || {};
   const now = opts.now || Date.now(), fetchImpl = opts.fetch || fetch;
+  const after = typeof opts.background === 'function' ? opts.background : waitUntil;
   if (!mem) mem = await readStored();
-  if (mem && now - mem.at < FRESH_MS) return { ok: true, stale: false, at: mem.at, items: mem.items };
-  if (!inflight) {
-    inflight = crawl(fetchImpl).then(async items => { mem = { at: now, items }; await writeStored(mem); return mem; })
-      .finally(() => { inflight = null; });
+  if (mem && now - mem.at < FRESH_MS) return { ok: true, stale: false, refreshing: false, at: mem.at, items: mem.items };
+  const cool = failAt && now - failAt < FRESH_MS;
+  if (mem && now - mem.at < STALE_DAYS * 864e5) {
+    if (!cool) after(startCrawl(fetchImpl, now).catch(() => {}));
+    return { ok: true, stale: true, refreshing: !cool, at: mem.at, items: mem.items };
   }
-  try { const got = await inflight; return { ok: true, stale: false, at: got.at, items: got.items }; } catch (e) {
-    require('./_log.js').fail('market', e);
-    if (mem && now - mem.at < STALE_DAYS * 864e5) return { ok: true, stale: true, at: mem.at, items: mem.items };
-    return { ok: false, stale: false, at: 0, items: [] };
+  try {
+    const got = await startCrawl(fetchImpl, now);
+    if (got && Array.isArray(got.items) && got.items.length) return { ok: true, stale: false, refreshing: false, at: got.at, items: got.items };
+    return { ok: false, stale: false, refreshing: false, at: 0, items: [] };
+  } catch (e) {
+    return { ok: false, stale: false, refreshing: false, at: 0, items: [] };
   }
 }
 
@@ -140,7 +185,7 @@ async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.setHeader('Cache-Control', 'no-store'); return res.status(405).send(JSON.stringify({ error: 'method' })); }
   const r = await load();
   res.setHeader('Cache-Control', r.ok && !r.stale ? 'public, max-age=0, s-maxage=1800, stale-while-revalidate=86400, stale-if-error=86400' : 'public, max-age=0, s-maxage=60');
-  return res.status(200).send(JSON.stringify({ ok: r.ok, stale: r.stale, fetchedAt: r.at ? new Date(r.at).toISOString() : null, source: SOURCE, items: r.items }));
+  return res.status(200).send(JSON.stringify({ ok: r.ok, stale: r.stale, refreshing: !!r.refreshing, fetchedAt: r.at ? new Date(r.at).toISOString() : null, source: SOURCE, items: r.items }));
 }
 
 module.exports = handler;
@@ -149,5 +194,7 @@ module.exports.parseListing = parseListing;
 module.exports.dedupe = dedupe;
 module.exports.category = category;
 module.exports.load = load;
-module.exports.reset = () => { mem = null; inflight = null; };
+module.exports.reset = () => { mem = null; inflight = null; failAt = 0; };
+module.exports.pending = () => inflight;
 module.exports.LIMITS = { MAX_LISTINGS, CONCURRENCY, PAGE_TIMEOUT_MS, DEADLINE_MS, FRESH_MS, STALE_DAYS };
+module.exports.LOCK = { KEY: LOCK_KEY, TTL_S: LOCK_TTL_S };

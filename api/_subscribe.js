@@ -3,7 +3,7 @@
 //        saves a PENDING signup: tsn:nl:pend:<sha256(token)> = email (expires in CONFIRM_DAYS) and the pending zset.
 //        The confirmation email (link /newsletter?confirm=<token>) goes out through Resend when RESEND_API_KEY and
 //        NEWSLETTER_FROM are set. Without them the signup is still saved as pending (the admin sees the count) and
-//        nothing crashes; the reader is told we'll confirm by email once our mail is set up. The answer is the same
+//        nothing crashes; the reader is told no link could be sent and to sign up again later. The answer is the same
 //        for a new, pending or already-confirmed address, so the form can't be used to check who subscribes.
 //   POST /api/subscribe {action:'confirm', token}  -> { ok, confirmed }   the reader pressed "Confirm" on /newsletter
 //        moves the address to the list: tsn:nl:subs (who gets the newsletter) and tsn:nl:confirmed (verified)
@@ -15,21 +15,27 @@
 // Sets: tsn:nl:subs (mailing list: confirmed + legacy signups from before double opt-in), tsn:nl:confirmed (clicked a
 // confirmation link: the count the newsletter-sponsor gate uses), tsn:nl:unsubs (left the list), tsn:nl:pending (zset
 // email -> time). Tokens are random; only their SHA-256 is stored.
+// Retention: a pending signup (its token key, and its entry in tsn:nl:pending) is gone after CONFIRM_DAYS whether or not
+// anyone opens the admin list: every signup prunes old entries and re-arms the zset's own TTL, and the scheduled
+// refresh (api/_refresh.js) prunes too. tsn:nl:sub:<email> (when the reader confirmed) is deleted when they leave;
+// sweep() clears the ones left behind by unsubscribes from before that, a bounded batch per scheduled refresh.
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
+const { clientIp, rlId } = require('./_ip.js');
 const { ORIGIN } = require('../public/routes.js'); // the canonical origin, when SITE_URL is unset
 const { same } = require('./_safe.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const RESEND = process.env.RESEND_API_KEY || '', AUDIENCE = process.env.RESEND_AUDIENCE_ID || '';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const DAILY_PER_IP = 5, CONFIRM_DAYS = 7, TEST_PER_DAY = 10;
-const K = { subs: 'tsn:nl:subs', confirmed: 'tsn:nl:confirmed', unsubs: 'tsn:nl:unsubs', pending: 'tsn:nl:pending', pend: h => 'tsn:nl:pend:' + h, rec: e => 'tsn:nl:sub:' + e, rl: ip => 'tsn:nl:rl:' + ip, cool: h => 'tsn:nl:cool:' + h };
+const DAILY_PER_IP = 5, CONFIRM_DAYS = 7, TEST_PER_DAY = 10, SWEEP_BATCH = 200;
+const K = { subs: 'tsn:nl:subs', confirmed: 'tsn:nl:confirmed', unsubs: 'tsn:nl:unsubs', pending: 'tsn:nl:pending', pend: h => 'tsn:nl:pend:' + h, rec: e => 'tsn:nl:sub:' + e, rl: ip => 'tsn:nl:rl:' + rlId(ip, 'subscribe'), cool: h => 'tsn:nl:cool:' + h, sweep: 'tsn:nl:sweep' };
 // One confirmation email per address per day, whoever asks (signup bombing from many IPs can't flood an inbox).
 const EMAIL_COOLDOWN = 86400;
 const MESSAGES = {
   sent: 'Almost done: check your inbox and tap the link to confirm. It expires in ' + CONFIRM_DAYS + ' days.',
-  failed: 'Thanks! We’ve saved your sign-up, but couldn’t send the confirmation email just now. We’ll send it soon; nothing goes out until you confirm.',
-  saved: 'Thanks! We’ve saved your sign-up. Our confirmation emails aren’t switched on yet, so we’ll email you a link to confirm before you get any newsletter.',
+  // Only a one-way hash of the confirmation code is kept, so a link that wasn't sent now can't be sent later.
+  failed: 'Thanks! We couldn’t send the confirmation email just now. Please try again tomorrow; nothing goes out until you confirm, and an unconfirmed sign-up is deleted after ' + CONFIRM_DAYS + ' days.',
+  saved: 'Thanks! Our confirmation emails aren’t switched on yet, so we couldn’t send you a link. Nothing goes out until you confirm; please sign up again later. An unconfirmed sign-up is deleted after ' + CONFIRM_DAYS + ' days.',
 };
 const hash = t => crypto.createHash('sha256').update(String(t)).digest('hex');
 const site = () => String(process.env.SITE_URL || ORIGIN).replace(/\/$/, '');
@@ -67,6 +73,25 @@ async function resend(body) {
 
 const pipeline = STORE.pipeline;
 // Verified (confirmed) subscribers: what the newsletter-sponsor gate counts (api/_catalog.js newsletterEligibility).
+// Pending signups older than CONFIRM_DAYS out of the zset (their token keys expire on their own).
+const pruneCmds = now => [['ZREMRANGEBYSCORE', K.pending, '0', String(now - CONFIRM_DAYS * 864e5)]];
+// One batch of the do-not-email list: delete the per-address records of readers who left before unsubscribe deleted
+// them. The SSCAN cursor lives in tsn:nl:sweep; after a full pass it reads 'done' and each call is one GET.
+// Returns { requests, commands } for the caller's store accounting.
+async function sweep() {
+  const g = await pipeline([['GET', K.sweep]]);
+  const cur = g[0] && g[0].result;
+  if (cur === 'done') return { requests: 1, commands: 1 };
+  const s = await pipeline([['SSCAN', K.unsubs, String(cur || '0'), 'COUNT', String(SWEEP_BATCH)]]);
+  const r = s[0] && s[0].result, ok = Array.isArray(r) && Array.isArray(r[1]);
+  const next = ok ? String(r[0]) : '0', left = ok ? r[1].map(String) : [];
+  // Someone who left and then confirmed again is off the do-not-email list; their record stays.
+  const still = left.length ? ((await pipeline([['SMISMEMBER', K.unsubs, ...left]]))[0].result || []) : [];
+  const gone = left.filter((_, i) => Number(still[i]) === 1);
+  await pipeline([...gone.map(e => ['DEL', K.rec(e)]), ['SET', K.sweep, next === '0' ? 'done' : next]]);
+  return { requests: left.length ? 4 : 3, commands: 3 + (left.length ? 1 : 0) + gone.length };
+}
+
 async function verifiedCount() {
   if (!STORE.stored()) return 0;
   const g = await pipeline([['SCARD', K.confirmed]]);
@@ -85,7 +110,7 @@ async function handler(req, res) {
       if (!isAdmin()) return send(404, { error: 'not found' });
       const q = req.query || {};
       if (q.preview) return send(200, await require('./newsletter.js').preview(now));
-      const out = await pipeline([['ZREMRANGEBYSCORE', K.pending, '0', String(now - CONFIRM_DAYS * 864e5)], ['SMEMBERS', K.confirmed], ['SCARD', K.subs], ['SCARD', K.unsubs], ['ZCARD', K.pending]]);
+      const out = await pipeline([...pruneCmds(now), ['SMEMBERS', K.confirmed], ['SCARD', K.subs], ['SCARD', K.unsubs], ['ZCARD', K.pending]]);
       const emails = ((out[1] && out[1].result) || []).slice().sort();
       const list = Number(out[2] && out[2].result) || 0;
       const C = require('./_catalog.js');
@@ -121,7 +146,7 @@ async function handler(req, res) {
     if (b.website) return send(200, { ok: true, pending: true, emailSent: p.confirmReady, message: p.confirmReady ? MESSAGES.sent : MESSAGES.saved }); // honeypot
     const email = norm(b.email);
     if (!validEmail(email)) return send(400, { error: 'Enter a valid email address.' });
-    const ip = require('./_ip.js').clientIp(req) || 'x';
+    const ip = clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX'], ['SISMEMBER', K.confirmed, email]]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'Too many attempts today. Try again tomorrow.' });
     const already = Number(rl[2] && rl[2].result) === 1;
@@ -130,7 +155,7 @@ async function handler(req, res) {
     let emailSent = false;
     if (!already) { // a confirmed reader gets no new email; the answer below is the same
       const token = crypto.randomBytes(32).toString('hex');
-      await pipeline([['SET', K.pend(hash(token)), email, 'EX', String(CONFIRM_DAYS * 86400)], ['ZADD', K.pending, String(now), email]]);
+      await pipeline([...pruneCmds(now), ['SET', K.pend(hash(token)), email, 'EX', String(CONFIRM_DAYS * 86400)], ['ZADD', K.pending, String(now), email], ['EXPIRE', K.pending, String(CONFIRM_DAYS * 86400)]]);
       if (p.confirmReady) { try { emailSent = await resend(confirmEmail(email, token)); } catch (_) { emailSent = false; } }
     }
     const ok = already ? p.confirmReady : emailSent;
@@ -141,4 +166,4 @@ async function handler(req, res) {
   }
 }
 module.exports = handler;
-Object.assign(module.exports, { K, EMAIL_COOLDOWN, CONFIRM_DAYS, MESSAGES, hash, provider, confirmEmail, verifiedCount });
+Object.assign(module.exports, { K, EMAIL_COOLDOWN, CONFIRM_DAYS, SWEEP_BATCH, MESSAGES, hash, provider, confirmEmail, verifiedCount, pruneCmds, sweep });

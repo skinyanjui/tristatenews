@@ -1,0 +1,4 @@
+{
+  "paxton": { "gapMs": 4000, "perRun": 3 },
+  "gnews": { "gapMs": 1500, "perRun": 5 }
+}

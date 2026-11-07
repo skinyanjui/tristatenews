@@ -1,18 +1,21 @@
 # Keeps the news snapshot fresh by calling /api/refresh on a schedule (free, works on Vercel's Hobby plan,
 # where Vercel Cron can only run once a day).
 # Setup: in the GitHub repo, Settings > Secrets and variables > Actions, add
-#   SITE_URL     e.g. https://tristatenewss.vercel.app   (no trailing slash)
+#   SITE_URL     e.g. https://www.tristatenow.com   (no trailing slash; that is the default when unset)
 #   CRON_SECRET  the same value as the CRON_SECRET environment variable in Vercel
 # Changes from the original: retries on network/5xx errors, the response is checked and summarized, failing
 # sources show up as warnings, and repeated failures open (then auto-close) one "refresh-failing" issue.
+# ship110: one schedule every 5 minutes; each run fetches only the sources that are due (api/news.js planRun: every
+# source's own everyMin, default 10 minutes, with backoff and rate limits). GitHub starts scheduled runs late (1-5
+# minutes measured) and sometimes skips one; the server schedules by each source's last try, so a late or skipped run
+# only delays, never loses, a source's turn. Sources with no success for 6 hours are listed as log warnings only.
 name: Refresh news
 on:
   schedule:
-    - cron: '*/10 * * * *'   # fast tier: TV, daily papers, law enforcement
-    - cron: '7,37 * * * *'   # every source, twice an hour
+    - cron: '4-59/5 * * * *'   # due sources (minutes 4, 9, 14...: off the hour, and off refresh-alerts' 2, 7, 12...)
   workflow_dispatch:
     inputs:
-      tier: { description: 'fast or all', default: 'all', required: false }
+      tier: { description: 'due, or all (also every source without its own everyMin)', default: 'due', required: false }
 concurrency:
   group: refresh-news
   cancel-in-progress: false
@@ -27,19 +30,19 @@ jobs:
       - name: Call /api/refresh
         id: call
         env:
-          SITE_URL: ${{ secrets.SITE_URL || 'https://tristatenewss.vercel.app' }}
+          SITE_URL: ${{ secrets.SITE_URL || 'https://www.tristatenow.com' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          SCHEDULE: ${{ github.event.schedule }}
           INPUT_TIER: ${{ github.event.inputs.tier }}
         run: |
           set -euo pipefail
           if [ -z "$CRON_SECRET" ]; then echo "::error::Add the CRON_SECRET repository secret (same value as the CRON_SECRET variable in Vercel). Nothing is being refreshed until then."; exit 1; fi
-          TIER=all; [ "$SCHEDULE" = "*/10 * * * *" ] && TIER=fast; [ -n "${INPUT_TIER:-}" ] && TIER="$INPUT_TIER"
+          TIER=due; [ -n "${INPUT_TIER:-}" ] && TIER="$INPUT_TIER"
           code=$(curl -sS --max-time 60 --retry 2 --retry-all-errors --retry-delay 15 -o body.json -w '%{http_code}' \
             -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/refresh?tier=$TIER" || echo 000)
           echo "HTTP $code"; cat body.json || true; echo
-          { echo "### Refresh news ($TIER): HTTP $code"; echo; jq -r '"stories: \(.stories // "-"), sources with stories: \(.sourcesWithStories // "-"), 304s: \(.notModified // "-"), ms: \(.ms // "-")"' body.json 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### Refresh news ($TIER): HTTP $code"; echo; jq -r 'if .skipped then "skipped: \(.skipped) (another refresh was running)" else "stories: \(.stories // "-"), sources with stories: \(.sourcesWithStories // "-"), due: \(.due // "-"), fetched: \(.fetched // "-"), deferred: \(.deferred // "-"), 304s: \(.notModified // "-"), snapshot written: \(.snapshotWritten // "-"), new stories: \(.discovery.newStories // "-") (median \(.discovery.medianMin // "-") min, p90 \(.discovery.p90Min // "-") min after publication), ms: \(.ms // "-")" end' body.json 2>/dev/null || true; } >> "$GITHUB_STEP_SUMMARY"
           jq -r '.failing[]? | "::warning title=Feed failing::\(.id): \(.result)"' body.json 2>/dev/null || true
+          jq -r '.staleSources[]? | "::warning title=Source stale::\(.id): last success \(if .lastOkAgeMin == null then "never (or over 14 days)" else "\(.lastOkAgeMin) min ago" end), status \(.status // "-"), \(.fails) failures in a row, cooling down \(.blockedForMin) more min, polled every \(.everyMin) min"' body.json 2>/dev/null || true
           if [ "$code" != "200" ]; then echo "::error::/api/refresh answered HTTP $code"; exit 1; fi
       - name: Open or update the failure issue
         if: failure() && github.event_name == 'schedule'

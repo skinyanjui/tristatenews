@@ -232,6 +232,7 @@
         var a = isS ? UI.sampleAd('ca', ad) : UI.adLink('ca', ad);
         var tag = a.querySelector('.spon-tag'); if (tag) tag.remove(); // the label moves to the bottom row
         var im = a.querySelector('img.ad-img');
+        if (isS && !im && typeof boardPic === 'function') { im = el('img', 'ad-img'); im.src = boardPic(ad.name); im.alt = ''; a.appendChild(im); }
         if (im) { im.className = 'th'; im.width = 112; im.height = 112; a.insertBefore(im, a.firstChild); } else a.classList.add('noimg');
         var bd = el('div', 'bd'), h = el('h2', null, ad.name || ''); h.title = ad.name || '';
         bd.appendChild(h);
@@ -939,6 +940,30 @@
   function inDays(n) { var d = new Date(Date.now() + n * 864e5); return d.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
+  // Labeled Jobs/Deals placeholders (same idea as Sample ad / Test listing): drawn on the page only, never written
+  // to Redis. Apply goes to /advertise; Report and Feature are omitted. Set on: false to hide them.
+  var BOARD_SAMPLES = { on: true,
+    jobs: [
+      { id: 'sjob01', title: 'Clinic nurse', business: 'Willow Clinic', jobType: 'Full-time', pay: '$28 an hour', category: 'Healthcare', town: 'Evansville, IN', desc: 'Day shifts at a small clinic. Not a real opening.', featured: true, logo: true, atOff: 1 },
+      { id: 'sjob02', title: 'Counter help', business: 'Harbor Goods', jobType: 'Part-time', pay: '$15 an hour', category: 'Retail & food service', town: 'Owensboro, KY', desc: 'Evenings at the register. Not a real opening.', logo: true, atOff: 2 },
+      { id: 'sjob03', title: 'Dock hand', business: 'North Wharf', jobType: 'Seasonal', pay: '$18 an hour', category: 'Warehouse & driving', town: 'Henderson, KY', desc: 'Unload trucks through the holidays. Not a real opening.', atOff: 3 },
+      { id: 'sjob04', title: 'Finish carpenter', business: 'Ash Timberworks', jobType: 'Contract', pay: '$32 an hour', category: 'Trades & construction', town: 'Newburgh, IN', desc: 'Trim work on a short build. Not a real opening.', logo: true, atOff: 4 },
+      { id: 'sjob05', title: 'Classroom aide', business: 'Maple Learning', jobType: 'Full-time', pay: '$16 an hour', category: 'Education', town: 'Evansville, IN', desc: 'Help in an elementary room. Not a real opening.', logo: true, atOff: 5 },
+      { id: 'sjob06', title: 'Office clerk', business: 'Ledger Quill', jobType: 'Part-time', pay: '$17 an hour', category: 'Office & admin', town: 'Paducah, KY', desc: 'Phones and filing, three days a week. Not a real opening.', logo: true, atOff: 6 },
+      { id: 'sjob07', title: 'Garden helper', business: 'Tri-Fork Co-op', jobType: 'Full-time', pay: '$14 an hour', category: 'Other', town: 'Mount Vernon, IN', desc: 'Planting and packing produce. Not a real opening.', logo: true, atOff: 7 },
+      { id: 'sjob08', title: 'Records reviewer', business: 'Cedar Wellness', jobType: 'Contract', pay: '$24 an hour', category: 'Healthcare', town: 'Owensboro, KY', desc: 'Chart review from home. Not a real opening.', logo: true, atOff: 8 }
+    ],
+    deals: [
+      { id: 'sdeal01', title: 'Morning pastry pair', business: 'Wren Oven', category: 'Food & drink', town: 'Evansville, IN', desc: 'A second pastry with one you buy, through the weekend. Not a real offer.', code: 'WREN2', endsOff: 10, featured: true, photo: true, logo: true, atOff: 1 },
+      { id: 'sdeal02', title: 'Tote with a book', business: 'Lark Mercantile', category: 'Shopping', town: 'Owensboro, KY', desc: 'A canvas tote when you pick up a new title. Not a real offer.', code: 'LARKTOTE', endsOff: 18, photo: true, logo: true, atOff: 2 },
+      { id: 'sdeal03', title: 'Shoe resole', business: 'Pebble Repair', category: 'Services', town: 'Henderson, KY', desc: 'First pair of soles at half the usual wait. Not a real offer.', photo: true, logo: true, atOff: 3 },
+      { id: 'sdeal04', title: 'Matinee two-for-one', business: 'Night Heron Stage', category: 'Entertainment', town: 'Evansville, IN', desc: 'A second matinee seat with one you buy. Not a real offer.', code: 'HERON2', endsOff: 21, photo: true, logo: true, atOff: 4 },
+      { id: 'sdeal05', title: 'Oil change reminder', business: 'Sparrow Motors', category: 'Auto', town: 'Newburgh, IN', desc: 'A reminder wash with a scheduled service. Not a real offer.', endsOff: 12, photo: true, atOff: 5 },
+      { id: 'sdeal06', title: 'Twine bundle', business: 'Thistle Twine', category: 'Other', town: 'Paducah, KY', desc: 'Garden twine with a wreath hoop. Not a real offer.', code: 'TWINE', endsOff: 8, photo: true, logo: true, atOff: 6 },
+      { id: 'sdeal07', title: 'Loaf and jam', business: 'Cinder Mill', category: 'Food & drink', town: 'Mount Vernon, IN', desc: 'A jar of jam with a still-warm loaf. Not a real offer.', photo: true, logo: true, atOff: 7 },
+      { id: 'sdeal08', title: 'Mending kit', business: 'Riverthread', category: 'Shopping', town: 'Henderson, KY', desc: 'Needles and thread with a patch pack. Not a real offer.', code: 'MEND', logo: true, atOff: 8 }
+    ]
+  };
   var clEl = document.getElementById('cl');
   var boards = {
     item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, el: clEl },
@@ -1004,7 +1029,7 @@
   function shownItems(b, kind, ignoreQ) {
     var real = kind === 'event' ? postedEvents() : b.items.slice();
     if (kind === 'event') real = real.concat(feedEvents());
-    var all = real;
+    var all = real.concat(boardSamples(kind));
     if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
@@ -1067,6 +1092,34 @@
   function bizAvatar(name, logo) {
     if (logo) { var im = el('img', 'bav'); im.src = logo; im.alt = ''; im.width = 28; im.height = 28; im.loading = 'lazy'; return im; }
     var a = el('span', 'bav bav-i', initials(name)); a.style.setProperty('--h', String(hueOf(name || '?'))); a.setAttribute('aria-hidden', 'true'); return a;
+  }
+  // Made-up pictures for labeled board placeholders (and unsold sample ads): SVG data URLs, no network.
+  function xmlText(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function boardPic(name, hue) {
+    hue = hue != null ? hue : hueOf(name || '?');
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="628" viewBox="0 0 1200 628">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(' + hue + ',55%,78%)"/><stop offset="1" stop-color="hsl(' + ((hue + 40) % 360) + ',50%,52%)"/></linearGradient></defs>' +
+      '<rect width="1200" height="628" fill="url(#g)"/><circle cx="980" cy="120" r="220" fill="rgba(255,255,255,.18)"/><circle cx="160" cy="560" r="260" fill="rgba(255,255,255,.12)"/>' +
+      '<text x="600" y="370" text-anchor="middle" font-family="Georgia, serif" font-size="220" fill="rgba(255,255,255,.92)">' + xmlText(initials(name)) + '</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function boardLogo(name, hue) {
+    hue = hue != null ? hue : hueOf(name || '?');
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112" viewBox="0 0 112 112">' +
+      '<rect width="112" height="112" rx="56" fill="hsl(' + hue + ',45%,42%)"/>' +
+      '<text x="56" y="68" text-anchor="middle" font-family="Georgia, serif" font-size="40" fill="#fff">' + xmlText(initials(name)) + '</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function boardSamples(kind) {
+    if (!BOARD_SAMPLES.on) return [];
+    var rows = kind === 'job' ? BOARD_SAMPLES.jobs : kind === 'deal' ? BOARD_SAMPLES.deals : [];
+    return rows.map(function (x) {
+      var it = { id: x.id, title: x.title, business: x.business, desc: x.desc, town: x.town, category: x.category, featured: !!x.featured, sample: true, at: new Date(Date.now() - (x.atOff || 1) * 864e5).toISOString() };
+      if (kind === 'job') { it.jobType = x.jobType; it.pay = x.pay; }
+      if (kind === 'deal') { it.code = x.code || ''; it.ends = x.endsOff != null ? inDays(x.endsOff) : ''; if (x.photo) it.imgData = boardPic(x.business); }
+      if (x.logo) it.logo = boardLogo(x.business);
+      return it;
+    });
   }
   // Re-encode an uploaded image through a canvas: max edge in px, optional square crop, JPEG under a size cap.
   function processImage(file, maxEdge, square, cap) {
@@ -1293,7 +1346,7 @@
   // under the preview). Feed items have neither.
   function actions(it, kind, b) {
     var out = { acts: null, feature: null };
-    if (it.feed) return out;
+    if (it.feed || it.sample) return out;
     var mine = b.mine.indexOf(it.id) >= 0, lab = mine ? 'Remove' : 'Report';
     var act = el('button', 'cl-ico'); act.type = 'button'; act.title = lab; act.setAttribute('aria-label', lab + ': ' + it.title); act.appendChild(svg(mine ? ICON_TRASH : ICON_FLAG));
     act.addEventListener('click', function () {
@@ -1329,8 +1382,8 @@
   function dealCard(it, b) {
     var ac = actions(it, 'deal', b);
     var code = null; if (it.code) { code = el('span', 'deal-code'); code.appendChild(el('span', null, 'Code ')); code.appendChild(el('code', null, it.code)); }
-    return UI.row({ cls: 'row-deal', pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '']),
-      title: it.title, text: it.desc, avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [contactNode(it.contact)], right: [code], acts: ac.acts, extra: [ac.feature] });
+    return UI.row({ cls: 'row-deal' + (it.featured ? ' is-featured' : ''), pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '']),
+      title: it.title, text: it.desc, avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [it.sample ? el('span', 'mk-tag', 'Sample') : null, it.sample ? null : contactNode(it.contact)], right: [code], acts: ac.acts, extra: [ac.feature] });
   }
   var EV_HUE = { 'Music': 'music', 'Food & drink': 'food', 'Family': 'family', 'Sports': 'sports', 'Arts': 'arts', 'Community': 'community' };
   var EV_ICON = {
@@ -1399,10 +1452,11 @@
   }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
-    var ac = actions(it, 'job', b), href = applyHref(it.contact), ap = null;
-    if (href) { ap = el('a', 'ad-cta', 'Apply'); ap.href = href; ap.title = it.contact; ap.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); }
-    return UI.row({ cls: 'row-job', kicker: kick(it, [it.jobType, it.pay, it.category, it.town]), title: it.title, text: it.desc,
-      avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [href ? null : contactNode(it.contact)], when: el('span', null, postDay(it.at)), right: [ap], acts: ac.acts, extra: [ac.feature] });
+    var ac = actions(it, 'job', b), href = it.sample ? '' : applyHref(it.contact), ap = null;
+    if (it.sample) { ap = el('a', 'ad-cta', 'Apply'); ap.href = '/advertise'; ap.setAttribute('aria-label', 'Not a real opening: ' + it.title); }
+    else if (href) { ap = el('a', 'ad-cta', 'Apply'); ap.href = href; ap.title = it.contact; ap.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); }
+    return UI.row({ cls: 'row-job' + (it.featured ? ' is-featured' : ''), kicker: kick(it, [it.jobType, it.pay, it.category, it.town]), title: it.title, text: it.desc,
+      avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [it.sample ? el('span', 'mk-tag', 'Sample') : null, href ? null : contactNode(it.contact)], when: el('span', null, postDay(it.at)), right: [ap], acts: ac.acts, extra: [ac.feature] });
   }
   function card(it, kind, b) {
     return kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b); // a paid placement says "Featured · Paid" in its label (FTC)
@@ -1416,7 +1470,7 @@
       left: [it.price ? el('b', 'cl-price', priceText(it.price)) : null, contactNode(it.contact)], when: el('span', null, postDay(it.at)), acts: ac.acts, extra: [ac.feature] });
   }
   function chips(b, kind) {
-    var present = {}; b.items.concat(kind === 'event' ? feedEvents() : kind === 'item' ? mkItems() : []).forEach(function (x) { present[x.category] = 1; });
+    var present = {}; b.items.concat(kind === 'event' ? feedEvents() : kind === 'item' ? mkItems() : boardSamples(kind)).forEach(function (x) { present[x.category] = 1; });
     var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
     return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
   }
@@ -1432,7 +1486,7 @@
   }
   // The heading of every board is its town picker.
   function townPicker(b, kind, title) {
-    var real = kind === 'event' ? postedEvents().concat(feedEvents()) : kind === 'item' ? b.items.concat(mkItems()) : b.items.slice();
+    var real = kind === 'event' ? postedEvents().concat(feedEvents()) : kind === 'item' ? b.items.concat(mkItems()) : b.items.concat(boardSamples(kind));
     var pool = real, counts = {};
     pool.forEach(function (x) { var t = townOf(x); if (t) counts[t] = (counts[t] || 0) + 1; });
     if (b.town && !counts[b.town]) counts[b.town] = 0;
@@ -2258,10 +2312,10 @@
     var docs = [];
     state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
     postedEvents().concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
-    boards.job.items.forEach(function (x) { docs.push(getDoc('jobs', x)); });
+    boards.job.items.concat(boardSamples('job')).forEach(function (x) { docs.push(getDoc('jobs', x)); });
     boards.obit.items.forEach(function (x) { docs.push(getDoc('obits', x)); });
     boards.item.items.forEach(function (x) { docs.push(getDoc('classifieds', x)); });
-    boards.deal.items.forEach(function (x) { docs.push(getDoc('deals', x)); });
+    boards.deal.items.concat(boardSamples('deal')).forEach(function (x) { docs.push(getDoc('deals', x)); });
     return docs;
   }
   function scoreDoc(d, qs) {

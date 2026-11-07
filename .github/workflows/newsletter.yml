@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Build (and, when enabled, send) this week's issue
         env:
-          SITE_URL: ${{ secrets.SITE_URL || 'https://tristatenewss.vercel.app' }}
+          SITE_URL: ${{ secrets.SITE_URL || 'https://www.tristatenow.com' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SEND: ${{ (github.event_name == 'schedule' || inputs.mode == 'send') && vars.NEWSLETTER_ENABLED == 'true' && '1' || '0' }}
         run: |

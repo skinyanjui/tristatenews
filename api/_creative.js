@@ -33,6 +33,8 @@
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
+const { clientIp, rlId } = require('./_ip.js');
+const { clean: cleanImage, cleanDataUrl } = require('./_imgmeta.js');
 const SZ = require('../public/adsizes.js');
 const BANNER_SIZES = SZ.usedSizes(); // the IAB sizes a creative can carry its own banner for
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
@@ -201,7 +203,7 @@ function tokenRef(token, now) {
 
 const pipeline = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (_) { return null; } };
-const K = { rec: id => 'tsn:cr:' + id, img: id => 'tsn:cr:img:' + id, imgSize: (id, k) => 'tsn:cr:img:' + id + ':' + k, index: 'tsn:cr:index', pending: 'tsn:cr:pending', live: 'tsn:cr:live', audit: 'tsn:cr:audit', rl: ip => 'tsn:cr:rl:' + ip, ref: r => 'tsn:cr:ref:' + r };
+const K = { rec: id => 'tsn:cr:' + id, img: id => 'tsn:cr:img:' + id, imgSize: (id, k) => 'tsn:cr:img:' + id + ':' + k, index: 'tsn:cr:index', pending: 'tsn:cr:pending', live: 'tsn:cr:live', audit: 'tsn:cr:audit', rl: ip => 'tsn:cr:rl:' + rlId(ip, 'creative'), ref: r => 'tsn:cr:ref:' + r };
 
 // Who may upload: -> { ref, refType } or null.
 async function access(b, now) {
@@ -270,7 +272,8 @@ async function handler(req, res) {
         res.setHeader('Cache-Control', c.status === 'approved' ? 'public, max-age=300, s-maxage=3600' : 'no-store');
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-        return res.status(200).send(Buffer.from(m[2], 'base64'));
+        const raw = Buffer.from(m[2], 'base64'); // creatives stored before uploads were cleaned lose their metadata here
+        return res.status(200).send(cleanImage(m[1].slice(6), raw) || raw);
       }
       if (!admin) return send(404, { error: 'not found' });
       const g = await pipeline([['ZREVRANGE', K.index, '0', '99'], ['ZRANGE', K.pending, '0', '99'], ['LRANGE', K.audit, '0', '99']]);
@@ -321,16 +324,20 @@ async function handler(req, res) {
     if (!who) return send(403, { error: 'Check your reference and the email you used on your inquiry, or the upload link we sent you.' });
     const v = validate(b);
     if (v.error) return send(400, v);
-    const ip = require('./_ip.js').clientIp(req) || 'x';
+    const ip = clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX'], ['SCARD', K.ref(who.ref)]]);
     if (Number(rl[0] && rl[0].result) > DAILY_PER_IP) return send(429, { error: 'Too many uploads today. Try again tomorrow.' });
     if (Number(rl[2] && rl[2].result) >= MAX_PER_REF) return send(429, { error: 'This reference already has ' + MAX_PER_REF + ' creatives waiting or running. Ask us to retire one first.' });
+    // Stored without metadata (api/_imgmeta.js); a file whose structure doesn't hold together is refused.
+    const files = { image: cleanDataUrl(b.image), square: v.square ? cleanDataUrl(b.square) : '', sizes: {} };
+    for (const k of sizeKeys(v)) files.sizes[k] = cleanDataUrl(b.sizes[k]);
+    if (!files.image || (v.square && !files.square) || Object.values(files.sizes).some(x => !x)) return send(400, { error: 'That image is damaged. Save it again and upload the new copy.', field: 'image' });
     const id = 'cr' + crypto.randomBytes(8).toString('hex').slice(0, 10);
     const rec = Object.assign({ id, ref: who.ref, refType: who.refType, status: 'pending', at: new Date(now).toISOString(), placements: [], history: [] }, v);
     await pipeline([
-      ['SET', K.img(id), String(b.image), 'EX', String(PENDING_TTL)],
-      ...sizeKeys(v).map(k => ['SET', K.imgSize(id, k), String(b.sizes[k]), 'EX', String(PENDING_TTL)]),
-      ...(v.square ? [['SET', K.imgSize(id, 'square'), String(b.square), 'EX', String(PENDING_TTL)]] : []),
+      ['SET', K.img(id), files.image, 'EX', String(PENDING_TTL)],
+      ...sizeKeys(v).map(k => ['SET', K.imgSize(id, k), files.sizes[k], 'EX', String(PENDING_TTL)]),
+      ...(v.square ? [['SET', K.imgSize(id, 'square'), files.square, 'EX', String(PENDING_TTL)]] : []),
       ['SET', K.rec(id), JSON.stringify(rec), 'EX', String(PENDING_TTL)],
       ['ZADD', K.index, String(now), id], ['ZADD', K.pending, String(now), id],
       ['SADD', K.ref(who.ref), id], ['EXPIRE', K.ref(who.ref), String(CLOSED_TTL)]

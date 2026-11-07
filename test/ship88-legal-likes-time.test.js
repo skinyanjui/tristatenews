@@ -11,7 +11,7 @@ test('legal: entity, address, county filled; DMCA agent still a placeholder', ()
   assert.ok(h.includes("entity:    'TristateNow.com',"));
   assert.ok(h.includes("address:   'P.O. Box 15, Evansville, Indiana 47714',"));
   assert.ok(h.includes("county:    'Vanderburgh'"));
-  assert.ok(h.includes('<span class="ph" data-ph="county">[COUNTY]</span> County, Indiana'), 'reads "Vanderburgh County, Indiana"');
+  assert.ok(h.includes('<span data-ph="county">Vanderburgh</span> County, Indiana'), 'reads "Vanderburgh County, Indiana"');
   assert.ok(h.includes("dmcaName:  '',") && h.includes("dmcaEmail: '',"));
 });
 

@@ -200,6 +200,6 @@ test('wiring and pages: /newsletter rewrite, sign-up and confirm page, home box,
   const legal = read('public/legal.html').replace(/<[^>]+>/g, '');
   for (const s of ['We send nothing until you confirm', 'an unconfirmed sign-up expires after 7 days', 'one-click unsubscribe link and our postal address', 'at least 1,500 confirmed (double opt-in) subscribers', 'one-way version of it', 'do-not-email list'])
     assert.ok(legal.includes(s), s);
-  assert.ok(read('public/legal.html').includes('data-ph="address">[MAILING ADDRESS]'), 'the postal address is still a flagged placeholder');
+  assert.ok(read('public/legal.html').includes('<span data-ph="address">P.O. Box 15, Evansville, Indiana 47714</span>'), 'the postal address is in the page itself, not only filled in by script');
   assert.ok(read('docs/legal-review.md').includes('36. **CAN-SPAM postal address'));
 });

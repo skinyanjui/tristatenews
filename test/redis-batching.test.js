@@ -41,6 +41,7 @@ function fakeStore() {
       case 'HGETALL': return { result: [].concat(...[...(hashes.get(a[0]) || new Map())]) };
       case 'ZADD': { const z = zsets.get(a[0]) || new Map(); zsets.set(a[0], z); let n = 0; for (let i = 1; i < a.length; i += 2) { if (!z.has(a[i + 1])) n++; z.set(a[i + 1], Number(a[i])); } return { result: n }; }
       case 'ZREMRANGEBYSCORE': { const z = zsets.get(a[0]) || new Map(); let n = 0; const hi = Number(a[2]); for (const [m, s] of z) if (s <= hi) { z.delete(m); n++; } return { result: n }; }
+      case 'SSCAN': return { result: ['0', []] };
       default: return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'ERR unknown command ' + op });
     }
   };
@@ -254,14 +255,19 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    // ship67: + one request pruning the 5 board indexes (api/listings.js pruneCmds); ship110: at most every 30 minutes
+    // ship67/ship110: board prune when due (5 cmds); privacy: newsletter prune + empty-list sweep every run
+    const zrem = () => store.log.commands.filter(c => c === 'ZREMRANGEBYSCORE').length;
     assert.ok(N >= res.body.fetched);
-    assert.deepEqual(res.body.store, { requests: 3, commands: res.body.fetched + 13 + 5 });
+    assert.equal(store.kv.get('tsn:nl:sweep'), 'done', 'an empty list is swept in one pass');
+    assert.deepEqual(res.body.store, { requests: 7, commands: res.body.fetched + 13 + 5 + 1 + 3 });
+    assert.equal(zrem(), 6, '5 board indexes + newsletter pending');
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
     for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'due', 'fetched', 'deferred', 'snapshotWritten', 'notModified', 'failing', 'statuses', 'discovery', 'staleSources']) assert.ok(k in res.body, k);
-    // the next run inside 30 minutes does not prune again
+    // the next run inside 30 minutes does not prune boards again; newsletter retention still runs
     store.reset();
     await refresh({ query: { tier: 'due' }, headers: { authorization: 'Bearer cron-test' } }, res);
-    assert.equal(res.body.store.requests, 2);
+    assert.equal(res.body.store.requests, 4);
+    assert.equal(zrem(), 1, 'newsletter only, no board prune');
+    assert.equal(res.body.store.commands, store.log.commands.length);
   } finally { restore(); }
 });

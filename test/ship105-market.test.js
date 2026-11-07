@@ -73,13 +73,13 @@ test('ship105: a live read is bounded and cached; a failure serves the last good
   const r3 = await M.load({ fetch: fakeFetch({ [SITE + '/sitemap.xml']: new Error('down') }), now: t0 + 31 * 60000 });
   assert.equal(r3.ok, true); assert.equal(r3.stale, true); assert.equal(r3.at, t0); assert.equal(r3.items.length, 2);
   const r4 = await M.load({ fetch: fakeFetch({}), now: t0 + 4 * 864e5 });
-  assert.deepEqual(r4, { ok: false, stale: false, at: 0, items: [] }, 'older than 3 days: not shown');
+  assert.deepEqual(r4, { ok: false, stale: false, refreshing: false, at: 0, items: [] }, 'older than 3 days: not shown');
   assert.ok(M.LIMITS.MAX_LISTINGS <= 40 && M.LIMITS.CONCURRENCY <= 6 && M.LIMITS.DEADLINE_MS < 10000);
 });
 
 test('ship105: nothing cached and the site down: ok:false and no items (never fixtures)', async () => {
   M.reset();
-  assert.deepEqual(await M.load({ fetch: fakeFetch({ [SITE + '/sitemap.xml']: new Error('down') }) }), { ok: false, stale: false, at: 0, items: [] });
+  assert.deepEqual(await M.load({ fetch: fakeFetch({ [SITE + '/sitemap.xml']: new Error('down') }) }), { ok: false, stale: false, refreshing: false, at: 0, items: [] });
   M.reset();
   assert.equal((await M.load({ fetch: fakeFetch({ [SITE + '/sitemap.xml']: SITEMAP }) })).ok, false, 'sitemap but no readable page');
   M.reset();
@@ -102,7 +102,7 @@ test('ship105: /api/market is a route of api/listings.js (still eight functions)
 
 test('ship105: Classifieds shows the listings in their own section with a test-listing disclosure on it and every card', () => {
   const js = read('public/assets/app.js');
-  assert.match(js, /fetch\('\/api\/market'\)/);
+  assert.match(js, /fetch\('\/api\/market'/);
   assert.match(js, /'From tristatemarketplace\.com'/);
   assert.match(js, /'Test listings from tristatemarketplace\.com, shown while we test the site\. Some are samples, and TRISTATENOW hasn\\u2019t verified any of them\. Prices and details are as posted there\.'/);
   assert.match(js, /el\('span', 'mk-tag', 'Test listing'\)/);

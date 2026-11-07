@@ -90,6 +90,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
     <section id="cov"><div class="row"><h2 id="cvh">Sources &amp; Coverage</h2><button class="ghost" id="cvr" type="button">Reload</button></div>
       <p class="m">Read-only health and coverage from the stored feed state, plus the classifier review queue. A county override is written to the audit log and takes effect at the next refresh. No reader data is shown here.</p>
+      <h2>Last refresh</h2><div id="cvrn"></div>
       <h2>Flags and batches</h2><div id="cvf"></div>
       <h2>Sources</h2><div class="row"><select id="cvsf" aria-label="Which sources to show"><option value="problem">Needs attention</option><option value="all">All</option></select><p class="m" id="cvsn"></p></div><div class="cvw"><table class="cv" id="cvs"></table></div>
       <h2>Counties</h2><div class="row"><select id="cvcf" aria-label="Which counties to show"><option value="all">All 68</option><option value="core">Core</option><option value="extended">Extended</option><option value="gap">Gaps (no home source)</option><option value="thin">Below the gate</option></select><p class="m" id="cvcn"></p></div><div class="cvw"><table class="cv" id="cvc"></table></div>
@@ -352,8 +353,15 @@ details summary { min-height:40px; display:flex; align-items:center; }
   var cov = null;
   function cell(tr, text, cls, tag) { var c = mk(tag || 'td', cls ? { 'class': cls } : {}, text); tr.appendChild(c); return c; }
   function drawCoverage() {
-    var d = cov; ['cvf', 'cvs', 'cvc', 'cvq', 'cva'].forEach(function (id) { $(id).textContent = ''; });
+    var d = cov; ['cvrn', 'cvf', 'cvs', 'cvc', 'cvq', 'cva'].forEach(function (id) { $(id).textContent = ''; });
     if (!d) { empty($('cvf'), 'Not available.'); return; }
+    var lr = d.lastRefresh;
+    if (!lr) empty($('cvrn'), d.store ? 'No completed refresh recorded yet.' : 'No store: last refresh is unknown.');
+    else {
+      var disc = lr.discovery, stale = lr.staleSources || [];
+      line($('cvrn'), (lr.tier || '') + ' · fetched ' + lr.fetched + ' of ' + lr.due + ' due' + (lr.deferred ? ' · ' + lr.deferred + ' deferred' : ''),
+        (lr.finishedAt ? new Date(lr.finishedAt).toLocaleString() : '') + (lr.durationMs != null ? ' · ' + lr.durationMs + ' ms' : '') + (disc && disc.newStories ? ' · ' + disc.newStories + ' new (median ' + disc.medianMin + ' min, p90 ' + disc.p90Min + ' min)' : '') + (stale.length ? ' · ' + stale.length + ' stale: ' + stale.map(function (s) { return s.id; }).join(', ') : ' · none stale') + (lr.runId ? ' · ' + lr.runId : ''));
+    }
     var f = d.flags || {};
     line($('cvf'), Object.keys(f).map(function (k) { return k + ' ' + (f[k] ? 'on' : 'off'); }).join(' · '), 'Batches enabled: ' + ((d.batches.enabled || []).join(', ') || 'none') + (d.store ? '' : ' · no store: health shows not fetched') + (d.snapshotAt ? ' · snapshot ' + new Date(d.snapshotAt).toLocaleString() : ''));
     (d.batches.files || []).forEach(function (b) { line($('cvf'), b.id + ': ' + b.sources + ' sources, ' + b.active + ' live', b.paused.length ? 'Paused: ' + b.paused.join(', ') : 'None paused'); });

@@ -8,6 +8,9 @@
 //   2026-10-22 adds HGETALL tsn:loc:overrides to the read request: all 64, fast 17, still 2 round trips
 //   step 5 adds the rolling county depth record (GET in the read, SET in the write): all 66, fast 19, still 2 trips
 //     (13 of the 15 fast sources are due; Courier & Press and the Gleaner poll every 30 minutes)
+//   ship110 (due-source scheduling): + the refresh lock (SET NX / DEL) and the schedule record tsn:news:sched; a source
+//     record is written only when it changed and the snapshot only when the stories changed (or every 30 minutes):
+//     first run F + 13, a due run with nothing due or changed 7 (4 read + run record, schedule, DEL lock)
 //   alerts, snapshot still fresh:         before 17 (3 + 14 GET)             after 2 (MGET + HGETALL)
 //   alerts refresh, A active alerts:      before 17 + 1 + 3 + 12 + 2A        after 2 + 1 + 3 + 12 + A + 1
 //     (11 alerts on these fake feeds: 55 before, 30 after)
@@ -78,39 +81,57 @@ test.afterEach(() => CLEAN.forEach(k => delete process.env[k]));
 
 const count = (log, op) => log.commands.filter(c => c === op).length;
 
-test('news refresh: one MGET reads every source state; writes unchanged; 2 round trips per run', async () => {
+test('news refresh: one MGET reads every source state and the schedule; writes only what changed; 2 round trips per run', async () => {
   const store = fakeStore(), restore = install(store);
   try {
     const news = load(STORE_ENV)('news');
     const N = news.SOURCES.length;
     assert.equal(N, 60);
     const all = await news.refreshAll({});
+    const F = all.run.fetched;
+    assert.equal(all.report.length, F);
+    assert.equal(F + all.run.deferred, N, 'every source is due on an empty store; Google News searches over the per-run cap wait');
+    assert.ok(F >= N - 10, 'fetched ' + F);
     assert.equal(store.log.requests, 2, 'one read request, one write request');
     assert.equal(count(store.log, 'MGET'), 1);
     assert.equal(count(store.log, 'GET'), 1, 'no per-source GET; the one GET is the rolling county depth record');
-    assert.equal(count(store.log, 'SET'), N + 3, 'one SET per fetched source, the snapshot, the run record and the depth record');
-    // 2026-10-22: the read request also carries HGETALL tsn:loc:overrides (admin county overrides): +1 command, same trips.
     assert.equal(count(store.log, 'HGETALL'), 1);
+    // ship110: + the refresh lock (SET NX in the read, DEL in the write) and the schedule record
+    assert.equal(count(store.log, 'SET'), F + 5, 'lock, one SET per fetched source, snapshot, run record, depth record, schedule');
     // ship67: + the current story-id set for /api/react (DEL, SADD, RENAME, EXPIRE), same write request.
-    assert.equal(store.log.commands.length, N + 10);
-    assert.equal(all.report.length, N);
-    assert.deepEqual(all.store, { requests: 2, commands: N + 10 }, 'refreshAll reports what it sent');
+    assert.equal(store.log.commands.length, F + 13);
+    assert.deepEqual(all.store, { requests: 2, commands: F + 13 }, 'refreshAll reports what it sent');
     // Same keys and TTLs as before: tsn:src:<id> for 14 days, the snapshot for 2 days.
-    for (const s of news.SOURCES) assert.equal(store.ttl.get('tsn:src:' + s.id), 14 * 86400, s.id);
+    for (const r of all.report) assert.equal(store.ttl.get('tsn:src:' + r.id), 14 * 86400, r.id);
     assert.equal(store.ttl.get('tsn:news:snapshot'), 2 * 86400);
     assert.equal(store.kv.get('tsn:news:snapshot'), JSON.stringify(all.snapshot));
-    for (const s of news.SOURCES) assert.ok(store.kv.has('tsn:src:' + s.id), s.id);
-
-    // Fast tier right after: every source state is still read (everyMin needs it), only the due fast sources write.
-    store.reset();
-    const fast = await news.refreshAll({ tier: 'fast' });
-    const F = fast.report.length;
-    assert.ok(F > 0 && F <= 15, 'fast sources fetched: ' + F);
-    assert.deepEqual([store.log.requests, count(store.log, 'MGET'), count(store.log, 'GET'), count(store.log, 'SET')], [2, 1, 1, F + 3]);
-    assert.deepEqual(fast.store, { requests: 2, commands: F + 10 }); // + the story-id set (4 commands, ship67)
-    assert.equal(F + 6, 19, '13 due fast sources + MGET + HGETALL + GET depth + snapshot + run record + SET depth');
     assert.equal(store.ttl.get('tsn:geo:depth'), 14 * 86400, 'depth record expires with its window');
-    console.log('# measured news commands per run: all=' + (N + 3) + ' (PR 1.2: ' + (N + 2) + '), fast=' + store.log.commands.length + ' (PR 1.2: ' + (F + 2) + ')');
+    assert.ok(!store.kv.has('tsn:news:lock'), 'lock released');
+
+    // A due run right after: nothing is due yet, the stories did not change, so only the run record, the schedule
+    // and the lock: 4 to read + 3 to write.
+    store.reset();
+    const idle = await news.refreshAll({ tier: 'due' });
+    assert.equal(idle.run.fetched, all.run.deferred, 'only the sources left over last run');
+    const idleSets = count(store.log, 'SET');
+    store.reset();
+    const quiet = await news.refreshAll({ tier: 'due' });
+    assert.equal(quiet.run.fetched, 0);
+    assert.deepEqual(store.log.commands, ['SET', 'MGET', 'HGETALL', 'GET', 'SET', 'SET', 'DEL']);
+    assert.equal(quiet.run.snapshotWritten, false);
+
+    // Every source due again, same stories: the sources are fetched but nothing about them changed, so no source
+    // record and no snapshot is written (their try and success times go in the one schedule record).
+    const sched = JSON.parse(store.kv.get('tsn:news:sched'));
+    for (const id of Object.keys(sched.src)) sched.src[id].t = new Date(Date.now() - 36e5 * 3).toISOString();
+    store.kv.set('tsn:news:sched', JSON.stringify(sched));
+    for (const s of news.SOURCES) { const st = JSON.parse(store.kv.get('tsn:src:' + s.id) || 'null'); if (st) { st.lastTry = new Date(Date.now() - 36e5 * 3).toISOString(); store.kv.set('tsn:src:' + s.id, JSON.stringify(st)); } }
+    store.reset();
+    const again = await news.refreshAll({ tier: 'due' });
+    assert.ok(again.run.fetched >= N - 10, 'fetched ' + again.run.fetched);
+    assert.equal(count(store.log, 'SET'), 3, 'lock, run record, schedule');
+    assert.equal(again.run.snapshotWritten, false);
+    console.log('# measured news commands per run: first=' + (F + 13) + ', idle due=' + (4 + 3) + ', due with no changes=' + store.log.commands.length + ' (first idle run with leftovers wrote ' + idleSets + ' SETs)');
   } finally { restore(); }
 });
 
@@ -124,10 +145,12 @@ test('news refresh: the MGET result feeds the next run exactly like the per-key 
   try {
     const news = load(STORE_ENV)('news');
     for (const s of news.SOURCES) { const st = JSON.parse(store.kv.get('tsn:src:' + s.id)); st.lastTry = new Date(Date.now() - 864e5).toISOString(); store.kv.set('tsn:src:' + s.id, JSON.stringify(st)); }
+    store.kv.delete('tsn:news:sched'); // (ship110: try times also live there)
     const before = Object.fromEntries(news.SOURCES.map(s => [s.id, JSON.parse(store.kv.get('tsn:src:' + s.id))]));
     const second = await news.refreshAll({});
     let failed = 0;
     for (const s of news.SOURCES) {
+      if (!store.kv.has('tsn:src:' + s.id)) continue; // deferred on the first run (Google News per-run cap)
       const st = JSON.parse(store.kv.get('tsn:src:' + s.id));
       assert.deepEqual(st.items, before[s.id].items, s.id + ' kept its stories');
       assert.ok(st.fails >= (before[s.id].fails || 0), s.id);
@@ -232,11 +255,19 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
-    // ship67: + one request pruning the 5 board indexes (api/listings.js pruneCmds)
-    // privacy: + one pruning unconfirmed newsletter signups, + three for a sweep batch of an empty do-not-email list
-    assert.deepEqual(res.body.store, { requests: 7, commands: N + 19 });
+    // ship67/ship110: board prune when due (5 cmds); privacy: newsletter prune + empty-list sweep every run
+    const zrem = () => store.log.commands.filter(c => c === 'ZREMRANGEBYSCORE').length;
+    assert.ok(N >= res.body.fetched);
     assert.equal(store.kv.get('tsn:nl:sweep'), 'done', 'an empty list is swept in one pass');
+    assert.deepEqual(res.body.store, { requests: 7, commands: res.body.fetched + 13 + 5 + 1 + 3 });
+    assert.equal(zrem(), 6, '5 board indexes + newsletter pending');
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
-    for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'notModified', 'failing', 'statuses']) assert.ok(k in res.body, k);
+    for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'due', 'fetched', 'deferred', 'snapshotWritten', 'notModified', 'failing', 'statuses', 'discovery', 'staleSources']) assert.ok(k in res.body, k);
+    // the next run inside 30 minutes does not prune boards again; newsletter retention still runs
+    store.reset();
+    await refresh({ query: { tier: 'due' }, headers: { authorization: 'Bearer cron-test' } }, res);
+    assert.equal(res.body.store.requests, 4);
+    assert.equal(zrem(), 1, 'newsletter only, no board prune');
+    assert.equal(res.body.store.commands, store.log.commands.length);
   } finally { restore(); }
 });

@@ -1,8 +1,8 @@
 // Tri-State (Evansville, IN-KY MSA) news aggregator.
-// A scheduled job (/api/refresh, handler in api/_refresh.js, served by this function) fetches every configured feed, normalizes, dedupes, and stores
-// the result in Redis; this endpoint just serves that stored snapshot, so pages load instantly and a
-// source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
-// is more than 3 hours old, the first visitor triggers a refresh instead.
+// A scheduled job (/api/refresh, handler in api/_refresh.js, served by this function) fetches the feeds that are due,
+// normalizes, dedupes, and stores the result in Redis; this endpoint just serves that stored snapshot, so pages load
+// instantly and a source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
+// is more than 3 hours old, the first visitor triggers the same due-source refresh (shared lock with the scheduler).
 
 // Coverage area: Evansville MSA plus Owensboro, Madisonville, Carbondale, Marion, Vincennes
 // and the towns in between (southwest Indiana, western Kentucky, southern Illinois).
@@ -13,7 +13,7 @@
 // returns zero items is reported in `sources` with ok:false and the page hides it.
 // The sources (ids, URLs, kinds, flags) live in the registry: data/sources/*.json, loaded by api/_sources.js, which
 // also drops disabled entries and applies EXTRA_FEEDS (plan PR 3.1).
-const { SOURCES, DISABLED_SOURCES } = require('./_sources.js');
+const { SOURCES, DISABLED_SOURCES, RATE_GROUPS } = require('./_sources.js');
 
 const { inTriState, PLACES: PLACE_LISTS } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
@@ -314,17 +314,22 @@ function parseFeed(xml, source) {
   for (const b of blocks.slice(0, PER_SOURCE_LIMIT)) {
     let title = stripHtml(tag(b, 'title'));
     const viaGoogle = /^https:\/\/news\.google\.com\//.test(source.fetchedUrl || '');
-    // Google News appends " - Publisher" to every title and its description is only a link back.
-    if (viaGoogle) { const cut = title.lastIndexOf(' - '); if (cut > 15 && title.length - cut < 64) title = title.slice(0, cut).trim(); }
+    // Google News appends " - Publisher" to every title and its description is only a link back. The publisher is
+    // the item's <source> name, or this source's name: that suffix comes off however short the rest is ("BILLBOARD -
+    // Dubois County Herald" is the paper's Billboard page, which STANDING_RE then drops; audit 2026-11-07). Any other
+    // " - X" tail comes off only after a real headline, as before.
+    if (viaGoogle) title = googleTitle(title, [stripHtml(tag(b, 'source')), source.name]);
     let link = tag(b, 'link').trim();
     if (!link) link = attr(b, 'link', 'href', /rel\s*=\s*["']alternate["']/i) || attr(b, 'link', 'href');
     if (!link) { const g = tag(b, 'guid').trim(); if (/^https?:\/\//i.test(g)) link = g; }
     link = safeUrl(link, false);
     if (!title || !link) continue;
 
-    const dateStr = tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated') || tag(b, 'dc:date');
-    const t = Date.parse(dateStr);
-    const published = Number.isFinite(t) ? new Date(t).toISOString() : null;
+    // The original publication date: pubDate / published / dc:date. An Atom entry's <updated> is only used when it is
+    // the one date there is; mergeState() then keeps the first date seen, so a later edit never moves the story.
+    let date = parseDate(tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'dc:date'), tzOf(source)) || parseDate(tag(b, 'updated'), tzOf(source));
+    if (date && viaGoogle && date.precision === 'time') { const g = googleDayOnly(date.ts); if (g) date = { ts: chicagoToUtc(g.y, g.mo, g.d, 0, 0).getTime(), precision: 'day' }; }
+    const published = date ? new Date(date.ts).toISOString() : null;
 
     const rawDesc = tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || tag(b, 'content');
     let summary = stripHtml(rawDesc);
@@ -346,9 +351,20 @@ function parseFeed(xml, source) {
     }
     image = safeUrl(image, true);
 
-    items.push({ title, link, summary, ...(more && source.kind !== 'events' && source.kind !== 'obits' ? { more } : {}), image, published, source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events', isObit: source.kind === 'obits' });
+    items.push({ title, link, summary, ...(more && source.kind !== 'events' && source.kind !== 'obits' ? { more } : {}), image, published, ...(date && date.precision === 'day' ? { datePrecision: 'day' } : {}), source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: source.kind === 'events', isObit: source.kind === 'obits' });
   }
   return items;
+}
+
+// A Google News title without its " - Publisher" tail (see parseFeed).
+function googleTitle(title, publishers) {
+  const cut = title.lastIndexOf(' - ');
+  if (cut < 0) return title;
+  const tail = title.slice(cut + 3).trim().toLowerCase();
+  const fold = s => String(s || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const head = title.slice(0, cut).trim();
+  if (head && publishers.some(p => p && fold(p) === fold(tail))) return head;
+  return cut > 15 && title.length - cut < 64 ? head : title;
 }
 
 // iCal (.ics) calendars: `published` carries the event's start time.
@@ -367,6 +383,51 @@ function zonedToUtc(tz, y, mo, d, h, mi) {
   return new Date(exact.length ? Math.min.apply(null, exact) : Math.max(a, b, c));
 }
 function chicagoToUtc(y, mo, d, h, mi) { return zonedToUtc(TZ, y, mo, d, h, mi); }
+
+// ---------- Publication dates (ship110) ----------
+// A feed date with an explicit zone (Z, +hh:mm, -0600, GMT, CST, EDT...) is read as written. One without a zone is a
+// wall-clock time in the publisher's zone: the registry's `tz` (IANA, e.g. America/Indiana/Vincennes for the Eastern
+// Indiana papers), else Chicago, the zone of most Tri-State publishers. Never the server's own zone (UTC on Vercel).
+// A date with no time of day ("2026-11-07", "7 Nov 2026") is day precision: that calendar day, stored as its start in
+// Chicago (the zone every page shows dates in, so the day never shifts), and the item says datePrecision 'day', so
+// nothing claims a posting time the publisher never gave.
+// Returns { ts, precision: 'time' | 'day' } or null. There is no fallback to the fetch time: unknown stays unknown.
+const ZONED_RE = /(?:\dZ|[+-]\d{2}:?\d{2}|\b(?:GMT|UTC|UT|EST|EDT|CST|CDT|MST|MDT|PST|PDT)\b)\s*$/i;
+const tzOf = source => (source && source.tz) || TZ;
+function parseDate(raw, tz) {
+  const s = String(raw || '').trim().replace(/\s+/g, ' ');
+  if (!s) return null;
+  const mon = w => MONTHS[String(w || '').slice(0, 3).toLowerCase()];
+  const day = (y, mo, d) => (y > 1970 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31 ? { ts: zonedToUtc(TZ, y, mo, d, 0, 0).getTime(), precision: 'day' } : null);
+  const at = (y, mo, d, h, mi, sec) => (y > 1970 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && h < 24 && mi < 60 ? { ts: zonedToUtc(tz, y, mo, d, h, mi).getTime() + (Number(sec) || 0) * 1000, precision: 'time' } : null);
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return day(+m[1], +m[2], +m[3]);
+  m = s.match(/^(?:[A-Za-z]+,? )?(\d{1,2}) ([A-Za-z]+)\.? (\d{4})$/);
+  if (m) return day(+m[3], mon(m[2]), +m[1]);
+  m = s.match(/^(?:[A-Za-z]+,? )?([A-Za-z]+)\.? (\d{1,2}),? (\d{4})$/);
+  if (m && mon(m[1])) return day(+m[3], mon(m[1]), +m[2]);
+  if (ZONED_RE.test(s)) { const t = Date.parse(s); return Number.isFinite(t) ? { ts: t, precision: 'time' } : null; }
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/);
+  if (m) return at(+m[1], +m[2], +m[3], +m[4], +m[5], m[6]);
+  m = s.match(/^(?:[A-Za-z]+,? )?(\d{1,2}) ([A-Za-z]+)\.? (\d{4}) (\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m && mon(m[2])) return at(+m[3], mon(m[2]), +m[1], +m[4], +m[5], m[6]);
+  // Any other zone-less form Date.parse understands: its wall-clock fields, read in the publisher's zone.
+  const t = Date.parse(s);
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  return at(d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds());
+}
+// Google News gives some publishers' stories a date only, sent as midnight ("Sat, 07 Nov 2026 06:00:00 GMT" for a
+// whole day of Dubois County Herald stories, audit 2026-11-07). A Google News time at exactly 00:00:00 in Chicago or
+// New York is that day, not a posting time.
+function googleDayOnly(ts) {
+  for (const zone of [TZ, 'America/New_York']) {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(ts));
+    const g = k => p.find(x => x.type === k).value;
+    if (g('hour') === '00' && g('minute') === '00' && g('second') === '00') return { y: +g('year'), mo: +g('month'), d: +g('day') };
+  }
+  return null;
+}
 // The Chicago calendar date (YYYY-MM-DD) of an instant, and the instant that day starts.
 const chicagoDate = t => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
 const chicagoDayStart = t => { const [y, mo, d] = chicagoDate(t).split('-').map(Number); return chicagoToUtc(y, mo, d, 0, 0).getTime(); };
@@ -528,19 +589,19 @@ function parseObitPage(html, source, entry) {
   if (!name) return null;
   const pubM = html.match(/"datePublished"\s*:\s*"([^"]+)"/);
   const deathM = html.match(/"deathDate"\s*:\s*"(\d{4}-\d{2}-\d{2})/);
-  let ts = pubM ? Date.parse(pubM[1]) : NaN;
-  if (!Number.isFinite(ts)) ts = entry.lastmod;
+  const pd = pubM ? parseDate(pubM[1], tzOf(source)) : null;
+  let ts = pd ? pd.ts : entry.lastmod, dayOnly = pd ? pd.precision === 'day' : entry.lastmodDay;
   // a page republished long after the death (a memorial added later) ages by the date of death
   // (CFS pages carry no deathDate, so "passed away ... on June 28, 2026" in the description is used instead)
   const desc = metaContent(html, 'description');
   const said = desc.match(/\b(?:passed away|died|entered (?:into )?rest)\b[^.]{0,80}?\b((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d{1,2},? \d{4})/i);
-  const death = deathM ? Date.parse(deathM[1] + 'T12:00:00Z') : said ? Date.parse(said[1].replace('.', '') + ' 12:00 UTC') : NaN;
-  if (Number.isFinite(death) && ts - death > 30 * 864e5) ts = death;
+  const dd = deathM ? parseDate(deathM[1], tzOf(source)) : said ? parseDate(said[1].replace('.', ''), tzOf(source)) : null;
+  if (dd && ts - dd.ts > 30 * 864e5) { ts = dd.ts; dayOnly = true; }
   const canon = safeUrl(metaContent(html, 'og:url'), true);
   const link = canon && hostOf(canon) === hostOf(entry.loc) ? canon : entry.loc;
   return {
     title: name, link, pageUrl: entry.loc, summary: obitSummary(desc, name),
-    image: safeUrl(metaContent(html, 'og:image'), true), published: new Date(ts).toISOString(),
+    image: safeUrl(metaContent(html, 'og:image'), true), published: new Date(ts).toISOString(), ...(dayOnly ? { datePrecision: 'day' } : {}),
     source: source.name, sourceId: source.id, maxAgeDays: source.maxAgeDays, isEvent: false, isObit: true,
   };
 }
@@ -553,7 +614,7 @@ async function fetchSitemap(source, url, prev) {
   const xml = await readCapped(r, CAP.sitemap);
   const cutoff = now - (source.maxAgeDays || 21) * 864e5;
   const entries = (xml.match(/<url>[\s\S]*?<\/url>/gi) || [])
-    .map(b => ({ loc: safeUrl(tag(b, 'loc').trim(), true), lastmod: Date.parse(tag(b, 'lastmod').trim()) }))
+    .map(b => { const d = parseDate(tag(b, 'lastmod'), tzOf(source)); return { loc: safeUrl(tag(b, 'loc').trim(), true), lastmod: d ? d.ts : NaN, lastmodDay: !!d && d.precision === 'day' }; })
     .filter(e => e.loc && Number.isFinite(e.lastmod) && e.lastmod >= cutoff && hostOf(e.loc) === hostOf(url) && new URL(e.loc).pathname.length > 2)
     .sort((a, b) => b.lastmod - a.lastmod)
     .slice(0, SITEMAP_SCAN);
@@ -823,19 +884,22 @@ function combine(results, now, pool) {
       }
       const cutoff = now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
       if (ts !== null && (ts < cutoff || ts > now + 36e5)) continue;
-      if (seen.has(key) || seen.has(it.link)) continue;
+      // ship110: an exact headline repeats only within one Chicago day ("COURT NEWS" on Monday and on Tuesday are two
+      // stories); undated stories keep the plain headline key
+      const dkey = ts === null ? key : key + '|' + chicagoDate(ts);
+      if (seen.has(dkey) || seen.has(it.link)) continue;
       const words = titleWords(it.title), names = titleNames(it.title);
       const dup = near.dupOf(words, it.sourceId, names, ts);
       if (dup) {
         // ship92: one card per story: the earliest report wins (the first outlet to have it); its place in the list
-        // takes the earlier story's time
-        if (dup.ref && ts != null && dup.ts != null && ts < dup.ts) { dup.ref.arr[dup.ref.i] = it; dup.ts = ts; dup.sourceId = it.sourceId; }
-        seen.add(key); seen.add(it.link);
+        // takes the earlier story's time. ship110: a day-only date is not "earlier" than an exact time on that day
+        if (dup.ref && ts != null && dup.ts != null && earlierReport(ts, isPrecise(it), dup.ts, dup.precise)) { dup.ref.arr[dup.ref.i] = it; dup.ts = ts; dup.precise = isPrecise(it); dup.sourceId = it.sourceId; }
+        seen.add(dkey); seen.add(it.link);
         continue;
       }
-      seen.add(key); seen.add(it.link);
+      seen.add(dkey); seen.add(it.link);
       const arr = r.source && (r.source.kind === 'police' || r.source.kind === 'courts') ? safety : all;
-      near.add(words, it.sourceId, names, ts, { arr, i: arr.length });
+      near.add(words, it.sourceId, names, ts, { arr, i: arr.length }).precise = isPrecise(it);
       arr.push(it);
     }
   }
@@ -855,9 +919,15 @@ function combine(results, now, pool) {
   return feed.concat(events.slice(0, 160), obits.slice(0, MAX_OBITS)).map((it, i) => {
     const out = { id: it.sourceId + '-' + i, ...it };
     if (out.image) out.image = cardImage(out);
-    delete out.imageBytes;
+    delete out.imageBytes; delete out.firstSeen; delete out.updated;
     return out;
   });
+}
+// Is report a (time ta) earlier than report b (time tb)? A day-only date covers its whole Chicago day, so it beats an
+// exact time only from an earlier day, and an exact time beats it on the same day.
+function earlierReport(ta, aPrecise, tb, bPrecise) {
+  if (aPrecise === bPrecise) return ta < tb;
+  return aPrecise ? chicagoDate(ta) <= chicagoDate(tb) : chicagoDate(ta) < chicagoDate(tb);
 }
 
 // ---------- Picture weight (audit 2026-10-22: home 4.8 MB, Events 19 MB) ----------
@@ -960,17 +1030,85 @@ const SNAP_KEY = 'tsn:news:snapshot', LOCK_KEY = 'tsn:news:lock', srcKey = id =>
 const NEWS_CACHE = 'public, max-age=0, s-maxage=60, stale-while-revalidate=60'; // /api/news 200s and the tab pages with stories
 const SNAP_MAX_AGE = 3 * 36e5;          // older than this and /api/news refreshes on the spot
 const KEEP_ITEMS = 80;                  // stories kept per source
-// Fast tier (every 10 min): sources that post often and tolerate polling. BLOX papers (Messenger-Inquirer,
-// The Messenger, Sun-Commercial, WPSD) rate-limit by IP, so they moved to the half-hourly full run.
-// Rate groups (registry field rateGroup): papers of one publisher served from shared infrastructure, which rate-limits
-// by IP across all of them. Paxton Media's western Kentucky and southern Illinois BLOX papers (batch 1) never loaded
-// from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the audit machine too). They are fetched 4 seconds apart,
-// at most 3 per run, and each has a Google News site: fallback.
+// ---------- Due-source scheduling (ship110) ----------
+// GitHub Actions calls /api/refresh?tier=due every 5 minutes (it actually starts 1-5 minutes late and sometimes skips a
+// slot). Each run fetches only the sources that are due, most overdue first:
+//   a source is due      everyMin minutes (registry; DEFAULT_EVERY_MIN when unset) after its last try, minus a minute
+//                        of slack so a run arriving a little early does not push it to the next run;
+//   failing sources      back off: from the 3rd failure in a row the interval doubles per failure, up to
+//                        MAX_BACKOFF_MIN (or the source's own everyMin when that is longer);
+//   refused hosts        a source whose every URL is in a 429/403 cooldown (loadSource) is not due until the first
+//                        cooldown ends: no request, no failure counted, no store write;
+//   rate groups          at most perRun of a group per run, gapMs apart, the most overdue first;
+//   Google News          at most GOOGLE_PER_RUN sources whose main URL is a Google News search, on top of the 600 ms
+//                        Google queue;
+//   the 30 s limit       no fetch starts after START_BUDGET_MS, so a started fetch (10 s, plus one fallback and the
+//                        picture budget) ends in time. A source left over stays due and goes first next run.
+// tier=all (manual) also fetches the sources with no everyMin of their own whenever it runs; it still honors each
+// source's everyMin, the backoff and the cooldowns. tier=fast, the old 10-minute tier, now means due.
+const DEFAULT_EVERY_MIN = 10, DUE_SLACK_MS = 60e3, MAX_BACKOFF_MIN = 60, GOOGLE_PER_RUN = 10, START_BUDGET_MS = 14e3;
+// One refresh at a time, scheduled or on demand (/api/news stale path): SET NX with a TTL past the 30 s limit.
+const LOCK_TTL_S = 45;
+// tsn:news:sched: { sig, snapAt, chores, src: { <id>: { t: lastTry, ok: lastOk, w: last record write } } }. Keeping
+// try/success times here, in one small key, means a source record is written only when its stories, validators or
+// failure state change, and the snapshot only when the stories change or SNAP_HEARTBEAT_MS has passed.
+const SCHED_KEY = 'tsn:news:sched', SNAP_HEARTBEAT_MS = 30 * 6e4, SRC_REWRITE_MS = 7 * 864e5, SRC_TTL_S = 14 * 86400;
+// A source with no success for this long is listed in the refresh answer's staleSources (and the workflow log).
+const STALE_SOURCE_MS = 6 * 36e5;
+const tsOf = v => { const t = v ? Date.parse(v) : NaN; return Number.isFinite(t) ? t : 0; };
+function intervalMs(s, st, mode) {
+  const base = s.everyMin || DEFAULT_EVERY_MIN, fails = (st && st.fails) || 0;
+  if (fails >= 3) return Math.min(Math.max(base, MAX_BACKOFF_MIN), base * Math.pow(2, fails - 2)) * 6e4;
+  return mode === 'all' && !s.everyMin ? 0 : base * 6e4;
+}
+// When every URL of the source is cooling down, the time the first one opens again; else 0.
+function blockedUntil(s, st, now) {
+  const b = (st && st.blocked) || {}, urls = [s.url].concat(s.altUrls || []);
+  const until = urls.map(u => Number(b[hostOf(u)]) || 0);
+  return until.every(t => t > now) ? Math.min(...until) : 0;
+}
+function dueAt(s, st, now, mode) {
+  const last = tsOf(st && st.lastTry), iv = intervalMs(s, st, mode);
+  return Math.max(last && iv ? last + iv - DUE_SLACK_MS : 0, blockedUntil(s, st, now));
+}
+// Which sources this run fetches. Returns { take, deferred (due but over a per-run limit), waiting (not due) }.
+function planRun(sources, states, now, mode) {
+  const order = new Map(sources.map((s, i) => [s.id, i]));
+  const due = [], waiting = [];
+  for (const s of sources) (dueAt(s, states[s.id], now, mode) <= now ? due : waiting).push(s);
+  due.sort((a, b) => dueAt(a, states[a.id], now, mode) - dueAt(b, states[b.id], now, mode) || order.get(a.id) - order.get(b.id));
+  const take = [], deferred = [], perGroup = {};
+  let google = 0;
+  for (const s of due) {
+    const g = s.rateGroup && RATE_GROUPS[s.rateGroup];
+    const gn = isGoogleNews(s.url);
+    if ((g && (perGroup[s.rateGroup] || 0) >= g.perRun) || (gn && google >= GOOGLE_PER_RUN)) { deferred.push(s); continue; }
+    if (g) perGroup[s.rateGroup] = (perGroup[s.rateGroup] || 0) + 1;
+    if (gn) google++;
+    take.push(s);
+  }
+  return { take, deferred, waiting };
+}
+// The parts of a source record that matter between runs (everything but the try and success times).
+const recordCore = st => { if (!st) return ''; const o = Object.assign({}, st); delete o.lastTry; delete o.lastOk; return JSON.stringify(o); };
+// What readers see changes only when this does (lastOk times and updatedAt are left out on purpose).
+function snapSig(snap) {
+  const h = require('crypto').createHash('sha1');
+  h.update(JSON.stringify(snap.items));
+  h.update(JSON.stringify(snap.sources.map(s => [s.id, s.ok, s.stale, s.count])));
+  h.update(JSON.stringify(snap.overrides || null));
+  return h.digest('base64').slice(0, 16);
+}
+
+// Rate groups (registry field rateGroup, limits in data/sources/rate-groups.json): papers of one publisher served
+// from shared infrastructure, which rate-limits by IP across all of them. Paxton Media's western Kentucky and
+// southern Illinois BLOX papers (batch 1) never loaded from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the
+// audit machine too). They are fetched 4 seconds apart, at most 3 per run, and each has a Google News site: fallback.
 // Batch 3's Google News fallbacks (rateGroup gnews: publisher sections whose RSS answers 429, and town searches for
-// counties with no working feed) are one queue too, 1.5 s apart and at most 5 per run, oldest first, so a full run never
-// adds more than a handful of Google requests (on top of the 600 ms Google queue) and stays inside the 30 s limit.
-const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 }, gnews: { gapMs: 1500, perRun: 5 } };
-const FAST_IDS = new Set(['ob-owtimes', 'wfie', 'weht', 'owtimes', 'courier', 'gleaner', 'kfvs', 'wthi', 'wkdq', 'wbkr', 'fbilou', 'fbiind', 'fbispr', 'usaowdky', 'usaosdil']);
+// counties with no working feed) are one queue too, 1.5 s apart and at most 5 per run, most overdue first, so a run
+// never adds more than a handful of Google requests (on top of the 600 ms Google queue) and stays inside the 30 s limit.
+// With runs every 5 minutes and these members due every 30 (registry), each is fetched about every 30-35 minutes
+// (it was every ~2 hours: 15 gnews members, 5 per half-hourly run, behind a 120-minute everyMin).
 
 const redis = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
@@ -980,23 +1118,72 @@ async function readSnapshot() {
   try { const out = await redis([['GET', SNAP_KEY]]); return parse(out[0] && out[0].result); } catch (e) { return null; }
 }
 
+// ---------- One story, one record (ship110) ----------
+// A source's stored stories and a new fetch are matched story by story: the same link, or the same headline on the
+// same Chicago day when one copy came through Google News (the publisher's feed and its Google News fallback give one
+// story two links; switching between them used to re-date it from Google's midnight to the publisher's time, or show
+// it twice). Different links with one headline on different days ("COURT NEWS" every weekday) stay separate stories.
+// The match keeps:
+//   published  the original publication time: the earliest exact time either copy gave; a day-only date is replaced
+//              by an exact time on that day, never the other way round. A later date for the same story is an edit
+//              and goes to `updated`, so editing a story never moves it up the list.
+//   firstSeen  when this site first stored the story (kept from the first copy; stories stored before ship110 have
+//              none). It is for diagnostics only and never shown as, or substituted for, the publication time.
+//   link       the publisher's own link over a news.google.com one.
+const isPrecise = it => !!it.published && it.datePrecision !== 'day';
+const dayOf = it => (it.published ? chicagoDate(Date.parse(it.published)) : null);
+function sameItem(a, b) {
+  if (a.link === b.link) return true;
+  if (!isGoogleNews(a.link || '') && !isGoogleNews(b.link || '')) return false;
+  return normKey(a) === normKey(b) && !!dayOf(a) && dayOf(a) === dayOf(b);
+}
+function mergeOne(old, fresh) {
+  const out = Object.assign({}, fresh);
+  if (isGoogleNews(fresh.link || '') && !isGoogleNews(old.link || '')) {
+    out.link = old.link;
+    for (const k of ['summary', 'more', 'image', 'imageBytes']) if (!fresh[k] && old[k] !== undefined) out[k] = old[k];
+  }
+  const to = old.published ? Date.parse(old.published) : null, tf = fresh.published ? Date.parse(fresh.published) : null;
+  let keep = old;
+  if (tf === null) keep = old;
+  else if (to === null) keep = fresh;
+  else if (isPrecise(old) !== isPrecise(fresh)) keep = isPrecise(old) ? old : (dayOf(old) === dayOf(fresh) ? fresh : old);
+  else keep = tf < to ? fresh : old;
+  out.published = keep.published || null;
+  if (keep.datePrecision === 'day') out.datePrecision = 'day'; else delete out.datePrecision;
+  const pub = out.published ? Date.parse(out.published) : null;
+  const latest = Math.max(tf || 0, to || 0, old.updated ? Date.parse(old.updated) || 0 : 0);
+  if (pub !== null && latest > pub && isPrecise(out)) out.updated = new Date(latest).toISOString(); else delete out.updated;
+  if (old.firstSeen) out.firstSeen = old.firstSeen; else delete out.firstSeen;
+  return out;
+}
+function mergeItems(fresh, stored, now) {
+  const used = new Set(), out = [];
+  for (const f of fresh) {
+    const i = stored.findIndex((s, j) => !used.has(j) && sameItem(s, f));
+    if (i >= 0) { used.add(i); out.push(mergeOne(stored[i], f)); } else out.push(Object.assign({}, f, { firstSeen: new Date(now).toISOString() }));
+  }
+  stored.forEach((s, j) => { if (!used.has(j)) out.push(s); });
+  return out;
+}
+
 // Folds a fetch result into the source's previous record. Failures keep the earlier stories.
 function mergeState(source, prev, res, now) {
   prev = prev || { items: [] };
   const state = { items: prev.items || [], url: prev.url || '', etag: prev.etag || '', lastModified: prev.lastModified || '', lastOk: prev.lastOk || null, fails: prev.fails || 0, error: null, lastTry: new Date(now).toISOString(), blocked: res.blocked || prev.blocked || {}, blockCount: res.blockCount !== undefined ? res.blockCount : (prev.blockCount || 0) };
   if (res.notModified || res.items.length || res.error === 'no items') { // 'no items': the feed works but has nothing local right now
     if (res.items.length) {
-      const fresh = new Set(res.items.map(i => i.link));
-      state.items = res.items.concat(state.items.filter(i => !fresh.has(i.link)));
+      state.items = mergeItems(res.items, state.items, now);
       state.etag = res.etag || ''; state.lastModified = res.lastModified || ''; state.url = res.url;
     }
     state.lastOk = new Date(now).toISOString(); state.fails = 0;
   } else { state.fails += 1; state.error = res.error || 'failed'; }
   // drop stories past their window (events stay until the day after they happen)
+  const current = new Set(res.items.map(i => i.link));
   state.items = state.items.filter(it => {
     const ts = it.published ? Date.parse(it.published) : null;
     if (it.isEvent) return ts !== null && ts >= now - 864e5;
-    if (ts === null) return res.items.includes(it);
+    if (ts === null) return current.has(it.link) || !!res.notModified; // undated: only while the feed still lists it
     return ts >= now - (it.maxAgeDays || MAX_AGE_DAYS) * 864e5;
   }).slice(0, KEEP_ITEMS);
   return state;
@@ -1071,47 +1258,52 @@ function buildSnapshot(states, now, pool) {
   return { updatedAt: new Date(now).toISOString(), sources, items };
 }
 
-// Fetches sources (all of them, or just the fast tier), updates their records, and rebuilds the snapshot.
-// Without Redis nothing is saved: the result is just computed fresh, as before.
+// Fetches the sources that are due (planRun above), updates their records and rebuilds the snapshot. Without Redis
+// nothing is saved and every source is due: the result is just computed fresh, as before. When another refresh
+// holds the lock, nothing is fetched and the answer is { busy: true }.
+// opts.chores: { name: everyMs } housekeeping the caller runs at most that often; the due ones come back in choresDue.
 async function refreshAll(opts) {
   opts = opts || {};
-  const now = Date.now();
-  let targets = opts.tier === 'fast' ? SOURCES.filter(s => FAST_IDS.has(s.id)) : SOURCES;
+  const now = Date.now(), nowIso = new Date(now).toISOString();
+  const tier = opts.tier === 'due' || opts.tier === 'fast' ? 'due' : 'all';
   let persist = stored();
-  let overridesAll = null, prevStates = {}, overridesRaw = [], depthPrev = null, depthRead = false;
+  let overridesAll = null, prevStates = {}, overridesRaw = [], depthPrev = null, depthRead = false, sched = null;
   const store = { requests: 0, commands: 0 }; // billed Upstash commands this run, reported by /api/refresh
   if (persist) {
     // If the store is unreachable (bad or rotated token, outage) keep going without it rather than failing the page.
     try {
-      // One MGET (one billed command) instead of one GET per source. Same values: a missing key is null either way.
-      // The same request also reads the admin's manual county overrides (HGETALL) and the rolling county depth record
-      // (GET tsn:geo:depth, api/_depthrec.js): two more commands, no extra trip.
-      store.requests++; store.commands += 3;
-      const keys = SOURCES.map(s => srcKey(s.id));
-      const out = await redis([['MGET'].concat(keys), ['HGETALL', OVERRIDES_KEY], ['GET', DEPTH().KEY]]);
-      const vals = out && out[0] && out[0].result;
-      if (!Array.isArray(vals) || vals.length !== keys.length) throw new Error('store MGET ' + ((out && out[0] && out[0].error) || 'bad reply'));
-      overridesRaw = (out[1] && out[1].result) || [];
-      if (out[2] && !out[2].error) { depthPrev = out[2].result || null; depthRead = true; }
+      // One request: take the refresh lock, MGET every source record plus the schedule (one billed command), the
+      // admin's manual county overrides (HGETALL) and the rolling county depth record (GET tsn:geo:depth).
+      store.requests++; store.commands += 4;
+      const keys = SOURCES.map(s => srcKey(s.id)).concat(SCHED_KEY);
+      const out = await redis([['SET', LOCK_KEY, nowIso, 'NX', 'EX', String(LOCK_TTL_S)], ['MGET'].concat(keys), ['HGETALL', OVERRIDES_KEY], ['GET', DEPTH().KEY]]);
+      if (out && out[0] && !out[0].error && out[0].result === null) return { busy: true, snapshot: null, report: [], store, runId: null, run: null, locations: null, choresDue: [] };
+      const vals = out && out[1] && out[1].result;
+      if (!Array.isArray(vals) || vals.length !== keys.length) throw new Error('store MGET ' + ((out && out[1] && out[1].error) || 'bad reply'));
+      overridesRaw = (out[2] && out[2].result) || [];
+      if (out[3] && !out[3].error) { depthPrev = out[3].result || null; depthRead = true; }
       SOURCES.forEach((s, i) => { prevStates[s.id] = parse(vals[i]); });
+      sched = parse(vals[keys.length - 1]);
     } catch (e) { persist = false; }
   }
-  // Respect each source's minimum polling interval (everyMin): skip it if it was tried recently.
-  targets = targets.filter(s => { const p = prevStates[s.id]; return !s.everyMin || !p || !p.lastTry || now - Date.parse(p.lastTry) >= s.everyMin * 6e4 - 30e3; });
-  // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the
-  // news and obituary feeds of one paper share a host. Sources with the same rateGroup (several papers of one
-  // publisher on shared servers) are one queue as well, with that group's gap and at most perRun of them per run
-  // (the ones tried longest ago first; the rest wait for the next run and keep their stories).
-  const groups = {};
-  const byLastTry = (a, b) => (Date.parse((prevStates[a.id] || {}).lastTry) || 0) - (Date.parse((prevStates[b.id] || {}).lastTry) || 0);
-  targets.forEach(s => { const k = s.rateGroup && RATE_GROUPS[s.rateGroup] ? 'group:' + s.rateGroup : 'host:' + hostOf(s.url); (groups[k] = groups[k] || []).push(s); });
-  for (const k of Object.keys(groups)) {
-    const g = k.startsWith('group:') && RATE_GROUPS[k.slice(6)];
-    if (g) groups[k] = groups[k].sort(byLastTry).slice(0, g.perRun);
+  sched = sched && typeof sched === 'object' ? sched : {};
+  const schedSrc = {};
+  for (const s of SOURCES) {
+    const m = sched.src && sched.src[s.id], p = prevStates[s.id];
+    if (!m) continue;
+    schedSrc[s.id] = m;
+    if (p) { const q = Object.assign({}, p); if (tsOf(m.t) > tsOf(q.lastTry)) q.lastTry = m.t; if (tsOf(m.ok) > tsOf(q.lastOk)) q.lastOk = m.ok; prevStates[s.id] = q; }
   }
-  targets = [].concat(...Object.values(groups));
+  // Without a store there is no next run to hand deferred sources to, so only the rate groups are limited.
+  const plan = planRun(SOURCES, prevStates, now, tier);
+  if (!persist) { plan.take = plan.take.concat(plan.deferred.filter(s => !(s.rateGroup && RATE_GROUPS[s.rateGroup]))); plan.deferred = plan.deferred.filter(s => s.rateGroup && RATE_GROUPS[s.rateGroup]); }
+  // Sources on the same host run one after another with a pause: those hosts rate-limit by IP, and the news and
+  // obituary feeds of one paper share a host. Sources with the same rateGroup are one queue as well, with that group's
+  // gap. Within a queue the most overdue go first.
+  const groups = {};
+  plan.take.forEach(s => { const k = s.rateGroup && RATE_GROUPS[s.rateGroup] ? 'group:' + s.rateGroup : 'host:' + hostOf(s.url); (groups[k] = groups[k] || []).push(s); });
+  const deferred = plan.deferred.slice();
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  const tier = opts.tier === 'fast' ? 'fast' : 'all';
   const runId = newRunId(now, tier);
   const fetched = (await Promise.all(Object.entries(groups).map(async ([k, group]) => {
     const g = k.startsWith('group:') ? RATE_GROUPS[k.slice(6)] : null;
@@ -1119,6 +1311,7 @@ async function refreshAll(opts) {
     let refused = false;
     for (let i = 0; i < group.length; i++) {
       if (i) await sleep(g ? g.gapMs : 900);
+      if (Date.now() - now > START_BUDGET_MS) { deferred.push(...group.slice(i)); break; }
       const t = Date.now();
       // once one paper of a rate group says 429/403, its sisters go straight to their Google News fallback this run
       const r = await loadSource(group[i], prevStates[group[i].id], now, { directOff: !!(g && refused) });
@@ -1131,10 +1324,10 @@ async function refreshAll(opts) {
   const states = Object.assign({}, prevStates);
   const report = [];
   for (const r of fetched) {
-    states[r.source.id] = mergeState(r.source, prevStates[r.source.id], r, now);
+    states[r.source.id] = Object.assign(mergeState(r.source, prevStates[r.source.id], r, now), { status: statusOf(r) });
     report.push({ id: r.source.id, result: r.notModified ? '304' : r.items.length ? 'ok ' + r.items.length : 'fail: ' + r.error });
   }
-  // sources not fetched this round (fast tier) still need a record
+  // sources not fetched this run still need a record
   SOURCES.forEach(s => { if (!states[s.id]) states[s.id] = { items: [], error: null, lastOk: null }; });
   const pool = [];
   const snap = buildSnapshot(states, now, pool);
@@ -1152,24 +1345,58 @@ async function refreshAll(opts) {
   const results = fetched.map(r => adapterResult(r, { runId }));
   const statusCounts = {};
   results.forEach(x => { statusCounts[x.status] = (statusCounts[x.status] || 0) + 1; });
+  // How long new stories took to reach the site: from the publisher's own time to this run, for stories first stored
+  // now that carry an exact time from the last two days. Polling, the publisher's feed delay and GitHub's schedule
+  // delay are all in it.
+  const lags = [];
+  for (const r of fetched) for (const it of states[r.source.id].items) {
+    if (it.firstSeen !== nowIso || !isPrecise(it)) continue;
+    const lag = now - Date.parse(it.published);
+    if (lag >= 0 && lag <= 2 * 864e5) lags.push(lag);
+  }
+  lags.sort((a, b) => a - b);
+  const pct = q => (lags.length ? Math.round(lags[Math.min(lags.length - 1, Math.floor(q * lags.length))] / 6e4) : null);
+  const discovery = { newStories: lags.length, medianMin: pct(0.5), p90Min: pct(0.9) };
+  const staleSources = SOURCES.filter(s => { const st = states[s.id]; return !st.lastOk || now - tsOf(st.lastOk) > STALE_SOURCE_MS; }).map(s => {
+    const st = states[s.id], bu = blockedUntil(s, st, now);
+    return { id: s.id, lastOkAgeMin: st.lastOk ? Math.round((now - tsOf(st.lastOk)) / 6e4) : null, status: st.status || null, fails: st.fails || 0, blockedForMin: bu ? Math.ceil((bu - now) / 6e4) : 0, everyMin: s.everyMin || DEFAULT_EVERY_MIN };
+  });
+  const sig = snapSig(snap);
+  const writeSnap = persist && (sig !== sched.sig || now - tsOf(sched.snapAt) >= SNAP_HEARTBEAT_MS);
+  const chores = Object.assign({}, sched.chores), choresDue = [];
+  for (const [name, every] of Object.entries(opts.chores || {})) if (now - tsOf(chores[name]) >= every - DUE_SLACK_MS) { choresDue.push(name); chores[name] = nowIso; }
   const finished = Date.now();
   let shadowLoc = null;
   if (FLAGS.countyClassification()) { try { shadowLoc = LOC().shadow(snap, SOURCES, { runId, tier }); } catch (e) { console.error('location shadow failed', e && e.message); } }
-  const run = { runId, tier, startedAt: new Date(now).toISOString(), finishedAt: new Date(finished).toISOString(), durationMs: finished - now, attempted: results.length, statusCounts, results };
+  const counts = { due: plan.take.length + plan.deferred.length, fetched: fetched.length, deferred: deferred.length, waiting: plan.waiting.length };
+  const run = { runId, tier, startedAt: nowIso, finishedAt: new Date(finished).toISOString(), durationMs: finished - now, attempted: results.length, ...counts, snapshotWritten: writeSnap, statusCounts, discovery, staleSources, deferredIds: deferred.map(s => s.id), results };
   if (persist) {
-    const cmds = fetched.map(r => ['SET', srcKey(r.source.id), JSON.stringify(states[r.source.id]), 'EX', String(14 * 86400)]);
-    cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
-    cmds.push(...require('./_storyid.js').idsCmds(snap.items, 2 * 86400)); // the ids /api/react accepts a heart for
+    const cmds = [];
+    for (const r of fetched) {
+      const id = r.source.id, st = states[id], m = Object.assign({}, schedSrc[id]);
+      if (!prevStates[id] || recordCore(prevStates[id]) !== recordCore(st) || now - tsOf(m.w) >= SRC_REWRITE_MS) {
+        cmds.push(['SET', srcKey(id), JSON.stringify(st), 'EX', String(SRC_TTL_S)]);
+        m.w = nowIso;
+      }
+      m.t = st.lastTry; m.ok = st.lastOk;
+      schedSrc[id] = m;
+    }
+    if (writeSnap) {
+      cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
+      cmds.push(...require('./_storyid.js').idsCmds(snap.items, 2 * 86400)); // the ids /api/react accepts a heart for
+      // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
+      if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
+      // Rolling county depth record: this run's stories (before the public cap) merged into the last 14 days. Only
+      // when the read succeeded, so a failed read never overwrites two weeks of history with one run.
+      if (depthRead) { try { cmds.push(['SET', DEPTH().KEY, JSON.stringify(DEPTH().update(depthPrev, pool, SOURCES.concat(DISABLED_SOURCES), now, overridesAll)), 'EX', String(DEPTH().TTL)]); } catch (e) { console.error('depth record failed', e && e.message); } }
+    }
     cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
-    // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
-    if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
-    // Rolling county depth record: this run's stories (before the public cap) merged into the last 14 days. Only
-    // when the read succeeded, so a failed read never overwrites two weeks of history with one run.
-    if (depthRead) { try { cmds.push(['SET', DEPTH().KEY, JSON.stringify(DEPTH().update(depthPrev, pool, SOURCES.concat(DISABLED_SOURCES), now, overridesAll)), 'EX', String(DEPTH().TTL)]); } catch (e) { console.error('depth record failed', e && e.message); } }
+    cmds.push(['SET', SCHED_KEY, JSON.stringify({ sig: writeSnap ? sig : sched.sig, snapAt: writeSnap ? nowIso : sched.snapAt, chores, src: schedSrc, runId }), 'EX', String(SRC_TTL_S)]);
+    cmds.push(['DEL', LOCK_KEY]);
     store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
   }
-  return { snapshot: snap, report, store, runId, run, locations: shadowLoc ? shadowLoc.summary : null };
+  return { snapshot: snap, report, store, runId, run, locations: shadowLoc ? shadowLoc.summary : null, choresDue };
 }
 
 // Work that should finish after the answer is sent. On Vercel the request context exposes waitUntil (the same hook
@@ -1201,9 +1428,12 @@ function page(snap, before, now) {
     cut = Date.parse(String(Array.isArray(before) ? before[0] : before));
     if (!Number.isFinite(cut)) return { error: 'before must be an ISO time' };
   }
-  const stories = snap.items.filter(it => !boardKind(it) && t(it) < cut).sort((a, b) => t(b) - t(a));
-  const shown = stories.slice(0, NEWS_PAGE);
-  const more = stories.length > NEWS_PAGE ? { before: new Date(t(shown[shown.length - 1])).toISOString() } : null;
+  // Pages walk the dated stories by time. An undated story has no place on that walk, so it rides only on the first
+  // page (ship110: it used to come back with every older page as if it were older than all of them).
+  const stories = snap.items.filter(it => !boardKind(it) && t(it) && t(it) < cut).sort((a, b) => t(b) - t(a));
+  const dated = stories.slice(0, NEWS_PAGE);
+  const shown = before != null ? dated : dated.concat(snap.items.filter(it => !boardKind(it) && !t(it)));
+  const more = stories.length > NEWS_PAGE ? { before: new Date(t(dated[dated.length - 1])).toISOString() } : null;
   const keep = new Set(shown);
   // ship76: an event leaves 58 minutes after its start (or at its end) at the moment of the answer, so a stored or
   // CDN-cached snapshot never serves a stale one (public/eventtime.js; the page checks again on every draw)
@@ -1239,17 +1469,18 @@ async function run(req, res) {
   }
   let snap = await readSnapshot();
   if (!snap || Date.now() - Date.parse(snap.updatedAt) > SNAP_MAX_AGE) {
-    // No fresh snapshot (cron not set up yet, or it stopped). A short lock lets one request refresh; the rest don't
-    // re-fetch every feed. Stale snapshot: serve it now and refresh after the answer (background()). No snapshot at
-    // all: the lock holder refreshes inline; everyone else gets a 503 with Retry-After instead of piling on.
-    let locked = false;
-    if (stored()) { try { const l = await redis([['SET', LOCK_KEY, '1', 'NX', 'EX', '90']]); locked = !(l[0] && l[0].result === 'OK'); } catch (e) { /* carry on */ } }
-    if (!snap && locked) {
-      res.setHeader('Cache-Control', 'no-store'); res.setHeader('Retry-After', '15');
-      return res.status(503).json({ error: 'news is refreshing, try again shortly' });
-    }
-    if (!snap) snap = (await refreshAll({})).snapshot;
-    else if (!locked) background(refreshAll({}).catch(e => console.error('background refresh failed', e && e.message)));
+    // No fresh snapshot (cron not set up yet, or it stopped). refreshAll's lock (shared with the scheduled refresh)
+    // lets one refresh run at a time; the rest don't re-fetch every feed. Stale snapshot: serve it now and refresh
+    // after the answer (background()). No snapshot at all: refresh inline, or a 503 with Retry-After while another
+    // refresh holds the lock.
+    if (!snap) {
+      const r = await refreshAll({ tier: 'due' });
+      if (r.busy) {
+        res.setHeader('Cache-Control', 'no-store'); res.setHeader('Retry-After', '15');
+        return res.status(503).json({ error: 'news is refreshing, try again shortly' });
+      }
+      snap = r.snapshot;
+    } else background(refreshAll({ tier: 'due' }).catch(e => console.error('background refresh failed', e && e.message)));
   }
   const view = page(publicSnapshot(scoped(snap, scope, filters)), req.query && req.query.before);
   if (view.error) { res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=300'); return res.status(400).json({ error: view.error }); }
@@ -1351,3 +1582,10 @@ module.exports.sizeImages = sizeImages;
 module.exports.IMG_MAX_BYTES = IMG_MAX_BYTES;
 module.exports.IMG_BUDGET_MS = IMG_BUDGET_MS;
 module.exports.logoFor = logoFor;
+module.exports.parseDate = parseDate;
+module.exports.googleTitle = googleTitle;
+module.exports.mergeItems = mergeItems;
+module.exports.planRun = planRun;
+module.exports.dueAt = dueAt;
+module.exports.intervalMs = intervalMs;
+module.exports.SCHED = { DEFAULT_EVERY_MIN, DUE_SLACK_MS, MAX_BACKOFF_MIN, GOOGLE_PER_RUN, START_BUDGET_MS, LOCK_TTL_S, SCHED_KEY, LOCK_KEY, SNAP_HEARTBEAT_MS, STALE_SOURCE_MS };

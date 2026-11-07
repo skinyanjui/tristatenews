@@ -34,6 +34,7 @@
       "id": "loogtimes",
       "name": "The Loogootee Times",
       "area": "Loogootee",
+      "tz": "America/Indiana/Vincennes",
       "site": "https://loogooteetimes.com",
       "counties": [
         "in-martin"
@@ -62,7 +63,7 @@
       "counties": [
         "ky-todd"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AElkton%20OR%20intitle%3AGuthrie%20OR%20intitle%3A%22Todd%20County%22%20OR%20intitle%3ATrenton%29%20%28site%3Awhopam.com%20OR%20site%3Awkdzradio.com%20OR%20site%3Akentuckynewera.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -96,7 +97,7 @@
       "counties": [
         "ky-mclean"
       ],
-      "everyMin": 120,
+      "everyMin": 60,
       "url": "https://news.google.com/rss/search?q=site%3Amessenger-inquirer.com%2Fmclean_county%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "localSection": true,
@@ -131,7 +132,7 @@
       "counties": [
         "ky-webster"
       ],
-      "everyMin": 120,
+      "everyMin": 60,
       "url": "https://news.google.com/rss/search?q=site%3Athe-messenger.com%2Fjournal_enterprise%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "localSection": true,
@@ -164,11 +165,12 @@
       "id": "pressdisp",
       "name": "Pike County Press-Dispatch",
       "area": "Petersburg, Ind.",
+      "tz": "America/Indiana/Petersburg",
       "site": "https://www.suncommercial.com",
       "counties": [
         "in-pike"
       ],
-      "everyMin": 120,
+      "everyMin": 60,
       "url": "https://news.google.com/rss/search?q=site%3Asuncommercial.com%2Fpress_dispatch%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "localSection": true,
@@ -203,7 +205,7 @@
       "counties": [
         "in-perry"
       ],
-      "everyMin": 120,
+      "everyMin": 60,
       "url": "https://news.google.com/rss/search?q=site%3Aduboiscountyherald.com%2Fperry_county_news%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "localSection": true,
@@ -239,7 +241,7 @@
       "counties": [
         "il-lawrence"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=site%3Agiant.fm%2Flawrence-county%2Fnews%2Flocal-news%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -275,7 +277,7 @@
       "counties": [
         "ky-trigg"
       ],
-      "everyMin": 120,
+      "everyMin": 60,
       "url": "https://news.google.com/rss/search?q=site%3Akentuckynewera.com%2Fcadiz_record%2Fnews%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "localSection": true,
@@ -309,7 +311,7 @@
       "counties": [
         "il-edwards"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AAlbion%20OR%20intitle%3A%22West%20Salem%22%20OR%20intitle%3A%22Bone%20Gap%22%20OR%20intitle%3A%22Edwards%20County%22%29%20%28site%3Awfiwradio.com%20OR%20site%3A14news.com%20OR%20site%3Awsiltv.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -346,7 +348,7 @@
       "counties": [
         "il-hamilton"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AMcLeansboro%20OR%20intitle%3A%22Hamilton%20County%22%20OR%20intitle%3ADahlgren%29%20%28site%3Awfiwradio.com%20OR%20site%3Awsiltv.com%20OR%20site%3Akfvs12.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -378,7 +380,7 @@
       "counties": [
         "il-saline"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AHarrisburg%20OR%20intitle%3AEldorado%20OR%20intitle%3A%22Carrier%20Mills%22%20OR%20intitle%3A%22Saline%20County%22%29%20%28site%3Awsiltv.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awpsdlocal6.com%20OR%20site%3Awfiwradio.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -414,7 +416,7 @@
       "counties": [
         "ky-union"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AMorganfield%20OR%20intitle%3ASturgis%20OR%20intitle%3AUniontown%20OR%20intitle%3A%22Union%20County%22%29%20%28site%3A14news.com%20OR%20site%3Atristatehomepage.com%20OR%20site%3Awevv.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -447,7 +449,7 @@
       "counties": [
         "il-perry"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3APinckneyville%20OR%20intitle%3A%22Du%20Quoin%22%20OR%20intitle%3ADuQuoin%20OR%20intitle%3A%22Perry%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Awsiltv.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -481,7 +483,7 @@
       "counties": [
         "il-johnson"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AVienna%20OR%20intitle%3AGoreville%20OR%20intitle%3A%22Johnson%20County%22%29%20%28site%3Akfvs12.com%20OR%20site%3Awsiltv.com%20OR%20site%3Awpsdlocal6.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -515,7 +517,7 @@
         "ky-fulton",
         "ky-hickman"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3A%22Fulton%20County%22%20OR%20intitle%3A%22Hickman%20County%22%20OR%20intitle%3A%22South%20Fulton%22%20OR%20intitle%3AHickman%29%20%28site%3Awpsdlocal6.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awestkentuckystar.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [
@@ -550,7 +552,7 @@
       "counties": [
         "ky-carlisle"
       ],
-      "everyMin": 120,
+      "everyMin": 30,
       "url": "https://news.google.com/rss/search?q=%28intitle%3AWickliffe%20OR%20intitle%3A%22Ballard%20County%22%20OR%20intitle%3A%22Carlisle%20County%22%20OR%20intitle%3ABardwell%29%20%28site%3Awpsdlocal6.com%20OR%20site%3Akfvs12.com%20OR%20site%3Awestkentuckystar.com%29%20-obituary%20when%3A14d&hl=en-US&gl=US&ceid=US:en",
       "rateGroup": "gnews",
       "geoTerms": [

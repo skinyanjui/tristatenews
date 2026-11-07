@@ -47,13 +47,15 @@ function health(src, st, now, extra) {
   else if (!newest && !st.error) status = 'quiet'; // fetched fine, nothing local right now (geo-filtered sources)
   else if (!newest || ageDays > allowed) status = 'stale';
   else if (st.error) status = 'degraded';
+  const lastOk = st && st.lastOk ? Date.parse(st.lastOk) : NaN;
   return {
     id: src.id, name: src.name, area: src.area || '', kind: src.kind || 'news', batch: extra.batch || null, active: !!extra.active,
     disabled: extra.disabled || null, status, lastTry: (st && st.lastTry) || null, lastOk: (st && st.lastOk) || null,
+    lastOkAgeMin: Number.isFinite(lastOk) ? Math.round((now - lastOk) / 6e4) : null,
     fails: (st && st.fails) || 0, error: st && st.error ? String(st.error).slice(0, 80) : null, items: items.length,
     newest: newest ? new Date(newest).toISOString() : null, ageDays: ageDays == null ? null : Math.round(ageDays * 10) / 10,
     cadenceDays: cadenceDays == null ? null : Math.round(cadenceDays * 100) / 100, cadenceFrom: ev ? 'evidence' : gaps.length ? 'stored items' : null,
-    counties: extra.counties || null,
+    everyMin: src.everyMin || 10, counties: extra.counties || null,
   };
 }
 
@@ -65,14 +67,24 @@ async function report(now) {
   for (const s of news.SOURCES) if (!S.BATCH.has(s.id)) list.push([s, { active: true }]);
   for (const s of news.DISABLED_SOURCES) if (!S.BATCH.has(s.id)) list.push([s, { active: false, disabled: s.disabled }]);
   for (const b of REG.BATCHES) for (const s of b.sources) list.push([s, { active: active.has(s.id), batch: b.batch, disabled: s.disabled || null, counties: s.counties }]);
-  let rolling = null, states = [], snap = null, ovr = [], audit = [], storeOk = false;
+  let rolling = null, states = [], snap = null, ovr = [], audit = [], storeOk = false, lastRefresh = null;
   if (news.stored()) {
     try {
-      const out = await news.redis([['MGET'].concat(list.map(([s]) => 'tsn:src:' + s.id)), ['GET', 'tsn:news:snapshot'], ['HGETALL', OVR], ['LRANGE', AUDIT, '0', '49'], ['GET', DREC.KEY]]);
+      const out = await news.redis([['MGET'].concat(list.map(([s]) => 'tsn:src:' + s.id)), ['GET', 'tsn:news:snapshot'], ['HGETALL', OVR], ['LRANGE', AUDIT, '0', '49'], ['GET', DREC.KEY], ['GET', news.SCHED.SCHED_KEY]]);
       states = (out[0] && out[0].result) || []; snap = parse(out[1] && out[1].result);
       const flat = (out[2] && out[2].result) || []; for (let i = 0; i + 1 < flat.length; i += 2) { const v = parse(flat[i + 1]); if (v) ovr.push(Object.assign({ key: flat[i] }, v)); }
       audit = ((out[3] && out[3].result) || []).map(parse).filter(Boolean);
       rolling = out[4] && !out[4].error ? out[4].result : null;
+      const sched = parse(out[5] && out[5].result);
+      if (sched && sched.runId) {
+        const got = await news.redis([['GET', 'tsn:runs:' + sched.runId]]);
+        const run = parse(got[0] && got[0].result);
+        if (run) lastRefresh = {
+          runId: run.runId, tier: run.tier, startedAt: run.startedAt, finishedAt: run.finishedAt, durationMs: run.durationMs,
+          due: run.due, fetched: run.fetched, deferred: run.deferred, waiting: run.waiting, snapshotWritten: run.snapshotWritten,
+          discovery: run.discovery || null, staleSources: run.staleSources || [], statusCounts: run.statusCounts || {},
+        };
+      }
       storeOk = true;
     } catch (_) { storeOk = false; }
   }
@@ -115,7 +127,7 @@ async function report(now) {
   review.sort((a, b) => rank(a) - rank(b));
   review.length = Math.min(review.length, 100);
   return {
-    ok: true, at: new Date(now).toISOString(), store: storeOk, snapshotAt: snap ? snap.updatedAt : null,
+    ok: true, at: new Date(now).toISOString(), store: storeOk, snapshotAt: snap ? snap.updatedAt : null, lastRefresh,
     flags: FLAGS.all(), batches: { enabled: batchOn, files: REG.BATCHES.map(b => ({ id: b.batch, sources: b.sources.length, active: b.sources.filter(s => active.has(s.id)).length, paused: b.sources.filter(s => s.disabled).map(s => s.id) })) },
     gate: { min: g.min, days: S.DEPTH_DAYS, source: g.source, at: g.at, measuredAt: cov ? cov.measuredAt : null, cap: DREC.CAP },
     sources, counties, review, overrides: ovr, audit,

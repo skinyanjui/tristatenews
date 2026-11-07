@@ -194,7 +194,8 @@ test('native first card with a 40-listing cold marketplace; empty native still s
   await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
   timings.coldMarketCardsMs = Date.now() - t0;
   timings.coldAfterReleaseMs = Date.now() - tM;
-  await expect(page.locator('#cl .cl-empty')).toContainText('Nothing posted yet');
+  await expect(page.locator('#cl')).not.toContainText('Nothing posted yet');
+  await expect(page.locator('#cl > .cl-list .cl-empty')).toHaveCount(0);
   await page.locator('#cl select').first().selectOption('Newburgh');
   await expect(page.locator('.mk-sec .row-mk')).toHaveCount(20);
   await expect(page.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com');

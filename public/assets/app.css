@@ -269,6 +269,32 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .cl-chips::-webkit-scrollbar { display:none; }
 .cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
 .cl-chip[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
+/* Classifieds-only tap targets: town menu, Post button and chips; town menu fills its cell; house ad line wraps. */
+#cl { --cl-tap: 44px; }
+#cl .cl-bar { align-items:stretch; }
+#cl .cl-bar .ev-town { display:block; width:100%; min-width:0; }
+#cl .cl-bar .ev-town select.ui-select {
+  display:block; box-sizing:border-box; width:100% !important; max-width:100%;
+  height:var(--cl-tap); min-height:var(--cl-tap); padding:0 var(--sp-8) 0 var(--sp-3);
+  appearance:auto; -webkit-appearance:auto;
+}
+#cl .cl-bar .ev-town select.ui-select:focus-visible,
+#cl .cl-bar > .cl-go:focus-visible,
+#cl .cl-chip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+#cl .cl-bar > .cl-go {
+  box-sizing:border-box; height:var(--cl-tap); min-height:var(--cl-tap);
+  display:inline-flex; align-items:center; white-space:nowrap;
+}
+#cl .cl-chips { flex-wrap:wrap; overflow:visible; }
+#cl .cl-chip { min-height:var(--cl-tap); }
+#cl .spon, #cl .spon-house {
+  height:auto; min-height:var(--cl-tap); flex-wrap:wrap; overflow:visible; white-space:normal;
+  padding:var(--sp-2) var(--sp-3); align-items:center;
+}
+#cl .spon > b, #cl .spon > span { min-width:0; overflow-wrap:anywhere; }
+#cl .mk-sec { margin-top:0; }
+#cl .cl-empty { margin:0; }
+#cl .mk-amt { flex:none; font-variant-numeric:tabular-nums; font-weight:500; color:var(--text-muted); }
 .cl-tag { display:inline-flex; align-items:center; flex:none; padding:0 8px; min-height:20px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--gray-100); font-size:11px; line-height:16px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
 .deal-grid { grid-template-columns:1fr; }
 @media (min-width:720px) { .deal-grid, #ev .cl-list { grid-template-columns:1fr 1fr; } #ev .cl-list { align-items:start; } }

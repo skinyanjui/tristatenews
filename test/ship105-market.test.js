@@ -107,7 +107,7 @@ test('ship105: Classifieds shows the listings in their own section with a test-l
   assert.match(js, /MK\.refreshing/);
   assert.match(js, /MK_FOLLOW_MS = 10000/);
   assert.match(js, /'From tristatemarketplace\.com'/);
-  assert.match(js, /'Test listings from tristatemarketplace\.com, shown while we test the site\. Some are samples, and TRISTATENOW hasn\\u2019t verified any of them\. Prices and details are as posted there\.'/);
+  assert.match(js, /'Test listings from tristatemarketplace\.com, shown while we test the site\. Some are samples\. TRISTATENOW has not checked these listings; open one to see the amount and details on that site\.'/);
   assert.match(js, /el\('span', 'mk-tag', 'Test listing'\)/);
   assert.match(js, /href: x\.url/);
   assert.match(js, /if \(!MK\.ok\) \{/);

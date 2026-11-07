@@ -68,9 +68,11 @@ test('empty native with 33 marketplace listings does not say nothing posted yet'
   await expect(page.locator('#cl')).not.toContainText('Nothing posted yet');
   await expect(page.locator('#cl')).not.toContainText('No posts on TRISTATENOW yet');
   await expect(page.locator('#cl > .cl-list .cl-empty')).toHaveCount(0);
-  await expect(page.locator('.mk-note')).toContainText('Some are samples');
-  await expect(page.locator('.mk-note')).toContainText('has not checked these listings');
-  await expect(page.locator('.mk-note')).not.toContainText('Prices and details are as posted there');
+  await expect(page.locator('.mk-sec h3')).toHaveCount(0);
+  await expect(page.locator('.mk-note')).toHaveCount(0);
+  await expect(page.locator('#cl')).not.toContainText('From tristatemarketplace.com');
+  await expect(page.locator('#cl')).not.toContainText('Test listings from tristatemarketplace.com');
+  await expect(page.locator('#cl')).not.toContainText('has not checked these listings');
   await expect(page.locator('.row-mk .mk-tag')).toHaveCount(33);
   await expect(page.locator('.row-mk .mk-amt').first()).toHaveText('$2500');
   await expect(page.locator('.row-mk').first().locator('.cl-price')).toHaveCount(0);
@@ -79,6 +81,7 @@ test('empty native with 33 marketplace listings does not say nothing posted yet'
   await expect(page.locator('#cl .spon')).toContainText('Sample ad');
   await expect(page.locator('#cl > .cl-chips')).toBeVisible();
   await expect(page.locator('.mk-sec .cl-chips')).toHaveCount(0);
+  await page.screenshot({ path: ART + '/classifieds-no-heading-390.png', fullPage: true });
 });
 
 test('loading empty native does not show an overall-empty message', async ({ page }) => {

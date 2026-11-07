@@ -1476,8 +1476,8 @@
     root.appendChild(list);
     return root;
   }
-  // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
-  // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
+  // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, after the
+  // native posts, each tagged Test listing and linked to the original. One that repeats a post here (same title and town) is left out.
   var MK = null, mkAsked = false, mkBusy = false, mkFollowed = false, mkFollowDue = false, mkFollowTimer = 0;
   var MK_FOLLOW_MS = 10000;
   function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
@@ -1577,12 +1577,8 @@
     return el(mkWanted(x) ? 'span' : 'b', mkWanted(x) ? 'mk-amt' : 'cl-price', x.price);
   }
   function marketSection(b) {
-    var sec = el('section', 'mk-sec'); sec.setAttribute('aria-labelledby', 'mk-h');
-    var sh = el('div', 'evx-sh'), h = el('h3', null, 'From tristatemarketplace.com'); h.id = 'mk-h'; sh.appendChild(h);
+    var sec = el('section', 'mk-sec');
     var all = mkItems(), items = mkShown(b);
-    if (items.length) sh.appendChild(el('span', 'evx-ct', items.length + (items.length === 1 ? ' listing' : ' listings')));
-    sec.appendChild(sh);
-    sec.appendChild(el('p', 'cl-note mk-note', 'Test listings from tristatemarketplace.com, shown while we test the site. Some are samples. TRISTATENOW has not checked these listings; open one to see the amount and details on that site.'));
     if (!MK) { sec.appendChild(el('p', 'cl-note', 'Loading listings from tristatemarketplace.com\u2026')); return sec; }
     if (!MK.ok) {
       var p = el('p', 'cl-note', 'Listings from tristatemarketplace.com aren\u2019t available right now. '), a = el('a', null, 'Browse them there');

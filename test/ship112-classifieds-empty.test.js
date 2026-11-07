@@ -24,13 +24,16 @@ test('ship112: native empty copy distinguishes loading, marketplace present, nat
   assert.match(js, /if \(!items\.length && kind === 'item'\) \{\s*if \(fillItemEmpty\(list, b\)\) root\.appendChild\(list\);/);
 });
 
-test('ship112: disclosure keeps test/sample labels and does not claim copied prices were checked', () => {
-  assert.match(js, /Some are samples\. TRISTATENOW has not checked these listings; open one to see the amount and details on that site\./);
+test('ship112: marketplace listings keep Test listing tags; no heading or description block', () => {
   assert.match(js, /el\('span', 'mk-tag', 'Test listing'\)/);
-  assert.match(js, /'From tristatemarketplace\.com'/);
+  assert.ok(!/'From tristatemarketplace\.com'/.test(js));
+  assert.ok(!/Test listings from tristatemarketplace/.test(js));
+  assert.ok(!/mk-note/.test(js));
   assert.ok(!/Prices and details are as posted there/.test(js));
   assert.ok(!/verified listing/i.test(js));
   assert.match(js, /A sample, not a real business/);
+  assert.match(js, /Loading listings from tristatemarketplace\.com/);
+  assert.match(js, /aren\\u2019t available right now/);
 });
 
 test('ship112: wanted marketplace amounts stay the printed figure; no budget or asking label', () => {

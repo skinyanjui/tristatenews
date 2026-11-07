@@ -1462,18 +1462,22 @@
     var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1); // one ad card per board view
     items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });
     if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
+    if (!items.length && kind === 'item') {
+      if (fillItemEmpty(list, b)) root.appendChild(list);
+      return root;
+    }
     if (!items.length) {
       var emp = el('div', 'cl-empty');
-      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : b.items.length ? 'Nothing in this category yet.' : 'Nothing posted yet. Be the first.'));
+      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : b.items.length ? 'Nothing in this category yet.' : 'Nothing posted yet. Be the first.'));
       if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); })); }
-      if ((kind === 'job' || kind === 'item' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
+      if ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
       list.appendChild(emp);
     }
     root.appendChild(list);
     return root;
   }
-  // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
-  // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
+  // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, after the
+  // native posts, each tagged Test listing and linked to the original. One that repeats a post here (same title and town) is left out.
   var MK = null, mkAsked = false, mkBusy = false, mkFollowed = false, mkFollowDue = false, mkFollowTimer = 0;
   var MK_FOLLOW_MS = 10000;
   function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
@@ -1489,8 +1493,8 @@
     if (oldChips && cr.children.length > 1) oldChips.replaceWith(cr);
     else if (oldChips && cr.children.length <= 1) oldChips.remove();
     else if (!oldChips && cr.children.length > 1) {
-      var list = clEl.querySelector('.cl-list');
-      if (list) list.parentNode.insertBefore(cr, list);
+      var before = clEl.querySelector(':scope > .cl-list') || clEl.querySelector('.mk-sec');
+      if (before) clEl.insertBefore(cr, before);
     }
   }
   function paintMarket() {
@@ -1499,6 +1503,7 @@
     if (!old) { renderClassifieds(); return; }
     old.replaceWith(marketSection(boards.item));
     paintItemFilters();
+    syncItemEmpty();
   }
   function takeMarket(d) { MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] }; }
   function askMarket(follow) {
@@ -1527,13 +1532,53 @@
     var own = {}; boards.item.items.forEach(function (x) { own[mkKey(x)] = 1; });
     return MK.items.filter(function (x) { return x && x.url && x.title && !own[mkKey(x)]; });
   }
+  function mkShown(b) {
+    return mkItems().filter(function (x) { return (!b.town || townOf(x) === b.town) && (!b.filter || x.category === b.filter); });
+  }
+  // Native empty copy on Classifieds is only for a native-only gap or a truly empty board. Marketplace cards
+  // (or a still-loading / filter-miss note on that section) must not sit under "Nothing posted yet."
+  function itemEmptyState(b) {
+    if (shownItems(b, 'item').length) return { skip: true, copy: '', filtered: false };
+    var mkAll = mkItems(), shown = mkShown(b);
+    if (!MK) return { skip: true, copy: '', filtered: false };
+    if (shown.length) return { skip: true, copy: '', filtered: false };
+    if (MK.ok && mkAll.length) return { skip: true, copy: '', filtered: false };
+    var filtered = !!(b.town || b.filter || state.q.trim());
+    var copy = filtered ? 'No posts match these filters.' : (MK.ok ? 'Nothing posted yet. Be the first.' : 'No posts on TRISTATENOW yet. Be the first.');
+    return { skip: false, copy: copy, filtered: filtered };
+  }
+  function fillItemEmpty(list, b) {
+    var st = itemEmptyState(b);
+    if (st.skip) return false;
+    var emp = el('div', 'cl-empty');
+    emp.appendChild(el('p', null, st.copy));
+    if (st.filtered) emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard('item'); }));
+    list.appendChild(emp);
+    return true;
+  }
+  function syncItemEmpty() {
+    if (state.cat !== 'classifieds' || clEl.hidden) return;
+    var b = boards.item;
+    if (shownItems(b, 'item').length) return;
+    var list = clEl.querySelector(':scope > .cl-list');
+    var st = itemEmptyState(b);
+    if (st.skip) { if (list) list.remove(); return; }
+    if (!list) {
+      list = el('div', 'cl-list');
+      var mk = clEl.querySelector('.mk-sec');
+      clEl.insertBefore(list, mk);
+    }
+    list.textContent = '';
+    fillItemEmpty(list, b);
+  }
+  function mkWanted(x) { return /^\s*wanted\b/i.test(String(x.title || '')); }
+  function mkAmount(x) {
+    if (!x.price) return null;
+    return el(mkWanted(x) ? 'span' : 'b', mkWanted(x) ? 'mk-amt' : 'cl-price', x.price);
+  }
   function marketSection(b) {
-    var sec = el('section', 'mk-sec'); sec.setAttribute('aria-labelledby', 'mk-h');
-    var sh = el('div', 'evx-sh'), h = el('h3', null, 'From tristatemarketplace.com'); h.id = 'mk-h'; sh.appendChild(h);
-    var all = mkItems(), items = all.filter(function (x) { return (!b.town || townOf(x) === b.town) && (!b.filter || x.category === b.filter); });
-    if (items.length) sh.appendChild(el('span', 'evx-ct', items.length + (items.length === 1 ? ' listing' : ' listings')));
-    sec.appendChild(sh);
-    sec.appendChild(el('p', 'cl-note mk-note', 'Test listings from tristatemarketplace.com, shown while we test the site. Some are samples, and TRISTATENOW hasn\u2019t verified any of them. Prices and details are as posted there.'));
+    var sec = el('section', 'mk-sec');
+    var all = mkItems(), items = mkShown(b);
     if (!MK) { sec.appendChild(el('p', 'cl-note', 'Loading listings from tristatemarketplace.com\u2026')); return sec; }
     if (!MK.ok) {
       var p = el('p', 'cl-note', 'Listings from tristatemarketplace.com aren\u2019t available right now. '), a = el('a', null, 'Browse them there');
@@ -1544,7 +1589,7 @@
     var list = el('div', 'cl-list');
     items.forEach(function (x) {
       list.appendChild(UI.row({ cls: 'row-item row-mk', href: x.url, pic: x.image || '', picRef: true, kicker: [x.srcCategory, x.town].filter(Boolean).join(' \u00B7 '), title: x.title, text: x.desc,
-        left: [x.price ? el('b', 'cl-price', x.price) : null, el('span', 'mk-tag', 'Test listing')], when: el('span', null, 'tristatemarketplace.com') }));
+        left: [mkAmount(x), el('span', 'mk-tag', 'Test listing')], when: el('span', null, 'tristatemarketplace.com') }));
     });
     sec.appendChild(list);
     return sec;

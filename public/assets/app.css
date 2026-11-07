@@ -269,6 +269,32 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .cl-chips::-webkit-scrollbar { display:none; }
 .cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
 .cl-chip[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
+/* Classifieds-only tap targets: town menu, Post button and chips; town menu fills its cell; house ad line wraps. */
+#cl { --cl-tap: 44px; }
+#cl .cl-bar { align-items:stretch; }
+#cl .cl-bar .ev-town { display:block; width:100%; min-width:0; }
+#cl .cl-bar .ev-town select.ui-select {
+  display:block; box-sizing:border-box; width:100% !important; max-width:100%;
+  height:var(--cl-tap); min-height:var(--cl-tap); padding:0 var(--sp-8) 0 var(--sp-3);
+  appearance:auto; -webkit-appearance:auto;
+}
+#cl .cl-bar .ev-town select.ui-select:focus-visible,
+#cl .cl-bar > .cl-go:focus-visible,
+#cl .cl-chip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+#cl .cl-bar > .cl-go {
+  box-sizing:border-box; height:var(--cl-tap); min-height:var(--cl-tap);
+  display:inline-flex; align-items:center; white-space:nowrap;
+}
+#cl .cl-chips { flex-wrap:wrap; overflow:visible; }
+#cl .cl-chip { min-height:var(--cl-tap); }
+#cl .spon, #cl .spon-house {
+  height:auto; min-height:var(--cl-tap); flex-wrap:wrap; overflow:visible; white-space:normal;
+  padding:var(--sp-2) var(--sp-3); align-items:center;
+}
+#cl .spon > b, #cl .spon > span { min-width:0; overflow-wrap:anywhere; }
+#cl .mk-sec { margin-top:0; }
+#cl .cl-empty { margin:0; }
+#cl .mk-amt { flex:none; font-variant-numeric:tabular-nums; font-weight:500; color:var(--text-muted); }
 .cl-tag { display:inline-flex; align-items:center; flex:none; padding:0 8px; min-height:20px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--gray-100); font-size:11px; line-height:16px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
 .deal-grid { grid-template-columns:1fr; }
 @media (min-width:720px) { .deal-grid, #ev .cl-list { grid-template-columns:1fr 1fr; } #ev .cl-list { align-items:start; } }
@@ -766,13 +792,11 @@ html.st-open { overflow:hidden; }
   .st-sheet.st-sheet:not(:has(.st-pic)) .st-bd { padding-top:var(--sp-8); }
 }
 @media (prefers-reduced-motion: reduce) { .st-page.st-page, .st-sheet .st-go, .st-sheet .st-nav { transition:none !important; } }
-/* ship105: tristatemarketplace.com test listings on Classifieds: their own section after the posts, a disclosure under
-   the heading and a "Test listing" tag on every card (beside the price, in the card's bottom row). */
+/* ship105: tristatemarketplace.com test listings on Classifieds: after the posts, a "Test listing" tag on every card
+   (beside the price, in the card's bottom row). No section heading or description block. */
 .mk-sec { display:grid; grid-template-columns:minmax(0, 1fr); gap:var(--sp-2); min-width:0; margin-top:var(--sp-4); }
-.mk-sec .evx-sh h3 { overflow-wrap:anywhere; }
-.mk-note { margin:0; }
 .mk-tag { display:inline-flex; align-items:center; flex:none; height:20px; padding:0 var(--sp-2); border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--background-subtle); color:var(--text-muted); font-size:11px; line-height:16px; font-weight:600; white-space:nowrap; }
-@media (max-width:639.98px) { .row-mk .src .when { display:none; } } /* phones: no room beside price and tag; the section heading names the source */
+@media (max-width:639.98px) { .row-mk .src .when { display:none; } } /* phones: no room beside price and tag */
 @media (max-width:374px) { .card:not(.breaking):has(a.ca > .th) .bd p:not(.cl-note) { display:none; } } /* too narrow for a description */
 @media (min-width:640px) {
   /* picture flush left for the card's full height; text, then the link/reaction row, on the right */

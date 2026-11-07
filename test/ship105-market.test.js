@@ -100,14 +100,15 @@ test('ship105: /api/market is a route of api/listings.js (still eight functions)
   assert.equal(res.code, 405);
 });
 
-test('ship105: Classifieds shows the listings in their own section with a test-listing disclosure on it and every card', () => {
+test('ship105: Classifieds shows the listings with a Test listing tag and original link, without a section heading or description', () => {
   const js = read('public/assets/app.js');
   assert.match(js, /fetch\('\/api\/market', \{ cache: 'no-store' \}\)/);
   assert.match(js, /mkFollowed/);
   assert.match(js, /MK\.refreshing/);
   assert.match(js, /MK_FOLLOW_MS = 10000/);
-  assert.match(js, /'From tristatemarketplace\.com'/);
-  assert.match(js, /'Test listings from tristatemarketplace\.com, shown while we test the site\. Some are samples, and TRISTATENOW hasn\\u2019t verified any of them\. Prices and details are as posted there\.'/);
+  assert.ok(!/'From tristatemarketplace\.com'/.test(js));
+  assert.ok(!/Test listings from tristatemarketplace/.test(js));
+  assert.ok(!/mk-note/.test(js));
   assert.match(js, /el\('span', 'mk-tag', 'Test listing'\)/);
   assert.match(js, /href: x\.url/);
   assert.match(js, /if \(!MK\.ok\) \{/);

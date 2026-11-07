@@ -19,11 +19,14 @@ async function open(page, width, market) {
   await page.locator('.mk-sec').waitFor();
 }
 
-test('390px: the section, its disclosure, a Test listing tag and the original link on every card; a repeat of a post is left out', async ({ page }) => {
+test('390px: Test listing tag and the original link on every card; a repeat of a post is left out; no heading or description', async ({ page }) => {
   await open(page, 390, { ok: true, stale: false, fetchedAt: new Date().toISOString(), source: { name: 'tristatemarketplace.com', url: MK + '/' }, items: ITEMS });
   const sec = page.locator('.mk-sec');
-  await expect(sec.locator('h3')).toHaveText('From tristatemarketplace.com');
-  await expect(sec.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com, shown while we test the site. Some are samples');
+  await expect(sec.locator('h3')).toHaveCount(0);
+  await expect(sec.locator('.mk-note')).toHaveCount(0);
+  await expect(sec.locator('.evx-sh')).toHaveCount(0);
+  await expect(page.locator('#cl')).not.toContainText('From tristatemarketplace.com');
+  await expect(page.locator('#cl')).not.toContainText('Test listings from tristatemarketplace.com');
   await expect(sec.locator('.row-mk')).toHaveCount(2);
   await expect(sec.locator('.row-mk .mk-tag')).toHaveCount(2);
   await expect(sec.locator('.row-mk a.ca').first()).toHaveAttribute('href', MK + '/listing/a');
@@ -134,7 +137,8 @@ test('when the first /api/market is still refreshing, the open tab fetches once 
   await page.goto('/classifieds');
   await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
   await expect(page.locator('.mk-sec')).toContainText('Showing listings as of November 5');
-  await expect(page.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com, shown while we test the site. Some are samples');
+  await expect(page.locator('#cl')).not.toContainText('From tristatemarketplace.com');
+  await expect(page.locator('.mk-note')).toHaveCount(0);
   expect(n).toBe(1);
   await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-stale-40.png', fullPage: true });
   await page.clock.runFor(10000);
@@ -188,16 +192,18 @@ test('native first card with a 40-listing cold marketplace; empty native still s
   timings.loadingNoteMs = Date.now() - t0;
   expect(timings.loadingNoteMs, 'loading note must not wait on the crawl').toBeLessThan(1500);
   await expect(page.locator('#cl .row-item:not(.row-mk)')).toHaveCount(0);
-  await expect(page.locator('.mk-note')).toContainText('Some are samples');
+  await expect(page.locator('.mk-note')).toHaveCount(0);
+  await expect(page.locator('.mk-sec h3')).toHaveCount(0);
   release();
   const tM = Date.now();
   await expect(page.locator('.mk-sec .row-mk')).toHaveCount(40);
   timings.coldMarketCardsMs = Date.now() - t0;
   timings.coldAfterReleaseMs = Date.now() - tM;
-  await expect(page.locator('#cl .cl-empty')).toContainText('Nothing posted yet');
+  await expect(page.locator('#cl')).not.toContainText('Nothing posted yet');
+  await expect(page.locator('#cl > .cl-list .cl-empty')).toHaveCount(0);
   await page.locator('#cl select').first().selectOption('Newburgh');
   await expect(page.locator('.mk-sec .row-mk')).toHaveCount(20);
-  await expect(page.locator('.mk-note')).toContainText('Test listings from tristatemarketplace.com');
+  await expect(page.locator('#cl')).not.toContainText('From tristatemarketplace.com');
   await page.screenshot({ path: '/opt/cursor/artifacts/classifieds-empty-native-40.png', fullPage: true });
   console.log('TIMING empty-native cold-market', JSON.stringify(timings));
 });

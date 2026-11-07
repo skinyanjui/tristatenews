@@ -38,6 +38,7 @@ function fakeStore() {
       case 'HGETALL': return { result: [].concat(...[...(hashes.get(a[0]) || new Map())]) };
       case 'ZADD': { const z = zsets.get(a[0]) || new Map(); zsets.set(a[0], z); let n = 0; for (let i = 1; i < a.length; i += 2) { if (!z.has(a[i + 1])) n++; z.set(a[i + 1], Number(a[i])); } return { result: n }; }
       case 'ZREMRANGEBYSCORE': { const z = zsets.get(a[0]) || new Map(); let n = 0; const hi = Number(a[2]); for (const [m, s] of z) if (s <= hi) { z.delete(m); n++; } return { result: n }; }
+      case 'SSCAN': return { result: ['0', []] };
       default: return (['HGETALL','SMEMBERS'].includes(String(op).toUpperCase()) ? { result: [] } : ['EXISTS','ZREM','DEL','SADD','SREM','EXPIRE','RENAME'].includes(String(op).toUpperCase()) ? { result: String(op).toUpperCase() === 'RENAME' ? 'OK' : 0 } : { error: 'ERR unknown command ' + op });
     }
   };
@@ -232,7 +233,9 @@ test('/api/refresh reports the run\'s store round trips and commands', async () 
     await refresh({ query: { tier: 'all' }, headers: { authorization: 'Bearer cron-test' } }, res);
     assert.equal(res.code, 200);
     // ship67: + one request pruning the 5 board indexes (api/listings.js pruneCmds)
-    assert.deepEqual(res.body.store, { requests: 3, commands: N + 15 });
+    // privacy: + one pruning unconfirmed newsletter signups, + three for a sweep batch of an empty do-not-email list
+    assert.deepEqual(res.body.store, { requests: 7, commands: N + 19 });
+    assert.equal(store.kv.get('tsn:nl:sweep'), 'done', 'an empty list is swept in one pass');
     assert.deepEqual(res.body.store.commands, store.log.commands.length, 'matches what the store saw');
     for (const k of ['ok', 'tier', 'runId', 'ms', 'stories', 'sourcesWithStories', 'notModified', 'failing', 'statuses']) assert.ok(k in res.body, k);
   } finally { restore(); }

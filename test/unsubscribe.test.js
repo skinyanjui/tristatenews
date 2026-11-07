@@ -59,7 +59,9 @@ test('rate limit: 5 a day per connection, then 429', () => withStore(async (f, h
   const r = await call(h, { email: 'x9@example.com' });
   assert.equal(r.code, 429);
   assert.equal((await call(h, { email: 'x9@example.com' }, { ip: '9.9.9.9' })).code, 200, 'other connections are unaffected');
-  assert.ok(f.log.some(c => c[0] === 'EXPIRE' && c[1] === 'tsn:nl:unrl:1.2.3.4' && c[2] === '86400'));
+  const key = 'tsn:nl:unrl:' + require('../api/_ip.js').rlId('1.2.3.4', 'unsubscribe');
+  assert.ok(f.log.some(c => c[0] === 'EXPIRE' && c[1] === key && c[2] === '86400'), 'same 24-hour window, keyed by a hash');
+  assert.ok(!f.log.some(c => c.some(x => String(x).includes('1.2.3.4') || String(x).includes('9.9.9.9'))), 'no raw address reaches the store');
 }));
 
 test('one-click (RFC 8058) needs a valid token; typed requests do not', () => withStore(async (f, h) => {

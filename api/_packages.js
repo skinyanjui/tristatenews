@@ -32,6 +32,7 @@
 const crypto = require('crypto');
 const STORE = require('./_store.js'); // the one Redis helper (pipeline, stored)
 const { same } = require('./_safe.js');
+const { clientIp, rlId } = require('./_ip.js');
 const CATALOG = require('./_catalog.js');
 const CAMP = require('./_campaigns.js');
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
@@ -46,7 +47,7 @@ const HOLDING = ['pending_payment', 'checkout', 'invoiced', 'paid'];
 const REF_RE = /^AD-[A-Z0-9]{6,10}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?1?[\s.-]*\(?\d{3}\)?[\s.-]*\d{3}[\s.-]*\d{4}$/;
-const K = { rec: ref => 'tsn:pkg:' + ref, index: 'tsn:pkg:index', open: 'tsn:pkg:open', log: 'tsn:pkg:log', rl: ip => 'tsn:pkg:rl:' + ip };
+const K = { rec: ref => 'tsn:pkg:' + ref, index: 'tsn:pkg:index', open: 'tsn:pkg:open', log: 'tsn:pkg:log', rl: ip => 'tsn:pkg:rl:' + rlId(ip, 'packages') };
 const DAY = 864e5;
 const dayNum = d => Math.round(Date.parse(d + 'T00:00:00Z') / DAY);
 const dateOf = n => new Date(n * DAY).toISOString().slice(0, 10);
@@ -286,7 +287,7 @@ async function handler(req, res) {
     if (b.website) return send(200, { ok: true, ref: 'AD-' + Date.now().toString(36).toUpperCase().slice(-6) + 'XX' });
     const who = contact(b);
     if (who.error) return send(400, who);
-    const ip = require('./_ip.js').clientIp(req) || 'x';
+    const ip = clientIp(req) || 'x';
     const rl = await pipeline([['INCR', K.rl(ip)], ['EXPIRE', K.rl(ip), '86400', 'NX']]);
     if ((Number(rl[0] && rl[0].result) || 0) > DAILY_PER_IP) return send(429, { error: 'You’ve started a few orders today. Email us and we’ll help.' });
     const [campaigns, orders] = await Promise.all([openCampaigns(), openOrders()]);

@@ -152,6 +152,6 @@ test('app.js draws from #tsn-data before loading, without skeletons, and counts 
   assert.match(js, /getElementById\('tsn-data'\)/);
   assert.match(js, /d\.cat !== state\.cat \|\| SC\.key !== 'tristate'/);
   assert.ok(js.indexOf("getElementById('tsn-data')") < js.lastIndexOf('load(false);'), 'hydrate before the first load');
-  assert.match(js, /state\.more = d\.more \|\| null; state\.partial = false;/);
+  assert.match(js, /state\.more = more; state\.partial = false;/); // ship110: more is d.more, or the older pages' cursor
   assert.match(js, /metaEl\.textContent = state\.partial \? upd :/);
 });

@@ -50,6 +50,65 @@ test('stale data says when it is from; a failure shows no listings, only a note 
   await expect(page.locator('.mk-sec a', { hasText: 'Browse them there' })).toHaveAttribute('href', MK + '/');
 });
 
+test('native posts show while the marketplace is still loading; arriving market cards do not rebuild the native list', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 1000 });
+  let release;
+  const gate = new Promise(r => { release = r; });
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, async route => {
+    await gate;
+    await route.fulfill({ json: { ok: true, stale: false, fetchedAt: new Date().toISOString(), source: { name: 'tristatemarketplace.com', url: MK + '/' }, items: ITEMS } });
+  });
+  const t0 = Date.now();
+  await page.goto('/classifieds');
+  const native = page.locator('#cl .row-item:not(.row-mk)', { hasText: 'Oak kitchen table' });
+  await expect(native).toBeVisible({ timeout: 2000 });
+  const nativeMs = Date.now() - t0;
+  expect(nativeMs, 'native posts must not wait on the marketplace crawl').toBeLessThan(1500);
+  await expect(page.locator('.mk-sec')).toContainText('Loading listings from tristatemarketplace.com');
+  await expect(page.locator('.row-mk')).toHaveCount(0);
+  await native.evaluate(c => { c.__probe = 1; });
+  release();
+  await expect(page.locator('.row-mk')).toHaveCount(2);
+  expect(await native.evaluate(c => c.__probe === 1 && c.isConnected), 'native card node kept').toBe(true);
+});
+
+test('a hidden Classifieds tab does not fetch /api/market; becoming visible does, once', async ({ page }) => {
+  const asked = [];
+  await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
+  await page.route(/\/api\/market$/, route => {
+    asked.push(Date.now());
+    return route.fulfill({ json: { ok: true, stale: false, fetchedAt: new Date().toISOString(), source: {}, items: ITEMS } });
+  });
+  await page.goto('/');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.locator('#tabs [data-cat="classifieds"]').click();
+  await expect(page.locator('#cl')).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(asked.length, 'no market fetch while hidden').toBe(0);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect.poll(() => asked.length).toBe(1);
+  await page.locator('#tabs [data-cat="news"]').click();
+  await page.locator('#tabs [data-cat="classifieds"]').click();
+  await page.waitForTimeout(200);
+  expect(asked.length, 'one fetch per page lifetime').toBe(1);
+});
+
+test('stale-while-refreshing shows last-good listings without a failure line', async ({ page }) => {
+  await open(page, 390, { ok: true, stale: true, refreshing: true, fetchedAt: '2026-11-05T18:00:00Z', source: {}, items: ITEMS });
+  await expect(page.locator('.mk-sec .row-mk')).toHaveCount(2);
+  await expect(page.locator('.mk-sec')).toContainText('Showing listings as of November 5');
+  await expect(page.locator('.mk-sec')).not.toContainText('Couldn\u2019t refresh just now');
+});
+
 test('320px: the TRISTATENOW wordmark and the footer link fit', async ({ page }) => {
   await open(page, 320, { ok: true, stale: false, fetchedAt: new Date().toISOString(), source: {}, items: ITEMS });
   await expect(page.locator('a.brand')).toHaveText('TRISTATENOW');

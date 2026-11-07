@@ -179,7 +179,7 @@ test('/api/news: stale -> served at once, refreshed in the background; missing +
   const src = read('api/news.js');
   // ship110: the lock is refreshAll's own (shared with the scheduled refresh); a busy refresh with no snapshot is a 503
   assert.match(src, /if \(r\.busy\) \{\s*res\.setHeader\('Cache-Control', 'no-store'\); res\.setHeader\('Retry-After', '15'\);/);
-  assert.match(src, /\} else background\(refreshAll\(\{\}\)/);
+  assert.match(src, /\} else background\(refreshAll\(\{ tier: 'due' \}\)/);
   assert.match(src, /Symbol\.for\('@vercel\/request-context'\)/);
   assert.match(src, /res\.setHeader\('Cache-Control', NEWS_CACHE\)/);
   const news = require('../api/news.js');

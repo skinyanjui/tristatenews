@@ -359,6 +359,18 @@ test('refreshAll: firstSeen marks new stories for the discovery lag, and never r
 });
 
 // ---------- registry, workflows ----------
+test('rate groups live in the registry; on-demand stale refresh is the same due pipeline as cron', () => {
+  const reg = require('../api/_sources.js');
+  assert.deepEqual(reg.RATE_GROUPS, { paxton: { gapMs: 4000, perRun: 3 }, gnews: { gapMs: 1500, perRun: 5 } });
+  assert.deepEqual(N.RATE_GROUPS, reg.RATE_GROUPS);
+  assert.equal(reg.validate().filter(p => /^rate-groups/.test(p)).length, 0);
+  const src = read('api/news.js');
+  assert.match(src, /refreshAll\(\{ tier: 'due' \}\)/);
+  assert.ok(!/background\(refreshAll\(\{\}\)\)/.test(src));
+  assert.match(src, /data\/sources\/rate-groups\.json/);
+  assert.ok(!/const RATE_GROUPS = \{ paxton:/.test(src));
+});
+
 test('registry: Eastern-time publishers carry their zone; every tz is valid; cadences are within limits', () => {
   const reg = require('../api/_sources.js');
   assert.deepEqual(reg.validate(reg.FILES.concat(reg.BATCHES)), []);

@@ -1,8 +1,8 @@
 // Tri-State (Evansville, IN-KY MSA) news aggregator.
-// A scheduled job (/api/refresh, handler in api/_refresh.js, served by this function) fetches every configured feed, normalizes, dedupes, and stores
-// the result in Redis; this endpoint just serves that stored snapshot, so pages load instantly and a
-// source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
-// is more than 3 hours old, the first visitor triggers a refresh instead.
+// A scheduled job (/api/refresh, handler in api/_refresh.js, served by this function) fetches the feeds that are due,
+// normalizes, dedupes, and stores the result in Redis; this endpoint just serves that stored snapshot, so pages load
+// instantly and a source that fails one run keeps its last good stories. If Redis isn't configured, or the snapshot
+// is more than 3 hours old, the first visitor triggers the same due-source refresh (shared lock with the scheduler).
 
 // Coverage area: Evansville MSA plus Owensboro, Madisonville, Carbondale, Marion, Vincennes
 // and the towns in between (southwest Indiana, western Kentucky, southern Illinois).
@@ -13,7 +13,7 @@
 // returns zero items is reported in `sources` with ok:false and the page hides it.
 // The sources (ids, URLs, kinds, flags) live in the registry: data/sources/*.json, loaded by api/_sources.js, which
 // also drops disabled entries and applies EXTRA_FEEDS (plan PR 3.1).
-const { SOURCES, DISABLED_SOURCES } = require('./_sources.js');
+const { SOURCES, DISABLED_SOURCES, RATE_GROUPS } = require('./_sources.js');
 
 const { inTriState, PLACES: PLACE_LISTS } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
@@ -1100,16 +1100,15 @@ function snapSig(snap) {
   return h.digest('base64').slice(0, 16);
 }
 
-// Rate groups (registry field rateGroup): papers of one publisher served from shared infrastructure, which rate-limits
-// by IP across all of them. Paxton Media's western Kentucky and southern Illinois BLOX papers (batch 1) never loaded
-// from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the audit machine too). They are fetched 4 seconds apart,
-// at most 3 per run, and each has a Google News site: fallback.
+// Rate groups (registry field rateGroup, limits in data/sources/rate-groups.json): papers of one publisher served
+// from shared infrastructure, which rate-limits by IP across all of them. Paxton Media's western Kentucky and
+// southern Illinois BLOX papers (batch 1) never loaded from Vercel (audit 2026-10-22: lastOk null, HTTP 429 from the
+// audit machine too). They are fetched 4 seconds apart, at most 3 per run, and each has a Google News site: fallback.
 // Batch 3's Google News fallbacks (rateGroup gnews: publisher sections whose RSS answers 429, and town searches for
 // counties with no working feed) are one queue too, 1.5 s apart and at most 5 per run, most overdue first, so a run
 // never adds more than a handful of Google requests (on top of the 600 ms Google queue) and stays inside the 30 s limit.
 // With runs every 5 minutes and these members due every 30 (registry), each is fetched about every 30-35 minutes
 // (it was every ~2 hours: 15 gnews members, 5 per half-hourly run, behind a 120-minute everyMin).
-const RATE_GROUPS = { paxton: { gapMs: 4000, perRun: 3 }, gnews: { gapMs: 1500, perRun: 5 } };
 
 const redis = STORE.pipeline;
 const parse = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
@@ -1392,7 +1391,7 @@ async function refreshAll(opts) {
       if (depthRead) { try { cmds.push(['SET', DEPTH().KEY, JSON.stringify(DEPTH().update(depthPrev, pool, SOURCES.concat(DISABLED_SOURCES), now, overridesAll)), 'EX', String(DEPTH().TTL)]); } catch (e) { console.error('depth record failed', e && e.message); } }
     }
     cmds.push(['SET', runKey(runId), JSON.stringify(run), 'EX', String(RUN_TTL)]);
-    cmds.push(['SET', SCHED_KEY, JSON.stringify({ sig: writeSnap ? sig : sched.sig, snapAt: writeSnap ? nowIso : sched.snapAt, chores, src: schedSrc }), 'EX', String(SRC_TTL_S)]);
+    cmds.push(['SET', SCHED_KEY, JSON.stringify({ sig: writeSnap ? sig : sched.sig, snapAt: writeSnap ? nowIso : sched.snapAt, chores, src: schedSrc, runId }), 'EX', String(SRC_TTL_S)]);
     cmds.push(['DEL', LOCK_KEY]);
     store.requests++; store.commands += cmds.length;
     try { await redis(cmds); } catch (e) { report.push({ id: 'store', result: 'fail: ' + e.message }); }
@@ -1475,13 +1474,13 @@ async function run(req, res) {
     // after the answer (background()). No snapshot at all: refresh inline, or a 503 with Retry-After while another
     // refresh holds the lock.
     if (!snap) {
-      const r = await refreshAll({});
+      const r = await refreshAll({ tier: 'due' });
       if (r.busy) {
         res.setHeader('Cache-Control', 'no-store'); res.setHeader('Retry-After', '15');
         return res.status(503).json({ error: 'news is refreshing, try again shortly' });
       }
       snap = r.snapshot;
-    } else background(refreshAll({}).catch(e => console.error('background refresh failed', e && e.message)));
+    } else background(refreshAll({ tier: 'due' }).catch(e => console.error('background refresh failed', e && e.message)));
   }
   const view = page(publicSnapshot(scoped(snap, scope, filters)), req.query && req.query.before);
   if (view.error) { res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=300'); return res.status(400).json({ error: view.error }); }

@@ -44,7 +44,7 @@ test('registry: valid, 4 files, seq 1..64 without gaps, 64 unique ids, no regist
   assert.strictEqual(new Set(entries.map(s => s.id)).size, 64);
   for (const s of [...news.SOURCES, ...news.DISABLED_SOURCES]) { assert.ok(!('seq' in s), s.id); assert.ok(!('note' in s), s.id); }
   const files = fs.readdirSync(path.join(ROOT, 'data/sources')).filter(f => f.endsWith('.json')).sort();
-  assert.deepStrictEqual(files, ['illinois.json', 'indiana.json', 'kentucky.json', 'statewide.json']);
+  assert.deepStrictEqual(files, ['illinois.json', 'indiana.json', 'kentucky.json', 'rate-groups.json', 'statewide.json']);
 });
 
 test('validate() reports a bad registry', () => {

@@ -102,6 +102,35 @@ test('GET reports flags, batches, source health, all 57 counties and the review 
     for (const row of d.review) assert.match(row.key, /^o[0-9a-f]{16}$/);
     const txt = JSON.stringify(d);
     assert.ok(!/@|fake-token|kv\.test|LISTINGS_ADMIN_KEY|test-admin-key/.test(txt), 'no emails, secrets or store details');
+    assert.equal(d.lastRefresh, null);
+    assert.equal(typeof h.everyMin, 'number');
+    assert.equal(typeof h.lastOkAgeMin, 'number');
+  } finally { un(); }
+});
+
+test('GET lastRefresh is the latest run record pointed at by tsn:news:sched, without per-source error text', async () => {
+  const st = store(), un = install(st);
+  try {
+    const news = fresh({ LISTINGS_ADMIN_KEY: KEY });
+    seed(st, news);
+    const runId = '2026-11-07T15:00Z-due-abcd';
+    st.kv.set('tsn:news:sched', JSON.stringify({ runId, sig: 'x', snapAt: iso(1), chores: {}, src: {} }));
+    st.kv.set('tsn:runs:' + runId, JSON.stringify({
+      runId, tier: 'due', startedAt: iso(1), finishedAt: iso(0.9), durationMs: 1200,
+      due: 12, fetched: 10, deferred: 2, waiting: 40, snapshotWritten: true,
+      discovery: { newStories: 3, medianMin: 11, p90Min: 18 },
+      staleSources: [{ id: 'fbilou', lastOkAgeMin: null, status: 'rate_limited', fails: 2, blockedForMin: 30, everyMin: 60 }],
+      statusCounts: { success: 9, rate_limited: 1 },
+      results: [{ sourceId: 'fbilou', error: 'HTTP 403 from secret-host.example' }],
+    }));
+    const d = (await call(news, 'GET', KEY)).body;
+    assert.equal(d.lastRefresh.runId, runId);
+    assert.equal(d.lastRefresh.tier, 'due');
+    assert.equal(d.lastRefresh.fetched, 10);
+    assert.equal(d.lastRefresh.discovery.medianMin, 11);
+    assert.equal(d.lastRefresh.staleSources[0].id, 'fbilou');
+    assert.ok(!('results' in d.lastRefresh));
+    assert.ok(!/secret-host|HTTP 403/.test(JSON.stringify(d.lastRefresh)));
   } finally { un(); }
 });
 
@@ -148,7 +177,7 @@ test('overrides reach the scope filters through the snapshot and are stripped fr
 
 test('the admin page has the Sources & Coverage section, uses the shared key helpers, and still 8 functions', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'admin.html'), 'utf8');
-  for (const id of ['cov', 'cvf', 'cvs', 'cvc', 'cvq', 'cva']) assert.ok(html.includes('id="' + id + '"'), id);
+  for (const id of ['cov', 'cvrn', 'cvf', 'cvs', 'cvc', 'cvq', 'cva']) assert.ok(html.includes('id="' + id + '"'), id);
   assert.match(html, /get\('\/api\/coverage'\)/); assert.match(html, /post\('\/api\/coverage'/);
   assert.ok(!/innerHTML/.test(html.slice(html.indexOf('Sources & Coverage (GET'))), 'text only, no innerHTML');
   const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));

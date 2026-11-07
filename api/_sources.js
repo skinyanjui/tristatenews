@@ -15,8 +15,10 @@
 //   geo          true: the outlet covers a wider region than ours, so only stories naming a REGION_TERMS place are kept
 //   strictGeo    ind | ky | ill: statewide publishers; items must name a Tri-State place in that state (api/_places.js)
 //   geoTerms     extra place names that are unambiguous inside this one publisher's area
-//   maxAgeDays   how long its stories stay on the page; everyMin: minutes between fetches (default 10, api/news.js planRun)
+//   maxAgeDays   how long its stories stay on the page
+//   everyMin     minutes between fetches (default 10, api/news.js planRun)
 //   tz           the publisher's IANA zone, for feed dates written without one (default America/Chicago)
+//   rateGroup    id of an entry in data/sources/rate-groups.json (shared publisher infrastructure)
 //   parser       sitemap | venue | ticketmaster (default: RSS, Atom or iCal)
 //   funeralHome  true for funeral homes (their card wins over a paper's for the same person)
 //   disabled     a reason string: the source stays listed here (easy to re-enable) but is never fetched or shown
@@ -36,6 +38,7 @@ const BATCHES = [
   require('../data/sources/batches/batch-3.json'),
 ];
 const BATCH_ONLY = ['seq', 'note', 'batch', 'site', 'counties', 'review', 'fallback'];
+const RATE_GROUPS = require('../data/sources/rate-groups.json');
 
 const KINDS = ['institution', 'courts', 'police', 'events', 'obits'];
 const STRICT = ['ind', 'ky', 'ill'];
@@ -64,6 +67,14 @@ function validate(files) {
       // localSection skips the Google News geo filter, so it is only for a Google News search limited to one site path
       if (s.localSection !== undefined && (s.localSection !== true || !/^https:\/\/news\.google\.com\/rss\/search\?q=site%3A[a-z0-9.-]+%2F[a-z0-9_%-]+/i.test(s.url || ''))) problems.push(where + ': localSection needs a Google News site:host/path search');
       if (s.fallback !== undefined && (!['google_news_site', 'google_news_towns'].includes(s.fallback) || !/^https:\/\/news\.google\.com\//.test(s.url || ''))) problems.push(where + ': fallback must label a Google News url (google_news_site or google_news_towns)');
+      if (s.rateGroup !== undefined && !(s.rateGroup in RATE_GROUPS)) problems.push(where + ': unknown rateGroup ' + s.rateGroup);
+    }
+  }
+  if (!files) {
+    if (!RATE_GROUPS || typeof RATE_GROUPS !== 'object') problems.push('rate-groups: missing');
+    else for (const [id, g] of Object.entries(RATE_GROUPS)) {
+      if (!g || !Number.isInteger(g.gapMs) || g.gapMs < 200 || g.gapMs > 60000) problems.push('rate-groups:' + id + ': gapMs must be 200-60000');
+      if (!g || !Number.isInteger(g.perRun) || g.perRun < 1 || g.perRun > 20) problems.push('rate-groups:' + id + ': perRun must be 1-20');
     }
   }
   return problems;
@@ -109,4 +120,4 @@ try {
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
 
-module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES, BATCHES, enabledBatches, activeBatches };
+module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES, BATCHES, enabledBatches, activeBatches, RATE_GROUPS };

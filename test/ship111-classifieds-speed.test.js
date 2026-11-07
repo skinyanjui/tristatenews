@@ -144,7 +144,7 @@ test('ship111: /api/market is still listings.js (8 functions); page fetches nati
   assert.ok(!/Promise\.all\(\s*\[[^\]]*(listings[^\]]*)market/.test(js));
   assert.match(js, /fetch\('\/api\/listings\?kind=' \+ kind/);
   assert.match(js, /fetch\('\/api\/market'/);
-  assert.match(js, /if \(isCl\) \{ renderClassifieds\(\);/);
+  assert.match(js, /if \(!clEl\.querySelector\('\.cl-bar'\)\) renderClassifieds\(\);/);
   assert.match(read('api/_market.js'), /waitUntil/);
   assert.match(read('api/_market.js'), /stale: true/);
 });

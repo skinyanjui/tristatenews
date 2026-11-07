@@ -31,9 +31,10 @@ test('posted time: short text, full date in title and aria-label (page and serve
   assert.equal(shortWhen(ago(8 * 36e5), now), '8h ago');
   assert.equal(shortWhen(ago(3 * 864e5), now), '3d ago');
   assert.equal(shortWhen(ago(10 * 864e5), now), 'October 25', 'older: spelled-out month');
-  assert.ok(src.includes(`aria-label="' + esc(timeAgo(it.published)) + '"'`));
+  // ship110: the full date drops the time for a story dated by day only (datePrecision 'day')
+  assert.ok(src.includes(`aria-label="' + esc(full) + '"'`) && src.includes("full = timeAgo(it.published, dayOnly)"));
   const js = read('public/assets/app.js');
-  assert.equal((js.match(/w\.title = timeAgo\(it\.published\); w\.setAttribute\('aria-label', w\.title\);/g) || []).length, 2);
+  assert.equal((js.match(/w\.title = timeAgo\(it\.published, it\.datePrecision === 'day'\); w\.setAttribute\('aria-label', w\.title\);/g) || []).length, 2);
   assert.ok(js.includes("if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';"));
   assert.ok(C);
 });

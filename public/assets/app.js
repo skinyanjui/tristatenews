@@ -359,7 +359,6 @@
   applyTheme();
   if (mq.addEventListener) mq.addEventListener('change', applyTheme);
 
-  var HOUR = 60 * 60 * 1000;
   var PAGE = 24;
   var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'news', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
   // Tab URLs (public/routes.js): a direct load of /events, /jobs ... opens that tab; /, /news and /police-courts open News.
@@ -419,8 +418,11 @@
     ids = ids.filter(function (x, k) { return ids.indexOf(x) === k; }).slice(0, 300);
     if (!ids.length) return;
     fetch('/api/react?ids=' + ids.join(','), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-      state.shared = !!(d && d.configured); state.counts = (d && d.counts) || {};
-      render(); repaintHearts(); // ship89: also the event picture hearts, which render() does not rebuild
+      var counts = (d && d.counts) || {}, was = JSON.stringify([state.shared, state.counts]);
+      state.shared = !!(d && d.configured); state.counts = counts;
+      // ship110: counts only order the Events tab's Popular rail; everywhere else the hearts repaint in place
+      if (state.cat === 'events' && was !== JSON.stringify([state.shared, state.counts])) render();
+      repaintHearts(); // ship89: also the event picture hearts, which render() does not rebuild
     }).catch(function () {});
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : /^ob-/.test(id || '') ? 'obits' : 'news'; } // ship91: ob-<news source> = a notice routed from a paper's news feed
@@ -443,6 +445,7 @@
     if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
     return k === cat;
   }
+  // News order is the API's (combine/page on the server). This only applies the open tab and the search box.
   function filtered() {
     var base = state.items.filter(function (i) { return inCat(i, state.cat); });
     var q = state.q.trim().toLowerCase();
@@ -518,11 +521,12 @@
     try { var x = new URL(u); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '#'; } catch (e) { return '#'; }
   }
 
-  function timeAgo(iso) {
+  // dayOnly (ship110): the publisher gave a date without a time (datePrecision 'day'), so no time is shown
+  function timeAgo(iso, dayOnly) {
     if (!iso || isNaN(Date.parse(iso))) return '';
     var d = new Date(iso), z = 'America/Chicago';
-    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: z }) + ' · ' +
-      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: z });
+    var day = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: z });
+    return dayOnly ? day : day + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: z });
   }
 
   /* ---------- weather (Open-Meteo) ---------- */
@@ -816,7 +820,7 @@
     var by = el('span', 'by');
     if (b.label) { by.appendChild(el('b', null, b.label)); by.appendChild(document.createTextNode(' · ')); }
     var u = brkUntil(b);
-    by.appendChild(document.createTextNode((u ? u + ' · ' : '') + (b.kind === 'alert' ? 'From ' : 'Reported by ') + hit.source + (u ? '' : ' · ' + timeAgo(hit.published))));
+    by.appendChild(document.createTextNode((u ? u + ' · ' : '') + (b.kind === 'alert' ? 'From ' : 'Reported by ') + hit.source + (u ? '' : ' · ' + timeAgo(hit.published, hit.datePrecision === 'day'))));
     tx.appendChild(by);
     bnBreak.appendChild(tx);
     var x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss breaking news banner');
@@ -882,12 +886,12 @@
   function loadAlerts() {
     var url = 'https://api.weather.gov/alerts/active?point=' + wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
     fetch(url, { headers: { accept: 'application/geo+json' } }).then(function (r) { if (!r.ok) throw new Error('alerts'); return r.json(); }).then(function (g) {
-      var seen = {};
+      var seen = {}, was = JSON.stringify(state.alerts);
       state.alerts = (g.features || []).map(function (f) { return f.properties || {}; }).filter(function (p) { if (!p.event || seen[p.event]) return false; seen[p.event] = 1; return true; });
       var rank = { Extreme: 0, Severe: 1, Moderate: 2, Minor: 3 };
       state.alerts.sort(function (a, b) { return (rank[a.severity] == null ? 4 : rank[a.severity]) - (rank[b.severity] == null ? 4 : rank[b.severity]); });
-      render(); // re-ranks the Breaking slot and redraws the strip
-    }).catch(function () { state.alerts = []; render(); });
+      if (JSON.stringify(state.alerts) !== was) render(); // re-ranks the Breaking slot and redraws the strip (ship110: only on a change)
+    }).catch(function () { if (state.alerts.length) { state.alerts = []; render(); } });
   }
 
   /* ---------- list ---------- */
@@ -1470,14 +1474,53 @@
   }
   // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
   // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
-  var MK = null, mkAsked = false;
-  function loadMarket() {
-    if (mkAsked) return;
-    mkAsked = true;
-    fetch('/api/market').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] };
-    }).catch(function () { MK = { ok: false, items: [] }; }).then(function () { drawBoard('item'); });
+  var MK = null, mkAsked = false, mkBusy = false, mkFollowed = false, mkFollowDue = false, mkFollowTimer = 0;
+  var MK_FOLLOW_MS = 10000;
+  function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
+  function paintItemFilters() {
+    var b = boards.item, bar = clEl.querySelector('.cl-bar');
+    if (!bar) return;
+    var post = bar.querySelector('.cl-go');
+    var next = el('div', 'cl-bar');
+    next.appendChild(townPicker(b, 'item', 'For sale'));
+    if (post) next.appendChild(post);
+    bar.replaceWith(next);
+    var oldChips = clEl.querySelector('.cl-chips'), cr = chips(b, 'item');
+    if (oldChips && cr.children.length > 1) oldChips.replaceWith(cr);
+    else if (oldChips && cr.children.length <= 1) oldChips.remove();
+    else if (!oldChips && cr.children.length > 1) {
+      var list = clEl.querySelector('.cl-list');
+      if (list) list.parentNode.insertBefore(cr, list);
+    }
   }
+  function paintMarket() {
+    if (state.cat !== 'classifieds' || clEl.hidden) return;
+    var old = clEl.querySelector('.mk-sec');
+    if (!old) { renderClassifieds(); return; }
+    old.replaceWith(marketSection(boards.item));
+    paintItemFilters();
+  }
+  function takeMarket(d) { MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] }; }
+  function askMarket(follow) {
+    if (mkBusy || !marketWanted()) return;
+    if (follow) { if (mkFollowed) return; mkFollowed = true; mkFollowDue = false; }
+    else { if (mkAsked) return; mkAsked = true; }
+    mkBusy = true;
+    fetch('/api/market', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      takeMarket(d);
+      if (!follow && MK && MK.refreshing) scheduleMarketFollow();
+    }).catch(function () { takeMarket(null); }).then(function () { mkBusy = false; paintMarket(); if (mkFollowDue) followMarket(); });
+  }
+  function scheduleMarketFollow() {
+    if (mkFollowed || mkFollowTimer) return;
+    mkFollowTimer = setTimeout(function () { mkFollowTimer = 0; followMarket(); }, MK_FOLLOW_MS);
+  }
+  function followMarket() {
+    if (mkFollowed) return;
+    if (mkBusy || !marketWanted()) { mkFollowDue = true; return; }
+    askMarket(true);
+  }
+  function loadMarket() { askMarket(false); if (mkFollowDue) followMarket(); }
   function mkKey(x) { return String(x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + '|' + townOf(x).toLowerCase(); }
   function mkItems() {
     if (!MK || !MK.ok) return [];
@@ -1496,7 +1539,7 @@
       var p = el('p', 'cl-note', 'Listings from tristatemarketplace.com aren\u2019t available right now. '), a = el('a', null, 'Browse them there');
       a.href = 'https://www.tristatemarketplace.com/'; a.target = '_blank'; a.rel = 'noopener'; p.appendChild(a); sec.appendChild(p); return sec;
     }
-    if (MK.stale && MK.fetchedAt) sec.appendChild(el('p', 'cl-note', 'Couldn\u2019t refresh just now. Showing listings as of ' + new Date(MK.fetchedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.'));
+    if (MK.stale && MK.fetchedAt) sec.appendChild(el('p', 'cl-note', (MK.refreshing ? 'Showing listings as of ' : 'Couldn\u2019t refresh just now. Showing listings as of ') + new Date(MK.fetchedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.'));
     if (!items.length) { sec.appendChild(el('p', 'cl-note', all.length ? 'No tristatemarketplace.com listings match these filters.' : 'No listings on tristatemarketplace.com right now.')); return sec; }
     var list = el('div', 'cl-list');
     items.forEach(function (x) {
@@ -2354,13 +2397,21 @@
   var logoMap = {};
   function mapLogos() { logoMap = {}; state.sources.forEach(function (x) { logoMap[x.id] = x.logo; }); }
   // Relative time for card meta, short ("12m ago", "5h ago", "3d ago", then "October 15"); the full date is in the tooltip and label.
-  function shortWhen(iso) {
+  function shortWhen(iso, dayOnly) {
     var t = Date.parse(iso); if (!iso || isNaN(t)) return '';
+    if (dayOnly) return dayWhen(t, Date.now());
     var m = Math.round((Date.now() - t) / 6e4);
     // ship88: posted times are short again ("Just now", "12m ago", "8h ago", "3d ago"); the full date is the title/label
     if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';
     if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
     var z = 'America/Chicago', d = Math.floor(m / 1440); if (d < 7) return d + 'd ago';
+    return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: z });
+  }
+  // ship110: a story dated by day only reads "Today", "Yesterday" or its date (same as api/_cards.js dayWhen)
+  function dayWhen(t, now) {
+    var z = 'America/Chicago', day = function (x) { return new Date(x).toLocaleDateString('en-CA', { timeZone: z }); };
+    if (day(t) === day(now)) return 'Today';
+    if (day(t) === day(now - 864e5)) return 'Yesterday';
     return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: z });
   }
   // The first picture of a list is usually the largest thing on screen (LCP): it loads at once with high priority;
@@ -2409,7 +2460,7 @@
       var src = el('div', 'st-src');
       if (logo) { var av = el('img', 'av'); av.src = logo; av.alt = ''; av.referrerPolicy = 'no-referrer'; av.addEventListener('error', function () { av.remove(); }); src.appendChild(av); }
       src.appendChild(el('b', null, it.source || ''));
-      if (it.published) { var w = el('time', null, shortWhen(it.published)); w.dateTime = it.published; w.title = timeAgo(it.published); src.appendChild(w); }
+      if (it.published) { var w = el('time', null, shortWhen(it.published, it.datePrecision === 'day')); w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); src.appendChild(w); }
       bd.appendChild(src);
       var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
       var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
@@ -2539,7 +2590,7 @@
     }
     src.appendChild(el('b', null, it.source));
     if (it.place && SC.on && !/^county:/.test(SC.key)) { if (DD.part(it.place, hTitle, it.source)) src.appendChild(el('span', 'place', it.place)); } // ship80: not when the title or source already names it // one locality label, only when the classifier is confident
-    var w = el('time', 'when', shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); w.setAttribute('aria-label', w.title); }
+    var w = el('time', 'when', shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
     src.appendChild(w);
     var sb = UI.heart({
       get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
@@ -2590,7 +2641,7 @@
       toggle: function () { toggleSaved(it); },
       after: function () { sb.paint(); renderTabs(); }
     });
-    var w = el('time', null, shortWhen(it.published)); if (it.published) { w.dateTime = it.published; w.title = timeAgo(it.published); w.setAttribute('aria-label', w.title); }
+    var w = el('time', null, shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
     return UI.row({ cls: 'row-obit', sec: 'obits', pic: it.image || '', picRef: true, kicker: it.source, title: it.title, titleHref: it.link, text: it.summary,
       left: [flowersLink(it, 'span')], when: w, acts: actRow(sb, it) });
   }
@@ -2647,7 +2698,14 @@
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
-    if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); loadMarket(); return; }
+    if (isCl) {
+      metaEl.textContent = '';
+      // News snapshot loads must not rebuild native cards (load() calls render while Classifieds is open).
+      if (!clEl.querySelector('.cl-bar')) renderClassifieds();
+      if (!boards.item.loaded) loadBoard('item');
+      loadMarket();
+      return;
+    }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
     if (state.cat === 'obits') { loadFlowers(); if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
     if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }
@@ -2732,7 +2790,8 @@
       if (want !== SC.key || state.more !== m) return;
       var seen = {}; state.items.forEach(function (i) { seen[i.id || i.link] = 1; });
       (d.items || []).forEach(function (i) { if (!seen[i.id || i.link]) state.items.push(i); });
-      state.more = d.more || null;
+      state.more = d.more || null; state.olderKey = want; // a background refresh keeps these (load)
+      state.sig = newsSig(state.items, state.sources);
       loadCounts();
     }).catch(function () { /* keep what we have; the button comes back on the next render */ });
   }
@@ -2740,29 +2799,102 @@
   var RETRY_MS = 60 * 1000;
   // true when time a is before time b (ISO strings); unknown times never count as older.
   function older(a, b) { var x = Date.parse(a), y = Date.parse(b); return isFinite(x) && isFinite(y) && x < y; }
-  function load(force) {
+  // What a reader would see change: the stories (link, headline, time, picture, summary) and the source list.
+  function newsSig(items, sources) {
+    return items.map(function (i) { return [i.link, i.title, i.published, i.datePrecision || '', i.image || '', i.summary || '', i.place || ''].join('\u0001'); }).join('\u0002') +
+      '\u0003' + sources.map(function (s) { return s.id + ':' + s.ok + ':' + s.count; }).join(',');
+  }
+  // A background refresh redraws only while the reader is not in the middle of something: no dialog open, no
+  // keyboard focus inside the list. Otherwise it waits (state.dirty) and the minute check draws it later.
+  function quietOk() { return !document.querySelector('dialog[open]') && !(document.activeElement && listEl.contains(document.activeElement)); }
+  // Redraw without moving what the reader is looking at: the story card at the reading line (40% down the screen, or
+  // else the first on screen) stays where it was; new stories above it push nothing down the screen. At the top of
+  // the page the new stories simply appear.
+  function anchored(draw) {
+    var key = null, top = 0, line = window.innerHeight * 0.4;
+    if ((window.scrollY || 0) > 0 && !listEl.hidden) {
+      for (var i = 0; i < listEl.children.length; i++) {
+        var c = listEl.children[i], r = c.getBoundingClientRect();
+        if (!c._story || r.bottom <= 0) continue;
+        if (!key || (r.top <= line && r.bottom > line)) { key = c._story.it.link; top = r.top; }
+        if (r.top > line) break;
+      }
+    }
+    if (!key) return draw();
+    // The browser's own scroll anchoring would correct the same move a second time, so it is off while this holds the
+    // card in place: at the redraw, and as rebuilt cards above it settle (an ad card resizes after it is added) for
+    // KEEP_MS, or until the reader scrolls, taps or types.
+    var root = document.documentElement, was = root.style.overflowAnchor, KEEP_MS = 2000, ro = null, EV = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+    root.style.overflowAnchor = 'none';
+    draw();
+    function keep() {
+      for (var j = 0; j < listEl.children.length; j++) {
+        var n = listEl.children[j];
+        if (n._story && n._story.it.link === key) { var dy = n.getBoundingClientRect().top - top; if (Math.abs(dy) >= 1) window.scrollBy(0, dy); return; }
+      }
+    }
+    function stop() {
+      if (ro) ro.disconnect();
+      EV.forEach(function (e) { window.removeEventListener(e, stop, true); });
+      root.style.overflowAnchor = was;
+    }
+    keep();
+    if (!window.ResizeObserver) return requestAnimationFrame(stop);
+    ro = new ResizeObserver(keep); ro.observe(listEl);
+    EV.forEach(function (e) { window.addEventListener(e, stop, { capture: true, passive: true }); });
+    setTimeout(stop, KEEP_MS);
+  }
+  var newsBusy = false;
+  // quiet: a background refresh (the 5-minute check, a returning tab): no skeletons, no redraw when nothing changed,
+  // older pages the reader already loaded are kept, and the redraw keeps the reader's place.
+  function load(force, quiet) {
     var first = !state.loaded;
-    if (first || force) { if (first || !state.items.length) skeletons(); }
+    if (!quiet && (first || force)) { if (first || !state.items.length) skeletons(); }
     var url = '/api/news' + (SC.key !== 'tristate' ? '?scope=' + SC.key : ''), want = SC.key;
+    newsBusy = true;
     // cache 'no-cache': always ask the server (a cheap CDN hit), never reuse the browser's own copy unasked.
     return fetch(url, { cache: force ? 'reload' : 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('news'); return r.json(); }).then(function (d) {
+      newsBusy = false;
       if (want !== SC.key) return; // the reader switched area while this was loading
       // The first stories in the HTML are newer than this answer (an older CDN copy): keep them and ask again shortly.
       if (state.partial && older(d.updatedAt, state.updatedAt)) { state.fetchedAt = Date.now(); if (!state.retried) { state.retried = true; setTimeout(function () { load(false); }, RETRY_MS); } return; }
-      state.items = d.items || []; state.sources = d.sources || []; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = d.more || null; state.partial = false;
+      // An older snapshot than the one on screen (another CDN copy) never replaces it.
+      if (quiet && !state.partial && older(d.updatedAt, state.updatedAt)) { state.fetchedAt = Date.now(); return; }
+      var items = d.items || [], more = d.more || null, sources = d.sources || [];
+      // Older pages the reader loaded stay: everything older than this answer's own last story, not in it.
+      if (!quiet) state.olderKey = null;
+      else if (state.olderKey === want && more && more.before) {
+        var have = {}, cut = Date.parse(more.before);
+        items.forEach(function (i) { have[i.link] = 1; });
+        var kept = state.items.filter(function (i) { var t = Date.parse(i.published); return !have[i.link] && isFinite(t) && t < cut; });
+        if (kept.length) { items = items.concat(kept); more = state.more; }
+      }
+      var sig = newsSig(items, sources), same = !force && state.loaded && !state.error && !state.partial && sig === state.sig;
+      state.items = items; state.sources = sources; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = more; state.partial = false; state.sig = sig;
       scopeFrom(d);
       state.error = false; state.loaded = true;
-      render();
+      if (same) return; // ship110: nothing a reader would see changed, so nothing is redrawn
+      if (quiet && !quietOk()) state.dirty = true;
+      else { state.dirty = false; if (quiet) anchored(render); else render(); }
       loadCounts();
     }).catch(function () {
+      newsBusy = false;
+      state.fetchedAt = Date.now(); // the next try waits for the next turn; a quiet failure keeps the stories on screen
+      if (quiet && state.items.length) return;
       state.error = true; state.loaded = true;
       render();
     });
   }
 
 
-  // hourly refresh while open, plus catch-up when the tab becomes visible after a long time away
-  setInterval(function () { load(false); }, HOUR);
+  // ship110: News stays current while the page is open: a fresh snapshot every NEWS_EVERY while the tab is visible and
+  // online (checked each minute, so a throttled or sleeping timer catches up), at once when the tab comes back or the
+  // connection returns after that long, and never two requests at once. A hidden or offline tab asks nothing. The
+  // server's snapshot itself changes only when a scheduled refresh finds new stories (every 5 minutes at most).
+  var NEWS_EVERY = 5 * 60 * 1000;
+  function newsDue() { return !document.hidden && navigator.onLine !== false && !newsBusy && !!state.fetchedAt && Date.now() - state.fetchedAt >= NEWS_EVERY - 30 * 1000; } // (half the minute check, so it is 5 minutes, not 6)
+  setInterval(function () { if (newsDue()) load(false, true); else if (state.dirty && quietOk()) { state.dirty = false; anchored(render); } }, 60 * 1000);
+  window.addEventListener('online', function () { if (newsDue()) load(false, true); if (marketWanted()) loadMarket(); });
   // weather updates continuously: every 10 minutes, and right away when the tab returns or the connection comes back
   var WX_EVERY = 10 * 60 * 1000, wxAt = Date.now();
   function wxTick() { if (wxPop.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return; wxAt = Date.now(); loadWeather(); }
@@ -2770,11 +2902,17 @@
   window.addEventListener('online', wxTick);
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
-    if (Date.now() - state.fetchedAt > HOUR) load(false);
+    if (newsDue()) load(false, true);
     if (Date.now() - wxAt > 2 * 60 * 1000) wxTick();
+    if (marketWanted()) loadMarket();
   });
-  // keep "x min ago" honest
-  setInterval(function () { if (state.items.length && !document.hidden) render(); }, 5 * 60 * 1000);
+  // keep "x min ago" honest: the times are rewritten in place (ship110: the list is no longer rebuilt for this)
+  function retime() {
+    Array.prototype.forEach.call(document.querySelectorAll('time[data-ago]'), function (w) {
+      var t = shortWhen(w.dateTime, w.dataset.ago === 'day'); if (t && w.textContent !== t) w.textContent = t;
+    });
+  }
+  setInterval(function () { if (!document.hidden) retime(); }, 60 * 1000);
   // ship76: an open Events tab (or search) redraws when an event starts ("Happening now") or passes its 58 minutes,
   // checked every 30 seconds; nothing redraws while nothing changed.
   var evSigLast = '';
@@ -2796,7 +2934,7 @@
   // end time), so an outage at /api/alerts or the NWS just falls back to the regular Breaking behavior.
   function loadOfficial() {
     return fetch('/api/alerts').then(function (r) { if (!r.ok) throw new Error('alerts'); return r.json(); })
-      .then(function (d) { state.official = Array.isArray(d.alerts) ? d.alerts : []; render(); })
+      .then(function (d) { var next = Array.isArray(d.alerts) ? d.alerts : []; if (JSON.stringify(next) === JSON.stringify(state.official)) return; state.official = next; render(); })
       .catch(function () { /* keep what we had */ });
   }
   setInterval(function () { if (!document.hidden) loadOfficial(); }, 2 * 60 * 1000);

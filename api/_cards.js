@@ -29,11 +29,19 @@ function shortWhen(iso, now) {
   const d = Math.floor(m / 1440); if (d < 7) return d + 'd ago';
   return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: TZ });
 }
-function timeAgo(iso) {
+// ship110: a story the publisher dated by day only (datePrecision 'day') shows that day, never a time (app.js dayWhen)
+function dayWhen(iso, now) {
+  const t = Date.parse(iso); if (!iso || isNaN(t)) return '';
+  const day = x => new Date(x).toLocaleDateString('en-CA', { timeZone: TZ });
+  if (day(t) === day(now)) return 'Today';
+  if (day(t) === day(now - 864e5)) return 'Yesterday';
+  return new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: TZ });
+}
+function timeAgo(iso, dayOnly) {
   if (!iso || isNaN(Date.parse(iso))) return '';
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: TZ }) + ' · ' +
-    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
+  const day = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: TZ });
+  return dayOnly ? day : day + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
 }
 const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>';
 const SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg>';
@@ -88,7 +96,8 @@ function card(it, o) {
   if (logo) src += '<img class="av" src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
   src += '<b>' + esc(it.source) + '</b>';
   if (it.place && o.places && DD.part(it.place, title, it.source)) src += '<span class="place">' + esc(it.place) + '</span>';
-  src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" title="' + esc(timeAgo(it.published)) + '" aria-label="' + esc(timeAgo(it.published)) + '"' : '') + '>' + esc(shortWhen(it.published, o.now)) + '</time></div>';
+  const dayOnly = it.datePrecision === 'day', full = timeAgo(it.published, dayOnly);
+  src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" data-ago="' + (dayOnly ? 'day' : 'time') + '" title="' + esc(full) + '" aria-label="' + esc(full) + '"' : '') + '>' + esc(dayOnly ? dayWhen(it.published, o.now) : shortWhen(it.published, o.now)) + '</time></div>';
   let body = '<div class="bd">';
   const tag = '<span class="pill pill-red' + (big && pic ? ' pill-over' : '') + '"><i></i>Breaking</span>';
   if (big && !pic) body += '<div class="bk-head">' + tag + '</div>';
@@ -127,4 +136,4 @@ function cards(p, now, tab) {
   return h;
 }
 
-module.exports = { pick, cards, card, esc, jsonScript, safeHref, shortWhen, PAGE };
+module.exports = { pick, cards, card, esc, jsonScript, safeHref, shortWhen, dayWhen, timeAgo, PAGE };

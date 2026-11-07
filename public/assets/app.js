@@ -445,6 +445,7 @@
     if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
     return k === cat;
   }
+  // News order is the API's (combine/page on the server). This only applies the open tab and the search box.
   function filtered() {
     var base = state.items.filter(function (i) { return inCat(i, state.cat); });
     var q = state.q.trim().toLowerCase();
@@ -1473,13 +1474,20 @@
   }
   // tristatemarketplace.com listings (GET /api/market, api/_market.js): shown while the site is tested, in their own
   // section with a disclosure, linking to the original listing. One that repeats a post here (same title and town) is left out.
-  var MK = null, mkAsked = false;
+  var MK = null, mkAsked = false, mkBusy = false;
+  function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
+  function paintMarket() {
+    if (state.cat !== 'classifieds' || clEl.hidden) return;
+    var old = clEl.querySelector('.mk-sec');
+    if (!old) { renderClassifieds(); return; }
+    old.replaceWith(marketSection(boards.item));
+  }
   function loadMarket() {
-    if (mkAsked) return;
-    mkAsked = true;
+    if (mkAsked || mkBusy || !marketWanted()) return;
+    mkAsked = true; mkBusy = true;
     fetch('/api/market').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] };
-    }).catch(function () { MK = { ok: false, items: [] }; }).then(function () { drawBoard('item'); });
+    }).catch(function () { MK = { ok: false, items: [] }; }).then(function () { mkBusy = false; paintMarket(); });
   }
   function mkKey(x) { return String(x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + '|' + townOf(x).toLowerCase(); }
   function mkItems() {
@@ -1499,7 +1507,7 @@
       var p = el('p', 'cl-note', 'Listings from tristatemarketplace.com aren\u2019t available right now. '), a = el('a', null, 'Browse them there');
       a.href = 'https://www.tristatemarketplace.com/'; a.target = '_blank'; a.rel = 'noopener'; p.appendChild(a); sec.appendChild(p); return sec;
     }
-    if (MK.stale && MK.fetchedAt) sec.appendChild(el('p', 'cl-note', 'Couldn\u2019t refresh just now. Showing listings as of ' + new Date(MK.fetchedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.'));
+    if (MK.stale && MK.fetchedAt) sec.appendChild(el('p', 'cl-note', (MK.refreshing ? 'Showing listings as of ' : 'Couldn\u2019t refresh just now. Showing listings as of ') + new Date(MK.fetchedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.'));
     if (!items.length) { sec.appendChild(el('p', 'cl-note', all.length ? 'No tristatemarketplace.com listings match these filters.' : 'No listings on tristatemarketplace.com right now.')); return sec; }
     var list = el('div', 'cl-list');
     items.forEach(function (x) {
@@ -2847,7 +2855,7 @@
   var NEWS_EVERY = 5 * 60 * 1000;
   function newsDue() { return !document.hidden && navigator.onLine !== false && !newsBusy && !!state.fetchedAt && Date.now() - state.fetchedAt >= NEWS_EVERY - 30 * 1000; } // (half the minute check, so it is 5 minutes, not 6)
   setInterval(function () { if (newsDue()) load(false, true); else if (state.dirty && quietOk()) { state.dirty = false; anchored(render); } }, 60 * 1000);
-  window.addEventListener('online', function () { if (newsDue()) load(false, true); });
+  window.addEventListener('online', function () { if (newsDue()) load(false, true); if (marketWanted()) loadMarket(); });
   // weather updates continuously: every 10 minutes, and right away when the tab returns or the connection comes back
   var WX_EVERY = 10 * 60 * 1000, wxAt = Date.now();
   function wxTick() { if (wxPop.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return; wxAt = Date.now(); loadWeather(); }
@@ -2857,6 +2865,7 @@
     if (document.hidden) return;
     if (newsDue()) load(false, true);
     if (Date.now() - wxAt > 2 * 60 * 1000) wxTick();
+    if (marketWanted()) loadMarket();
   });
   // keep "x min ago" honest: the times are rewritten in place (ship110: the list is no longer rebuilt for this)
   function retime() {

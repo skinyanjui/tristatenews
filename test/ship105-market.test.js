@@ -110,4 +110,7 @@ test('ship105: Classifieds shows the listings in their own section with a test-l
   assert.match(js, /if \(!MK\.ok\) \{/);
   assert.ok(!/verified listing/i.test(js));
   assert.match(js, /root\.appendChild\(marketSection\(boards\.item\)\);/);
+  assert.match(js, /function marketWanted\(\)/);
+  assert.match(js, /function paintMarket\(\)/);
+  assert.match(js, /!document\.hidden && navigator\.onLine !== false/);
 });

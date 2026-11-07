@@ -1477,11 +1477,28 @@
   var MK = null, mkAsked = false, mkBusy = false, mkFollowed = false, mkFollowDue = false, mkFollowTimer = 0;
   var MK_FOLLOW_MS = 10000;
   function marketWanted() { return state.cat === 'classifieds' && !document.hidden && navigator.onLine !== false; }
+  function paintItemFilters() {
+    var b = boards.item, bar = clEl.querySelector('.cl-bar');
+    if (!bar) return;
+    var post = bar.querySelector('.cl-go');
+    var next = el('div', 'cl-bar');
+    next.appendChild(townPicker(b, 'item', 'For sale'));
+    if (post) next.appendChild(post);
+    bar.replaceWith(next);
+    var oldChips = clEl.querySelector('.cl-chips'), cr = chips(b, 'item');
+    if (oldChips && cr.children.length > 1) oldChips.replaceWith(cr);
+    else if (oldChips && cr.children.length <= 1) oldChips.remove();
+    else if (!oldChips && cr.children.length > 1) {
+      var list = clEl.querySelector('.cl-list');
+      if (list) list.parentNode.insertBefore(cr, list);
+    }
+  }
   function paintMarket() {
     if (state.cat !== 'classifieds' || clEl.hidden) return;
     var old = clEl.querySelector('.mk-sec');
     if (!old) { renderClassifieds(); return; }
     old.replaceWith(marketSection(boards.item));
+    paintItemFilters();
   }
   function takeMarket(d) { MK = d && Array.isArray(d.items) ? d : { ok: false, items: [] }; }
   function askMarket(follow) {
@@ -2681,7 +2698,14 @@
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
-    if (isCl) { renderClassifieds(); metaEl.textContent = ''; if (!boards.item.loaded) loadBoard('item'); loadMarket(); return; }
+    if (isCl) {
+      metaEl.textContent = '';
+      // News snapshot loads must not rebuild native cards (load() calls render while Classifieds is open).
+      if (!clEl.querySelector('.cl-bar')) renderClassifieds();
+      if (!boards.item.loaded) loadBoard('item');
+      loadMarket();
+      return;
+    }
     if (isDl) { renderDeals(); metaEl.textContent = ''; if (!boards.deal.loaded) loadBoard('deal'); return; }
     if (state.cat === 'obits') { loadFlowers(); if (!boards.obit.loaded) loadBoard('obit'); else renderObits(); }
     if (isJb) { renderJobs(); metaEl.textContent = ''; if (!boards.job.loaded) loadBoard('job'); return; }

@@ -54,6 +54,10 @@ test('native posts show while the marketplace is still loading; arriving market 
   await page.setViewportSize({ width: 390, height: 1000 });
   let release;
   const gate = new Promise(r => { release = r; });
+  await page.route(/\/api\/news(\?|$)/, async route => {
+    await new Promise(r => setTimeout(r, 400));
+    await route.fulfill({ json: { updatedAt: new Date().toISOString(), sources: [], items: [] } });
+  });
   await page.route(/\/api\/listings\?kind=item$/, route => route.fulfill({ json: { configured: true, items: NATIVE } }));
   await page.route(/\/api\/market$/, async route => {
     await gate;

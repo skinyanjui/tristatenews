@@ -2683,14 +2683,14 @@
       at = i; var S = list[i]._story, it = S.it, pic = S.pic, logo = S.logo, title = S.title, cardHeart = S.heart;
       while (page.firstChild) page.removeChild(page.firstChild);
       d.scrollTop = 0;
-      if (pic) { var im = el('img', 'st-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.addEventListener('error', function () { im.remove(); }); page.appendChild(im); }
-      d.classList.toggle('st-nopic', !pic);
-      var bd = el('div', 'st-bd');
       var src = el('div', 'st-src');
       if (logo) { var av = el('img', 'av'); av.src = logo; av.alt = ''; av.referrerPolicy = 'no-referrer'; av.addEventListener('error', function () { av.remove(); }); src.appendChild(av); }
       src.appendChild(el('b', null, it.source || ''));
       if (it.published) { var w = el('time', null, shortWhen(it.published, it.datePrecision === 'day')); w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); src.appendChild(w); }
-      bd.appendChild(src);
+      page.appendChild(src);
+      if (pic) { var im = el('img', 'st-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.addEventListener('error', function () { im.remove(); }); page.appendChild(im); }
+      d.classList.toggle('st-nopic', !pic);
+      var bd = el('div', 'st-bd');
       var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
       var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
       var sh = UI.heart({
@@ -2783,23 +2783,22 @@
   function makeCard(it, big, bk) {
     var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
     if (!big && kd === 'obits') return obitRow(it);
-    var card = el('article', big ? 'card breaking' : 'card row');
+    var card = el('article', big ? 'card breaking' : 'card news-story');
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
     // Police & courts cards never show photos (no mugshots); ship94: nor does an outlet's crime story (CRIME_RE).
     var pic = safe ? '' : it.image;
     if (crimeStory(it)) pic = '';
     var logo = logoMap[it.sourceId] || '';
-    var a = el('a', 'ca');
+    var a = el('a', big ? 'ca' : 'ca ns-ca');
     a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';
-    var body = el('div', 'bd');
+    var body = el('div', big ? 'bd' : 'ns-bd');
     // The red "Breaking" badge already says it, so the lead card drops an outlet's "BREAKING:" prefix (as the top banner does).
     var hTitle = big ? (it.title.replace(/^\s*(breaking( news)?|just in|developing story|news alert)\s*[:|\u2013\u2014-]\s*/i, '') || it.title) : it.title;
-    // Story rows (ship74): bold section label, headline, then the source + time line; the Breaking card keeps its layout.
     var kick = !big && RT && RT.sectionLabel ? RT.sectionLabel(kd, it.cat) : '';
     var tabL = (CATS.filter(function (x) { return x.id === state.cat; })[0] || {}).label;
     kick = DD.part(kick, tabL); // ship80: no label that repeats the tab it is on
     if (kick) body.appendChild(el('span', 'kicker', kick));
-    var h2 = el('h2', null, hTitle); if (!big) h2.title = hTitle; // one line in a News row: the full headline stays in title (and the text)
+    var h2 = el('h2', null, hTitle); if (!big) h2.title = hTitle;
     body.appendChild(h2);
     if (bk && (bk.label || bk.end != null)) {
       var bm = el('div', 'bk-meta');
@@ -2810,51 +2809,50 @@
     }
     var sum = DD.preview(hTitle, it.summary); if (sum) body.appendChild(el('p', null, sum));
     if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));
-    // source + short time: one small line with the outlet's icon
-    var src = el('div', 'src');
+    var src = el('div', big ? 'src' : 'ns-src');
     if (logo) {
       var av = el('img', 'av'); av.src = logo; av.alt = ''; av.loading = 'lazy'; av.referrerPolicy = 'no-referrer';
       av.addEventListener('error', function () { av.remove(); });
       src.appendChild(av);
     }
     src.appendChild(el('b', null, it.source));
-    if (it.place && SC.on && !/^county:/.test(SC.key)) { if (DD.part(it.place, hTitle, it.source)) src.appendChild(el('span', 'place', it.place)); } // ship80: not when the title or source already names it // one locality label, only when the classifier is confident
-    var w = el('time', 'when', shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
+    if (it.place && SC.on && !/^county:/.test(SC.key)) { if (DD.part(it.place, hTitle, it.source)) src.appendChild(el('span', 'place', it.place)); } // ship80: not when the title or source already names it
+    var w = el('time', big ? 'when' : '', shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
     src.appendChild(w);
     var sb = UI.heart({
       get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
       toggle: function () { toggleSaved(it); },
       after: function () { sb.paint(); renderTabs(); }
     });
-    // Option B (ad-card style): picture flush left on desktop / on top on phones; source row, headline and a short
-    // description; a bottom row with where the link goes plus the heart and share.
+    var im = null;
     if (pic) {
-      var im = el('img', 'th'); picLoading(im); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = '';
-      if (!big) { im.width = 112; im.height = 112; } // reserves the square thumbnail's box before it loads
+      im = el('img', big ? 'th' : 'ns-pic'); picLoading(im); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.alt = '';
+      if (!big) { im.width = 1200; im.height = 675; }
       im.src = pic;
       im.addEventListener('error', function () { im.remove(); a.classList.add('noimg'); });
-      a.appendChild(im);
     } else a.classList.add('noimg');
-    if (big) body.insertBefore(src, body.firstChild);
-    else body.appendChild(src); // News rows: headline, preview, then the source + time line last
-    a.appendChild(body);
+    if (big) {
+      body.insertBefore(src, body.firstChild);
+      if (im) a.appendChild(im);
+      a.appendChild(body);
+    } else {
+      a.appendChild(src);
+      if (im) a.appendChild(im);
+      a.appendChild(body);
+    }
     card.appendChild(a);
     if (!big) card._story = { it: it, pic: pic, logo: logo, title: hTitle, heart: sb }; // ship98: the sheet's previous / next
     // ship95: a tap on the story opens its sheet over the feed (picture, headline, summary, "Continue to <publisher>");
-    // a modified or middle click still opens the publisher's page directly. Heart, flag and share sit outside the link.
+    // a modified or middle click still opens the publisher's page directly. Heart and share sit outside the link.
     a.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault(); storySheet(it, pic, logo, hTitle, sb, card);
     });
-    var foot = el('div', 'cf');
-    // Obituaries: Send flowers / Plant a tree / Donate and the heart and share share ONE row, the card's last, at every
-    // width (outside the card's link; ship59). Links first (left), reactions last (right), in reading and focus order;
-    // CSS keeps it on one line: short labels and icon reactions when narrow.
+    var foot = el('div', big ? 'cf' : 'ns-foot');
     foot.appendChild(actRow(sb, it));
     card.appendChild(foot);
     if (big) {
       var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true });
-      // over the picture as before; with no picture it sits inline above the source line so it never covers text
       if (a.classList.contains('noimg') || !pic) { var hd = el('div', 'bk-head'); hd.appendChild(tag); body.insertBefore(hd, body.firstChild); }
       else { tag.classList.add('pill-over'); card.appendChild(tag); }
     }

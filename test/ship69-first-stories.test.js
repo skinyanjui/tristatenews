@@ -59,7 +59,7 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
   assert.ok(!list.includes('Jane Doe') && !list.includes('>Fair<'), 'News only');
   // the first picture is the LCP candidate; the rest wait
   assert.equal((list.match(/fetchpriority="high"/g) || []).length, 1);
-  assert.match(list, /<img class="th" loading="eager" fetchpriority="high"[^>]*src="https:\/\/img\.ex\.com\/0\.jpg"/);
+  assert.match(list, /<img class="ns-pic" loading="eager" fetchpriority="high"[^>]*src="https:\/\/img\.ex\.com\/0\.jpg"/);
   const d = JSON.parse(blob(h));
   assert.equal(d.cat, 'news'); assert.equal(d.partial, true); assert.equal(d.items.length, 24);
   assert.deepEqual(d.sources.map(s => s.id).sort(), ['epd', 'ex'], 'only the sources the stories use');
@@ -68,10 +68,10 @@ test('"/" with a snapshot: first 24 News stories as cards and JSON, no /api/news
 test('Police & courts cards: no photo, the not-convicted note, safety section', async t => {
   t.mock.method(news, 'homeView', async () => view());
   const list = listOf((await call({ p: '/' })).body);
-  const m = /<article class="card row" data-sec="safety">([\s\S]*?)<\/article>/.exec(list);
+  const m = /<article class="card news-story" data-sec="safety">([\s\S]*?)<\/article>/.exec(list);
   assert.ok(m, 'police card rendered');
-  assert.ok(!m[1].includes('mug.jpg') && !m[1].includes('class="th"'), 'no photo');
-  assert.match(m[1], /<a class="ca noimg"/);
+  assert.ok(!m[1].includes('mug.jpg') && !m[1].includes('class="th"') && !m[1].includes('class="ns-pic"'), 'no photo');
+  assert.match(m[1], /<a class="ca ns-ca noimg"/);
   assert.match(m[1], /<p class="cl-note">Charged or arrested, not convicted\.<\/p>/);
 });
 

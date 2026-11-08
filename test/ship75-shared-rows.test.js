@@ -15,8 +15,8 @@ test('every card type is drawn by the one row component', () => {
   assert.ok(!/UI\.row\(/.test(fnOf('jobCard')), 'Jobs are stacked cards');
   assert.ok(!/UI\.row\(/.test(fnOf('dealCard')), 'Deals are stacked cards');
   assert.match(fnOf('eventCard'), /evxCard\(it, b\)/, 'events in search use the one event card (ship79)');
-  assert.match(app, /var card = el\('article', big \? 'card breaking' : 'card row'\);/, 'News, Police & courts, institutions, county pages, saved');
-  assert.match(read('api/_cards.js'), /'<article class="card' \+ \(big \? ' breaking' : ' row'\)/, 'server-drawn rows are the same rows');
+  assert.match(app, /var card = el\('article', big \? 'card breaking' : 'card news-story'\);/, 'News stories are stacked cards; Breaking keeps its lead card');
+  assert.match(read('api/_cards.js'), /class="card news-story"/, 'server-drawn news cards match the stacked markup');
   assert.match(app, /boardAd: function \(kind\)[\s\S]{0,300}UI\.adRow\(f\)/, 'our own board ads are rows too');
   assert.match(app, /var row = el\('article', 'card row ad-row ad-feed'\)/);
 });
@@ -32,7 +32,7 @@ test('the row: picture column only with a picture, one-line headline, two-line p
   assert.match(blk, /\.src \{ box-sizing:border-box; height:var\(--meta-h\);[^}]*flex-wrap:nowrap;/);
   assert.match(blk, /\.acts \.cl-ico \{[^}]*width:var\(--ico\); height:var\(--ico\);/, 'Report / Remove are 24px icons like heart and share');
   assert.match(blk, /\.bav \{ width:var\(--ico\); height:var\(--ico\);/, 'business avatars are the 24px logo size');
-  assert.match(blk, /:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\):not\(\.job-grid\):not\(\.deal-grid\) \{ display:flex; flex-direction:column; gap:0; \}/, 'one row per line in news-style lists; Jobs/Deals keep their grid');
+  assert.match(blk, /:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\):not\(\.job-grid\):not\(\.deal-grid\):not\(\.news-one\) \{ display:flex; flex-direction:column; gap:0; \}/, 'one row per line in news-style lists; Jobs/Deals keep their grid; News stacked cards keep gap');
   assert.doesNotMatch(css, /footer[^{]*\{[^}]*position:\s*fixed/);
 });
 

@@ -53,11 +53,12 @@ test('ship113: labeled Jobs and Deals samples cover types, photos, logos, coupon
   assert.match(js, /function boardPic\(/);
   assert.match(js, /function boardLogo\(/);
   assert.match(js, /sample: true/);
-  assert.match(js, /el\('span', 'mk-tag', 'Sample'\)/);
+  assert.match(js, /Demo listing/);
   assert.match(js, /if \(it\.feed \|\| it\.sample\) return out/);
-  assert.match(js, /el\('a', 'ad-cta', 'Advertise a job'\)/);
-  assert.match(js, /it\.sample[\s\S]*?ap\.href = '\/advertise'/);
-  assert.match(js, /else if \(href\) \{ ap = el\('a', 'ad-cta', 'Apply'\)/);
+  assert.match(js, /viewBtn\('View job', it, 'job'/);
+  assert.match(js, /el\('a', 'bd-quiet', 'Advertise a job'\)/);
+  assert.match(js, /ap\.href = '\/advertise'/);
+  assert.match(js, /else if \(href\) \{[\s\S]*'Apply'/);
   assert.match(js, /real\.concat\(boardSamples\(kind\)\)/);
   for (const t of ['Full-time', 'Part-time', 'Seasonal', 'Contract']) assert.match(js, new RegExp("jobType: '" + t + "'"));
   for (const c of ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'])

@@ -11,7 +11,9 @@ const fnOf = name => { const i = app.indexOf('  function ' + name + '('); assert
 
 test('every card type is drawn by the one row component', () => {
   assert.match(app, /row: function \(o\) \{\s*var c = el\('article', 'card row'/);
-  for (const f of ['dealCard', 'jobCard', 'obitCard', 'obitRow', 'cardBase']) assert.match(fnOf(f), /UI\.row\(\{/, f);
+  for (const f of ['obitCard', 'obitRow', 'cardBase']) assert.match(fnOf(f), /UI\.row\(\{/, f);
+  assert.ok(!/UI\.row\(/.test(fnOf('jobCard')), 'Jobs are stacked cards');
+  assert.ok(!/UI\.row\(/.test(fnOf('dealCard')), 'Deals are stacked cards');
   assert.match(fnOf('eventCard'), /evxCard\(it, b\)/, 'events in search use the one event card (ship79)');
   assert.match(app, /var card = el\('article', big \? 'card breaking' : 'card row'\);/, 'News, Police & courts, institutions, county pages, saved');
   assert.match(read('api/_cards.js'), /'<article class="card' \+ \(big \? ' breaking' : ' row'\)/, 'server-drawn rows are the same rows');
@@ -30,7 +32,7 @@ test('the row: picture column only with a picture, one-line headline, two-line p
   assert.match(blk, /\.src \{ box-sizing:border-box; height:var\(--meta-h\);[^}]*flex-wrap:nowrap;/);
   assert.match(blk, /\.acts \.cl-ico \{[^}]*width:var\(--ico\); height:var\(--ico\);/, 'Report / Remove are 24px icons like heart and share');
   assert.match(blk, /\.bav \{ width:var\(--ico\); height:var\(--ico\);/, 'business avatars are the 24px logo size');
-  assert.match(blk, /:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\) \{ display:flex; flex-direction:column; gap:0; \}/, 'one row per line in every list');
+  assert.match(blk, /:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\):not\(\.job-grid\):not\(\.deal-grid\) \{ display:flex; flex-direction:column; gap:0; \}/, 'one row per line in news-style lists; Jobs/Deals keep their grid');
   assert.doesNotMatch(css, /footer[^{]*\{[^}]*position:\s*fixed/);
 });
 
@@ -51,8 +53,10 @@ test('per-type rules kept: obituaries one bottom row and no ads; police photo-fr
   assert.ok(app.includes("var pic = safe ? '' : it.image;"));
   assert.match(fnOf('kick'), /filter\(Boolean\)/, 'empty label parts are dropped');
   assert.match(fnOf('cardBase'), /el\('b', 'cl-price', priceText\(it\.price\)\)/);
-  assert.match(fnOf('jobCard'), /el\('a', 'ad-cta', 'Apply'\)/);
-  assert.match(fnOf('dealCard'), /'deal-code'/);
+  assert.match(fnOf('jobCard'), /View job/);
+  assert.match(fnOf('dealCard'), /View deal/);
+  assert.match(fnOf('boardDetails'), /'Apply'/);
+  assert.match(fnOf('boardDetails'), /'deal-code'/);
 });
 
 test('phones: the county tag is hidden in the bottom row; desktop keeps it', () => {

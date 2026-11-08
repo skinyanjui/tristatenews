@@ -949,8 +949,9 @@
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
   // Labeled Jobs/Deals placeholders (same idea as Sample ad / Test listing): drawn on the page only, never written
-  // to Redis. The sample job button is "Advertise a job" (/advertise), not Apply. Report and Feature are omitted.
-  // A featured sample uses the featured layout labeled "Sample featured placement", never "Featured · Paid".
+  // to Redis. The card button is View job / View deal. Sample details cannot apply or redeem; a sample job may
+  // offer Advertise a job (/advertise). Report and Feature are omitted. A featured sample is labeled
+  // "Sample featured placement", never "Featured · Paid".
   // Set on: false to hide them.
   var BOARD_SAMPLES = { on: true,
     jobs: [
@@ -1403,11 +1404,41 @@
   // A community post's contact (phone or email) as a link where it can be one.
   function contactNode(c, label) { var href = applyHref(c); if (!c) return null; var n = href ? el('a', 'cl-contact', label || c) : el('span', 'cl-contact', c); if (href) n.href = href; return n; }
   function catPill(it) { return el('span', 'cl-tag', it.category || 'Other'); }
+  function endsLabel(it) { return it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : ''; }
+  function featLabel(it) {
+    if (!it.featured) return null;
+    return el('p', it.sample ? 'bd-feat' : 'bd-feat bd-paid', it.sample ? 'Sample featured placement' : 'Featured \u00B7 Paid');
+  }
+  function demoNote(kind) {
+    return el('p', 'bd-demo', kind === 'job' ? 'Demo listing. Not a real opening.' : 'Demo listing. Not a real offer.');
+  }
+  function viewBtn(label, it, kind, b) {
+    var bt = el('button', (kind === 'job' ? 'job-view' : 'deal-view') + ' bd-view', label);
+    bt.type = 'button';
+    bt.addEventListener('click', function () { boardDetails(it, kind, b, bt); });
+    return bt;
+  }
   function dealCard(it, b) {
-    var ac = actions(it, 'deal', b);
-    var code = null; if (it.code) { code = el('span', 'deal-code'); code.appendChild(el('span', null, 'Code ')); code.appendChild(el('code', null, it.code)); }
-    return UI.row({ cls: 'row-deal' + (it.featured ? ' is-featured' : ''), pic: photoSrc(it), kicker: kick(it, [it.category, it.town, it.ends ? 'Ends ' + new Date(it.ends + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : '']),
-      title: it.title, text: it.desc, avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [it.sample ? el('span', 'mk-tag', 'Sample') : null, it.sample ? null : contactNode(it.contact)], right: [code], acts: ac.acts, extra: [ac.feature] });
+    var c = el('article', 'deal row-deal' + (it.featured ? ' is-featured' : ''));
+    var pic = photoSrc(it);
+    if (pic) {
+      var im = el('img', 'deal-img'); im.src = pic; im.alt = ''; im.width = 1200; im.height = 628; im.loading = 'lazy';
+      im.addEventListener('error', function () { im.remove(); });
+      c.appendChild(im);
+    }
+    var body = el('div', 'deal-body');
+    var head = el('div', 'deal-head');
+    head.appendChild(bizAvatar(it.business || it.title, it.logo));
+    if (it.business) head.appendChild(el('span', 'deal-biz', it.business));
+    body.appendChild(head);
+    var feat = featLabel(it); if (feat) body.appendChild(feat);
+    body.appendChild(el('h2', 'deal-offer', it.title));
+    var cond = [it.town, it.category, endsLabel(it)].filter(Boolean).join(' \u00B7 ');
+    if (cond) body.appendChild(el('p', 'deal-cond', cond));
+    if (it.sample) body.appendChild(demoNote('deal'));
+    body.appendChild(viewBtn('View deal', it, 'deal', b));
+    c.appendChild(body);
+    return c;
   }
   var EV_HUE = { 'Music': 'music', 'Food & drink': 'food', 'Family': 'family', 'Sports': 'sports', 'Arts': 'arts', 'Community': 'community' };
   var EV_ICON = {
@@ -1476,11 +1507,79 @@
   }
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
-    var ac = actions(it, 'job', b), href = it.sample ? '' : applyHref(it.contact), ap = null;
-    if (it.sample) { ap = el('a', 'ad-cta', 'Advertise a job'); ap.href = '/advertise'; ap.setAttribute('aria-label', 'Not a real opening. Advertise a job: ' + it.title); }
-    else if (href) { ap = el('a', 'ad-cta', 'Apply'); ap.href = href; ap.title = it.contact; ap.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); }
-    return UI.row({ cls: 'row-job' + (it.featured ? ' is-featured' : ''), kicker: kick(it, [it.jobType, it.pay, it.category, it.town]), title: it.title, text: it.desc,
-      avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [it.sample ? el('span', 'mk-tag', 'Sample') : null, href ? null : contactNode(it.contact)], when: el('span', null, postDay(it.at)), right: [ap], acts: ac.acts, extra: [ac.feature] });
+    var c = el('article', 'job row-job' + (it.featured ? ' is-featured' : ''));
+    var head = el('div', 'job-head');
+    head.appendChild(bizAvatar(it.business || it.title, it.logo));
+    if (it.business) head.appendChild(el('span', 'job-co', it.business));
+    c.appendChild(head);
+    var feat = featLabel(it); if (feat) c.appendChild(feat);
+    c.appendChild(el('h2', 'job-title', it.title));
+    var meta = [it.town, it.jobType, it.category].filter(Boolean).join(' \u00B7 ');
+    if (meta) c.appendChild(el('p', 'job-meta', meta));
+    if (it.pay) c.appendChild(el('p', 'job-pay', it.pay));
+    if (it.sample) c.appendChild(demoNote('job'));
+    c.appendChild(viewBtn('View job', it, 'job', b));
+    return c;
+  }
+  function boardDetails(it, kind, b, opener) {
+    var back = opener || document.activeElement;
+    var d = el('dialog', 'bd-sheet');
+    d.setAttribute('aria-labelledby', 'bd-sheet-h');
+    var x = el('button', 'bd-x', 'Close'); x.type = 'button';
+    d.appendChild(x);
+    if (kind === 'deal' && photoSrc(it)) {
+      var im = el('img', 'bd-pic'); im.src = photoSrc(it); im.alt = ''; im.addEventListener('error', function () { im.remove(); });
+      d.appendChild(im);
+    }
+    var co = el('div', 'bd-co');
+    co.appendChild(bizAvatar(it.business || it.title, it.logo));
+    if (it.business) co.appendChild(el('b', null, it.business));
+    d.appendChild(co);
+    var feat = featLabel(it); if (feat) d.appendChild(feat);
+    var h = el('h2', null, it.title); h.id = 'bd-sheet-h'; d.appendChild(h);
+    var bits = kind === 'job' ? [it.town, it.jobType, it.category, it.pay] : [it.town, it.category, endsLabel(it)];
+    d.appendChild(el('p', 'bd-meta', bits.filter(Boolean).join(' \u00B7 ')));
+    if (it.desc) d.appendChild(el('p', 'bd-desc', it.desc));
+    var href = it.sample ? '' : applyHref(it.contact);
+    if (it.sample) {
+      d.appendChild(el('p', 'bd-demo', kind === 'job' ? 'This is a demo listing. It is not a real job and you cannot apply.' : 'This is a demo listing. It is not a real offer and you cannot redeem it.'));
+      if (it.code) d.appendChild(el('p', 'bd-meta', 'Example code ' + it.code + ' (not redeemable).'));
+      if (kind === 'job') { var ap = el('a', 'bd-quiet', 'Advertise a job'); ap.href = '/advertise'; d.appendChild(ap); }
+    } else if (href) {
+      if (kind === 'job') {
+        var apply = el('a', 'bd-act', 'Apply'); apply.href = href; apply.title = it.contact;
+        apply.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact);
+        d.appendChild(apply);
+      } else {
+        var go = el('a', 'bd-act', 'Get offer'); go.href = href; d.appendChild(go);
+      }
+    } else if (it.contact) d.appendChild(el('p', 'bd-meta', it.contact));
+    if (!it.sample && it.code) {
+      var shown = el('span', 'deal-code'); shown.appendChild(el('span', null, 'Code ')); shown.appendChild(el('code', null, it.code));
+      d.appendChild(shown);
+      var cp = el('button', 'bd-act', 'Copy code'); cp.type = 'button';
+      cp.addEventListener('click', function () {
+        var t = String(it.code);
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { cp.textContent = 'Copied'; }).catch(function () {});
+        else cp.textContent = t;
+      });
+      d.appendChild(cp);
+    }
+    if (!it.sample) {
+      var ac = actions(it, kind, b);
+      if (ac.feature) d.appendChild(ac.feature);
+      if (ac.acts) d.appendChild(ac.acts);
+    }
+    x.addEventListener('click', function () { d.close(); });
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+    d.addEventListener('close', function () {
+      d.remove();
+      if (back && back.focus) back.focus({ preventScroll: true });
+    });
+    document.body.appendChild(d);
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    x.focus();
+    return d;
   }
   function card(it, kind, b) {
     return kind === 'obit' ? obitCard(it, b) : cardBase(it, kind, b); // a paid placement says "Featured · Paid" in its label (FTC)

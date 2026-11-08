@@ -94,7 +94,7 @@ for (const board of BOARDS) {
         await expect(tab).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator(board.root)).toBeVisible();
         await expect(page.locator(board.root + ' ' + board.row).first()).toBeVisible();
-        await expect(page.locator(board.root + ' .mk-tag', { hasText: 'Sample' }).first()).toBeVisible();
+        await expect(page.locator(board.root + ' .bd-demo').first()).toBeVisible();
         await expect(page.locator(board.root)).toContainText('Sample featured placement');
         await expect(page.locator(board.root)).not.toContainText('Featured · Paid');
         await expect(page.locator(board.root)).toContainText(board.sampleNote);
@@ -134,14 +134,14 @@ for (const board of BOARDS) {
           const logos = page.locator('#jb .row-job img.bav');
           await expect(logos.first()).toBeVisible();
           expect(await logos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
-          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveAttribute('href', '/advertise');
-          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveText('Advertise a job');
+          await expect(page.locator('#jb .row-job .job-view').first()).toHaveText('View job');
+          expect(await page.locator('#jb .row-job .job-view').first().evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeGreaterThanOrEqual(44);
         } else {
-          const photos = page.locator('#dl .row-deal img.th');
+          const photos = page.locator('#dl .row-deal img.deal-img');
           await expect(photos.first()).toBeVisible();
           expect(await photos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
           await expect(page.locator('#dl .row-deal img.bav').first()).toBeVisible();
-          await expect(page.locator('#dl .deal-code code').first()).toHaveText('WREN2');
+          await expect(page.locator('#dl .row-deal .deal-view').first()).toHaveText('View deal');
         }
 
         const tag = board.tab.toLowerCase() + '-' + (dark ? 'dark' : 'light') + '-' + vp.name;
@@ -152,7 +152,7 @@ for (const board of BOARDS) {
   }
 }
 
-test('Jobs sample Advertise a job goes to /advertise and never posts; Part-time filter works', async ({ page }) => {
+test('Jobs View job opens a demo dialog; Advertise a job is in the sheet; Part-time filter works', async ({ page }) => {
   const hits = await stub(page);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/jobs');
@@ -163,14 +163,21 @@ test('Jobs sample Advertise a job goes to /advertise and never posts; Part-time 
   await expect(page.locator('#jb')).not.toContainText('Clinic nurse');
   await page.locator('#jb .cl-chip', { hasText: 'Any type' }).click();
   await expect(page.locator('#jb .row-job')).toHaveCount(8);
-  await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveAttribute('href', '/advertise');
-  await page.locator('#jb .row-job .ad-cta').first().click();
-  await expect(page.locator('#sn')).toBeVisible();
-  await expect(page.locator('#sn')).toContainText('Advertise with TRISTATENOW');
+  const view = page.locator('#jb .row-job .job-view').first();
+  await view.focus();
+  await page.keyboard.press('Enter');
+  const dlg = page.locator('dialog.bd-sheet');
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText('This is a demo listing');
+  await expect(dlg).not.toContainText('Apply');
+  await expect(dlg.locator('a.bd-quiet')).toHaveAttribute('href', '/advertise');
+  await page.keyboard.press('Escape');
+  await expect(dlg).toHaveCount(0);
+  await expect(view).toBeFocused();
   expect(hits.filter(x => x === 'POST' || x === 'CHECKOUT' || x === 'ADVERTISE')).toEqual([]);
 });
 
-test('Deals sample coupons stay on the card; Food & drink filter works; Post form does not submit', async ({ page }) => {
+test('Deals View deal opens a demo dialog; Food & drink filter works; Post form does not submit', async ({ page }) => {
   const hits = await stub(page);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/deals');
@@ -179,7 +186,15 @@ test('Deals sample coupons stay on the card; Food & drink filter works; Post for
   await expect(page.locator('#dl .row-deal')).toHaveCount(2);
   await page.locator('#dl .cl-chip', { hasText: 'All' }).click();
   await expect(page.locator('#dl .row-deal')).toHaveCount(8);
-  await expect(page.locator('#dl .deal-code code').first()).toBeVisible();
+  await page.locator('#dl .row-deal .deal-view').first().click();
+  const dlg = page.locator('dialog.bd-sheet');
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText('This is a demo listing');
+  await expect(dlg).toContainText('WREN2');
+  await expect(dlg).not.toContainText('Copy code');
+  await expect(dlg).not.toContainText('Get offer');
+  await dlg.locator('.bd-x').click();
+  await expect(dlg).toHaveCount(0);
   await page.locator('#dl .cl-bar > .cl-go').click();
   await expect(page.locator('#dl form.cl-form')).toBeVisible();
   await expect(page.locator('#dl form.cl-form')).toContainText('Business');

@@ -25,12 +25,12 @@
 - Create: `test/ship116-jobs-deals-stacked.test.js`
 - Modify: `e2e/jobs-deals-stacked.spec.js` (new), then later `e2e/jobs-deals.spec.js`, `e2e/jobs-deals-mobile.spec.js`, `test/ship75-shared-rows.test.js`, `test/ship113-jobs-deals.test.js`, `test/ship115-jobs-deals-mobile.test.js`
 
-- [ ] Unit test asserts stacked markup (`function boardDetails`, `View job`, `View deal`, `Demo listing`, `bd-sheet`, no sample Apply/Copy, real Apply/Copy only with working contact/code, chips nowrap, 8 functions).
-- [ ] Playwright: card/CTA/image/text bounds vs card and viewport at 320/360/375/390/414/430/768/1280 light/dark and 200% zoom; long real + sample; no-image; featured; keyboard open/close/focus; filters still work.
+- [x] Unit test asserts stacked markup (`function boardDetails`, `View job`, `View deal`, `Demo listing`, `bd-sheet`, no sample Apply/Copy, real Apply/Copy only with working contact/code, chips nowrap, 8 functions).
+- [x] Playwright: card/CTA/image/text bounds vs card and viewport at 320/360/375/390/414/430/768/1280 light/dark and 200% zoom; long real + sample; no-image; featured; keyboard open/close/focus; filters still work.
 
 Run unit test; expect FAIL (boardDetails / View job missing).
 
-### Task 2: Cards + dialog (TDD green)
+### Task 2: Cards + dialog (TDD green) ✅
 
 **Files:**
 - Modify: `public/assets/app.js` (`jobCard`, `dealCard`, add `boardDetails`)
@@ -40,7 +40,7 @@ Run unit test; expect FAIL (boardDetails / View job missing).
 
 `jobCard` / `dealCard` no longer call `UI.row`. News/classifieds/obits/events still do.
 
-### Task 3: Verify and PR
+### Task 3: Verify and PR ✅
 
 - `npm run lint`, `npm test`, Playwright Jobs/Deals specs
 - Screenshots under `/opt/cursor/artifacts/stacked-*`

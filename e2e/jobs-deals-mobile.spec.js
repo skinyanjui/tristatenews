@@ -47,7 +47,9 @@ async function stub(page) {
 
 async function layout(page, root) {
   return page.evaluate(sel => {
-    const vw = innerWidth;
+    const zoom = parseFloat(getComputedStyle(document.body).zoom) || parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    const layoutVw = innerWidth;
+    const viewRight = innerWidth * zoom;
     const rootEl = document.querySelector(sel);
     const cards = [...(rootEl ? rootEl.querySelectorAll('article.row-job, article.row-deal') : [])];
     const rows = [];
@@ -57,43 +59,38 @@ async function layout(page, root) {
       return a.left >= b.left - pad && a.right <= b.right + pad && a.width > 0 && a.height > 0;
     }
     cards.forEach(card => {
-      const src = card.querySelector('.src');
-      const cta = card.querySelector('.ad-cta');
-      const coupon = card.querySelector('.deal-code');
-      const name = card.querySelector('.src b');
-      const tag = card.querySelector('.mk-tag');
-      const when = card.querySelector('.src .when');
-      const img = card.querySelector('img.th, img.bav');
-      const kicker = card.querySelector('.kicker');
-      const title = (card.querySelector('h2') || {}).textContent || '';
+      const cta = card.querySelector('.bd-view');
+      const demo = card.querySelector('.bd-demo');
+      const img = card.querySelector('img.deal-img, img.bav');
+      const titleEl = card.querySelector('h2');
+      const pay = card.querySelector('.job-pay');
+      const meta = card.querySelector('.job-meta, .deal-cond');
+      const who = (card.querySelector('.job-co, .deal-biz') || {}).textContent || '';
+      const title = (who + ' ' + ((titleEl || {}).textContent || '')).trim();
       const cr = card.getBoundingClientRect();
       const offenders = [];
-      [cta, coupon, name, tag, when, img, kicker, src].forEach(el => {
+      [cta, demo, img, titleEl, pay, meta].forEach(el => {
         if (!el) return;
         const r = el.getBoundingClientRect();
         if (r.width < 1 && r.height < 1) return;
-        const pastView = r.right > vw + 1.5;
+        const pastView = r.right > viewRight + 1.5;
         const pastCard = r.right > cr.right + 1.5;
         if (pastView || pastCard) {
           offenders.push({
             cls: el.className, text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48),
-            pastView: Math.round(r.right - vw), pastCard: Math.round(r.right - cr.right)
+            pastView: Math.round(r.right - viewRight), pastCard: Math.round(r.right - cr.right)
           });
         }
       });
       rows.push({
         title,
         featured: card.classList.contains('is-featured'),
-        sample: !!(tag && /sample/i.test(tag.textContent)),
-        hasImg: !!img,
+        sample: !!(demo && /demo listing/i.test(demo.textContent)),
+        hasImg: !!card.querySelector('img.deal-img'),
         cta: cta ? cta.textContent.trim() : null,
-        coupon: coupon ? coupon.textContent.trim() : null,
+        ctaH: cta ? Math.round(cta.getBoundingClientRect().height / zoom) : 0,
         ctaInCard: inside(cta, card, 1.5),
-        ctaInView: cta ? cta.getBoundingClientRect().right <= vw + 1.5 : null,
-        couponInCard: inside(coupon, card, 1.5),
-        couponInView: coupon ? coupon.getBoundingClientRect().right <= vw + 1.5 : null,
-        srcOverflow: src ? getComputedStyle(src).overflowX : null,
-        srcWrap: src ? getComputedStyle(src).flexWrap : null,
+        ctaInView: cta ? cta.getBoundingClientRect().right <= viewRight + 1.5 : null,
         offenders
       });
     });
@@ -109,8 +106,8 @@ async function layout(page, root) {
       };
     });
     return {
-      vw,
-      pageOverflow: document.documentElement.scrollWidth - vw,
+      vw: layoutVw,
+      pageOverflow: document.documentElement.scrollWidth - layoutVw,
       htmlOverflow: getComputedStyle(document.documentElement).overflowX,
       bodyOverflow: getComputedStyle(document.body).overflowX,
       rows, chipRows
@@ -136,7 +133,7 @@ for (const board of [
 ]) {
   for (const dark of [false, true]) {
     for (const vp of VIEWPORTS) {
-      test(`${board.tab} ${dark ? 'dark' : 'light'} ${vp.name}: footer CTA/coupon stay in the card and viewport`, async ({ page }) => {
+      test(`${board.tab} ${dark ? 'dark' : 'light'} ${vp.name}: stacked card and View CTA stay in the card and viewport`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: dark ? 'dark' : 'light' });
         await page.setViewportSize({ width: vp.width, height: vp.height });
         await stub(page);
@@ -151,28 +148,25 @@ for (const board of [
         expect(featured.length).toBeGreaterThan(0);
         const samples = m.rows.filter(r => r.sample);
         expect(samples.length).toBeGreaterThanOrEqual(8);
-        const longs = m.rows.filter(r => /Regional Medical|Riverside Bakehouse|FALLFESTIVALBUNDLE|Overnight licensed/.test(r.title + (r.coupon || '')));
+        const longs = m.rows.filter(r => /Regional Medical|Riverside Bakehouse|Overnight licensed|Holiday pastry/.test(r.title));
         expect(longs.length).toBeGreaterThan(0);
         for (const row of m.rows) {
           expect(row.offenders, row.title + ' ' + JSON.stringify(row.offenders)).toEqual([]);
-          if (row.cta) {
-            expect(row.ctaInCard, row.title + ' CTA in card').toBe(true);
-            expect(row.ctaInView, row.title + ' CTA in viewport').toBe(true);
-          }
-          if (row.coupon) {
-            expect(row.couponInCard, row.title + ' coupon in card').toBe(true);
-            expect(row.couponInView, row.title + ' coupon in viewport').toBe(true);
-          }
+          expect(row.cta, row.title + ' has View').toBeTruthy();
+          expect(row.ctaH, row.title + ' tap').toBeGreaterThanOrEqual(44);
+          expect(row.ctaInCard, row.title + ' CTA in card').toBe(true);
+          expect(row.ctaInView, row.title + ' CTA in viewport').toBe(true);
         }
         if (board.tab === 'Jobs') {
-          const sampleCta = m.rows.find(r => r.sample && r.cta);
-          expect(sampleCta.cta).toBe('Advertise a job');
-          const paid = m.rows.find(r => r.featured && !r.sample);
+          expect(m.rows.every(r => r.cta === 'View job')).toBe(true);
           expect(await page.locator('#jb')).toContainText('Featured · Paid');
           expect(await page.locator('#jb')).toContainText('Sample featured placement');
+          expect(await page.locator('#jb')).toContainText('Demo listing');
         } else {
+          expect(m.rows.every(r => r.cta === 'View deal')).toBe(true);
           expect(m.rows.some(r => r.hasImg)).toBe(true);
           expect(m.rows.some(r => !r.hasImg)).toBe(true);
+          expect(await page.locator('#dl')).toContainText('Demo listing');
         }
         for (const row of m.chipRows) {
           expect(row.wrap).not.toBe('wrap');
@@ -180,8 +174,44 @@ for (const board of [
           expect(row.chipH).toBeGreaterThanOrEqual(44);
         }
         const tag = board.tab.toLowerCase() + '-' + (dark ? 'dark' : 'light') + '-' + vp.name;
-        await page.screenshot({ path: ART + '/jobs-deals-mobile-' + tag + '.png', fullPage: false });
+        await page.screenshot({ path: ART + '/stacked-' + tag + '.png', fullPage: false });
       });
     }
   }
 }
+
+test('200% zoom at 375: View buttons and titles stay in the card', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await stub(page);
+  await page.goto('/jobs');
+  await expect(page.locator('#jb .row-job').first()).toBeVisible();
+  await page.evaluate(() => { document.body.style.zoom = '2'; });
+  const m = await layout(page, '#jb');
+  for (const row of m.rows) {
+    expect(row.offenders, row.title + ' ' + JSON.stringify(row.offenders)).toEqual([]);
+    expect(row.ctaInCard).toBe(true);
+    expect(row.ctaInView).toBe(true);
+  }
+  await page.screenshot({ path: ART + '/stacked-jobs-375-zoom200.png', fullPage: false });
+});
+
+test('real job Apply and real deal Copy code only in the detail dialog', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stub(page);
+  await page.goto('/jobs');
+  await page.locator('#jb .row-job', { hasText: 'Overnight licensed' }).locator('.job-view').click();
+  const jobDlg = page.locator('dialog.bd-sheet');
+  await expect(jobDlg).toBeVisible();
+  await expect(jobDlg).toContainText('Featured · Paid');
+  await expect(jobDlg.locator('a.bd-act', { hasText: 'Apply' })).toHaveAttribute('href', /tel:/);
+  await expect(jobDlg).not.toContainText('This is a demo listing');
+  await jobDlg.locator('.bd-x').click();
+  await page.goto('/deals');
+  await page.locator('#dl .row-deal', { hasText: 'Holiday pastry' }).locator('.deal-view').click();
+  const dealDlg = page.locator('dialog.bd-sheet');
+  await expect(dealDlg).toBeVisible();
+  await expect(dealDlg).toContainText('FALLFESTIVALBUNDLE');
+  await expect(dealDlg.locator('button.bd-act', { hasText: 'Copy code' })).toBeVisible();
+  await expect(dealDlg.locator('a.bd-act', { hasText: 'Get offer' })).toHaveAttribute('href', /tel:/);
+  await page.screenshot({ path: ART + '/stacked-deals-detail-390.png', fullPage: false });
+});

@@ -949,7 +949,9 @@
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
   // Labeled Jobs/Deals placeholders (same idea as Sample ad / Test listing): drawn on the page only, never written
-  // to Redis. Apply goes to /advertise; Report and Feature are omitted. Set on: false to hide them.
+  // to Redis. The sample job button is "Advertise a job" (/advertise), not Apply. Report and Feature are omitted.
+  // A featured sample uses the featured layout labeled "Sample featured placement", never "Featured · Paid".
+  // Set on: false to hide them.
   var BOARD_SAMPLES = { on: true,
     jobs: [
       { id: 'sjob01', title: 'Clinic nurse', business: 'Willow Clinic', jobType: 'Full-time', pay: '$28 an hour', category: 'Healthcare', town: 'Evansville, IN', desc: 'Day shifts at a small clinic. Not a real opening.', featured: true, logo: true, atOff: 1 },
@@ -1391,8 +1393,12 @@
     }
     return out;
   }
-  // Labels for a row: only parts that add information, joined with " · "; "Featured · Paid" first on a paid post (FTC).
-  function kick(it, parts) { var k = (it.featured ? ['Featured \u00B7 Paid'] : []).concat(DD.parts(parts, it.title)).filter(Boolean).join(' \u00B7 '); return k; } // ship80: no part twice, none already in the title
+  // Labels for a row: only parts that add information, joined with " · ". A real paid post says "Featured · Paid"
+  // first (FTC). A labeled sample that uses the featured layout says "Sample featured placement" and never claims paid.
+  function kick(it, parts) {
+    var feat = it.featured ? (it.sample ? ['Sample featured placement'] : ['Featured \u00B7 Paid']) : [];
+    return feat.concat(DD.parts(parts, it.title)).filter(Boolean).join(' \u00B7 ');
+  } // ship80: no part twice, none already in the title
   function postDay(at) { return at ? new Date(at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/Chicago' }) : ''; }
   // A community post's contact (phone or email) as a link where it can be one.
   function contactNode(c, label) { var href = applyHref(c); if (!c) return null; var n = href ? el('a', 'cl-contact', label || c) : el('span', 'cl-contact', c); if (href) n.href = href; return n; }
@@ -1471,7 +1477,7 @@
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
     var ac = actions(it, 'job', b), href = it.sample ? '' : applyHref(it.contact), ap = null;
-    if (it.sample) { ap = el('a', 'ad-cta', 'Apply'); ap.href = '/advertise'; ap.setAttribute('aria-label', 'Not a real opening: ' + it.title); }
+    if (it.sample) { ap = el('a', 'ad-cta', 'Advertise a job'); ap.href = '/advertise'; ap.setAttribute('aria-label', 'Not a real opening. Advertise a job: ' + it.title); }
     else if (href) { ap = el('a', 'ad-cta', 'Apply'); ap.href = href; ap.title = it.contact; ap.setAttribute('aria-label', 'Apply for ' + it.title + ' at ' + (it.business || 'this employer') + ' using ' + it.contact); }
     return UI.row({ cls: 'row-job' + (it.featured ? ' is-featured' : ''), kicker: kick(it, [it.jobType, it.pay, it.category, it.town]), title: it.title, text: it.desc,
       avatar: bizAvatar(it.business || it.title, it.logo), name: it.business || '', left: [it.sample ? el('span', 'mk-tag', 'Sample') : null, href ? null : contactNode(it.contact)], when: el('span', null, postDay(it.at)), right: [ap], acts: ac.acts, extra: [ac.feature] });

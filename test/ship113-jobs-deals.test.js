@@ -55,7 +55,9 @@ test('ship113: labeled Jobs and Deals samples cover types, photos, logos, coupon
   assert.match(js, /sample: true/);
   assert.match(js, /el\('span', 'mk-tag', 'Sample'\)/);
   assert.match(js, /if \(it\.feed \|\| it\.sample\) return out/);
+  assert.match(js, /el\('a', 'ad-cta', 'Advertise a job'\)/);
   assert.match(js, /it\.sample[\s\S]*?ap\.href = '\/advertise'/);
+  assert.match(js, /else if \(href\) \{ ap = el\('a', 'ad-cta', 'Apply'\)/);
   assert.match(js, /real\.concat\(boardSamples\(kind\)\)/);
   for (const t of ['Full-time', 'Part-time', 'Seasonal', 'Contract']) assert.match(js, new RegExp("jobType: '" + t + "'"));
   for (const c of ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'])
@@ -66,6 +68,7 @@ test('ship113: labeled Jobs and Deals samples cover types, photos, logos, coupon
   assert.match(js, /it\.logo = boardLogo/);
   assert.match(js, /code: 'WREN2'/);
   assert.match(js, /featured: true/);
+  assert.match(js, /it\.sample \? \['Sample featured placement'\] : \['Featured \\u00B7 Paid'\]/);
   assert.ok((js.match(/id: 'sjob\d+'/g) || []).length >= 7, 'enough jobs to place the in-listing ad');
   assert.ok((js.match(/id: 'sdeal\d+'/g) || []).length >= 7, 'enough deals to place the in-listing ad');
   assert.ok(!/fetch\('\/api\/listings'[\s\S]{0,200}BOARD_SAMPLES/.test(js));

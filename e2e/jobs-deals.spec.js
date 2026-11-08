@@ -95,7 +95,8 @@ for (const board of BOARDS) {
         await expect(page.locator(board.root)).toBeVisible();
         await expect(page.locator(board.root + ' ' + board.row).first()).toBeVisible();
         await expect(page.locator(board.root + ' .mk-tag', { hasText: 'Sample' }).first()).toBeVisible();
-        await expect(page.locator(board.root)).toContainText('Featured · Paid');
+        await expect(page.locator(board.root)).toContainText('Sample featured placement');
+        await expect(page.locator(board.root)).not.toContainText('Featured · Paid');
         await expect(page.locator(board.root)).toContainText(board.sampleNote);
         await expect(page.locator(board.root)).not.toContainText('Nothing posted yet. Be the first.');
         await expect(page.locator(board.root + ' .cl-link')).toHaveCount(0);
@@ -134,7 +135,7 @@ for (const board of BOARDS) {
           await expect(logos.first()).toBeVisible();
           expect(await logos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
           await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveAttribute('href', '/advertise');
-          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveText('Apply');
+          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveText('Advertise a job');
         } else {
           const photos = page.locator('#dl .row-deal img.th');
           await expect(photos.first()).toBeVisible();
@@ -151,7 +152,7 @@ for (const board of BOARDS) {
   }
 }
 
-test('Jobs sample Apply goes to /advertise and never posts; Part-time filter works', async ({ page }) => {
+test('Jobs sample Advertise a job goes to /advertise and never posts; Part-time filter works', async ({ page }) => {
   const hits = await stub(page);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/jobs');

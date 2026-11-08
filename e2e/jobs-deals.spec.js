@@ -1,5 +1,5 @@
-// Jobs and Deals reader boards: tabs, empty copy, 44px Post controls, form fields.
-// Listings GET is mocked; POST is intercepted so nothing is written.
+// Jobs and Deals reader boards: labeled samples with images, one-row chips, 44px Post, demo-only apply/report/feature.
+// Listings GET is mocked empty; samples are client-side. POST/checkout are intercepted so nothing is written.
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 
@@ -7,26 +7,28 @@ const ART = '/opt/cursor/artifacts';
 fs.mkdirSync(ART, { recursive: true });
 
 async function stub(page) {
-  const posts = [];
+  const hits = [];
   await page.route(/\/api\/news(\?|$)/, route => route.fulfill({ json: { updatedAt: new Date().toISOString(), sources: [], items: [] } }));
-  await page.route(/\/api\/listings\?kind=job$/, route => {
-    if (route.request().method() === 'GET') return route.fulfill({ json: { configured: true, items: [] } });
-    posts.push(route.request().url());
-    return route.fulfill({ status: 204, body: '' });
-  });
-  await page.route(/\/api\/listings\?kind=deal$/, route => {
-    if (route.request().method() === 'GET') return route.fulfill({ json: { configured: true, items: [] } });
-    posts.push(route.request().url());
-    return route.fulfill({ status: 204, body: '' });
-  });
-  await page.route(/\/api\/listings$/, route => {
-    if (route.request().method() === 'POST') {
-      posts.push('POST');
+  await page.route(/\/api\/listings(\?|$)/, route => {
+    const req = route.request();
+    const url = req.url();
+    if (req.method() === 'POST') {
+      hits.push('POST');
       return route.fulfill({ status: 204, body: '' });
     }
+    if (/kind=job/.test(url)) return route.fulfill({ json: { configured: true, items: [] } });
+    if (/kind=deal/.test(url)) return route.fulfill({ json: { configured: true, items: [] } });
     return route.continue();
   });
-  return posts;
+  await page.route(/\/api\/checkout/, route => {
+    hits.push('CHECKOUT');
+    return route.fulfill({ status: 204, body: '' });
+  });
+  await page.route(/\/api\/advertise/, route => {
+    hits.push('ADVERTISE');
+    return route.fulfill({ json: { ok: false } });
+  });
+  return hits;
 }
 
 async function measure(page, root) {
@@ -46,35 +48,142 @@ async function measure(page, root) {
   }, root);
 }
 
-for (const board of [
-  { path: '/jobs', root: '#jb', tab: 'Jobs', post: 'Post a job', empty: 'Nothing posted yet. Be the first.', form: 'Job title' },
-  { path: '/deals', root: '#dl', tab: 'Deals', post: 'Post a deal', empty: 'Nothing posted yet. Be the first.', form: 'Business' }
-]) {
-  for (const vp of [{ width: 390, height: 900, name: '390' }, { width: 1280, height: 900, name: '1280' }]) {
-    test(`${board.tab} ${vp.name}px: tab, empty board, 44px Post, form without submitting`, async ({ page }) => {
-      const posts = await stub(page);
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto(board.path);
-      const tab = page.locator('#tab-' + board.tab.toLowerCase());
-      await tab.scrollIntoViewIfNeeded();
-      await expect(tab).toBeVisible();
-      await expect(tab).toHaveAttribute('aria-selected', 'true');
-      await expect(page.locator(board.root)).toBeVisible();
-      await expect(page.locator(board.root)).toContainText(board.empty);
-      await expect(page.locator(board.root + ' .cl-bar > .cl-go')).toHaveText(board.post);
-      const m = await measure(page, board.root);
-      expect(m.brand).toBe('TRISTATENOW');
-      expect(m.tabLabel).toBe(board.tab);
-      expect(m.post).toBeGreaterThanOrEqual(44);
-      if (m.chip != null) expect(m.chip).toBeGreaterThanOrEqual(44);
-      if (vp.width <= 430) expect(m.wx).toBeLessThan(m.post + 1);
-      await page.screenshot({ path: ART + '/jobs-deals-' + board.tab.toLowerCase() + '-' + vp.name + '.png', fullPage: true });
-      await page.locator(board.root + ' .cl-bar > .cl-go').click();
-      await expect(page.locator(board.root + ' form.cl-form')).toBeVisible();
-      await expect(page.locator(board.root + ' form.cl-form')).toContainText(board.form);
-      await expect(page.locator(board.root + ' form.cl-form')).toContainText('18 or older');
-      await page.screenshot({ path: ART + '/jobs-deals-' + board.tab.toLowerCase() + '-' + vp.name + '-form.png', fullPage: true });
-      expect(posts.filter(x => x === 'POST')).toEqual([]);
-    });
+async function chipMetrics(page, sel) {
+  return page.evaluate(s => {
+    const row = document.querySelector(s);
+    const chips = row ? [...row.querySelectorAll('.cl-chip')] : [];
+    const r = el => el.getBoundingClientRect();
+    const rowBox = row ? r(row) : null;
+    const tops = chips.map(c => Math.round(r(c).top));
+    const last = chips[chips.length - 1];
+    return {
+      count: chips.length,
+      labels: chips.map(c => c.textContent.trim()),
+      wrap: tops.length ? Math.max(...tops) - Math.min(...tops) > 8 : false,
+      chipH: chips[0] ? Math.round(r(chips[0]).height) : 0,
+      overflowX: row ? row.scrollWidth - row.clientWidth : 0,
+      pageOverflow: document.documentElement.scrollWidth - innerWidth,
+      lastFullyVisible: last && rowBox ? r(last).right <= rowBox.right + 4 || (row.scrollWidth - row.clientWidth - row.scrollLeft < 2) : false,
+      wrapStyle: row ? getComputedStyle(row).flexWrap : null
+    };
+  }, sel);
+}
+
+const BOARDS = [
+  { path: '/jobs', root: '#jb', tab: 'Jobs', post: 'Post a job', form: 'Job title', row: '.row-job', catSel: '#jb > .cl-chips', lastCat: 'Other', sampleNote: 'Not a real opening' },
+  { path: '/deals', root: '#dl', tab: 'Deals', post: 'Post a deal', form: 'Business', row: '.row-deal', catSel: '#dl > .cl-chips', lastCat: 'Other', sampleNote: 'Not a real offer' }
+];
+const VIEWPORTS = [
+  { width: 320, height: 900, name: '320' },
+  { width: 390, height: 900, name: '390' },
+  { width: 430, height: 900, name: '430' },
+  { width: 1280, height: 900, name: '1280' }
+];
+
+for (const board of BOARDS) {
+  for (const dark of [false, true]) {
+    for (const vp of VIEWPORTS) {
+      test(`${board.tab} ${dark ? 'dark' : 'light'} ${vp.name}px: labeled samples, one category row, no writes`, async ({ page }) => {
+        const hits = await stub(page);
+        await page.emulateMedia({ colorScheme: dark ? 'dark' : 'light' });
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await page.goto(board.path);
+        const tab = page.locator('#tab-' + board.tab.toLowerCase());
+        await tab.scrollIntoViewIfNeeded();
+        await expect(tab).toBeVisible();
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator(board.root)).toBeVisible();
+        await expect(page.locator(board.root + ' ' + board.row).first()).toBeVisible();
+        await expect(page.locator(board.root + ' .mk-tag', { hasText: 'Sample' }).first()).toBeVisible();
+        await expect(page.locator(board.root)).toContainText('Sample featured placement');
+        await expect(page.locator(board.root)).not.toContainText('Featured · Paid');
+        await expect(page.locator(board.root)).toContainText(board.sampleNote);
+        await expect(page.locator(board.root)).not.toContainText('Nothing posted yet. Be the first.');
+        await expect(page.locator(board.root + ' .cl-link')).toHaveCount(0);
+        await expect(page.locator(board.root + ' .cl-feature')).toHaveCount(0);
+        const m = await measure(page, board.root);
+        expect(m.brand).toBe('TRISTATENOW');
+        expect(m.tabLabel).toBe(board.tab);
+        expect(m.post).toBeGreaterThanOrEqual(44);
+        if (m.chip != null) expect(m.chip).toBeGreaterThanOrEqual(44);
+        if (vp.width <= 430) expect(m.wx).toBeLessThan(m.post + 1);
+
+        const cats = await chipMetrics(page, board.catSel);
+        expect(cats.wrapStyle).not.toBe('wrap');
+        expect(cats.wrap).toBe(false);
+        expect(cats.chipH).toBeGreaterThanOrEqual(44);
+        expect(cats.pageOverflow).toBe(0);
+        expect(cats.labels[0]).toBe('All');
+        expect(cats.labels[cats.labels.length - 1]).toBe(board.lastCat);
+        if (vp.width <= 390) expect(cats.overflowX).toBeGreaterThan(0);
+        await page.evaluate(() => new Promise(r => setTimeout(r, 50)));
+        await page.evaluate(s => {
+          const row = document.querySelector(s);
+          if (row) row.scrollLeft = row.scrollWidth;
+        }, board.catSel);
+        const end = await chipMetrics(page, board.catSel);
+        expect(end.lastFullyVisible).toBe(true);
+        expect(end.pageOverflow).toBe(0);
+        await page.evaluate(s => { const row = document.querySelector(s); if (row) row.scrollLeft = 0; }, board.catSel);
+
+        if (board.tab === 'Jobs') {
+          const types = await chipMetrics(page, '#jb .ev-filters .cl-chips');
+          expect(types.wrap).toBe(false);
+          expect(types.wrapStyle).not.toBe('wrap');
+          expect(types.pageOverflow).toBe(0);
+          const logos = page.locator('#jb .row-job img.bav');
+          await expect(logos.first()).toBeVisible();
+          expect(await logos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveAttribute('href', '/advertise');
+          await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveText('Advertise a job');
+        } else {
+          const photos = page.locator('#dl .row-deal img.th');
+          await expect(photos.first()).toBeVisible();
+          expect(await photos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+          await expect(page.locator('#dl .row-deal img.bav').first()).toBeVisible();
+          await expect(page.locator('#dl .deal-code code').first()).toHaveText('WREN2');
+        }
+
+        const tag = board.tab.toLowerCase() + '-' + (dark ? 'dark' : 'light') + '-' + vp.name;
+        await page.screenshot({ path: ART + '/jobs-deals-' + tag + '.png', fullPage: true });
+        expect(hits.filter(x => x === 'POST' || x === 'CHECKOUT' || x === 'ADVERTISE')).toEqual([]);
+      });
+    }
   }
 }
+
+test('Jobs sample Advertise a job goes to /advertise and never posts; Part-time filter works', async ({ page }) => {
+  const hits = await stub(page);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/jobs');
+  await expect(page.locator('#jb .row-job')).toHaveCount(8);
+  await page.locator('#jb .cl-chip', { hasText: 'Part-time' }).click();
+  await expect(page.locator('#jb .row-job')).toHaveCount(2);
+  await expect(page.locator('#jb')).toContainText('Counter help');
+  await expect(page.locator('#jb')).not.toContainText('Clinic nurse');
+  await page.locator('#jb .cl-chip', { hasText: 'Any type' }).click();
+  await expect(page.locator('#jb .row-job')).toHaveCount(8);
+  await expect(page.locator('#jb .row-job .ad-cta').first()).toHaveAttribute('href', '/advertise');
+  await page.locator('#jb .row-job .ad-cta').first().click();
+  await expect(page.locator('#sn')).toBeVisible();
+  await expect(page.locator('#sn')).toContainText('Advertise with TRISTATENOW');
+  expect(hits.filter(x => x === 'POST' || x === 'CHECKOUT' || x === 'ADVERTISE')).toEqual([]);
+});
+
+test('Deals sample coupons stay on the card; Food & drink filter works; Post form does not submit', async ({ page }) => {
+  const hits = await stub(page);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/deals');
+  await expect(page.locator('#dl .row-deal')).toHaveCount(8);
+  await page.locator('#dl .cl-chip', { hasText: 'Food & drink' }).click();
+  await expect(page.locator('#dl .row-deal')).toHaveCount(2);
+  await page.locator('#dl .cl-chip', { hasText: 'All' }).click();
+  await expect(page.locator('#dl .row-deal')).toHaveCount(8);
+  await expect(page.locator('#dl .deal-code code').first()).toBeVisible();
+  await page.locator('#dl .cl-bar > .cl-go').click();
+  await expect(page.locator('#dl form.cl-form')).toBeVisible();
+  await expect(page.locator('#dl form.cl-form')).toContainText('Business');
+  await expect(page.locator('#dl form.cl-form')).toContainText('18 or older');
+  await page.screenshot({ path: ART + '/jobs-deals-deals-390-form.png', fullPage: true });
+  expect(hits.filter(x => x === 'POST' || x === 'CHECKOUT' || x === 'ADVERTISE')).toEqual([]);
+});

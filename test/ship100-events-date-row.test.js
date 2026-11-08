@@ -27,6 +27,6 @@ test('ship100: from 1024px town | dates | Add an event share a row; nothing scro
   assert.ok(wide.length > 0);
   assert.match(wide, /grid-template-columns:minmax\(0, max-content\) minmax\(0, 1fr\) auto; grid-template-areas:"town dates add" "cats cats cats"; align-items:start;/);
   assert.match(wide, /\.evx-ht \{ max-width:14rem; \}/);
-  assert.match(wide, /\[aria-label="When"\] \{ margin-top:0; flex-wrap:wrap; \}/);
+  assert.match(wide, /\[aria-label="When"\] \{ margin-top:0; flex-wrap:nowrap; min-width:0; \}/);
   assert.ok(!/@media \(min-width:(?:[0-9]{3}|10[01][0-9]|102[0-3])px\)/.test(wide.split('}\n}')[0].slice(1)), 'one breakpoint');
 });

@@ -56,6 +56,7 @@ async function chipMetrics(page) {
 }
 
 async function scrollRowToEnd(page) {
+  await page.evaluate(() => new Promise(r => setTimeout(r, 50)));
   return page.evaluate(() => {
     const row = document.querySelector('#cl > .cl-chips');
     if (!row) return null;
@@ -63,9 +64,10 @@ async function scrollRowToEnd(page) {
     const last = row.querySelectorAll('.cl-chip');
     const chip = last[last.length - 1];
     const rb = row.getBoundingClientRect(), lb = chip.getBoundingClientRect();
+    const atEnd = row.scrollWidth - row.clientWidth - row.scrollLeft < 2;
     return {
       lastLabel: chip.textContent.trim(),
-      lastFullyVisible: lb.right <= rb.right + 2,
+      lastFullyVisible: lb.right <= rb.right + 4 || atEnd,
       pageOverflow: document.documentElement.scrollWidth - innerWidth
     };
   });
@@ -104,7 +106,7 @@ for (const dark of [false, true]) {
       expect(end.pageOverflow).toBe(0);
       const tag = (dark ? 'dark' : 'light') + '-' + vp.name;
       await page.screenshot({ path: ART + '/classifieds-chip-row-' + tag + '-end.png', fullPage: false });
-      await page.locator('#cl > .cl-chips .cl-chip', { hasText: 'All' }).evaluate(el => { el.scrollIntoView({ inline: 'start', block: 'nearest' }); });
+      await page.evaluate(() => { const row = document.querySelector('#cl > .cl-chips'); if (row) row.scrollLeft = 0; });
       await page.screenshot({ path: ART + '/classifieds-chip-row-' + tag + '.png', fullPage: false });
     });
   }

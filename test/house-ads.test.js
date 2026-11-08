@@ -1,7 +1,8 @@
-// Ads PR 3: no fictional advertisers or sample posts anywhere on the site, except the placeholder sample ads (ads PR
-// 4.2, test/sample-ads.test.js), which are labeled "Sample ad" and live only in sponsors.json "samples". Open ad spots show the site's own
-// "Advertise with us" unit; real ads are labeled "Sponsored" and linked rel="sponsored"; News/All, News,
-// Police & courts and Obituaries carry no ads at all.
+// Ads PR 3: no fictional advertisers or unlabeled sample posts anywhere on the site, except (1) the placeholder sample
+// ads (ads PR 4.2, test/sample-ads.test.js), labeled "Sample ad" and living in sponsors.json "samples", and (2) labeled
+// Jobs/Deals board placeholders (BOARD_SAMPLES in app.js, tagged "Sample", test/ship113-jobs-deals.test.js). Open ad
+// spots show the site's own "Advertise with us" unit; real ads are labeled "Sponsored" and linked rel="sponsored";
+// News/All, News, Police & courts and Obituaries carry no ads at all.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -13,7 +14,7 @@ const html = require('./_page.js')(), legal = read('public/legal.html'), raw = r
 const sponsors = JSON.parse(raw);
 // Everything but the labeled sample-ad switch and its code, which test/sample-ads.test.js checks on its own.
 const rawNoSamples = JSON.stringify(Object.assign({}, sponsors, { samples: undefined, note: sponsors.note.replace(/ 'samples' is the one switch[\s\S]*$/, '') }));
-const htmlNoSamples = html.replace(/\/\/ [^\n]*/g, '').replace(/Sample ad|sampleAd|UI\.sample|TSNAds\.sample|__samples|sj\.samples|ad-sample|A sample, not a real business|f\.type === 'sample'|      sample: function \(offset\)/g, '');
+const htmlNoSamples = html.replace(/\/\/ [^\n]*/g, '').replace(/Sample ad|sampleAd|UI\.sample|TSNAds\.sample|__samples|sj\.samples|ad-sample|A sample, not a real business|f\.type === 'sample'|      sample: function \(offset\)|BOARD_SAMPLES|boardSamples|it\.sample|sample: true|mk-tag', 'Sample'|Sample featured placement/g, '');
 
 // Words and claims that only ever came from made-up demo content. If any comes back, this fails.
 const FICTION = [/\bsample\b/i, /example\.(com|org|net)/i, /5\.49\s*%/, /\bAPR\b/, /lorem ipsum/i, /\bdemo (ad|post|listing)s?\b/i, /\bplaceholder (ad|business|sponsor)s?\b/i,

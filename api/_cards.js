@@ -92,7 +92,7 @@ function pick(view, cat, now) {
 function card(it, o) {
   const kd = o.kindOf(it), safe = kd === 'police' || kd === 'courts', big = !!o.brk;
   const sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
-  const pic = safe ? '' : (it.image || '');
+  const pic = (safe || crime.crimeTitle(it.title)) ? '' : (it.image || '');
   const logo = (o.logos[it.sourceId] || '');
   const title = big ? (it.title.replace(LEAD_RE, '') || it.title) : it.title;
   const srcCls = big ? 'src' : 'ns-src';

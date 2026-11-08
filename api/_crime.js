@@ -1,8 +1,9 @@
 // Crime / Police & courts headlines: comments are off. The regex is copied from public/assets/app.js
 // (crimeStory): headline words only, so a sports "shooting guard" keeps comments and its photo.
-// Unknown metadata must fail closed (caller).
+// Homicide/DV: "allegedly killed", "killed by husband", "her body was found" — not a bare "killed"
+// (weather "Storm kills 3" and sports "kill off the Heat" stay on). Unknown metadata fail closed (caller).
 'use strict';
-const CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say)\b/i;
+const CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say|alleged(?:ly)? kill(?:ed|ing)|killed by (?:her |his |their )?(?:husband|wife|boyfriend|girlfriend|fianc[eé]e?|partner|ex)|kills? (?:her |his |their )?(?:husband|wife|boyfriend|girlfriend|fianc[eé]e?|partner|ex)|(?:her|his|their) body (?:was |were )?found|(?:woman|man|girl|boy|teen(?:ager)?|child)'s body (?:was )?found|beaten to death|strangl(?:e|ed|ing|ation)|domestic(?:ally)?(?:-|\s+)(?:violence|abuse|assault|battery))\b/i;
 const BLOCKED_KINDS = new Set(['police', 'courts', 'obits', 'events']);
 
 function crimeTitle(title) { return CRIME_RE.test(String(title || '')); }

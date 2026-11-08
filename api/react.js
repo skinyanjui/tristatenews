@@ -60,7 +60,8 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
-module.exports.LIKE_TTL = LIKE_TTL;
-module.exports.DAILY_PER_IP = DAILY_PER_IP;
-module.exports.STORY_PER_IP = STORY_PER_IP;
+const dispatch = require('./_dispatch.js').host({ comments: () => require('./_comments.js') }, handler);
+dispatch.LIKE_TTL = LIKE_TTL;
+dispatch.DAILY_PER_IP = DAILY_PER_IP;
+dispatch.STORY_PER_IP = STORY_PER_IP;
+module.exports = dispatch;

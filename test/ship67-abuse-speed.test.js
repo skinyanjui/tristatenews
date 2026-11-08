@@ -77,7 +77,7 @@ test('story ids: the server computes the same id as the page', () => {
   const { storyId, idsCmds, KEY } = require('../api/_storyid.js');
   for (const l of ['https://www.14news.com/2026/10/29/a/', 'https://x.org/?q=ü&z=1', '']) assert.equal(storyId(l), pageId(l), l);
   const cmds = idsCmds([{ link: 'https://a/1' }, { link: 'https://a/1' }, { link: 'https://a/2' }]);
-  assert.deepEqual(cmds.map(c => c[0]), ['DEL', 'SADD', 'RENAME', 'EXPIRE']);
+  assert.deepEqual(cmds.map(c => c[0]), ['DEL', 'SADD', 'RENAME', 'EXPIRE', 'SET']);
   assert.equal(cmds[1].length, 4, 'deduplicated'); assert.equal(cmds[2][2], KEY);
   assert.match(read('api/news.js'), /_storyid\.js'\)\.idsCmds\(snap\.items/);
 });

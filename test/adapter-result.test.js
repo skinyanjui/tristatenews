@@ -168,8 +168,8 @@ test('refreshAll writes tsn:runs:<runId> (EX 7 days) in the same write request; 
     }
     const fbi = rec.results.filter(r => /^fbi/.test(r.sourceId));
     assert.ok(fbi.length >= 3 && fbi.every(r => r.status === 'temporary_failure' && r.httpStatus === 503 && r.detail === 'HTTP 503'), JSON.stringify(fbi));
-    // + refresh lock (SET NX), snapshot, run record, depth record, schedule
-    assert.equal(st.log.filter(op => op === 'SET').length, rec.fetched + 5);
+    // + refresh lock (SET NX), snapshot, run record, depth record, schedule, comments meta
+    assert.equal(st.log.filter(op => op === 'SET').length, rec.fetched + 6);
 
     // the old fast tier through /api/refresh is the due tier: runId in the answer, run record stored, statuses counted
     const res = { setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };

@@ -10,11 +10,26 @@ function storyId(link) {
   return 'h' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 // The Redis set of current story ids, rewritten by every refresh (built under TMP, then RENAMEd over KEY).
-const KEY = 'tsn:news:ids', TMP = 'tsn:news:ids:next';
-// Commands that replace the set with the ids of these items.
-function idsCmds(items, ttlSec) {
+// META is the trusted kind/title for comments (api/_comments.js): never take the client's category.
+const KEY = 'tsn:news:ids', TMP = 'tsn:news:ids:next', META = 'tsn:news:meta';
+function metaOf(items, sources) {
+  const kinds = {};
+  (sources || []).forEach(s => { if (s && s.id) kinds[s.id] = String(s.kind || ''); });
+  const out = {};
+  (items || []).forEach(i => {
+    if (!i || !i.link) return;
+    out[storyId(i.link)] = { kind: kinds[i.sourceId] || '', title: String(i.title || ''), sourceId: String(i.sourceId || '') };
+  });
+  return out;
+}
+// Commands that replace the set with the ids of these items, and the comments allowlist hash.
+function idsCmds(items, ttlSec, sources) {
   const ids = [...new Set((items || []).filter(i => i && i.link).map(i => storyId(i.link)))];
   if (!ids.length) return [];
-  return [['DEL', TMP], ['SADD', TMP, ...ids], ['RENAME', TMP, KEY], ['EXPIRE', KEY, String(ttlSec || 2 * 86400)]];
+  const ttl = String(ttlSec || 2 * 86400);
+  return [
+    ['DEL', TMP], ['SADD', TMP, ...ids], ['RENAME', TMP, KEY], ['EXPIRE', KEY, ttl],
+    ['SET', META, JSON.stringify(metaOf(items, sources)), 'EX', ttl]
+  ];
 }
-module.exports = { storyId, idsCmds, KEY };
+module.exports = { storyId, idsCmds, KEY, META, metaOf };

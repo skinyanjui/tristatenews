@@ -28,8 +28,8 @@ test('ship96: a short description adds nothing; events and obituaries never carr
 
 test('ship96: the sheet: longer text, heart + share (card state, fixed slot), Continue with the logo', () => {
   assert.ok(fn.includes("String(it.more || it.summary || '').trim().replace("));
-  assert.ok(fn.includes("var ar = actRow(sh, it); ar.classList.add('st-acts');") && fn.includes('cardHeart.paint()'));
-  assert.ok(fn.includes("toggle: function () { toggleSaved(it); }"), 'the card row\u2019s own like call');
+  assert.ok(fn.includes("var ar = newsActs(sh, it); ar.classList.add('st-acts');") && fn.includes('cardHeart.paint()'));
+  assert.ok(fn.includes("toggle: function () { toggleLiked(it); }"), 'the card row\u2019s own like call');
   assert.ok(fn.includes("go = el('a', 'st-go');") && fn.includes("gl.alt = ''") && fn.includes("el('span', null, 'Continue to ' + (it.source || 'the story'))"));
   assert.ok(!/st-why|Why this is here/.test(fn), 'ship98: no "Why this is here" line');
   assert.ok(fn.includes('if (pic) {'), 'no photo for Police & courts or crime stories, as on the card');

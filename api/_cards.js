@@ -18,6 +18,7 @@ const LEAD_RE = /^\s*(breaking( news)?|just in|developing story|news alert)\s*[:
 const TZ = 'America/Chicago';
 
 const { esc, jsonScript } = require('./_html.js');
+const crime = require('./_crime.js');
 function safeHref(u) {
   try { const x = new URL(u); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '#'; } catch (e) { return '#'; }
 }
@@ -45,6 +46,8 @@ function timeAgo(iso, dayOnly) {
 }
 const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>';
 const SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg>';
+const BOOKMARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-3.4L6 21V4.5a1 1 0 0 1 1-1z"></path></svg>';
+const COMMENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9A1.5 1.5 0 0 1 19 16.5H9.2L4.5 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"></path></svg>';
 
 // The tab's stories, as app.js inCat() picks them (kind by source; unknown sources count as news).
 function inCat(kind, cat) {
@@ -109,7 +112,10 @@ function card(it, o) {
   }
   const href = safeHref(it.link);
   const share = href === '#' ? '' : '<button class="share" type="button" aria-label="' + esc('Share: ' + it.title) + '" title="Share">' + SHARE + '</button>';
-  const acts = '<div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + share + '</div>';
+  const save = '<button class="sv-btn" type="button" aria-pressed="false" aria-label="' + esc('Save: ' + it.title) + '">' + BOOKMARK + '</button>';
+  const cmOn = (kd === 'news' || kd === 'institution') && !crime.crimeTitle(it.title);
+  const cm = cmOn ? '<button class="cm-btn" type="button" aria-label="' + esc('Comments: ' + it.title) + '">' + COMMENT + '<span></span></button>' : '';
+  const acts = '<div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + cm + save + share + '</div>';
   if (big) {
     let body = '<div class="bd">';
     if (!pic) body += '<div class="bk-head">' + tag + '</div>';

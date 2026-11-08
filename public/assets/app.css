@@ -999,6 +999,36 @@ article.card.row.row:not(.breaking):has(> .ca) .src .rt { flex:none; }
 article.card.row.row:not(.breaking):has(> .ca) .src .when ~ .rt { padding-left:var(--act-gap); }
 article.card.row.row:not(.breaking):has(> .ca) .src .ad-cta { text-decoration:none; } /* ship83: ink and weight from the shared action button */
 article.card.row.row:not(.breaking):has(> .ca) .src .ev-go svg { display:none; }
+/* Jobs/Deals footers: the shared news .src is a 40px nowrap row with overflow:hidden. A job CTA
+   ("Advertise a job") or deal coupon cannot shrink, so on a phone it sits past the card; the clip
+   also hid that from document.scrollWidth. Wrap only these boards' footers; chip rows stay nowrap. */
+#jb .row-job .src, #dl .row-deal .src {
+  flex-wrap:wrap;
+  height:auto;
+  min-height:var(--meta-h);
+  overflow:visible;
+  row-gap:var(--sp-1);
+  align-content:center;
+}
+#jb .row-job .src b, #dl .row-deal .src b {
+  min-width:0;
+  flex:0 1 auto;
+}
+#jb .row-job .src .ad-cta, #dl .row-deal .src .ad-cta, #dl .row-deal .src .deal-code {
+  flex:0 0 auto;
+  max-width:100%;
+  overflow:visible;
+  text-overflow:clip;
+}
+#dl .row-deal .src .deal-code {
+  flex-wrap:wrap;
+  margin-top:0;
+  min-width:0;
+}
+#dl .row-deal .src .deal-code code {
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
 article.card.row.row:not(.breaking):has(> .ca) .src .ob-acts { flex:1 1 0; min-width:0; }
 article.card.row.row:not(.breaking):has(> .ca) .bd > .cl-feature { align-self:flex-start; margin-top:var(--sp-1); }
 article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico { position:relative; flex:none; box-sizing:border-box; width:var(--ico); height:var(--ico); padding:0; margin:0; display:inline-flex; align-items:center; justify-content:center; border-radius:9999px; color:var(--text-muted); }

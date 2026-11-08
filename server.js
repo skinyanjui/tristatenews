@@ -160,6 +160,35 @@ function handleRedisCommand(cmd) {
       }
       return { result: removed };
     }
+    case 'ZREMRANGEBYRANK': {
+      if (!zStore.has(key)) return { result: 0 };
+      const z = zStore.get(key);
+      const sorted = Array.from(z.entries()).sort((a, b) => a[1] - b[1]);
+      const start = Number(cmd[2]);
+      const stop = Number(cmd[3]);
+      const sliced = sorted.slice(start, stop + 1);
+      let removed = 0;
+      sliced.forEach(([member]) => { if (z.delete(member)) removed++; });
+      return { result: removed };
+    }
+    case 'PTTL': {
+      if (kvStore.has(key) || zStore.has(key) || setStore.has(key) || listStore.has(key) || hashStore.has(key)) {
+        return { result: 180 * 86400 * 1000 };
+      }
+      return { result: -2 };
+    }
+    case 'EVAL': {
+      const ATOM = require('./api/_cmatom.js');
+      const script = String(cmd[1]);
+      const n = Number(cmd[2]);
+      const keys = cmd.slice(3, 3 + n).map(String);
+      const argv = cmd.slice(3 + n).map(v => String(v));
+      try {
+        return { result: ATOM.run(script, ATOM.wrap(handleRedisCommand), keys, argv) };
+      } catch (e) {
+        return { error: String(e.message || e) };
+      }
+    }
     case 'ZRANGE': {
       if (!zStore.has(key)) return { result: [] };
       const z = zStore.get(key);
@@ -174,9 +203,22 @@ function handleRedisCommand(cmd) {
       const z = zStore.get(key);
       const start = Number(cmd[2]);
       const stop = Number(cmd[3]);
+      const withScores = cmd.slice(4).some(x => String(x).toUpperCase() === 'WITHSCORES');
       const sorted = Array.from(z.entries()).sort((a, b) => b[1] - a[1]);
       const sliced = stop === -1 ? sorted.slice(start) : sorted.slice(start, stop + 1);
-      return { result: sliced.map(e => e[0]) };
+      return { result: withScores ? sliced.flatMap(e => [e[0], String(e[1])]) : sliced.map(e => e[0]) };
+    }
+    case 'EXISTS': {
+      return { result: (kvStore.has(key) || zStore.has(key) || setStore.has(key) || listStore.has(key) || hashStore.has(key)) ? 1 : 0 };
+    }
+    case 'RENAME': {
+      const dest = String(cmd[2]);
+      if (setStore.has(key)) { setStore.set(dest, setStore.get(key)); setStore.delete(key); }
+      else if (kvStore.has(key)) { kvStore.set(dest, kvStore.get(key)); kvStore.delete(key); }
+      else if (hashStore.has(key)) { hashStore.set(dest, hashStore.get(key)); hashStore.delete(key); }
+      else if (listStore.has(key)) { listStore.set(dest, listStore.get(key)); listStore.delete(key); }
+      else if (zStore.has(key)) { zStore.set(dest, zStore.get(key)); zStore.delete(key); }
+      return { result: 'OK' };
     }
     case 'LPUSH': {
       if (!listStore.has(key)) listStore.set(key, []);
@@ -201,6 +243,9 @@ function handleRedisCommand(cmd) {
       const start = Number(cmd[2]);
       const stop = Number(cmd[3]);
       return { result: stop === -1 ? list.slice(start) : list.slice(start, stop + 1) };
+    }
+    case 'LLEN': {
+      return { result: listStore.has(key) ? listStore.get(key).length : 0 };
     }
     default:
       return { result: null };
@@ -265,6 +310,9 @@ app.all(['/api/checkout', '/api/catalog', '/api/orders', '/api/flowers', '/api/m
 });
 
 app.all('/api/react', (req, res, next) => {
+  Promise.resolve(reactHandler(req, res)).catch(next);
+});
+app.all('/api/comments', (req, res, next) => { // served by api/react.js (see vercel.json rewrites)
   Promise.resolve(reactHandler(req, res)).catch(next);
 });
 

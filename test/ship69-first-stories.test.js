@@ -143,7 +143,7 @@ test('Breaking: an outlet-labeled story within 3 hours leads as the big card, on
   const p = C.pick(v, 'news', NOW), list = C.cards(p, NOW);
   assert.match(list, /^<article class="card breaking" data-sec="news"><a class="ca noimg"[^>]*><div class="bd"><div class="bk-head"><span class="pill pill-red"><i><\/i>Breaking<\/span><\/div>/);
   assert.match(list, /<h2>Bridge closed<\/h2>/);
-  assert.equal((list.match(/Bridge closed/g) || []).length, 3, 'one card (title, like and share labels)');
+  assert.equal((list.match(/Bridge closed/g) || []).length, 5, 'one card (title, like, comments, save and share labels)');
   assert.equal((list.match(/<article /g) || []).length, 25, 'Breaking plus 24 stories');
 });
 

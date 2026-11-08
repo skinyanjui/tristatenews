@@ -230,3 +230,7 @@ Copyright & DMCA, Corrections & Removals and Accessibility are unchanged.
 37. **Do-not-email record:** we keep unsubscribed addresses indefinitely (tsn:nl:unsubs) so they are never re-added by mistake. Confirm that's acceptable under the Privacy wording, or set a period.
 38. **Legacy sign-ups:** addresses that signed up before double opt-in are kept but no longer mailed until they confirm. Decide whether to send them one re-confirmation email (allowed: they asked for the newsletter) or delete them.
 39. **Sample sponsor block:** the admin preview and /advertise show a made-up business labeled "Sample ad". Real sends never carry a sample (api/newsletter.js: no sponsor unless one is sold).
+
+## Public comments and browser bookmarks (8 November 2026)
+
+Privacy (Last updated November 8, 2026) and Terms §6 now describe anonymous public comments on non-crime news (plain text, ~300 characters, 180-day retention, hashed-IP reports, admin restore/delete) and browser-only saved articles (`tsn.saved`) separate from hearted stories (`tsn.liked`). The random browser ID is a 24-hour comment/report rate-limit identifier only and is **not** stored on the comment record. **Needs review:** whether anonymous public comments without accounts, and the 180-day retention, are acceptable; comments are off for Police & courts and crime headlines.

@@ -1401,7 +1401,7 @@ async function refreshAll(opts) {
     }
     if (writeSnap) {
       cmds.push(['SET', SNAP_KEY, JSON.stringify(snap), 'EX', String(2 * 86400)]);
-      cmds.push(...require('./_storyid.js').idsCmds(snap.items, 2 * 86400)); // the ids /api/react accepts a heart for
+      cmds.push(...require('./_storyid.js').idsCmds(snap.items, 2 * 86400, snap.sources)); // ids + comments allowlist /api/react and /api/comments accept
       // Shadow county classification (plan stage B, COUNTY_CLASSIFICATION_ENABLED): stored privately, never in the snapshot.
       if (shadowLoc) cmds.push(['SET', LOC().SHADOW_KEY, JSON.stringify(shadowLoc), 'EX', String(LOC().SHADOW_TTL)]);
       // Rolling county depth record: this run's stories (before the public cap) merged into the last 14 days. Only

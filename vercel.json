@@ -67,6 +67,10 @@
       "destination": "/api/listings?__route=market"
     },
     {
+      "source": "/api/comments",
+      "destination": "/api/react?__route=comments"
+    },
+    {
       "source": "/api/subscribe",
       "destination": "/api/unsubscribe?__route=subscribe"
     },

@@ -89,7 +89,7 @@ test('ship108: CSP already allows it (same-origin script and intake); Privacy de
   assert.match(csp, /connect-src 'self'/);
   const legal = read('public/legal.html');
   for (const s of ['Page-speed measurements (Vercel Speed Insights)', 'the page address with anything after “?” or “#” removed', 'It sets no cookie, stores nothing in your browser, uses no ID',
-    'Vercel Speed Insights (page speed, above) sets no cookies either.', 'receives the <a href="#privacy-speed">page-speed measurements</a>', 'Last updated November 6, 2026'])
+    'Vercel Speed Insights (page speed, above) sets no cookies either.', 'receives the <a href="#privacy-speed">page-speed measurements</a>', 'Last updated November 8, 2026'])
     assert.ok(legal.includes(s), s);
   assert.equal(fs.readdirSync(path.join(root, 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_')).length, 8);
 });

@@ -21,6 +21,8 @@
   }
   // ship83: one heart glyph (symmetric, centred in the 24 box, same reach as the flag and share glyphs).
   var ICON_HEART = [['path', { d: 'M12 21C6.5 17.2 2.5 13.6 2.5 8.8A5 5 0 0 1 12 6.4a5 5 0 0 1 9.5 2.4c0 4.8-4 8.4-9.5 12.2Z' }]];
+  var ICON_BOOKMARK = [['path', { d: 'M7 3.5h10a1 1 0 0 1 1 1V21l-6-3.4L6 21V4.5a1 1 0 0 1 1-1z' }]];
+  var ICON_COMMENT = [['path', { d: 'M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9A1.5 1.5 0 0 1 19 16.5H9.2L4.5 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z' }]];
   // A short message at the bottom of the screen (screen readers hear it too).
   var toastEl = null, toastT = 0;
   function toast(msg) {
@@ -32,6 +34,42 @@
   // ship80: repeated copy on cards goes (public/dedupe.js); without it, text passes through unchanged
   var DD = window.TSNDedupe || { preview: function (t, x) { return x || ''; }, part: function (x) { return x || ''; }, parts: function (l) { return (l || []).filter(Boolean); }, lead: function (x) { return x || ''; }, same: function () { return false; }, has: function () { return false; } };
   function actRow(heartBtn, it) { var g = el('div', 'acts'); g.appendChild(heartBtn); g.appendChild(shareFor(it)); return g; }
+  function newsActs(heartBtn, it) {
+    var g = el('div', 'acts');
+    g.appendChild(heartBtn);
+    if (commentsOk(it)) g.appendChild(commentBtn(it));
+    g.appendChild(saveBtn(it));
+    g.appendChild(shareFor(it));
+    return g;
+  }
+  function saveBtn(it) {
+    var b = el('button', 'sv-btn'); b.type = 'button';
+    function paint() {
+      var on = isSaved(it.link);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.setAttribute('aria-label', (on ? 'Remove from saved: ' : 'Save: ') + it.title);
+    }
+    b.appendChild(svg(ICON_BOOKMARK));
+    paint();
+    b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); toggleSaved(it); });
+    b.paint = paint;
+    return b;
+  }
+  function commentBtn(it) {
+    var b = el('button', 'cm-btn'); b.type = 'button';
+    var cnt = el('span');
+    function paint() {
+      var n = state.cmCounts[storyId(it.link)] || 0;
+      b.setAttribute('aria-label', (n ? n + ' comment' + (n === 1 ? '' : 's') : 'Comments') + ': ' + it.title);
+      cnt.textContent = n > 0 ? String(n) : '';
+    }
+    b.appendChild(svg(ICON_COMMENT));
+    b.appendChild(cnt);
+    paint();
+    b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); commentSheet(it); });
+    b.paint = paint;
+    return b;
+  }
   // The share button for a story or event, or nothing when it has no usable link.
   function shareFor(it) { var u = it.link ? safeHref(it.link) : '#'; return u === '#' ? document.createDocumentFragment() : UI.share(it.title, u); }
   function copyLink(url) {
@@ -367,9 +405,14 @@
   });
   applyTheme();
   if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+  var savedBtn = document.getElementById('savedBtn');
+  if (savedBtn) {
+    savedBtn.appendChild(svg(ICON_BOOKMARK));
+    savedBtn.addEventListener('click', function () { savedSheet(); });
+  }
 
   var PAGE = 24;
-  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'news', limit: PAGE, saved: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false };
+  var state = { sf: 'all', srl: PAGE, items: [], sources: [], loaded: false, error: false, updatedAt: null, fetchedAt: 0, q: '', cat: 'news', limit: PAGE, saved: [], liked: [], alerts: [], official: [], brk: { top: null, more: 0 }, counts: {}, shared: false, cmCounts: {}, cmOn: false };
   // Tab URLs (public/routes.js): a direct load of /events, /jobs ... opens that tab; /, /news and /police-courts open News.
   var RT = window.TSNRoutes || null, ROUTE_SYNCED = false;
   (function () { var r = RT && RT.byPath(location.pathname); if (r) state.cat = r.cat; })();
@@ -392,6 +435,19 @@
     try { history.replaceState(history.state, '', '/' + q + (oldH ? '' : location.hash)); } catch (e) {}
   })();
   try { var sv = JSON.parse(localStorage.getItem('tsn.saved') || '[]'); if (Array.isArray(sv)) state.saved = sv.filter(function (x) { return x && x.link && x.title; }); } catch (e) {}
+  try {
+    var likedRaw = localStorage.getItem('tsn.liked');
+    if (likedRaw == null) {
+      // One-time split: historic hearts were stored in tsn.saved. Keep those as bookmarks and seed tsn.liked so
+      // pressed hearts stay pressed. Do not POST /api/react (that would double-count or rewrite Redis like sets).
+      state.liked = state.saved.map(function (x) { return x.link; });
+      persistLiked();
+    } else {
+      var lk = JSON.parse(likedRaw || '[]');
+      state.liked = Array.isArray(lk) ? lk.filter(function (x) { return typeof x === 'string' && x; }) : [];
+    }
+  } catch (e) { state.liked = []; }
+  repaintSaves();
   function storyId(link) { // short stable id from the story link (cyrb53)
     var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
     for (var i = 0; i < link.length; i++) { var c = link.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
@@ -404,26 +460,47 @@
   if (!uid) uid = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   function likeCount(it) {
     if (state.shared) return state.counts[storyId(it.link)] || 0;
-    return isSaved(it.link) ? 1 : 0;
+    return isLiked(it.link) ? 1 : 0;
   }
-  function persistSaved() { try { localStorage.setItem('tsn.saved', JSON.stringify(state.saved.slice(0, 200))); } catch (e) {} }
+  function persistSaved() { try { localStorage.setItem('tsn.saved', JSON.stringify(state.saved.slice(0, 200))); return true; } catch (e) { return false; } }
+  function persistLiked() { try { localStorage.setItem('tsn.liked', JSON.stringify(state.liked.slice(0, 200))); return true; } catch (e) { return false; } }
   function isSaved(link) { return state.saved.some(function (x) { return x.link === link; }); }
+  function isLiked(link) { return state.liked.indexOf(link) >= 0; }
   function toggleSaved(it) {
+    var prev = state.saved.slice();
     if (isSaved(it.link)) state.saved = state.saved.filter(function (x) { return x.link !== it.link; });
-    else state.saved.unshift({ title: it.title, link: it.link, summary: it.summary || '', image: it.image || '', published: it.published, source: it.source, sourceId: it.sourceId });
-    persistSaved();
-    var on = isSaved(it.link), id = storyId(it.link);
+    else state.saved.unshift({ title: it.title, link: it.link, summary: it.summary || '', image: savedPic(it), published: it.published, source: it.source, sourceId: it.sourceId });
+    if (!persistSaved()) { state.saved = prev; toast('Couldn\u2019t save on this device'); return false; }
+    repaintSaves();
+    return true;
+  }
+  function toggleLiked(it) {
+    var prev = state.liked.slice(), on;
+    if (isLiked(it.link)) state.liked = state.liked.filter(function (x) { return x !== it.link; });
+    else state.liked.unshift(it.link);
+    if (!persistLiked()) { state.liked = prev; toast('Couldn\u2019t save on this device'); return false; }
+    on = isLiked(it.link);
+    var id = storyId(it.link);
     if (state.shared) {
       state.counts[id] = Math.max(0, (state.counts[id] || 0) + (on ? 1 : -1));
       fetch('/api/react', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: id, uid: uid, liked: on }) })
-        .then(function (r) { return r.json(); }).then(function (d) { if (d && typeof d.count === 'number' && d.count !== state.counts[id]) { state.counts[id] = d.count; repaintHearts(); } }) // ship89: no re-render
+        .then(function (r) { return r.json(); }).then(function (d) { if (d && typeof d.count === 'number' && d.count !== state.counts[id]) { state.counts[id] = d.count; repaintHearts(); } })
         .catch(function () {});
     }
+    return true;
   }
   // ship89: refresh every heart's pressed state and count in place (no list re-render, no node replacement).
   function repaintHearts() { Array.prototype.forEach.call(document.querySelectorAll('button.like'), function (x) { if (x.paint) x.paint(); }); }
+  function repaintSaves() {
+    Array.prototype.forEach.call(document.querySelectorAll('button.sv-btn'), function (x) { if (x.paint) x.paint(); });
+    var n = state.saved.length, b = document.getElementById('savedBtn');
+    if (b) {
+      b.setAttribute('aria-pressed', n ? 'true' : 'false');
+      b.setAttribute('aria-label', n ? 'Saved articles (' + n + ')' : 'Saved articles');
+    }
+  }
   function loadCounts() {
-    var ids = state.items.map(function (i) { return storyId(i.link); }).concat(state.saved.map(function (i) { return storyId(i.link); }));
+    var ids = state.items.map(function (i) { return storyId(i.link); }).concat(state.saved.map(function (i) { return storyId(i.link); })).concat(state.liked.map(function (link) { return storyId(link); }));
     ids = ids.filter(function (x, k) { return ids.indexOf(x) === k; }).slice(0, 300);
     if (!ids.length) return;
     fetch('/api/react?ids=' + ids.join(','), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
@@ -433,6 +510,16 @@
       if (state.cat === 'events' && was !== JSON.stringify([state.shared, state.counts])) render();
       repaintHearts(); // ship89: also the event picture hearts, which render() does not rebuild
     }).catch(function () {});
+    loadCommentCounts(ids);
+  }
+  function loadCommentCounts(ids) {
+    ids = (ids || state.items.map(function (i) { return storyId(i.link); })).filter(function (x, k, a) { return a.indexOf(x) === k; }).slice(0, 300);
+    if (!ids.length) return;
+    fetch('/api/comments?ids=' + ids.join(','), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      state.cmOn = !!(d && d.configured);
+      state.cmCounts = (d && d.counts) || {};
+      Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (x) { if (x.paint) x.paint(); });
+    }).catch(function () { state.cmOn = false; });
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : /^ob-/.test(id || '') ? 'obits' : 'news'; } // ship91: ob-<news source> = a notice routed from a paper's news feed
   var CATS = [
@@ -1842,8 +1929,8 @@
   function evxHeart(it) {
     var news = { title: it.title, link: it.link, source: it.source, sourceId: it.sourceId, published: it.start, image: it.image || '' };
     var sb = UI.heart({
-      get: function () { return { on: isSaved(it.link), n: likeCount(news), label: it.title }; },
-      toggle: function () { toggleSaved(news); },
+      get: function () { return { on: isLiked(it.link), n: likeCount(news), label: it.title }; },
+      toggle: function () { toggleLiked(news); },
       after: function () { sb.paint(); renderTabs(); }
     });
     sb.classList.add('evc-like');
@@ -2655,6 +2742,186 @@
   // story that merely mentions police keeps its picture; "shooting" in a sports headline (guard, percentage) is not a crime.
   var CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say)\b/i;
   function crimeStory(it) { return CRIME_RE.test(String(it && it.title || '')); }
+  // Same photo rule as makeCard: Police & courts and crime headlines never keep a picture in Saved (mugshots).
+  function savedPic(it) {
+    var kd = kindOf(it && it.sourceId);
+    if (kd === 'police' || kd === 'courts' || crimeStory(it)) return '';
+    return (it && it.image) || '';
+  }
+  function scrubSavedPics() {
+    var n = 0;
+    state.saved.forEach(function (x) { if (x.image && !savedPic(x)) { x.image = ''; n++; } });
+    if (n) persistSaved();
+  }
+  function commentsOk(it) {
+    var kd = kindOf(it && it.sourceId);
+    if (kd === 'police' || kd === 'courts' || kd === 'obits' || kd === 'events') return false;
+    if (kd !== 'news' && kd !== 'institution') return false;
+    return !crimeStory(it);
+  }
+  function rememberOpener() {
+    var el = document.activeElement;
+    return el && el !== document.body && el !== document.documentElement ? el : null;
+  }
+  function restoreOpener(el) {
+    try {
+      if (!el || !el.isConnected || typeof el.focus !== 'function') return;
+      if (el.disabled || el.hidden) return;
+      if (el.getClientRects && !el.getClientRects().length) return;
+      el.focus({ preventScroll: true });
+    } catch (e) {}
+  }
+  function commentSheet(it) {
+    var back = rememberOpener();
+    var prev = document.querySelector('dialog.cm-sheet'); if (prev) prev.remove();
+    var d = el('dialog', 'cm-sheet'); d.setAttribute('aria-labelledby', 'cm-h');
+    var top = el('div', 'cm-top');
+    var h = el('h2', null, 'Comments'); h.id = 'cm-h';
+    var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close comments');
+    x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
+    top.appendChild(h); top.appendChild(x);
+    var status = el('p', 'cm-status'); status.setAttribute('role', 'status'); status.textContent = 'Loading comments\u2026';
+    var list = el('div', 'cm-list');
+    var more = el('button', 'cm-more'); more.type = 'button'; more.textContent = 'Load more'; more.hidden = true;
+    var form = el('form', 'cm-form');
+    var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.placeholder = 'Add a public comment (no links, 300 characters).';
+    var go = el('button', 'cm-post'); go.type = 'submit'; go.textContent = 'Post';
+    form.appendChild(ta); form.appendChild(go);
+    d.appendChild(top); d.appendChild(status); d.appendChild(list); d.appendChild(more); d.appendChild(form);
+    var shown = 0, totalN = 0;
+    function close() { if (d.open) d.close(); else d.remove(); }
+    x.addEventListener('click', close);
+    d.addEventListener('click', function (e) { if (e.target === d) close(); });
+    d.addEventListener('close', function () { d.remove(); restoreOpener(back); });
+    function row(c) {
+      var item = el('article', 'cm-item');
+      var p = el('p'); p.textContent = c.text; item.appendChild(p);
+      var meta = el('div', 'cm-meta');
+      if (c.at) { var t = el('time'); t.dateTime = c.at; t.textContent = timeAgo(c.at); meta.appendChild(t); }
+      var rp = el('button', 'cm-report'); rp.type = 'button'; rp.textContent = 'Report';
+      rp.addEventListener('click', function () {
+        rp.disabled = true;
+        fetch('/api/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'report', id: c.id, uid: uid }) })
+          .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b }; }); })
+          .then(function (o) {
+            if (!o.ok) {
+              rp.disabled = false;
+              var err = (o.b && o.b.error) || 'Couldn\u2019t report that.';
+              toast(err);
+              status.setAttribute('role', 'status');
+              return;
+            }
+            rp.textContent = 'Reported'; toast('Reported');
+          })
+          .catch(function () { rp.disabled = false; toast('Couldn\u2019t report that. Try again.'); });
+      });
+      meta.appendChild(rp); item.appendChild(meta); return item;
+    }
+    function paintStatus() {
+      if (!shown) { status.textContent = 'No comments yet. Be the first.'; more.hidden = true; return; }
+      if (shown < totalN) status.textContent = 'Showing ' + shown + ' of ' + totalN;
+      else status.textContent = totalN + ' comment' + (totalN === 1 ? '' : 's');
+      more.hidden = shown >= totalN;
+    }
+    function draw(dta, append) {
+      if (!dta || dta.configured === false) {
+        status.textContent = 'Comments aren\u2019t available right now.'; form.hidden = true; more.hidden = true; return;
+      }
+      if (dta.allowed === false) {
+        status.textContent = 'Comments are off for this story.'; form.hidden = true; more.hidden = true; return;
+      }
+      form.hidden = false;
+      var comments = dta.comments || [];
+      if (!append) { list.textContent = ''; shown = 0; }
+      comments.forEach(function (c) { list.appendChild(row(c)); });
+      shown += comments.length;
+      totalN = typeof dta.total === 'number' ? dta.total : (typeof dta.count === 'number' ? dta.count : shown);
+      paintStatus();
+      state.cmCounts[storyId(it.link)] = totalN;
+      Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (b) { if (b.paint) b.paint(); });
+    }
+    more.addEventListener('click', function () {
+      more.disabled = true;
+      fetch('/api/comments?id=' + encodeURIComponent(storyId(it.link)) + '&offset=' + shown, { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (dta) { more.disabled = false; draw(dta, true); })
+        .catch(function () { more.disabled = false; toast('Couldn\u2019t load comments.'); });
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = String(ta.value || '').trim();
+      if (!text) { toast('Add a comment.'); return; }
+      go.disabled = true;
+      fetch('/api/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: storyId(it.link), uid: uid, text: text }) })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b }; }); })
+        .then(function (o) {
+          go.disabled = false;
+          if (!o.ok) { toast((o.b && o.b.error) || 'Couldn\u2019t post that.'); return; }
+          ta.value = '';
+          if (o.b && o.b.comment) {
+            list.insertBefore(row(o.b.comment), list.firstChild);
+            shown += 1; totalN += 1; paintStatus();
+            state.cmCounts[storyId(it.link)] = totalN;
+            Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (b) { if (b.paint) b.paint(); });
+          }
+        })
+        .catch(function () { go.disabled = false; toast('Couldn\u2019t post that. Try again.'); });
+    });
+    document.body.appendChild(d);
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    fetch('/api/comments?id=' + encodeURIComponent(storyId(it.link)), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (dta) { draw(dta, false); })
+      .catch(function () { status.textContent = 'Couldn\u2019t load comments.'; form.hidden = true; more.hidden = true; });
+    ta.focus();
+    return d;
+  }
+  function savedSheet() {
+    var back = rememberOpener();
+    var prev = document.querySelector('dialog.sv-sheet'); if (prev) prev.remove();
+    var d = el('dialog', 'sv-sheet'); d.setAttribute('aria-labelledby', 'sv-h');
+    var top = el('div', 'cm-top');
+    var h = el('h2', null, 'Saved articles'); h.id = 'sv-h';
+    var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close saved articles');
+    x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
+    top.appendChild(h); top.appendChild(x);
+    var status = el('p', 'cm-status'); status.setAttribute('role', 'status');
+    var list = el('div', 'sv-list');
+    d.appendChild(top); d.appendChild(status); d.appendChild(list);
+    function close() { if (d.open) d.close(); else d.remove(); }
+    x.addEventListener('click', close);
+    d.addEventListener('click', function (e) { if (e.target === d) close(); });
+    d.addEventListener('close', function () { d.remove(); restoreOpener(back); });
+    function draw() {
+      list.textContent = '';
+      if (!state.saved.length) { status.textContent = 'Nothing saved in this browser yet.'; return; }
+      status.textContent = state.saved.length + ' saved in this browser.';
+      state.saved.forEach(function (it) {
+        var row = el('article', 'sv-item');
+        var pic = savedPic(it);
+        if (pic) {
+          var im = el('img', 'sv-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer';
+          im.addEventListener('error', function () { im.remove(); });
+          row.appendChild(im);
+        }
+        var bd = el('div', 'sv-bd');
+        bd.appendChild(el('h3', null, it.title));
+        if (it.source) bd.appendChild(el('p', 'sv-src', it.source));
+        var acts = el('div', 'sv-acts');
+        var go = el('a', 'st-go'); go.textContent = 'Continue to ' + (it.source || 'the story');
+        go.href = safeHref(it.link); go.target = '_blank'; go.rel = 'noopener noreferrer';
+        var rm = el('button', 'sv-rm'); rm.type = 'button'; rm.textContent = 'Remove';
+        rm.setAttribute('aria-label', 'Remove from saved: ' + it.title);
+        rm.addEventListener('click', function () { toggleSaved(it); draw(); });
+        acts.appendChild(go); acts.appendChild(rm); bd.appendChild(acts); row.appendChild(bd); list.appendChild(row);
+      });
+    }
+    draw();
+    document.body.appendChild(d);
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    x.focus();
+    return d;
+  }
   // ship95 (experiment): the story sheet. A news story opens over the feed before the reader leaves the site: its
   // picture (none for Police & courts or crime stories, as on the card), source and time, the headline, the feed's
   // summary (we only have the RSS summary, never the article) and one "Continue to <publisher>" link that opens the
@@ -2694,12 +2961,12 @@
       var h = el('h2', null, title || it.title); h.id = 'st-sheet-h'; bd.appendChild(h);
       var sm = String(it.more || it.summary || '').trim().replace(/\s*\[(?:\u2026|\.\.\.)\]$/, '\u2026'); if (sm && sm !== (title || it.title)) bd.appendChild(el('p', 'st-sum', sm));
       var sh = UI.heart({
-        get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
-        toggle: function () { toggleSaved(it); },
+        get: function () { return { on: isLiked(it.link), n: likeCount(it), label: it.title }; },
+        toggle: function () { toggleLiked(it); },
         after: function () { sh.paint(); if (cardHeart && cardHeart.paint) cardHeart.paint(); renderTabs(); }
       });
       // ship99: one row above Continue: heart and share on the left, "N of M" on the right
-      var ar = actRow(sh, it); ar.classList.add('st-acts');
+      var ar = newsActs(sh, it); ar.classList.add('st-acts');
       var bar = el('div', 'st-bar'); bar.appendChild(ar);
       if (list.length > 1) { var pos = el('span', 'st-pos'); pos.appendChild(el('b', null, String(i + 1))); pos.appendChild(document.createTextNode(' of ' + list.length)); pos.setAttribute('aria-label', 'Story ' + (i + 1) + ' of ' + list.length); bar.appendChild(pos); }
       bd.appendChild(bar);
@@ -2820,8 +3087,8 @@
     var w = el('time', big ? 'when' : '', shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
     src.appendChild(w);
     var sb = UI.heart({
-      get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
-      toggle: function () { toggleSaved(it); },
+      get: function () { return { on: isLiked(it.link), n: likeCount(it), label: it.title }; },
+      toggle: function () { toggleLiked(it); },
       after: function () { sb.paint(); renderTabs(); }
     });
     var im = null;
@@ -2849,7 +3116,7 @@
       e.preventDefault(); storySheet(it, pic, logo, hTitle, sb, card);
     });
     var foot = el('div', big ? 'cf' : 'ns-foot');
-    foot.appendChild(actRow(sb, it));
+    foot.appendChild(newsActs(sb, it));
     card.appendChild(foot);
     if (big) {
       var tag = UI.pill({ label: 'Breaking', tone: 'red', dot: true });
@@ -2864,8 +3131,8 @@
   // links of its own). Never an ad.
   function obitRow(it) {
     var sb = UI.heart({
-      get: function () { return { on: isSaved(it.link), n: likeCount(it), label: it.title }; },
-      toggle: function () { toggleSaved(it); },
+      get: function () { return { on: isLiked(it.link), n: likeCount(it), label: it.title }; },
+      toggle: function () { toggleLiked(it); },
       after: function () { sb.paint(); renderTabs(); }
     });
     var w = el('time', null, shortWhen(it.published, it.datePrecision === 'day')); if (it.published) { w.dateTime = it.published; w.dataset.ago = it.datePrecision === 'day' ? 'day' : 'time'; w.title = timeAgo(it.published, it.datePrecision === 'day'); w.setAttribute('aria-label', w.title); }
@@ -3098,6 +3365,7 @@
       }
       var sig = newsSig(items, sources), same = !force && state.loaded && !state.error && !state.partial && sig === state.sig;
       state.items = items; state.sources = sources; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = more; state.partial = false; state.sig = sig;
+      scrubSavedPics();
       scopeFrom(d);
       state.error = false; state.loaded = true;
       if (same) return; // ship110: nothing a reader would see changed, so nothing is redrawn
@@ -3176,6 +3444,7 @@
     if (s.parentNode) s.parentNode.removeChild(s);
     if (!d || !Array.isArray(d.items) || d.cat !== state.cat || SC.key !== 'tristate' || state.loaded) return;
     state.items = d.items; state.sources = Array.isArray(d.sources) ? d.sources : []; state.updatedAt = d.updatedAt; state.partial = true;
+    scrubSavedPics();
     scopeFrom(d);
     state.error = false; state.loaded = true;
     render();

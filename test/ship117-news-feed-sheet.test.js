@@ -43,9 +43,11 @@ test('ship117: non-Breaking news cards are stacked photo-led, not the CNN row', 
   assert.match(css, /article\.card\.news-story/);
   assert.match(css, /\.news-story \.ns-pic \{[^}]*width:100%/);
   assert.match(css, /\.news-story \.ns-pic \{[^}]*aspect-ratio:16\/9/);
-  assert.match(css, /\.news-story \.ns-foot [^{]*min-height:44px|\.news-story \.ns-foot :is\(\.like, \.share\) \{[^}]*min-height:44px/);
+  assert.match(css, /\.news-story \.ns-foot [^{]*min-height:44px|\.news-story \.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\) \{[^}]*min-height:44px/);
   assert.ok(!/EXAMPLE STORY/.test(js + cards));
-  assert.ok(!/bookmark|comment-btn|ns-comment|ns-save/.test(mk));
+  assert.match(mk, /newsActs\(/);
+  assert.match(js, /el\('button', 'sv-btn'\)/);
+  assert.match(js, /el\('button', 'cm-btn'\)/);
 });
 
 test('ship117: server first-paint matches: publisher then photo then headline; police photo-free; no-image compact', () => {
@@ -75,8 +77,8 @@ test('ship117: sheet is publisher, photo, full-contrast summary, red Continue; s
   assert.match(st, /html\.st-open|st-open/);
   assert.match(st, /'Continue to ' \+ \(it\.source \|\| 'the story'\)/);
   assert.match(st, /go\.target = '_blank'/);
-  assert.ok(!/fetch\(/.test(st));
-  assert.ok(!/bookmark|st-comment/.test(st));
+  assert.ok(!/EXAMPLE STORY/.test(st));
+  assert.match(st, /newsActs\(/);
   assert.match(css, /\.st-sheet \.st-sum \{[^}]*color:var\(--foreground\)/);
   assert.match(css, /\.st-sheet \.st-go \{[^}]*(--wordmark-now|--red)/);
   assert.match(css, /\.st-x \{[^}]*min-height:44px|\.st-sheet \.st-x \{[^}]*width:44px/);

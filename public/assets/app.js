@@ -469,7 +469,7 @@
   function toggleSaved(it) {
     var prev = state.saved.slice();
     if (isSaved(it.link)) state.saved = state.saved.filter(function (x) { return x.link !== it.link; });
-    else state.saved.unshift({ title: it.title, link: it.link, summary: it.summary || '', image: it.image || '', published: it.published, source: it.source, sourceId: it.sourceId });
+    else state.saved.unshift({ title: it.title, link: it.link, summary: it.summary || '', image: savedPic(it), published: it.published, source: it.source, sourceId: it.sourceId });
     if (!persistSaved()) { state.saved = prev; toast('Couldn\u2019t save on this device'); return false; }
     repaintSaves();
     return true;
@@ -2742,6 +2742,17 @@
   // story that merely mentions police keeps its picture; "shooting" in a sports headline (guard, percentage) is not a crime.
   var CRIME_RE = /\b(?:murder(?:s|ed|er|ers)?|homicides?|manslaughter|sex offenders?|rap(?:e|ed|ist)|sexual(?:ly)? assault(?:ed)?|molest(?:ed|ation|ing)?|arrest(?:s|ed)?|charged|charges|indicted|indictment|accused|suspects?|mugshots?|convicted|sentenced|in custody|booked|jailed|inmates?|warrants?|wanted|kidnapp(?:ed|ing)|abduct(?:ed|ion)|stabb(?:ed|ing)|robber(?:y|ies)|burglar(?:y|ies)|carjack(?:ed|ing)|shooting(?! (?:guard|percentage|woes|slump|touch|clinic|range|star))|shot and killed|fatally shot|deputies say|police say)\b/i;
   function crimeStory(it) { return CRIME_RE.test(String(it && it.title || '')); }
+  // Same photo rule as makeCard: Police & courts and crime headlines never keep a picture in Saved (mugshots).
+  function savedPic(it) {
+    var kd = kindOf(it && it.sourceId);
+    if (kd === 'police' || kd === 'courts' || crimeStory(it)) return '';
+    return (it && it.image) || '';
+  }
+  function scrubSavedPics() {
+    var n = 0;
+    state.saved.forEach(function (x) { if (x.image && !savedPic(x)) { x.image = ''; n++; } });
+    if (n) persistSaved();
+  }
   function commentsOk(it) {
     var kd = kindOf(it && it.sourceId);
     if (kd === 'police' || kd === 'courts' || kd === 'obits' || kd === 'events') return false;
@@ -2887,8 +2898,9 @@
       status.textContent = state.saved.length + ' saved in this browser.';
       state.saved.forEach(function (it) {
         var row = el('article', 'sv-item');
-        if (it.image) {
-          var im = el('img', 'sv-pic'); im.src = it.image; im.alt = ''; im.referrerPolicy = 'no-referrer';
+        var pic = savedPic(it);
+        if (pic) {
+          var im = el('img', 'sv-pic'); im.src = pic; im.alt = ''; im.referrerPolicy = 'no-referrer';
           im.addEventListener('error', function () { im.remove(); });
           row.appendChild(im);
         }
@@ -3353,6 +3365,7 @@
       }
       var sig = newsSig(items, sources), same = !force && state.loaded && !state.error && !state.partial && sig === state.sig;
       state.items = items; state.sources = sources; state.updatedAt = d.updatedAt; state.fetchedAt = Date.now(); state.more = more; state.partial = false; state.sig = sig;
+      scrubSavedPics();
       scopeFrom(d);
       state.error = false; state.loaded = true;
       if (same) return; // ship110: nothing a reader would see changed, so nothing is redrawn
@@ -3431,6 +3444,7 @@
     if (s.parentNode) s.parentNode.removeChild(s);
     if (!d || !Array.isArray(d.items) || d.cat !== state.cat || SC.key !== 'tristate' || state.loaded) return;
     state.items = d.items; state.sources = Array.isArray(d.sources) ? d.sources : []; state.updatedAt = d.updatedAt; state.partial = true;
+    scrubSavedPics();
     scopeFrom(d);
     state.error = false; state.loaded = true;
     render();

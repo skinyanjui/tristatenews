@@ -375,6 +375,12 @@ test('ship118: news cards/sheet have distinct save and comment; hearts use tsn.l
   assert.match(js, /if \(!o\.ok\)/);
   assert.match(js, /Showing ' \+ shown \+ ' of '/);
   assert.match(js, /cm-more/);
+  assert.match(js, /function savedPic\(/);
+  assert.match(js, /image: savedPic\(it\)/);
+  assert.match(js, /function scrubSavedPics\(/);
+  const sv = js.slice(js.indexOf('function savedSheet('), js.indexOf('function storySheet('));
+  assert.match(sv, /savedPic\(/);
+  assert.match(sv, /sv-pic/);
   assert.match(css, /\.sv-btn/);
   assert.match(css, /\.cm-btn/);
   assert.match(css, /\.news-story \.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\)|\.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\)/);

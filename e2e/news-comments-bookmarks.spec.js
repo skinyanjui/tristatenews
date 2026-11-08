@@ -182,6 +182,18 @@ test('card/sheet comment, save/unsave, Saved list, heart independence, crime off
   await expect(crimeCard.locator('.cm-btn')).toHaveCount(0);
   await expect(policeCard.locator('.cm-btn')).toHaveCount(0);
   await expect(crimeCard.locator('.sv-btn')).toBeVisible();
+  await policeCard.locator('.sv-btn').click();
+  await crimeCard.locator('.sv-btn').click();
+  await page.locator('#savedBtn').click();
+  const svMug = page.locator('dialog.sv-sheet');
+  await expect(svMug).toBeVisible();
+  await expect(svMug.locator('.sv-item', { hasText: 'Annual report' })).toHaveCount(1);
+  await expect(svMug.locator('.sv-item', { hasText: 'arrested downtown' })).toHaveCount(1);
+  await expect(svMug.locator('.sv-item', { hasText: 'Annual report' }).locator('img.sv-pic')).toHaveCount(0);
+  await expect(svMug.locator('.sv-item', { hasText: 'arrested downtown' }).locator('img.sv-pic')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await policeCard.locator('.sv-btn').click();
+  await crimeCard.locator('.sv-btn').click();
 
   await first.locator('.cm-btn').click();
   const cm = page.locator('dialog.cm-sheet');
@@ -243,9 +255,12 @@ test('migration: existing tsn.saved stays saved and hearts stay pressed without 
   await page.setViewportSize({ width: 390, height: 844 });
   await stub(page);
   page.on('request', req => { if (req.method() === 'POST' && /\/api\/react/.test(req.url())) posts.push(req.postData() || ''); });
-  await page.addInitScript(item => {
-    localStorage.setItem('tsn.saved', JSON.stringify([item]));
-  }, { title: FIX.title, link: FIX.link, summary: FIX.summary, image: FIX.image, published: FIX.published, source: FIX.source, sourceId: FIX.sourceId });
+  await page.addInitScript(items => {
+    localStorage.setItem('tsn.saved', JSON.stringify(items));
+  }, [
+    { title: FIX.title, link: FIX.link, summary: FIX.summary, image: FIX.image, published: FIX.published, source: FIX.source, sourceId: FIX.sourceId },
+    { title: POLICE.title, link: POLICE.link, summary: POLICE.summary, image: POLICE.image, published: POLICE.published, source: POLICE.source, sourceId: POLICE.sourceId }
+  ]);
   await page.goto('/');
   await expect(page.locator('#list article.news-story h2', { hasText: 'riverfront redevelopment' })).toBeVisible({ timeout: 15000 });
   const first = page.locator('#list article.news-story', { hasText: 'riverfront redevelopment' });
@@ -254,6 +269,15 @@ test('migration: existing tsn.saved stays saved and hearts stay pressed without 
   expect(posts).toEqual([]);
   const liked = await page.evaluate(() => localStorage.getItem('tsn.liked'));
   expect(liked).toContain(FIX.link);
+  await page.locator('#savedBtn').click();
+  const sv = page.locator('dialog.sv-sheet');
+  await expect(sv.locator('.sv-item', { hasText: 'riverfront redevelopment' })).toHaveCount(1);
+  await expect(sv.locator('.sv-item', { hasText: 'Annual report' })).toHaveCount(1);
+  await expect(sv.locator('.sv-item', { hasText: 'riverfront redevelopment' }).locator('img.sv-pic')).toHaveCount(1);
+  await expect(sv.locator('.sv-item', { hasText: 'Annual report' }).locator('img.sv-pic')).toHaveCount(0);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('tsn.saved') || '[]'));
+  expect(stored.find(x => /Annual report/.test(x.title)).image).toBe('');
+  expect(stored.find(x => /riverfront/.test(x.title)).image).toContain('river.jpg');
 });
 
 test('failed report stays Report and restores the opener', async ({ page }) => {

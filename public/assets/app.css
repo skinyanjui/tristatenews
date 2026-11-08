@@ -270,7 +270,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
 .cl-chip[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
 /* Board tap targets (Classifieds, Jobs, Deals): town menu, Post button and chips. --ctl stays 32px in the nav. */
-#cl, #jb, #dl { --cl-tap: 44px; }
+#cl, #jb, #dl, #ev { --cl-tap: 44px; }
 #cl .cl-bar, #jb .cl-bar, #dl .cl-bar { align-items:stretch; }
 #cl .cl-bar .ev-town, #jb .cl-bar .ev-town, #dl .cl-bar .ev-town { display:block; width:100%; min-width:0; }
 #cl .cl-bar .ev-town select.ui-select,
@@ -286,13 +286,23 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 #cl .cl-bar > .cl-go:focus-visible,
 #jb .cl-bar > .cl-go:focus-visible,
 #dl .cl-bar > .cl-go:focus-visible,
-#cl .cl-chip:focus-visible, #jb .cl-chip:focus-visible, #dl .cl-chip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+#cl .cl-chip:focus-visible, #jb .cl-chip:focus-visible, #dl .cl-chip:focus-visible, #ev .cl-chip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
 #cl .cl-bar > .cl-go, #jb .cl-bar > .cl-go, #dl .cl-bar > .cl-go {
   box-sizing:border-box; height:var(--cl-tap); min-height:var(--cl-tap);
   display:inline-flex; align-items:center; white-space:nowrap;
 }
-#cl .cl-chips, #jb .cl-chips, #dl .cl-chips { flex-wrap:wrap; overflow:visible; }
-#cl .cl-chip, #jb .cl-chip, #dl .cl-chip { min-height:var(--cl-tap); }
+#cl .cl-chip, #jb .cl-chip, #dl .cl-chip, #ev .cl-chip { min-height:var(--cl-tap); }
+/* Category/filter chip rows (Classifieds, Jobs, Deals, Events): one non-wrapping row. On a narrow
+   screen the row scrolls sideways so every chip stays reachable without widening the page. */
+#cl, #jb, #dl, #ev { min-width:0; }
+#cl .cl-chips, #jb .cl-chips, #dl .cl-chips, #ev .cl-chips {
+  flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none; touch-action:pan-x;
+  min-width:0; max-width:100%; scroll-padding-inline:var(--sp-2);
+}
+#cl .cl-chips, #jb .cl-chips, #dl .cl-chips { padding-block:2px; }
+#cl .cl-chips::-webkit-scrollbar, #jb .cl-chips::-webkit-scrollbar, #dl .cl-chips::-webkit-scrollbar, #ev .cl-chips::-webkit-scrollbar { display:none; }
+#cl .cl-chips .cl-chip, #jb .cl-chips .cl-chip, #dl .cl-chips .cl-chip, #ev .cl-chips .cl-chip { white-space:nowrap; scroll-margin-inline:var(--sp-2); }
 #cl .spon, #cl .spon-house, #jb .spon, #jb .spon-house, #dl .spon, #dl .spon-house {
   height:auto; min-height:var(--cl-tap); flex-wrap:wrap; overflow:visible; white-space:normal;
   padding:var(--sp-2) var(--sp-3); align-items:center;
@@ -323,11 +333,11 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inherit; border-radius:3px; padding:0 1px; }
 .sr { display:grid; gap:16px; }
 .sr[hidden] { display:none; }
-.ev-filters { display:grid; gap:8px; margin-bottom:8px; }
+.ev-filters { display:grid; gap:8px; margin-bottom:8px; min-width:0; }
 @media (min-width:720px) { .ev-filters { grid-template-columns:1fr auto; align-items:center; } }
 .ev-town select { min-height:var(--ctl); padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; max-width:100%; }
 .cl-empty { display:grid; gap:12px; justify-items:start; }
-.sr-bar { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.sr-bar { display:flex; flex-wrap:nowrap; gap:8px; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; scrollbar-width:none; padding-bottom:2px; min-width:0; max-width:100%; }
 .sr-bar::-webkit-scrollbar { display:none; }
 .sr-sec { display:grid; gap:12px; }
 .sr-h { margin:8px 0 0; display:flex; align-items:center; gap:8px; font-size:18px; line-height:24px; font-weight:600; letter-spacing:-.01em; }
@@ -1214,5 +1224,5 @@ article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src b { min-wid
 @media (min-width:1024px) {
   .evx-filters { grid-template-columns:minmax(0, max-content) minmax(0, 1fr) auto; grid-template-areas:"town dates add" "cats cats cats"; align-items:start; }
   .evx-filters .evx-ht { max-width:14rem; }
-  .evx-filters > [aria-label="When"] { margin-top:0; flex-wrap:wrap; }
+  .evx-filters > [aria-label="When"] { margin-top:0; flex-wrap:nowrap; min-width:0; }
 }

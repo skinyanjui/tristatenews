@@ -47,11 +47,11 @@ test('ship112: wanted marketplace amounts stay the printed figure; no budget or 
 });
 
 test('ship112: classifieds tap targets are 44px and scoped; --ctl stays 32px', () => {
-  assert.match(css, /#cl, #jb, #dl \{ --cl-tap: 44px; \}/);
+  assert.match(css, /#cl, #jb, #dl, #ev \{ --cl-tap: 44px; \}/);
   assert.match(css, /--ctl: 32px;/);
   assert.match(css, /#cl \.cl-bar \.ev-town select\.ui-select/);
   assert.match(css, /#cl \.cl-bar > \.cl-go/);
-  assert.match(css, /#cl \.cl-chip, #jb \.cl-chip, #dl \.cl-chip \{ min-height:var\(--cl-tap\); \}/);
+  assert.match(css, /#cl \.cl-chip, #jb \.cl-chip, #dl \.cl-chip, #ev \.cl-chip \{ min-height:var\(--cl-tap\); \}/);
   assert.match(css, /#cl \.spon, #cl \.spon-house, #jb \.spon, #jb \.spon-house, #dl \.spon, #dl \.spon-house/);
   assert.match(css, /#cl \.mk-amt/);
   assert.ok(!/:root \{[^}]*--ctl:\s*44px/.test(css));

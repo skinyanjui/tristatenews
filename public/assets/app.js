@@ -102,6 +102,14 @@
       chipRow: function (items, active, onPick, aria) {
         var row = el('div', 'cl-chips'); if (aria) { row.setAttribute('role', 'group'); row.setAttribute('aria-label', aria); }
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
+        // Keep the pressed/focused chip in the row's horizontal scrollport (never scrollIntoView: that jumps the page).
+        row.addEventListener('focusin', function (e) {
+          if (e.target && e.target.classList && e.target.classList.contains('cl-chip')) scrollChipX(e.target);
+        });
+        requestAnimationFrame(function () {
+          var on = row.querySelector('.cl-chip[aria-pressed="true"]');
+          if (on && on !== row.querySelector('.cl-chip')) scrollChipX(on);
+        });
         return row;
       },
       // An approved ad's link: rel="sponsored", a new tab for web links (not for tel:), "Sponsored" first, and its
@@ -1088,6 +1096,16 @@
   }
   function photoSrc(it) { return it.imgData || (it.img ? '/api/listings?img=' + encodeURIComponent(it.id) : ''); }
   function hueOf(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; }
+  // Scroll a chip sideways inside its .cl-chips row only (no vertical page jump).
+  function scrollChipX(el) {
+    var row = el;
+    while (row && row.classList && !row.classList.contains('cl-chips')) row = row.parentNode;
+    if (!row || !row.classList || !el.getBoundingClientRect) return;
+    var r = row.getBoundingClientRect(), b = el.getBoundingClientRect(), pad = 8, dx = 0;
+    if (b.left < r.left + pad) dx = b.left - r.left - pad;
+    else if (b.right > r.right - pad) dx = b.right - r.right + pad;
+    if (dx) row.scrollLeft += dx;
+  }
   function initials(name) { var w = String(name || '?').split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w.length > 1 ? w[1].charAt(0) : '')).toUpperCase(); }
   function bizAvatar(name, logo) {
     if (logo) { var im = el('img', 'bav'); im.src = logo; im.alt = ''; im.width = 28; im.height = 28; im.loading = 'lazy'; return im; }
@@ -1472,7 +1490,7 @@
   function chips(b, kind) {
     var present = {}; b.items.concat(kind === 'event' ? feedEvents() : kind === 'item' ? mkItems() : boardSamples(kind)).forEach(function (x) { present[x.category] = 1; });
     var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
-    return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
+    return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); }, 'Category');
   }
   function eventFilters(b) {
     var bar = el('div', 'ev-filters');
@@ -1859,7 +1877,14 @@
     // The hidden date input sits next to the button, not inside it (a control inside a button: axe nested-interactive).
     var pw = el('span', 'evx-pickw'); pw.appendChild(pk); pw.appendChild(inp);
     row.appendChild(pw);
-    requestAnimationFrame(function () { var on = row.querySelector('[aria-pressed="true"]'); if (on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - 16; }); // keep the chosen chip in view
+    row.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.classList && t.classList.contains('cl-chip')) scrollChipX(t);
+    });
+    requestAnimationFrame(function () {
+      var on = row.querySelector('[aria-pressed="true"]');
+      if (on && on !== row.querySelector('.cl-chip')) scrollChipX(on);
+    });
     return row;
   }
   function evxHeader(b) {

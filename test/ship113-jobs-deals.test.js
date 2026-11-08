@@ -73,7 +73,7 @@ test('ship113: labeled Jobs and Deals samples cover types, photos, logos, coupon
 });
 
 test('ship113: Jobs and Deals board controls share classifieds 44px tap targets; nav --ctl stays 32px', () => {
-  assert.match(css, /#cl, #jb, #dl \{ --cl-tap: 44px; \}/);
+  assert.match(css, /#cl, #jb, #dl, #ev \{ --cl-tap: 44px; \}/);
   assert.match(css, /--ctl: 32px;/);
   assert.match(css, /#jb \.cl-bar > \.cl-go/);
   assert.match(css, /#dl \.cl-bar > \.cl-go/);

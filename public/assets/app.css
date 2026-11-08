@@ -291,8 +291,18 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
   box-sizing:border-box; height:var(--cl-tap); min-height:var(--cl-tap);
   display:inline-flex; align-items:center; white-space:nowrap;
 }
-#cl .cl-chips, #jb .cl-chips, #dl .cl-chips { flex-wrap:wrap; overflow:visible; }
+#jb .cl-chips, #dl .cl-chips { flex-wrap:wrap; overflow:visible; }
 #cl .cl-chip, #jb .cl-chip, #dl .cl-chip { min-height:var(--cl-tap); }
+/* Classifieds category chips: one non-wrapping row. On a narrow screen the row scrolls sideways so every
+   category stays reachable without widening the page. 44px taps and the focus ring stay intact. */
+#cl { min-width:0; }
+#cl > .cl-chips {
+  flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none; touch-action:pan-x;
+  min-width:0; max-width:100%; padding-block:2px; scroll-padding-inline:var(--sp-2);
+}
+#cl > .cl-chips::-webkit-scrollbar { display:none; }
+#cl > .cl-chips .cl-chip { white-space:nowrap; scroll-margin-inline:var(--sp-2); }
 #cl .spon, #cl .spon-house, #jb .spon, #jb .spon-house, #dl .spon, #dl .spon-house {
   height:auto; min-height:var(--cl-tap); flex-wrap:wrap; overflow:visible; white-space:normal;
   padding:var(--sp-2) var(--sp-3); align-items:center;

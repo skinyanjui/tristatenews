@@ -60,7 +60,9 @@ const SOURCES = [
 const comments = {};
 function commentId() { return 'c' + Math.random().toString(36).slice(2, 10); }
 
-async function stub(page, items) {
+async function stub(page, items, opts) {
+  Object.keys(comments).forEach(k => { delete comments[k]; });
+  const reportFail = !!(opts && opts.reportFail);
   await page.route(url => !/^http:\/\/(127\.0\.0\.1|localhost)/.test(url.href) && !url.href.startsWith(page.url()), route => route.abort());
   await page.route(/\/api\/news(\?|$)/, route => route.fulfill({
     json: { updatedAt: new Date(Date.now() + 60 * 1000).toISOString(), sources: SOURCES, items: items || [FIX, NOIMG, CRIME, POLICE] }
@@ -85,14 +87,19 @@ async function stub(page, items) {
     if (req.method() === 'GET' && url.searchParams.get('id')) {
       const id = url.searchParams.get('id');
       if (/crime|police/i.test(id) || id === storyId(CRIME.link) || id === storyId(POLICE.link)) {
-        return route.fulfill({ json: { configured: true, allowed: false, comments: [], count: 0 } });
+        return route.fulfill({ json: { configured: true, allowed: false, comments: [], count: 0, total: 0 } });
       }
       const list = comments[id] || [];
-      return route.fulfill({ json: { configured: true, allowed: true, comments: list, count: list.length } });
+      const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0);
+      const slice = list.slice(offset, offset + 20);
+      return route.fulfill({ json: { configured: true, allowed: true, comments: slice, count: list.length, total: list.length, offset } });
     }
     if (req.method() === 'POST') {
       const body = req.postDataJSON() || {};
-      if (body.action === 'report') return route.fulfill({ json: { ok: true } });
+      if (body.action === 'report') {
+        if (reportFail) return route.fulfill({ status: 429, json: { error: 'too many' } });
+        return route.fulfill({ json: { ok: true } });
+      }
       const id = String(body.id || '');
       const text = String(body.text || '').replace(/[<>]/g, ' ').trim().slice(0, 300);
       if (!text) return route.fulfill({ status: 400, json: { error: 'Add a comment.' } });
@@ -185,6 +192,7 @@ test('card/sheet comment, save/unsave, Saved list, heart independence, crime off
   await expect(cm).toContainText('EXAMPLE public comment');
   await page.keyboard.press('Escape');
   await expect(cm).toHaveCount(0);
+  await expect(first.locator('.cm-btn')).toBeFocused();
 
   await first.locator('.sv-btn').click();
   await expect(first.locator('.sv-btn')).toHaveAttribute('aria-pressed', 'true');
@@ -204,6 +212,7 @@ test('card/sheet comment, save/unsave, Saved list, heart independence, crime off
   await page.screenshot({ path: ART + '/news-saved-light-390.png', fullPage: false });
   fs.copyFileSync(ART + '/news-saved-light-390.png', FIXDIR + '/news-saved-light-390.png');
   await page.keyboard.press('Escape');
+  await expect(page.locator('#savedBtn')).toBeFocused();
 
   await first.locator('a.ca').click();
   const sheet = page.locator('dialog.st-sheet');
@@ -215,6 +224,7 @@ test('card/sheet comment, save/unsave, Saved list, heart independence, crime off
   await page.screenshot({ path: ART + '/news-comments-light-390.png', fullPage: false });
   fs.copyFileSync(ART + '/news-comments-light-390.png', FIXDIR + '/news-comments-light-390.png');
   await page.keyboard.press('Escape');
+  await expect(sheet.locator('.cm-btn')).toBeFocused();
   await page.keyboard.press('Escape');
 
   await page.reload();
@@ -244,6 +254,26 @@ test('migration: existing tsn.saved stays saved and hearts stay pressed without 
   expect(posts).toEqual([]);
   const liked = await page.evaluate(() => localStorage.getItem('tsn.liked'));
   expect(liked).toContain(FIX.link);
+});
+
+test('failed report stays Report and restores the opener', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stub(page, null, { reportFail: true });
+  await page.goto('/');
+  await expect(page.locator('#list article.news-story h2', { hasText: 'riverfront redevelopment' })).toBeVisible({ timeout: 15000 });
+  const first = page.locator('#list article.news-story', { hasText: 'riverfront redevelopment' });
+  await first.locator('.cm-btn').click();
+  const cm = page.locator('dialog.cm-sheet');
+  await expect(cm).toBeVisible();
+  await cm.locator('textarea').fill('EXAMPLE comment to report.');
+  await cm.locator('.cm-post').click();
+  const rp = cm.locator('.cm-item').first().locator('.cm-report');
+  await expect(rp).toBeVisible();
+  await rp.click();
+  await expect(rp).toHaveText('Report');
+  await expect(rp).toBeEnabled();
+  await page.keyboard.press('Escape');
+  await expect(first.locator('.cm-btn')).toBeFocused();
 });
 
 test('no-image and long text still expose save; 44px targets at 320–1280; 200% zoom', async ({ page }) => {

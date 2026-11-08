@@ -32,6 +32,26 @@ function fakeStore() {
       case 'RENAME': { if (sets.has(k)) { sets.set(a[0], sets.get(k)); sets.delete(k); } if (kv.has(k)) { kv.set(a[0], kv.get(k)); kv.delete(k); } return { result: 'OK' }; }
       case 'ZADD': { const m = z.get(k) || new Map(); z.set(k, m); m.set(a[1], Number(a[0])); return { result: 1 }; }
       case 'ZREM': { const m = z.get(k); let n = 0; if (m) a.forEach(x => { if (m.delete(x)) n++; }); return { result: n }; }
+      case 'ZCARD': return { result: (z.get(k) || new Map()).size };
+      case 'ZREMRANGEBYSCORE': {
+        const m = z.get(k); if (!m) return { result: 0 };
+        const min = String(a[0]) === '-inf' ? -Infinity : Number(a[0]);
+        const max = String(a[1]) === '+inf' ? Infinity : Number(a[1]);
+        let n = 0; [...m].forEach(([mem, s]) => { if (s >= min && s <= max) { m.delete(mem); n++; } }); return { result: n };
+      }
+      case 'ZREMRANGEBYRANK': {
+        const m = z.get(k); if (!m) return { result: 0 };
+        const sorted = [...m].sort((x, y) => x[1] - y[1]).slice(Number(a[0]), Number(a[1]) + 1);
+        let n = 0; sorted.forEach(([mem]) => { if (m.delete(mem)) n++; }); return { result: n };
+      }
+      case 'PTTL': return { result: kv.has(k) || sets.has(k) || z.has(k) || lists.has(k) ? 180 * 86400 * 1000 : -2 };
+      case 'EVAL': {
+        const ATOM = require('../api/_cmatom.js');
+        const nkeys = Number(a[0]);
+        const keys = a.slice(1, 1 + nkeys);
+        const argv = a.slice(1 + nkeys);
+        return { result: ATOM.run(k, ATOM.wrap(run), keys, argv) };
+      }
       case 'ZREVRANGE': {
         const m = z.get(k) || new Map();
         const arr = [...m].sort((x, y) => y[1] - x[1]).slice(Number(a[0]), Number(a[1]) + 1);
@@ -154,10 +174,17 @@ test('ship118: allowlist, crime, unknown, expired, XSS, links, CSRF, size, metho
   assert.deepEqual([pol.code, pol.body.error], [400, 'comments off']);
   const link = await post({ id: good, uid: 'reader-0001', text: 'see https://evil.com' });
   assert.equal(link.code, 400);
+  assert.equal((await post({ id: good, uid: 'reader-0001', text: 'see example.co/x' })).code, 400);
+  assert.equal((await post({ id: good, uid: 'reader-0001', text: 'bit.ly/abcd' })).code, 400);
+  assert.equal((await post({ id: good, uid: 'reader-0001', text: 't.co/x9' })).code, 400);
+  const prose = await post({ id: good, uid: 'reader-0001', text: 'Meet on U.S. 41 near Mr. Smith.' });
+  assert.equal(prose.code, 200, 'prose with initials is not a link');
   const xss = await post({ id: good, uid: 'reader-0001', text: '<script>alert(1)</script> hello' });
   assert.equal(xss.code, 200);
   assert.equal(xss.body.comment.text.includes('<'), false);
   assert.ok(!xss.body.comment.uid);
+  const stored = JSON.parse(s.kv.get('tsn:cm:' + xss.body.comment.id));
+  assert.ok(!('uid' in stored), 'browser id is not stored on the comment');
   const ok = await post({ id: good, uid: 'reader-0001', text: 'The riverfront looks great.' });
   assert.equal(ok.code, 200);
   const got = await call(C, { query: { id: good } });
@@ -234,6 +261,91 @@ test('ship118: degraded store fail closed; concurrent reports hide once', () => 
   await Promise.all(['1.1.1.1', '2.2.2.2', '3.3.3.3'].map(ip => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip }, origin), body: { action: 'report', id: cid, uid: 'reporter01' } })));
   const q = await call(C, { query: { review: '1' }, headers: { 'x-admin-key': 'admin-test-key' } });
   assert.equal(q.body.items.filter(x => x.id === cid).length, 1);
+  const after = await call(C, { query: { id } });
+  assert.equal(after.body.total, 0);
+  assert.equal(after.body.count, 0);
+  assert.ok(!after.body.comments.some(c => c.id === cid));
+}));
+
+test('ship118: hasLink catches short hosts; EVAL is used for vis transitions', () => {
+  const C = require('../api/_comments.js');
+  const src = read('api/_comments.js');
+  assert.equal(C.hasLink('https://evil.test/x'), true);
+  assert.equal(C.hasLink('www.example.com'), true);
+  assert.equal(C.hasLink('example.co/path'), true);
+  assert.equal(C.hasLink('bit.ly/x'), true);
+  assert.equal(C.hasLink('The riverfront looks great.'), false);
+  assert.equal(C.hasLink('Meet Mr. Smith on U.S. 41.'), false);
+  assert.match(src, /EVAL/);
+  assert.match(src, /tsn:cm:vis:/);
+  assert.equal(src.includes('visCount'), false);
+});
+
+test('ship118: concurrent reports decrement once; post+restore keep both; delete+restore cannot ghost', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/atom');
+  seedStory(s, id, NEWS);
+  const post = (uid, ip, text) => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip }, origin), body: { id, uid, text } });
+  const a = await post('reader-a01', '1.1.1.1', 'First live comment.');
+  const b = await post('reader-b01', '1.1.1.2', 'Second live comment.');
+  assert.equal(a.code, 200); assert.equal(b.code, 200);
+  const cidA = a.body.comment.id, cidB = b.body.comment.id;
+  await Promise.all(['8.8.8.1', '8.8.8.2', '8.8.8.3'].map(ip => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip }, origin), body: { action: 'report', id: cidA, uid: 'reporter01' } })));
+  const hid = await call(C, { query: { id } });
+  assert.equal(hid.body.total, 1);
+  assert.equal(hid.body.count, 1);
+  assert.ok(hid.body.comments.some(c => c.id === cidB));
+  assert.ok(!hid.body.comments.some(c => c.id === cidA));
+  const vis = s.z.get('tsn:cm:vis:' + id) || new Map();
+  assert.equal(vis.size, 1);
+
+  const rest = call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'restore', id: cidA } });
+  const extra = post('reader-c01', '1.1.1.3', 'Posted during restore.');
+  const both = await Promise.all([rest, extra]);
+  assert.equal(both[0].body.restored, true);
+  assert.equal(both[1].code, 200);
+  const live = await call(C, { query: { id } });
+  assert.equal(live.body.total, 3);
+  assert.equal(live.body.count, 3);
+
+  const cidC = both[1].body.comment.id;
+  const del = call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'delete', id: cidC } });
+  const rest2 = call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'restore', id: cidC } });
+  await Promise.all([del, rest2]);
+  const end = await call(C, { query: { id } });
+  assert.ok(end.body.total >= 2);
+  assert.equal(end.body.total, end.body.comments.length);
+  assert.ok(!end.body.comments.some(c => c.id === cidC && !s.kv.get('tsn:cm:' + cidC)));
+  const vis2 = s.z.get('tsn:cm:vis:' + id) || new Map();
+  for (const cid of vis2.keys()) {
+    assert.ok(s.kv.get('tsn:cm:' + cid), 'visible index has no ghost ' + cid);
+  }
+}));
+
+test('ship118: live visible count is capped and pruned; thread total is X of Y', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/page');
+  seedStory(s, id, NEWS);
+  const post = (i) => call(C, {
+    method: 'POST',
+    headers: Object.assign({ 'x-real-ip': '10.0.' + Math.floor(i / 8) + '.' + (i % 8) }, origin),
+    body: { id, uid: 'reader-' + String(i).padStart(4, '0'), text: 'River comment number ' + i + '.' }
+  });
+  for (let i = 0; i < 25; i++) assert.equal((await post(i)).code, 200);
+  const page = await call(C, { query: { id } });
+  assert.equal(page.body.comments.length, 20);
+  assert.equal(page.body.total, 25);
+  assert.equal(page.body.count, 25);
+  const page2 = await call(C, { query: { id, offset: '20' } });
+  assert.equal(page2.body.comments.length, 5);
+  assert.equal(page2.body.total, 25);
+  s.z.get('tsn:cm:vis:' + id).set('cexpired01', Math.floor(Date.now() / 1000) - 10);
+  const pruned = await call(C, { query: { id } });
+  assert.equal(pruned.body.total, 25);
+  assert.ok(!pruned.body.comments.some(c => c.id === 'cexpired01'));
+  for (let i = 25; i < 205; i++) assert.equal((await post(i)).code, 200, 'post ' + i);
+  const capped = await call(C, { query: { id } });
+  assert.equal(capped.body.total, 200);
+  assert.equal(capped.body.comments.length, 20);
+  assert.equal(capped.body.count, 200);
 }));
 
 test('ship118: news cards/sheet have distinct save and comment; hearts use tsn.liked; crime has no comment', () => {
@@ -258,6 +370,11 @@ test('ship118: news cards/sheet have distinct save and comment; hearts use tsn.l
   assert.match(js, /dialog', 'cm-sheet'|el\('dialog', 'cm-sheet'\)/);
   assert.match(js, /dialog', 'sv-sheet'|el\('dialog', 'sv-sheet'\)/);
   assert.match(js, /textContent/);
+  assert.match(js, /function restoreOpener\(/);
+  assert.match(js, /function rememberOpener\(/);
+  assert.match(js, /if \(!o\.ok\)/);
+  assert.match(js, /Showing ' \+ shown \+ ' of '/);
+  assert.match(js, /cm-more/);
   assert.match(css, /\.sv-btn/);
   assert.match(css, /\.cm-btn/);
   assert.match(css, /\.news-story \.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\)|\.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\)/);

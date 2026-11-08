@@ -30,11 +30,11 @@ Accounts, cross-device sync, paid services, new Vercel functions, comment thread
 - Hosted at `/api/comments`, rewritten onto existing `api/react.js` (still **8** functions). Same Redis as hearts. Without Redis: `{ configured: false }` and the UI says comments aren’t available — no local fake thread.
 - Compose ~300 characters, strip `<>`/controls, collapse space, **no links**. Render with `textContent` only.
 - GET `?id=` thread (bounded, newest first, ≤20) and GET `?ids=` batched counts. POST create / report. Admin GET `?review=1` + POST restore/delete with `x-admin-key` = existing `LISTINGS_ADMIN_KEY` (constant-time compare; wrong key → 404 like listings).
-- Rate-limit uid + hashed IP (existing `_ip.js`). Never store or return raw IP or uid on public/admin JSON.
-- Report dedup: `SADD` hashed IP; `SCARD` ≥ 3 hides and queues. Repeat IP does not extra-count.
-- Allowlist: refresh writes `tsn:news:ids` **and** `tsn:news:meta` (storyId → `{kind, title, sourceId}`) from the snapshot. POST requires current id + allowed meta. GET uses the same meta; police/courts, crime-title (`CRIME_RE` matching the page), unknown kind, missing meta, or expired/unknown id → not allowed, empty thread (stored comments are not readable). Client category is ignored.
+- Rate-limit uid + hashed IP (existing `_ip.js`, 24-hour counters). Never store uid or raw IP on the comment record or public/admin JSON.
+- Report dedup: `SADD` hashed IP; `SCARD` ≥ 3 hides and queues. Repeat IP does not extra-count. Hide/restore/delete/create are one Redis EVAL on a visible ZSET (`tsn:cm:vis:<story>` scored by expiry); counts are ZCARD after pruning, never a read-modify-SET.
+- Allowlist: refresh writes `tsn:news:ids` **and** `tsn:news:meta` (storyId → `{kind, title, sourceId}`) from the snapshot. POST requires current id + allowed meta. GET uses the same meta; police/courts, crime-title (`CRIME_RE` matching the page), unknown kind, missing meta, or expired/unknown id → not allowed, empty thread (stored comments are not readable). Client category is ignored. First deploy: comments stay fail-closed until a normal refresh writes meta (do not trigger a production refresh).
 - Same-origin CSRF on POST (Origin/Referer host must match `Host`); method/size checks; storage errors fail closed.
-- TTL **180 days** on comment records, lists, report sets, and counts (same window as likes). Indexes trimmed (200 ids/story).
+- TTL **180 days** on comment records and report sets. Visible index capped at 200; GET thread is 20 plus `total` (show X of Y / load more).
 - No threads, no notifications, no names.
 
 ## Admin (reachable)

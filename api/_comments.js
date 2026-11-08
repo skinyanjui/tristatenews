@@ -1,5 +1,5 @@
 // Public anonymous comments on current non-crime news. Hosted by api/react.js (vercel rewrite /api/comments).
-//   GET  /api/comments?id=<storyId>              -> { configured, allowed, comments, count }
+//   GET  /api/comments?id=<storyId>&offset=      -> { configured, allowed, comments, count, total }
 //   GET  /api/comments?ids=<id,id>               -> { configured, counts }   (allowed stories only)
 //   POST /api/comments { id, uid, text }         -> { ok, comment }          (create)
 //   POST /api/comments { action:'report', id, uid }
@@ -7,12 +7,15 @@
 //   POST { action:'restore'|'delete', id } + x-admin-key
 // Trusted allowlist is tsn:news:meta + tsn:news:ids from refresh (api/_storyid.js). Client category is ignored.
 // Unknown / expired / police / courts / crime-title / missing meta: fail closed (not allowed, empty thread).
+// Visible index is tsn:cm:vis:<storyId> (ZSET, score = expiry unix). Count is ZCARD after pruning expired
+// members, not a separate n±1 key. Hide/restore/delete/create run as one Redis EVAL.
 'use strict';
 const STORE = require('./_store.js');
 const { same } = require('./_safe.js');
 const { KEY: IDS, META } = require('./_storyid.js');
 const { commentsBlocked } = require('./_crime.js');
 const { clientIp, ipHash } = require('./_ip.js');
+const ATOM = require('./_cmatom.js');
 
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const STORY_RE = /^[a-z0-9]{4,24}$/;
@@ -22,23 +25,25 @@ const COMMENT_TTL = 180 * 86400;
 const MAX_TEXT = 300;
 const MAX_BODY = 4096;
 const MAX_THREAD = 20;
-const MAX_LIST = 199;
+const MAX_VIS = 200;
 const DAILY_PER_UID = 8;
 const DAILY_PER_IP = 20;
 const STORY_PER_IP = 8;
 const REPORTS_TO_HIDE = 3;
 const REPORTS_PER_IP = 10;
 const REVIEW = 'tsn:cm:review';
+const PRUNE_CHUNK = 80;
 
 const pipeline = STORE.pipeline;
 const rec = id => 'tsn:cm:' + id;
-const listKey = id => 'tsn:cm:list:' + id;
-const nKey = id => 'tsn:cm:n:' + id;
+const visKey = id => 'tsn:cm:vis:' + id;
 const hideKey = id => 'tsn:cm:hide:' + id;
 const repKey = id => 'tsn:cm:rep:' + id;
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
-const hasLink = t => /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|info|biz|xyz|ru|top|shop|site)\b)/i.test(t);
+// Catch pasted URLs and host-like tokens (example.co, bit.ly) without treating "U.S." / "Mr. Smith" / "ok." as links.
+const hasLink = t => /https?:\/\/|www\.|\b(?:bit\.ly|t\.co|tinyurl\.com|goo\.gl|ow\.ly|is\.gd|buff\.ly|cutt\.ly|rb\.gy|shorturl\.at|tiny\.cc)\b|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|net|org|info|biz|xyz|ru|top|shop|site|co|io|ly|me|us|cc|tv|app|dev|page|link|click|gg|to|uk|de|br|in|au|ca|edu|gov|int)\b/i.test(t);
 const dayUtc = () => new Date().toISOString().slice(0, 10);
+const nowSec = () => Math.floor(Date.now() / 1000);
 const send = (res, code, obj, cache) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', cache || 'no-store');
@@ -71,9 +76,15 @@ function newCid() {
   return ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 21);
 }
 
+async function evalScript(script, keys, argv) {
+  const cmd = ['EVAL', script, String(keys.length)].concat(keys, argv.map(String));
+  const out = await pipeline([cmd]);
+  return out[0] && out[0].result;
+}
+
 async function handler(req, res) {
   if (!STORE.stored()) {
-    return send(res, 200, { configured: false, allowed: false, comments: [], counts: {}, count: 0 }, 'public, s-maxage=300');
+    return send(res, 200, { configured: false, allowed: false, comments: [], counts: {}, count: 0, total: 0 }, 'public, s-maxage=300');
   }
   try {
     if (req.method === 'GET' && String((req.query && req.query.review) || '') === '1') return await review(req, res);
@@ -90,7 +101,7 @@ async function handler(req, res) {
   } catch (e) {
     require('./_log.js').fail('comments', e);
     return req.method === 'GET'
-      ? send(res, 200, { configured: false, allowed: false, comments: [], counts: {}, count: 0 })
+      ? send(res, 200, { configured: false, allowed: false, comments: [], counts: {}, count: 0, total: 0 })
       : send(res, 502, { error: 'Couldn’t save that right now. Try again in a moment.' });
   }
 }
@@ -104,39 +115,60 @@ async function classify(id) {
   return { meta, inSet, setExists, allowed };
 }
 
+async function liveThread(id, offset) {
+  const vis = visKey(id);
+  await pipeline([['ZREMRANGEBYSCORE', vis, '-inf', String(nowSec())]]);
+  const got = await pipeline([['ZREVRANGE', vis, String(offset), String(offset + MAX_THREAD - 1)], ['ZCARD', vis]]);
+  const ids = ((got[0] && got[0].result) || []).filter(x => CID_RE.test(String(x)));
+  let total = Number(got[1] && got[1].result) || 0;
+  if (!ids.length) return { comments: [], total };
+  const recs = await pipeline(ids.map(cid => ['GET', rec(cid)]).concat(ids.map(cid => ['EXISTS', hideKey(cid)])));
+  const comments = [], ghosts = [];
+  ids.forEach((cid, i) => {
+    if (Number(recs[ids.length + i] && recs[ids.length + i].result)) { ghosts.push(cid); return; }
+    const o = parseRec(recs[i] && recs[i].result);
+    if (!o || o.storyId !== id) { ghosts.push(cid); return; }
+    const pub = publicComment(o);
+    if (pub) comments.push(pub);
+    else ghosts.push(cid);
+  });
+  if (ghosts.length) {
+    await pipeline(ghosts.map(cid => ['ZREM', vis, cid]));
+    const n = await pipeline([['ZCARD', vis]]);
+    total = Number(n[0] && n[0].result) || comments.length;
+  }
+  return { comments, total };
+}
+
 async function read(req, res) {
   const q = req.query || {};
   if (q.id) {
     const id = String(q.id);
     if (!STORY_RE.test(id)) return send(res, 400, { error: 'bad request' });
     const cls = await classify(id);
-    if (!cls.allowed) return send(res, 200, { configured: true, allowed: false, comments: [], count: 0 }, 'public, max-age=0, s-maxage=15');
-    const got = await pipeline([['LRANGE', listKey(id), '0', String(MAX_LIST)], ['GET', nKey(id)]]);
-    const ids = ((got[0] && got[0].result) || []).filter(x => CID_RE.test(String(x)));
-    const recs = ids.length ? await pipeline(ids.map(cid => ['GET', rec(cid)]).concat(ids.map(cid => ['EXISTS', hideKey(cid)]))) : [];
-    const comments = [];
-    for (let i = 0; i < ids.length && comments.length < MAX_THREAD; i++) {
-      if (Number(recs[ids.length + i] && recs[ids.length + i].result)) continue;
-      const o = parseRec(recs[i] && recs[i].result);
-      if (!o || o.storyId !== id) continue;
-      const pub = publicComment(o);
-      if (pub) comments.push(pub);
-    }
-    return send(res, 200, { configured: true, allowed: true, comments, count: Number(got[1] && got[1].result) || comments.length }, 'public, max-age=0, s-maxage=15');
+    if (!cls.allowed) return send(res, 200, { configured: true, allowed: false, comments: [], count: 0, total: 0 }, 'public, max-age=0, s-maxage=15');
+    const offset = Math.max(0, Math.min(MAX_VIS, parseInt(q.offset, 10) || 0));
+    const { comments, total } = await liveThread(id, offset);
+    return send(res, 200, { configured: true, allowed: true, comments, count: total, total, offset }, 'public, max-age=0, s-maxage=15');
   }
   const rawIds = Array.isArray(q.ids) ? q.ids.join(',') : String(q.ids || '');
   const ids = [...new Set(rawIds.split(',').filter(x => STORY_RE.test(x)))].slice(0, 300);
   if (!ids.length) return send(res, 200, { configured: true, counts: {} }, 'public, max-age=0, s-maxage=15');
-  const pre = await pipeline([['GET', META]].concat(ids.map(id => ['GET', nKey(id)])));
+  const pre = await pipeline([['GET', META]]);
   let map = {};
   try { map = JSON.parse(pre[0] && pre[0].result) || {}; } catch (_) { map = {}; }
+  const allowed = ids.filter(id => map[id] && !commentsBlocked(map[id]));
   const counts = {};
-  ids.forEach((id, i) => {
-    const meta = map[id];
-    if (!meta || commentsBlocked(meta)) return;
-    const n = Number(pre[i + 1] && pre[i + 1].result) || 0;
-    if (n > 0) counts[id] = n;
-  });
+  const now = String(nowSec());
+  for (let i = 0; i < allowed.length; i += PRUNE_CHUNK) {
+    const chunk = allowed.slice(i, i + PRUNE_CHUNK);
+    const nums = await evalScript(ATOM.SCRIPT_PRUNE, chunk.map(visKey), [now]);
+    const arr = Array.isArray(nums) ? nums : [];
+    chunk.forEach((id, j) => {
+      const n = Number(arr[j]) || 0;
+      if (n > 0) counts[id] = n;
+    });
+  }
   return send(res, 200, { configured: true, counts }, 'public, max-age=0, s-maxage=15');
 }
 
@@ -163,15 +195,9 @@ async function create(req, res, body) {
   }
   const cid = newCid();
   const now = new Date().toISOString();
-  const item = { id: cid, storyId: id, text, at: now, uid };
-  await pipeline([
-    ['SET', rec(cid), JSON.stringify(item), 'EX', String(COMMENT_TTL)],
-    ['LPUSH', listKey(id), cid],
-    ['LTRIM', listKey(id), '0', String(MAX_LIST)],
-    ['EXPIRE', listKey(id), String(COMMENT_TTL)],
-    ['INCR', nKey(id)],
-    ['EXPIRE', nKey(id), String(COMMENT_TTL)]
-  ]);
+  const item = { id: cid, storyId: id, text, at: now };
+  const exp = nowSec() + COMMENT_TTL;
+  await evalScript(ATOM.SCRIPT_CREATE, [rec(cid), visKey(id)], [JSON.stringify(item), cid, exp, COMMENT_TTL, nowSec(), MAX_VIS]);
   return send(res, 200, { ok: true, comment: publicComment(item) });
 }
 
@@ -184,52 +210,41 @@ async function report(req, res, body) {
   if ((Number(lim[0] && lim[0].result) || 0) > REPORTS_PER_IP) return send(res, 429, { error: 'too many' });
   const g = await pipeline([['GET', rec(id)]]);
   const o = parseRec(g[0] && g[0].result);
-  if (!o) return send(res, 200, { ok: true });
+  if (!o || !o.storyId) return send(res, 200, { ok: true });
   const who = ipHash(ip, 'cm-report');
-  const out = await pipeline([['SADD', repKey(id), who], ['EXPIRE', repKey(id), String(COMMENT_TTL)], ['SCARD', repKey(id)], ['EXISTS', hideKey(id)]]);
-  const reports = Number(out[2] && out[2].result) || 0;
-  if (reports >= REPORTS_TO_HIDE && Number(out[3] && out[3].result) !== 1) {
-    const now = Date.now();
-    await pipeline([
-      ['SET', hideKey(id), '1', 'EX', String(COMMENT_TTL)],
-      ['ZADD', REVIEW, String(now), id],
-      ['EXPIRE', REVIEW, String(COMMENT_TTL)],
-      ['SET', nKey(o.storyId), String(Math.max(0, (await visCount(o.storyId)) - 1)), 'EX', String(COMMENT_TTL)]
-    ]);
-  }
+  await evalScript(
+    ATOM.SCRIPT_REPORT,
+    [rec(id), repKey(id), hideKey(id), visKey(o.storyId), REVIEW],
+    [who, id, nowSec(), COMMENT_TTL, REPORTS_TO_HIDE]
+  );
   return send(res, 200, { ok: true });
-}
-
-async function visCount(storyIdVal) {
-  const g = await pipeline([['GET', nKey(storyIdVal)]]);
-  return Number(g[0] && g[0].result) || 0;
 }
 
 async function moderate(req, res, body, action) {
   if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(res, 404, { error: 'not found' });
   const id = String(body.id || '');
   if (!CID_RE.test(id)) return send(res, 400, { error: 'bad request' });
-  const g = await pipeline([['GET', rec(id)], ['EXISTS', hideKey(id)]]);
+  const g = await pipeline([['GET', rec(id)]]);
   const o = parseRec(g[0] && g[0].result);
-  const hidden = Number(g[1] && g[1].result) === 1;
+  const story = (o && o.storyId) || 'x';
   if (action === 'delete') {
-    const cmds = [['DEL', rec(id)], ['DEL', hideKey(id)], ['DEL', repKey(id)], ['ZREM', REVIEW, id]];
-    if (o && o.storyId && !hidden) cmds.push(['SET', nKey(o.storyId), String(Math.max(0, await visCount(o.storyId) - 1)), 'EX', String(COMMENT_TTL)]);
-    await pipeline(cmds);
+    await evalScript(ATOM.SCRIPT_DELETE, [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW], [id]);
     return send(res, 200, { ok: true, deleted: true });
   }
-  if (!o) return send(res, 200, { ok: true, restored: false });
-  const cmds = [['DEL', hideKey(id)], ['DEL', repKey(id)], ['ZREM', REVIEW, id]];
-  if (hidden) cmds.push(['SET', nKey(o.storyId), String((await visCount(o.storyId)) + 1), 'EX', String(COMMENT_TTL)]);
-  await pipeline(cmds);
-  return send(res, 200, { ok: true, restored: true });
+  if (!o) {
+    await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(story), rec(id), REVIEW, repKey(id)], [id, COMMENT_TTL, nowSec()]);
+    return send(res, 200, { ok: true, restored: false });
+  }
+  const out = await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(o.storyId), rec(id), REVIEW, repKey(id)], [id, COMMENT_TTL, nowSec()]);
+  const hidden = Array.isArray(out) ? Number(out[0]) : Number(out);
+  return send(res, 200, { ok: true, restored: hidden === 1 });
 }
 
 async function review(req, res) {
   if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(res, 404, { error: 'not found' });
   const q = await pipeline([['ZREVRANGE', REVIEW, '0', '199', 'WITHSCORES']]);
   const flat = (q[0] && q[0].result) || [], rows = [];
-  for (let i = 0; i < flat.length; i += 2) if (CID_RE.test(String(flat[i]))) rows.push({ id: flat[i], at: new Date(Number(flat[i + 1])).toISOString() });
+  for (let i = 0; i < flat.length; i += 2) if (CID_RE.test(String(flat[i]))) rows.push({ id: flat[i], at: new Date(Number(flat[i + 1]) * 1000).toISOString() });
   if (!rows.length) return send(res, 200, { items: [] });
   const got = await pipeline(rows.flatMap(r => [['GET', rec(r.id)], ['SCARD', repKey(r.id)], ['EXISTS', hideKey(r.id)]]));
   const items = [];
@@ -252,6 +267,8 @@ async function review(req, res) {
 module.exports = handler;
 module.exports.COMMENT_TTL = COMMENT_TTL;
 module.exports.MAX_TEXT = MAX_TEXT;
+module.exports.MAX_THREAD = MAX_THREAD;
+module.exports.MAX_VIS = MAX_VIS;
 module.exports.DAILY_PER_IP = DAILY_PER_IP;
 module.exports.DAILY_PER_UID = DAILY_PER_UID;
 module.exports.STORY_PER_IP = STORY_PER_IP;
@@ -259,3 +276,4 @@ module.exports.REPORTS_TO_HIDE = REPORTS_TO_HIDE;
 module.exports.clean = clean;
 module.exports.hasLink = hasLink;
 module.exports.sameOrigin = sameOrigin;
+module.exports.visKey = visKey;

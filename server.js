@@ -160,6 +160,35 @@ function handleRedisCommand(cmd) {
       }
       return { result: removed };
     }
+    case 'ZREMRANGEBYRANK': {
+      if (!zStore.has(key)) return { result: 0 };
+      const z = zStore.get(key);
+      const sorted = Array.from(z.entries()).sort((a, b) => a[1] - b[1]);
+      const start = Number(cmd[2]);
+      const stop = Number(cmd[3]);
+      const sliced = sorted.slice(start, stop + 1);
+      let removed = 0;
+      sliced.forEach(([member]) => { if (z.delete(member)) removed++; });
+      return { result: removed };
+    }
+    case 'PTTL': {
+      if (kvStore.has(key) || zStore.has(key) || setStore.has(key) || listStore.has(key) || hashStore.has(key)) {
+        return { result: 180 * 86400 * 1000 };
+      }
+      return { result: -2 };
+    }
+    case 'EVAL': {
+      const ATOM = require('./api/_cmatom.js');
+      const script = String(cmd[1]);
+      const n = Number(cmd[2]);
+      const keys = cmd.slice(3, 3 + n).map(String);
+      const argv = cmd.slice(3 + n).map(v => String(v));
+      try {
+        return { result: ATOM.run(script, ATOM.wrap(handleRedisCommand), keys, argv) };
+      } catch (e) {
+        return { error: String(e.message || e) };
+      }
+    }
     case 'ZRANGE': {
       if (!zStore.has(key)) return { result: [] };
       const z = zStore.get(key);

@@ -89,7 +89,9 @@ Hearts always work for the reader and are kept in their browser (`tsn.liked`; th
 
 Anonymous public comments on non-crime news stories (no name or email; about 300 characters; no links). Hosted at `/api/comments` by `api/react.js` (still 8 functions). Comments are off for Police & courts items and crime headlines, decided from the trusted snapshot (`tsn:news:meta`), not a client-claimed category. Unknown or expired stories reject new posts and do not show a thread. Without Redis the page says comments aren’t available — there is no private fake thread.
 
-Rate limits use a hashed IP (never stored raw) plus the browser id. Three reports from different connections hide a comment. Comment records expire after **180 days**.
+Rate limits use a hashed IP (never stored raw) plus the browser id as a 24-hour counter only; the browser id is not stored on the comment. Three reports from different connections hide a comment. Comment records expire after **180 days**. Visible counts come from live comments in a 200-item index (expired or hidden comments are pruned), not a separate running total.
+
+**First deploy:** comments stay off until a normal scheduled `/api/refresh` writes `tsn:news:meta`. Do not run a one-off production refresh for this. Until that job has succeeded, unknown stories fail closed.
 
 **Moderation:** open `/admin` (or `/admin.html`), enter the existing `LISTINGS_ADMIN_KEY` in the same key field used for reported posts. The **Reported comments** section lists hidden comments. Restore puts one back; Remove deletes it. Do not put the key in the page, in git, or in this README — keep it in Vercel env only. Public comments without accounts will be abused; that queue is the workflow.
 

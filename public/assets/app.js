@@ -2748,7 +2748,20 @@
     if (kd !== 'news' && kd !== 'institution') return false;
     return !crimeStory(it);
   }
+  function rememberOpener() {
+    var el = document.activeElement;
+    return el && el !== document.body && el !== document.documentElement ? el : null;
+  }
+  function restoreOpener(el) {
+    try {
+      if (!el || !el.isConnected || typeof el.focus !== 'function') return;
+      if (el.disabled || el.hidden) return;
+      if (el.getClientRects && !el.getClientRects().length) return;
+      el.focus({ preventScroll: true });
+    } catch (e) {}
+  }
   function commentSheet(it) {
+    var back = rememberOpener();
     var prev = document.querySelector('dialog.cm-sheet'); if (prev) prev.remove();
     var d = el('dialog', 'cm-sheet'); d.setAttribute('aria-labelledby', 'cm-h');
     var top = el('div', 'cm-top');
@@ -2758,15 +2771,17 @@
     top.appendChild(h); top.appendChild(x);
     var status = el('p', 'cm-status'); status.setAttribute('role', 'status'); status.textContent = 'Loading comments\u2026';
     var list = el('div', 'cm-list');
+    var more = el('button', 'cm-more'); more.type = 'button'; more.textContent = 'Load more'; more.hidden = true;
     var form = el('form', 'cm-form');
     var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.placeholder = 'Add a public comment (no links, 300 characters).';
     var go = el('button', 'cm-post'); go.type = 'submit'; go.textContent = 'Post';
     form.appendChild(ta); form.appendChild(go);
-    d.appendChild(top); d.appendChild(status); d.appendChild(list); d.appendChild(form);
-    function close() { if (d.open) d.close(); d.remove(); }
+    d.appendChild(top); d.appendChild(status); d.appendChild(list); d.appendChild(more); d.appendChild(form);
+    var shown = 0, totalN = 0;
+    function close() { if (d.open) d.close(); else d.remove(); }
     x.addEventListener('click', close);
     d.addEventListener('click', function (e) { if (e.target === d) close(); });
-    d.addEventListener('close', function () { d.remove(); });
+    d.addEventListener('close', function () { d.remove(); restoreOpener(back); });
     function row(c) {
       var item = el('article', 'cm-item');
       var p = el('p'); p.textContent = c.text; item.appendChild(p);
@@ -2776,28 +2791,51 @@
       rp.addEventListener('click', function () {
         rp.disabled = true;
         fetch('/api/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'report', id: c.id, uid: uid }) })
-          .then(function (r) { return r.json(); }).then(function () { rp.textContent = 'Reported'; toast('Reported'); })
+          .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b }; }); })
+          .then(function (o) {
+            if (!o.ok) {
+              rp.disabled = false;
+              var err = (o.b && o.b.error) || 'Couldn\u2019t report that.';
+              toast(err);
+              status.setAttribute('role', 'status');
+              return;
+            }
+            rp.textContent = 'Reported'; toast('Reported');
+          })
           .catch(function () { rp.disabled = false; toast('Couldn\u2019t report that. Try again.'); });
       });
       meta.appendChild(rp); item.appendChild(meta); return item;
     }
-    function draw(dta) {
-      list.textContent = '';
+    function paintStatus() {
+      if (!shown) { status.textContent = 'No comments yet. Be the first.'; more.hidden = true; return; }
+      if (shown < totalN) status.textContent = 'Showing ' + shown + ' of ' + totalN;
+      else status.textContent = totalN + ' comment' + (totalN === 1 ? '' : 's');
+      more.hidden = shown >= totalN;
+    }
+    function draw(dta, append) {
       if (!dta || dta.configured === false) {
-        status.textContent = 'Comments aren\u2019t available right now.'; form.hidden = true; return;
+        status.textContent = 'Comments aren\u2019t available right now.'; form.hidden = true; more.hidden = true; return;
       }
       if (dta.allowed === false) {
-        status.textContent = 'Comments are off for this story.'; form.hidden = true; return;
+        status.textContent = 'Comments are off for this story.'; form.hidden = true; more.hidden = true; return;
       }
       form.hidden = false;
       var comments = dta.comments || [];
-      if (!comments.length) { status.textContent = 'No comments yet. Be the first.'; }
-      else { status.textContent = comments.length + ' comment' + (comments.length === 1 ? '' : 's'); }
+      if (!append) { list.textContent = ''; shown = 0; }
       comments.forEach(function (c) { list.appendChild(row(c)); });
-      var n = typeof dta.count === 'number' ? dta.count : comments.length;
-      state.cmCounts[storyId(it.link)] = n;
+      shown += comments.length;
+      totalN = typeof dta.total === 'number' ? dta.total : (typeof dta.count === 'number' ? dta.count : shown);
+      paintStatus();
+      state.cmCounts[storyId(it.link)] = totalN;
       Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (b) { if (b.paint) b.paint(); });
     }
+    more.addEventListener('click', function () {
+      more.disabled = true;
+      fetch('/api/comments?id=' + encodeURIComponent(storyId(it.link)) + '&offset=' + shown, { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (dta) { more.disabled = false; draw(dta, true); })
+        .catch(function () { more.disabled = false; toast('Couldn\u2019t load comments.'); });
+    });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var text = String(ta.value || '').trim();
@@ -2810,9 +2848,9 @@
           if (!o.ok) { toast((o.b && o.b.error) || 'Couldn\u2019t post that.'); return; }
           ta.value = '';
           if (o.b && o.b.comment) {
-            if (status.textContent.indexOf('No comments') === 0) status.textContent = '1 comment';
             list.insertBefore(row(o.b.comment), list.firstChild);
-            state.cmCounts[storyId(it.link)] = (state.cmCounts[storyId(it.link)] || 0) + 1;
+            shown += 1; totalN += 1; paintStatus();
+            state.cmCounts[storyId(it.link)] = totalN;
             Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (b) { if (b.paint) b.paint(); });
           }
         })
@@ -2822,12 +2860,13 @@
     if (d.showModal) d.showModal(); else d.setAttribute('open', '');
     fetch('/api/comments?id=' + encodeURIComponent(storyId(it.link)), { cache: 'no-store' })
       .then(function (r) { return r.json(); })
-      .then(draw)
-      .catch(function () { status.textContent = 'Couldn\u2019t load comments.'; form.hidden = true; });
+      .then(function (dta) { draw(dta, false); })
+      .catch(function () { status.textContent = 'Couldn\u2019t load comments.'; form.hidden = true; more.hidden = true; });
     ta.focus();
     return d;
   }
   function savedSheet() {
+    var back = rememberOpener();
     var prev = document.querySelector('dialog.sv-sheet'); if (prev) prev.remove();
     var d = el('dialog', 'sv-sheet'); d.setAttribute('aria-labelledby', 'sv-h');
     var top = el('div', 'cm-top');
@@ -2838,10 +2877,10 @@
     var status = el('p', 'cm-status'); status.setAttribute('role', 'status');
     var list = el('div', 'sv-list');
     d.appendChild(top); d.appendChild(status); d.appendChild(list);
-    function close() { if (d.open) d.close(); d.remove(); }
+    function close() { if (d.open) d.close(); else d.remove(); }
     x.addEventListener('click', close);
     d.addEventListener('click', function (e) { if (e.target === d) close(); });
-    d.addEventListener('close', function () { d.remove(); });
+    d.addEventListener('close', function () { d.remove(); restoreOpener(back); });
     function draw() {
       list.textContent = '';
       if (!state.saved.length) { status.textContent = 'Nothing saved in this browser yet.'; return; }

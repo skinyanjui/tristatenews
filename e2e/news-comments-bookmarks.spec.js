@@ -41,6 +41,36 @@ const CRIME = {
   sourceId: 'fix',
   published: new Date(T0 - 80 * 6e4).toISOString()
 };
+const HOMICIDE = {
+  id: 'fixture-news-homicide',
+  title: 'Woman allegedly killed by husband texted sister she was \u2018not good\u2019 days before her body was found',
+  summary: 'Homicide fixture: comments must stay off. Not real news.',
+  link: 'https://www.14news.com/fixture-homicide/',
+  image: 'https://img.example.test/mug.jpg',
+  source: 'Fixture Desk',
+  sourceId: 'fix',
+  published: new Date(T0 - 85 * 6e4).toISOString()
+};
+const SPORT = {
+  id: 'fixture-news-sport',
+  title: 'EXAMPLE · Pacers kill off the Heat in overtime',
+  summary: 'Sports fixture: comments stay on. Not real news.',
+  link: 'https://www.14news.com/fixture-sport/',
+  image: 'https://img.example.test/river.jpg',
+  source: 'Fixture Desk',
+  sourceId: 'fix',
+  published: new Date(T0 - 50 * 6e4).toISOString()
+};
+const WEATHER = {
+  id: 'fixture-news-weather',
+  title: 'EXAMPLE · Storm kills 3 in western Kentucky after overnight flooding',
+  summary: 'Weather fixture: comments stay on. Not real news.',
+  link: 'https://www.14news.com/fixture-weather/',
+  image: 'https://img.example.test/river.jpg',
+  source: 'Fixture Desk',
+  sourceId: 'fix',
+  published: new Date(T0 - 55 * 6e4).toISOString()
+};
 const POLICE = {
   id: 'fixture-police-01',
   title: 'EXAMPLE · Annual report published',
@@ -53,7 +83,7 @@ const POLICE = {
   published: new Date(T0 - 90 * 6e4).toISOString()
 };
 const SOURCES = [
-  { id: 'fix', name: 'Fixture Desk', kind: 'news', logo: '', ok: true, count: 3 },
+  { id: 'fix', name: 'Fixture Desk', kind: 'news', logo: '', ok: true, count: 6 },
   { id: 'pd', name: 'Fixture PD', kind: 'police', logo: '', ok: true, count: 1 }
 ];
 
@@ -65,7 +95,7 @@ async function stub(page, items, opts) {
   const reportFail = !!(opts && opts.reportFail);
   await page.route(url => !/^http:\/\/(127\.0\.0\.1|localhost)/.test(url.href) && !url.href.startsWith(page.url()), route => route.abort());
   await page.route(/\/api\/news(\?|$)/, route => route.fulfill({
-    json: { updatedAt: new Date(Date.now() + 60 * 1000).toISOString(), sources: SOURCES, items: items || [FIX, NOIMG, CRIME, POLICE] }
+    json: { updatedAt: new Date(Date.now() + 60 * 1000).toISOString(), sources: SOURCES, items: items || [FIX, NOIMG, SPORT, WEATHER, CRIME, HOMICIDE, POLICE] }
   }));
   await page.route(/\/api\/(react|alerts|listings|inbox)(\?|$)/, route => {
     if (route.request().method() === 'POST' && /\/api\/react/.test(route.request().url())) {
@@ -86,7 +116,7 @@ async function stub(page, items, opts) {
     }
     if (req.method() === 'GET' && url.searchParams.get('id')) {
       const id = url.searchParams.get('id');
-      if (/crime|police/i.test(id) || id === storyId(CRIME.link) || id === storyId(POLICE.link)) {
+      if (/crime|police|homicide/i.test(id) || id === storyId(CRIME.link) || id === storyId(HOMICIDE.link) || id === storyId(POLICE.link)) {
         return route.fulfill({ json: { configured: true, allowed: false, comments: [], count: 0, total: 0 } });
       }
       const list = comments[id] || [];
@@ -176,24 +206,35 @@ test('card/sheet comment, save/unsave, Saved list, heart independence, crime off
 
   const first = page.locator('#list article.news-story', { hasText: 'riverfront redevelopment' });
   const crimeCard = page.locator('#list article.news-story', { hasText: 'Man arrested downtown' });
+  const homicideCard = page.locator('#list article.news-story', { hasText: 'allegedly killed by husband' });
+  const sportCard = page.locator('#list article.news-story', { hasText: 'Pacers kill off the Heat' });
+  const weatherCard = page.locator('#list article.news-story', { hasText: 'Storm kills 3' });
   const policeCard = page.locator('#list article.news-story', { hasText: 'Annual report published' });
   await expect(first.locator('.cm-btn')).toBeVisible();
   await expect(first.locator('.sv-btn')).toBeVisible();
   await expect(crimeCard.locator('.cm-btn')).toHaveCount(0);
+  await expect(homicideCard.locator('.cm-btn')).toHaveCount(0);
+  await expect(homicideCard.locator('img.ns-pic')).toHaveCount(0);
   await expect(policeCard.locator('.cm-btn')).toHaveCount(0);
+  await expect(sportCard.locator('.cm-btn')).toBeVisible();
+  await expect(weatherCard.locator('.cm-btn')).toBeVisible();
   await expect(crimeCard.locator('.sv-btn')).toBeVisible();
   await policeCard.locator('.sv-btn').click();
   await crimeCard.locator('.sv-btn').click();
+  await homicideCard.locator('.sv-btn').click();
   await page.locator('#savedBtn').click();
   const svMug = page.locator('dialog.sv-sheet');
   await expect(svMug).toBeVisible();
   await expect(svMug.locator('.sv-item', { hasText: 'Annual report' })).toHaveCount(1);
   await expect(svMug.locator('.sv-item', { hasText: 'arrested downtown' })).toHaveCount(1);
+  await expect(svMug.locator('.sv-item', { hasText: 'allegedly killed by husband' })).toHaveCount(1);
   await expect(svMug.locator('.sv-item', { hasText: 'Annual report' }).locator('img.sv-pic')).toHaveCount(0);
   await expect(svMug.locator('.sv-item', { hasText: 'arrested downtown' }).locator('img.sv-pic')).toHaveCount(0);
+  await expect(svMug.locator('.sv-item', { hasText: 'allegedly killed by husband' }).locator('img.sv-pic')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await policeCard.locator('.sv-btn').click();
   await crimeCard.locator('.sv-btn').click();
+  await homicideCard.locator('.sv-btn').click();
 
   await first.locator('.cm-btn').click();
   const cm = page.locator('dialog.cm-sheet');
@@ -315,7 +356,7 @@ test('no-image and long text still expose save; 44px targets at 320–1280; 200%
         expect(row.likeH).toBeGreaterThanOrEqual(44);
         expect(row.shareH).toBeGreaterThanOrEqual(44);
         expect(row.svH).toBeGreaterThanOrEqual(44);
-        if (/arrested downtown|Annual report/.test(row.title)) expect(row.hasCm).toBe(false);
+        if (/arrested downtown|Annual report|allegedly killed/.test(row.title)) expect(row.hasCm).toBe(false);
         else {
           expect(row.hasCm).toBe(true);
           expect(row.cmH).toBeGreaterThanOrEqual(44);

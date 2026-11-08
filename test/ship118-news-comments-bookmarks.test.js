@@ -131,6 +131,50 @@ test('ship118: CRIME_RE matches the page; unknown metadata fail closed', () => {
   assert.equal(crime.crimeTitle('Shooting guard leads the Aces'), false);
 });
 
+const HOMICIDE = 'Woman allegedly killed by husband texted sister she was \u2018not good\u2019 days before her body was found';
+test('ship118: homicide/DV headlines fail closed; weather/sports keep comments; stored reads stay empty', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js');
+  assert.equal(crime.crimeTitle(HOMICIDE), true, 'live homicide headline');
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: HOMICIDE, sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Woman killed by husband in Henderson', sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Man kills his wife after argument, police say', sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: "Woman's body was found in a creek", sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Husband charged in domestic violence case', sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Man arrested downtown after overnight chase', sourceId: 'n' }), true);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Storm kills 3 in western Kentucky after overnight flooding', sourceId: 'n' }), false);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Heat wave deaths climb in the Ohio Valley', sourceId: 'n' }), false);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Pacers kill off the Heat in overtime', sourceId: 'n' }), false);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Shooting guard leads the Aces', sourceId: 'n' }), false);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Council passes riverfront plan', sourceId: 'n' }), false);
+  const okFn = js.slice(js.indexOf('function commentsOk('), js.indexOf('function rememberOpener('));
+  assert.doesNotMatch(okFn, /state\.cat/, 'commentsOk ignores client category');
+
+  const Cards = require('../api/_cards.js');
+  const html = Cards.cards(Cards.pick({
+    updatedAt: '2026-11-08T22:00:00Z',
+    sources: [{ id: 'n', name: 'N', kind: 'news' }],
+    items: [{ title: HOMICIDE, summary: 'Fixture.', link: 'https://n.ex/homicide', image: 'https://img.ex/mug.jpg', published: '2026-11-08T21:00:00Z', source: 'N', sourceId: 'n' }]
+  }, 'news', Date.parse('2026-11-08T22:00:00Z')), Date.parse('2026-11-08T22:00:00Z'));
+  assert.match(html, /allegedly killed by husband/);
+  assert.doesNotMatch(html, /cm-btn/);
+  assert.doesNotMatch(html, /mug\.jpg|ns-pic/);
+
+  const id = storyId('https://n.ex/homicide');
+  seedStory(s, id, { kind: 'news', title: HOMICIDE, sourceId: 'n' });
+  s.kv.set('tsn:cm:cpreexist01', JSON.stringify({ id: 'cpreexist01', storyId: id, text: 'should not leak', at: '2026-11-08T12:00:00Z' }));
+  s.z.set('tsn:cm:vis:' + id, new Map([['cpreexist01', Math.floor(Date.now() / 1000) + 86400]]));
+  const got = await call(C, { query: { id } });
+  assert.equal(got.body.allowed, false);
+  assert.deepEqual(got.body.comments, []);
+  assert.equal(got.body.count, 0);
+  const counts = await call(C, { query: { ids: id } });
+  assert.ok(!counts.body.counts[id]);
+  const post = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '8.8.8.8' }, origin), body: { id, uid: 'reader-0001', text: 'Hi river.', cat: 'news' } });
+  assert.equal(post.code, 400);
+  assert.match(String(post.body.error || ''), /comments off/i);
+  assert.equal(s.kv.get('tsn:cm:cpreexist01') && JSON.parse(s.kv.get('tsn:cm:cpreexist01')).text, 'should not leak');
+}));
+
 test('ship118: idsCmds writes trusted meta from sources, not the client', () => {
   const cmds = idsCmds(
     [{ link: 'https://n.ex/a', title: 'Riverfront', sourceId: 'n' }, { link: 'https://n.ex/a', title: 'Riverfront', sourceId: 'n' }, { link: 'https://p.ex/b', title: 'Arrest made', sourceId: 'p' }],

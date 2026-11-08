@@ -15,7 +15,7 @@ test('ship95: a plain click on a news card opens the sheet; modified or middle c
   assert.ok(mk.includes('e.preventDefault(); storySheet(it, pic, logo, hTitle, sb, card);'));
   assert.ok(mk.includes("a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';"), 'the card is still a real link');
   // reactions live in the footer, outside the card link, so they never open the sheet
-  assert.ok(mk.indexOf("var foot = el('div', 'cf');") > mk.indexOf('card.appendChild(a);'));
+  assert.ok(mk.indexOf("var foot = el('div', big ? 'cf' : 'ns-foot');") > mk.indexOf('card.appendChild(a);'));
   assert.ok(!/storySheet\(/.test(app.slice(app.indexOf('function obitRow('), app.indexOf('function obitRow(') + 3000)), 'obituaries keep their own links');
 });
 

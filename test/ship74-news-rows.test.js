@@ -31,28 +31,30 @@ const view = {
   ]
 };
 
-test('server rows: label, headline, preview, then source; sized lazy thumbnail only with a picture; police photo-free and labeled', () => {
+test('server rows: publisher then photo then headline; sized lazy photo only with a picture; police photo-free and labeled', () => {
   const h = C.cards(C.pick(view, 'news', NOW), NOW);
   const arts = h.split('<article').slice(1);
   assert.equal(arts.length, 3);
   const [a, b, c] = arts;
+  assert.match(a, /class="card news-story"/);
+  assert.match(a, /<div class="ns-src">[\s\S]*<img class="ns-pic"/, 'publisher line above the photo');
   assert.match(a, /<span class="kicker">Sports<\/span><h2 title="With picture">With picture<\/h2>/);
-  assert.match(a, /<\/h2><p>A short preview\.<\/p><div class="src">/, 'preview under the headline, source line last');
-  assert.match(a, /<img class="th"[^>]* width="112" height="112" src="https:\/\/img\.ex\/a\.jpg">/);
+  assert.match(a, /<\/h2><p>A short preview\.<\/p>/);
+  assert.match(a, /<img class="ns-pic"[^>]* width="1200" height="675" src="https:\/\/img\.ex\/a\.jpg">/);
   assert.match(b, /<span class="kicker">Police &amp; courts<\/span>/);
-  assert.doesNotMatch(b, /class="th"/); assert.match(b, /class="ca noimg"/); assert.match(b, /Charged or arrested, not convicted\./);
-  assert.doesNotMatch(c, /kicker/); assert.match(c, /<div class="bd"><h2 title="Google fallback, no picture">Google fallback, no picture<\/h2><div class="src">/); assert.doesNotMatch(c, /class="th"/); assert.match(c, /class="ca noimg"/);
+  assert.doesNotMatch(b, /class="ns-pic"|class="th"/); assert.match(b, /class="ca ns-ca noimg"/); assert.match(b, /Charged or arrested, not convicted\./);
+  assert.doesNotMatch(c, /kicker/); assert.match(c, /<div class="ns-bd"><h2 title="Google fallback, no picture">Google fallback, no picture<\/h2>/); assert.doesNotMatch(c, /class="ns-pic"|class="th"/); assert.match(c, /class="ca ns-ca noimg"/);
   // only the first picture loads eagerly (the LCP); later ones are lazy, all sized
   const pics = view.items.slice(0, 1).concat([{ ...view.items[0], id: 'a2', link: 'https://n.ex/a2', title: 'Second picture' }]);
   const two = C.cards(C.pick({ ...view, items: pics }, 'news', NOW), NOW);
-  assert.match(two, /<img class="th" loading="eager"[^>]* width="112" height="112"[\s\S]*<img class="th" loading="lazy"[^>]* width="112" height="112"/);
+  assert.match(two, /<img class="ns-pic" loading="eager"[^>]* width="1200" height="675"[\s\S]*<img class="ns-pic" loading="lazy"[^>]* width="1200" height="675"/);
 });
 
 test('app.js builds the same order and sizes (non-Breaking rows), keeping the Breaking card as it was', () => {
   const app = read('public/assets/app.js');
   assert.match(app, /var kick = !big && RT && RT\.sectionLabel \? RT\.sectionLabel\(kd, it\.cat\) : '';[\s\S]{0,260}?kick = DD\.part\(kick, tabL\);[^\n]*\s*if \(kick\) body\.appendChild\(el\('span', 'kicker', kick\)\);\s*var h2 = el\('h2', null, hTitle\);/);
-  assert.match(app, /if \(!big\) \{ im\.width = 112; im\.height = 112; \}/);
-  assert.match(app, /if \(big\) body\.insertBefore\(src, body\.firstChild\);\s*else body\.appendChild\(src\);/);
+  assert.match(app, /if \(!big\) \{ im\.width = 1200; im\.height = 675; \}/);
+  assert.match(app, /a\.appendChild\(src\);\s*if \(im\) a\.appendChild\(im\);\s*a\.appendChild\(body\);/);
   assert.match(app, /var h2 = el\('h2', null, hTitle\); if \(!big\) h2\.title = hTitle;/);
   assert.ok(app.includes("var pic = safe ? '' : it.image;"), 'no photos on police items');
 });

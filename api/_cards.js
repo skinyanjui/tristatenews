@@ -92,36 +92,45 @@ function card(it, o) {
   const pic = safe ? '' : (it.image || '');
   const logo = (o.logos[it.sourceId] || '');
   const title = big ? (it.title.replace(LEAD_RE, '') || it.title) : it.title;
-  let src = '<div class="src">';
+  const srcCls = big ? 'src' : 'ns-src';
+  let src = '<div class="' + srcCls + '">';
   if (logo) src += '<img class="av" src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
   src += '<b>' + esc(it.source) + '</b>';
   if (it.place && o.places && DD.part(it.place, title, it.source)) src += '<span class="place">' + esc(it.place) + '</span>';
   const dayOnly = it.datePrecision === 'day', full = timeAgo(it.published, dayOnly);
-  src += '<time class="when"' + (it.published ? ' datetime="' + esc(it.published) + '" data-ago="' + (dayOnly ? 'day' : 'time') + '" title="' + esc(full) + '" aria-label="' + esc(full) + '"' : '') + '>' + esc(dayOnly ? dayWhen(it.published, o.now) : shortWhen(it.published, o.now)) + '</time></div>';
-  let body = '<div class="bd">';
+  src += '<time' + (big ? ' class="when"' : '') + (it.published ? ' datetime="' + esc(it.published) + '" data-ago="' + (dayOnly ? 'day' : 'time') + '" title="' + esc(full) + '" aria-label="' + esc(full) + '"' : '') + '>' + esc(dayOnly ? dayWhen(it.published, o.now) : shortWhen(it.published, o.now)) + '</time></div>';
   const tag = '<span class="pill pill-red' + (big && pic ? ' pill-over' : '') + '"><i></i>Breaking</span>';
-  if (big && !pic) body += '<div class="bk-head">' + tag + '</div>';
-  // ship74 story rows: bold section label, headline, then the source line (the Breaking card keeps source first)
   const kick = big ? '' : DD.part(RT.sectionLabel(kd, it.cat), o.tab); // no label that repeats the tab it is on
-  body += big ? src + '<h2>' + esc(title) + '</h2>' : (kick ? '<span class="kicker">' + esc(kick) + '</span>' : '') + '<h2 title="' + esc(title) + '">' + esc(title) + '</h2>';
-  if (big && (o.brk.label || o.brk.end != null)) {
-    body += '<div class="bk-meta">' + (o.brk.label ? '<b>' + esc(o.brk.label) + '</b>' : '') + (o.more ? '<span>+' + o.more + ' more active</span>' : '') + '</div>';
-  }
   const sum = DD.preview(title, it.summary); // a preview never repeats the headline
-  if (sum) body += '<p>' + esc(sum) + '</p>';
-  if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
-  if (!big) body += src; // News rows: headline, preview, then the source + time line last
-  body += '</div>';
   let img = '';
   if (pic) {
     const lead = o.lead.left; o.lead.left = false;
-    img = '<img class="th" ' + (lead ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' referrerpolicy="no-referrer" decoding="async" alt=""' + (big ? '' : ' width="112" height="112"') + ' src="' + esc(pic) + '">';
+    img = '<img class="' + (big ? 'th' : 'ns-pic') + '" ' + (lead ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"') + ' referrerpolicy="no-referrer" decoding="async" alt=""' + (big ? '' : ' width="1200" height="675"') + ' src="' + esc(pic) + '">';
   }
   const href = safeHref(it.link);
   const share = href === '#' ? '' : '<button class="share" type="button" aria-label="' + esc('Share: ' + it.title) + '" title="Share">' + SHARE + '</button>';
-  return '<article class="card' + (big ? ' breaking' : ' row') + '" data-sec="' + sec + '"><a class="ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + img + body + '</a>' +
-    '<div class="cf"><div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + share + '</div></div>' +
-    (big && pic ? tag : '') + '</article>';
+  const acts = '<div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + share + '</div>';
+  if (big) {
+    let body = '<div class="bd">';
+    if (!pic) body += '<div class="bk-head">' + tag + '</div>';
+    body += src + '<h2>' + esc(title) + '</h2>';
+    if (o.brk.label || o.brk.end != null) {
+      body += '<div class="bk-meta">' + (o.brk.label ? '<b>' + esc(o.brk.label) + '</b>' : '') + (o.more ? '<span>+' + o.more + ' more active</span>' : '') + '</div>';
+    }
+    if (sum) body += '<p>' + esc(sum) + '</p>';
+    if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
+    body += '</div>';
+    return '<article class="card breaking" data-sec="' + sec + '"><a class="ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + img + body + '</a>' +
+      '<div class="cf">' + acts + '</div>' + (pic ? tag : '') + '</article>';
+  }
+  let body = '<div class="ns-bd">';
+  if (kick) body += '<span class="kicker">' + esc(kick) + '</span>';
+  body += '<h2 title="' + esc(title) + '">' + esc(title) + '</h2>';
+  if (sum) body += '<p>' + esc(sum) + '</p>';
+  if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
+  body += '</div>';
+  return '<article class="card news-story" data-sec="' + sec + '"><a class="ca ns-ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + src + img + body + '</a>' +
+    '<div class="ns-foot">' + acts + '</div></article>';
 }
 
 // The list's inner HTML for pick()'s result.

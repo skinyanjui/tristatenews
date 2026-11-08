@@ -937,6 +937,63 @@ article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-
 .bd-sheet .bd-quiet { display:inline-flex; align-items:center; min-height:44px; margin-top:var(--sp-3); color:var(--blue); }
 .bd-sheet .deal-code { margin-top:var(--sp-3); flex-wrap:wrap; max-width:100%; }
 
+/* ship117: photo-led news cards + preview sheet. Publisher and time on top, full-width photo, headline,
+   two-line summary, 44px heart/share. Missing/failed photos collapse. Breaking, obituaries and boards unchanged. */
+article.card.news-story {
+  display:flex; flex-direction:column; gap:0; height:auto; min-width:0; max-width:100%;
+  overflow:hidden; box-sizing:border-box; border:1px solid var(--border); border-radius:16px;
+  background:var(--background); content-visibility:auto; contain-intrinsic-size:auto 280px;
+}
+article.card.news-story:hover { border-color:var(--gray-400); background:var(--background); }
+article.card.news-story > a.ca {
+  display:flex; flex-direction:column; grid-template-columns:minmax(0, 1fr); grid-template-areas:none;
+  gap:0; padding:0; min-width:0; min-height:0;
+}
+article.card.news-story .ns-src {
+  display:flex; align-items:center; gap:var(--sp-2); min-width:0;
+  padding:var(--sp-4) var(--sp-4) var(--sp-3); font-size:13px; line-height:18px; color:var(--text-muted);
+}
+article.card.news-story .ns-src .av { width:32px; height:32px; border-radius:9999px; }
+article.card.news-story .ns-src b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--foreground); font-weight:600; font-size:14px; }
+article.card.news-story .ns-src time { flex:none; white-space:nowrap; }
+article.card.news-story .ns-src time::before { content:"\00B7"; margin:0 var(--sp-2); }
+article.card.news-story .ns-src .place { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+article.card.news-story .ns-pic { display:block; width:100%; max-width:100%; aspect-ratio:16/9; height:auto; object-fit:cover; background:var(--gray-100); }
+article.card.news-story .ns-bd { display:flex; flex-direction:column; gap:var(--sp-2); padding:var(--sp-3) var(--sp-4) var(--sp-2); min-width:0; }
+article.card.news-story .kicker { font-size:11px; line-height:16px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--red); }
+article.card.news-story h2 {
+  margin:0; font-size:20px; line-height:26px; font-weight:700; letter-spacing:-.015em; color:var(--foreground);
+  overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+}
+article.card.news-story a:hover h2 { color:var(--foreground); }
+article.card.news-story .ns-bd p { display:-webkit-box; }
+article.card.news-story .ns-bd p:not(.cl-note) {
+  margin:0; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+  font-size:14px; line-height:20px; color:var(--text-muted); max-width:none;
+}
+article.card.news-story .ns-foot { display:flex; align-items:center; min-height:44px; padding:var(--sp-2) var(--sp-3) var(--sp-3); }
+article.card.news-story .ns-foot .acts { display:flex; align-items:center; gap:var(--sp-3); }
+article.card.news-story .ns-foot :is(.like, .share) {
+  position:relative; inset:auto; transform:none; margin:0; box-sizing:border-box;
+  height:44px; min-height:44px; min-width:44px; padding:0; border:1px solid var(--gray-200);
+  border-radius:9999px; background:var(--background); color:var(--foreground);
+  display:inline-flex; align-items:center; justify-content:center;
+}
+article.card.news-story .ns-foot .like { width:auto; padding:0 var(--sp-3); gap:var(--sp-1); }
+article.card.news-story .ns-foot .like > span { display:inline-block; min-width:1ch; font-size:13px; font-weight:600; }
+article.card.news-story .ns-foot :is(.like, .share) svg { width:20px; height:20px; }
+article.card.news-story .ns-foot :is(.like, .share)::after { content:none; }
+.list.news-one { gap:var(--card-gap); }
+.st-sheet .st-page > .st-src { position:static; color:inherit; padding:var(--sp-6) calc(var(--sp-12) + var(--sp-6)) var(--sp-3) var(--sp-6); min-width:0; }
+.st-sheet .st-page > .st-pic { width:calc(100% - 2 * var(--sp-6)); max-width:calc(100% - 2 * var(--sp-6)); margin:0 var(--sp-6); aspect-ratio:16/9; border-radius:12px; }
+.st-sheet .st-page:has(> .st-pic)::before { display:none; }
+.st-sheet .st-sum { color:var(--foreground); }
+.st-sheet .st-go { background:var(--wordmark-now, var(--red-strong)); color:#fff; box-shadow:none; min-height:52px; }
+.st-sheet .st-x { width:44px; height:44px; min-height:44px; background:var(--gray-100); color:var(--foreground); box-shadow:none; }
+.st-sheet .st-x:hover { background:var(--gray-200); color:var(--foreground); }
+.st-sheet .st-grab { background:var(--gray-400); }
+.st-sheet .st-acts :is(.like, .share) { height:44px; min-height:44px; min-width:44px; }
+
 /* ---------- ship81: compact event cards on big screens ----------
    The same card (picture or tile with the heart top-right, title, venue, the one-line bottom row with 24px flag, share
    and Tickets/Details) in a narrower, tighter version from 1024px, so each side-scroller (Popular, every day) shows more
@@ -1022,7 +1079,7 @@ article.card.row.row:not(.breaking):has(> .ca) .acts :is(.like:not([aria-pressed
 article.card.row.row:not(.breaking):has(> .ca) .acts :is(.like, .share, .cl-ico) svg { stroke-width:var(--row-stroke); }
 article.card.row.row:not(.breaking):has(> .ca) .acts :is(.like, .share, .cl-ico):focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 /* ship75: the row in every list: one per line, no gaps (the rows draw their own dividers) */
-:is(.list, .cl-list, .evx-day, .evx-sec):has(> .card.row):not(.job-grid):not(.deal-grid) { display:flex; flex-direction:column; gap:0; }
+:is(.list, .cl-list, .evx-day, .evx-sec):has(> .card.row):not(.job-grid):not(.deal-grid):not(.news-one) { display:flex; flex-direction:column; gap:0; }
 article.card.row.row:not(.breaking):has(> .ca) .bav { width:var(--ico); height:var(--ico); flex:none; font-size:10px; line-height:var(--ico); border-radius:9999px; }
 article.card.row.row:not(.breaking):has(> .ca) h2 a { color:inherit; text-decoration:none; }
 article.card.row.row:not(.breaking):has(> .ca) h2 a::before { content:""; position:absolute; inset:0; } /* the whole row opens the headline link (bottom-row links sit above it) */

@@ -56,7 +56,7 @@ for (const w of [390, 1280]) {
         await expect(heart.locator('span')).toHaveText(n); // no second jump from the server answer
         const after = await box();
         expect(after, `${label}: time box`).toEqual(before);
-        if (name !== 'events') { const h = await heart.boundingBox(); expect(after.x + after.width, `${label}: time clear of the heart`).toBeLessThanOrEqual(h.x); }
+        if (name !== 'events' && name !== 'news' && name !== 'search') { const h = await heart.boundingBox(); expect(after.x + after.width, `${label}: time clear of the heart`).toBeLessThanOrEqual(h.x); }
         const same = await card.evaluate((c, ts) => c.isConnected && c.__probe === 1 && c.querySelector(ts).__probe === 1, timeSel);
         expect(same, `${label}: card and time are the same nodes`).toBe(true);
       }

@@ -102,6 +102,15 @@
       chipRow: function (items, active, onPick, aria) {
         var row = el('div', 'cl-chips'); if (aria) { row.setAttribute('role', 'group'); row.setAttribute('aria-label', aria); }
         items.forEach(function (it) { row.appendChild(UI.chip(it.label, it.value === active, function () { onPick(it.value); })); });
+        // Keep the pressed/focused chip in the scrollport after a rebuild (Classifieds is one horizontal row).
+        row.addEventListener('focusin', function (e) {
+          if (e.target && e.target.classList && e.target.classList.contains('cl-chip') && e.target.scrollIntoView)
+            e.target.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+        });
+        requestAnimationFrame(function () {
+          var on = row.querySelector('.cl-chip[aria-pressed="true"]');
+          if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+        });
         return row;
       },
       // An approved ad's link: rel="sponsored", a new tab for web links (not for tel:), "Sponsored" first, and its
@@ -1418,7 +1427,7 @@
   function chips(b, kind) {
     var present = {}; b.items.concat(kind === 'event' ? feedEvents() : kind === 'item' ? mkItems() : []).forEach(function (x) { present[x.category] = 1; });
     var items = [{ value: '', label: 'All' }].concat(b.cats.filter(function (c) { return present[c]; }).map(function (c) { return { value: c, label: c }; }));
-    return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); });
+    return UI.chipRow(items, b.filter || '', function (v) { b.filter = v; drawBoard(kind); }, 'Category');
   }
   function eventFilters(b) {
     var bar = el('div', 'ev-filters');

@@ -1,14 +1,20 @@
 // Public anonymous comments on current non-crime news. Hosted by api/react.js (vercel rewrite /api/comments).
 //   GET  /api/comments?id=<storyId>&offset=      -> { configured, allowed, comments, count, total }
 //   GET  /api/comments?ids=<id,id>               -> { configured, counts }   (allowed stories only)
-//   POST /api/comments { id, uid, text }         -> { ok, comment }          (create)
+//   POST /api/comments { action:'ready' }        -> { ready } + Set-Cookie on first issue only
+//   POST /api/comments { id, uid, text }         -> { ok, comment }          (create; cookie required)
+//   POST /api/comments { action:'mine', ids }    -> { mine }                 (private; cookie hash check)
+//   POST /api/comments { action:'delete', id }   -> owner cookie delete, or admin with x-admin-key
 //   POST /api/comments { action:'report', id, uid }
-//   GET  /api/comments?review=1  + x-admin-key   -> hidden queue
+//   GET  /api/comments?review=1  + x-admin-key   -> hidden/held queue
 //   POST { action:'restore'|'delete', id } + x-admin-key
 // Trusted allowlist is tsn:news:meta + tsn:news:ids from refresh (api/_storyid.js). Client category is ignored.
 // Unknown / expired / police / courts / crime-title / missing meta: fail closed (not allowed, empty thread).
 // Visible index is tsn:cm:vis:<storyId> (ZSET, score = expiry unix). Count is ZCARD after pruning expired
 // members, not a separate n±1 key. Hide/restore/delete/create run as one Redis EVAL.
+// GET never reads Cookie and stays public/CDN-cacheable. Ownership is a first-party HttpOnly cookie
+// (see api/_cmcookie.js). Create requires a valid incoming cookie (round-trip via ready); we never
+// treat Set-Cookie on the create response as proof the browser stored it. Filter: api/_cmfilter.js.
 'use strict';
 const STORE = require('./_store.js');
 const { same } = require('./_safe.js');
@@ -16,6 +22,8 @@ const { KEY: IDS, META } = require('./_storyid.js');
 const { commentsBlocked } = require('./_crime.js');
 const { clientIp, ipHash } = require('./_ip.js');
 const ATOM = require('./_cmatom.js');
+const FILTER = require('./_cmfilter.js');
+const COOKIE = require('./_cmcookie.js');
 
 const ADMIN = process.env.LISTINGS_ADMIN_KEY || '';
 const STORY_RE = /^[a-z0-9]{4,24}$/;
@@ -26,6 +34,7 @@ const MAX_TEXT = 300;
 const MAX_BODY = 4096;
 const MAX_THREAD = 20;
 const MAX_VIS = 200;
+const MAX_MINE = 40;
 const DAILY_PER_UID = 8;
 const DAILY_PER_IP = 20;
 const STORY_PER_IP = 8;
@@ -33,12 +42,16 @@ const REPORTS_TO_HIDE = 3;
 const REPORTS_PER_IP = 10;
 const REVIEW = 'tsn:cm:review';
 const PRUNE_CHUNK = 80;
+const REJECT_MSG = 'This comment can’t be posted.';
+const COOKIE_MSG = 'Comments need a first-party cookie in this browser. Allow cookies for this site, then try again.';
 
 const pipeline = STORE.pipeline;
 const rec = id => 'tsn:cm:' + id;
 const visKey = id => 'tsn:cm:vis:' + id;
 const hideKey = id => 'tsn:cm:hide:' + id;
 const repKey = id => 'tsn:cm:rep:' + id;
+const ownKey = id => 'tsn:cm:own:' + id;
+const okKey = id => 'tsn:cm:ok:' + id;
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 // Catch pasted URLs and host-like tokens (example.co, bit.ly) without treating "U.S." / "Mr. Smith" / "ok." as links.
 const hasLink = t => /https?:\/\/|www\.|\b(?:bit\.ly|t\.co|tinyurl\.com|goo\.gl|ow\.ly|is\.gd|buff\.ly|cutt\.ly|rb\.gy|shorturl\.at|tiny\.cc)\b|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|net|org|info|biz|xyz|ru|top|shop|site|co|io|ly|me|us|cc|tv|app|dev|page|link|click|gg|to|uk|de|br|in|au|ca|edu|gov|int)\b/i.test(t);
@@ -46,7 +59,7 @@ const dayUtc = () => new Date().toISOString().slice(0, 10);
 const nowSec = () => Math.floor(Date.now() / 1000);
 const send = (res, code, obj, cache) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', cache || 'no-store');
+  res.setHeader('Cache-Control', cache || 'private, no-store');
   return res.status(code).send(JSON.stringify(obj));
 };
 const publicComment = o => o && o.id ? { id: o.id, text: o.text, at: o.at } : null;
@@ -76,6 +89,18 @@ function newCid() {
   return ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 21);
 }
 
+function whyOf(hide) {
+  const v = String(hide || '');
+  if (v === 'hold') return 'hold';
+  if (v.indexOf('auto') === 0 || v === 'filter') return 'filter';
+  if (v) return 'reports';
+  return '';
+}
+
+function renewCookie(req, res, token) {
+  res.setHeader('Set-Cookie', COOKIE.setCookieHeader(req, token));
+}
+
 async function evalScript(script, keys, argv) {
   const cmd = ['EVAL', script, String(keys.length)].concat(keys, argv.map(String));
   const out = await pipeline([cmd]);
@@ -95,7 +120,13 @@ async function handler(req, res) {
     const raw = typeof req.body === 'string' ? req.body : JSON.stringify(body);
     if (raw.length > MAX_BODY) return send(res, 413, { error: 'too large' });
     const action = String(body.action || '');
-    if (action === 'restore' || action === 'delete') return await moderate(req, res, body, action);
+    if (action === 'ready') return ready(req, res);
+    if (action === 'mine') return await mine(req, res, body);
+    if (action === 'restore') return await moderate(req, res, body, action);
+    if (action === 'delete') {
+      if (ADMIN && same(req.headers['x-admin-key'], ADMIN)) return await moderate(req, res, body, action);
+      return await ownerDelete(req, res, body);
+    }
     if (action === 'report') return await report(req, res, body);
     return await create(req, res, body);
   } catch (e) {
@@ -104,6 +135,47 @@ async function handler(req, res) {
       ? send(res, 200, { configured: false, allowed: false, comments: [], counts: {}, count: 0, total: 0 })
       : send(res, 502, { error: 'Couldn’t save that right now. Try again in a moment.' });
   }
+}
+
+function ready(req, res) {
+  const token = COOKIE.readToken(req);
+  if (token) return send(res, 200, { ready: true });
+  const issued = COOKIE.newToken();
+  renewCookie(req, res, issued);
+  return send(res, 200, { ready: false });
+}
+
+async function mine(req, res, body) {
+  const token = COOKIE.readToken(req);
+  if (!token) return send(res, 200, { mine: [] });
+  const raw = Array.isArray(body.ids) ? body.ids : String(body.ids || '').split(',');
+  const ids = [...new Set(raw.map(x => String(x)).filter(x => CID_RE.test(x)))].slice(0, MAX_MINE);
+  if (!ids.length) return send(res, 200, { mine: [] });
+  const want = COOKIE.tokenHash(token);
+  const got = await pipeline(ids.map(id => ['GET', ownKey(id)]));
+  const mineIds = [];
+  ids.forEach((id, i) => {
+    const h = got[i] && got[i].result;
+    if (h && COOKIE.hashesEqual(String(h), want)) mineIds.push(id);
+  });
+  return send(res, 200, { mine: mineIds });
+}
+
+async function ownerDelete(req, res, body) {
+  const token = COOKIE.readToken(req);
+  const id = String(body.id || '');
+  if (!token || !CID_RE.test(id)) return send(res, 404, { error: 'not found' });
+  const g = await pipeline([['GET', rec(id)]]);
+  const o = parseRec(g[0] && g[0].result);
+  const story = (o && o.storyId) || 'x';
+  const out = await evalScript(
+    ATOM.SCRIPT_OWN_DELETE,
+    [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW, ownKey(id), okKey(id)],
+    [id, COOKIE.tokenHash(token)]
+  );
+  const ok = Array.isArray(out) ? Number(out[0]) === 1 : Number(out) === 1;
+  if (!ok) return send(res, 404, { error: 'not found' });
+  return send(res, 200, { ok: true, deleted: true });
 }
 
 async function classify(id) {
@@ -123,15 +195,33 @@ async function liveThread(id, offset) {
   let total = Number(got[1] && got[1].result) || 0;
   if (!ids.length) return { comments: [], total };
   const recs = await pipeline(ids.map(cid => ['GET', rec(cid)]).concat(ids.map(cid => ['EXISTS', hideKey(cid)])));
-  const comments = [], ghosts = [];
+  const slots = [], ghosts = [], scan = [];
   ids.forEach((cid, i) => {
     if (Number(recs[ids.length + i] && recs[ids.length + i].result)) { ghosts.push(cid); return; }
     const o = parseRec(recs[i] && recs[i].result);
     if (!o || o.storyId !== id) { ghosts.push(cid); return; }
     const pub = publicComment(o);
-    if (pub) comments.push(pub);
-    else ghosts.push(cid);
+    if (!pub) { ghosts.push(cid); return; }
+    const hit = FILTER.classify(o.text);
+    const row = { cid, pub, hit, keep: hit.action === 'ok' };
+    slots.push(row);
+    if (hit.action !== 'ok') scan.push(row);
   });
+  if (scan.length) {
+    const oks = await pipeline(scan.map(x => ['EXISTS', okKey(x.cid)]));
+    for (let i = 0; i < scan.length; i++) {
+      if (Number(oks[i] && oks[i].result) === 1) { scan[i].keep = true; continue; }
+      const reason = 'auto-' + (scan[i].hit.rule || 'filter');
+      await evalScript(
+        ATOM.SCRIPT_AUTOHIDE,
+        [rec(scan[i].cid), hideKey(scan[i].cid), vis, REVIEW, okKey(scan[i].cid)],
+        [scan[i].cid, nowSec(), COMMENT_TTL, reason]
+      );
+    }
+    const n = await pipeline([['ZCARD', vis]]);
+    total = Number(n[0] && n[0].result) || slots.filter(x => x.keep).length;
+  }
+  const comments = slots.filter(x => x.keep).map(x => x.pub);
   if (ghosts.length) {
     await pipeline(ghosts.map(cid => ['ZREM', vis, cid]));
     const n = await pipeline([['ZCARD', vis]]);
@@ -193,11 +283,30 @@ async function create(req, res, body) {
   if ((Number(lim[0] && lim[0].result) || 0) > DAILY_PER_IP || (Number(lim[2] && lim[2].result) || 0) > DAILY_PER_UID || (Number(lim[4] && lim[4].result) || 0) > STORY_PER_IP) {
     return send(res, 429, { error: 'too many' });
   }
+  const token = COOKIE.readToken(req);
+  if (!token) return send(res, 400, { error: COOKIE_MSG });
+  const hit = FILTER.classify(text);
+  if (hit.action === 'reject') return send(res, 400, { error: REJECT_MSG, field: 'text' });
   const cid = newCid();
   const now = new Date().toISOString();
   const item = { id: cid, storyId: id, text, at: now };
   const exp = nowSec() + COMMENT_TTL;
-  await evalScript(ATOM.SCRIPT_CREATE, [rec(cid), visKey(id)], [JSON.stringify(item), cid, exp, COMMENT_TTL, nowSec(), MAX_VIS]);
+  const hash = COOKIE.tokenHash(token);
+  if (hit.action === 'hold') {
+    await evalScript(
+      ATOM.SCRIPT_HOLD,
+      [rec(cid), hideKey(cid), REVIEW, ownKey(cid)],
+      [JSON.stringify(item), cid, nowSec(), COMMENT_TTL, hash]
+    );
+    renewCookie(req, res, token);
+    return send(res, 200, { ok: true, pending: true, id: cid });
+  }
+  await evalScript(
+    ATOM.SCRIPT_CREATE,
+    [rec(cid), visKey(id), ownKey(cid)],
+    [JSON.stringify(item), cid, exp, COMMENT_TTL, nowSec(), MAX_VIS, hash]
+  );
+  renewCookie(req, res, token);
   return send(res, 200, { ok: true, comment: publicComment(item) });
 }
 
@@ -228,14 +337,14 @@ async function moderate(req, res, body, action) {
   const o = parseRec(g[0] && g[0].result);
   const story = (o && o.storyId) || 'x';
   if (action === 'delete') {
-    await evalScript(ATOM.SCRIPT_DELETE, [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW], [id]);
+    await evalScript(ATOM.SCRIPT_DELETE, [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW, ownKey(id), okKey(id)], [id]);
     return send(res, 200, { ok: true, deleted: true });
   }
   if (!o) {
-    await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(story), rec(id), REVIEW, repKey(id)], [id, COMMENT_TTL, nowSec()]);
+    await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(story), rec(id), REVIEW, repKey(id), okKey(id)], [id, COMMENT_TTL, nowSec()]);
     return send(res, 200, { ok: true, restored: false });
   }
-  const out = await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(o.storyId), rec(id), REVIEW, repKey(id)], [id, COMMENT_TTL, nowSec()]);
+  const out = await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(o.storyId), rec(id), REVIEW, repKey(id), okKey(id)], [id, COMMENT_TTL, nowSec()]);
   const hidden = Array.isArray(out) ? Number(out[0]) : Number(out);
   return send(res, 200, { ok: true, restored: hidden === 1 });
 }
@@ -246,11 +355,12 @@ async function review(req, res) {
   const flat = (q[0] && q[0].result) || [], rows = [];
   for (let i = 0; i < flat.length; i += 2) if (CID_RE.test(String(flat[i]))) rows.push({ id: flat[i], at: new Date(Number(flat[i + 1]) * 1000).toISOString() });
   if (!rows.length) return send(res, 200, { items: [] });
-  const got = await pipeline(rows.flatMap(r => [['GET', rec(r.id)], ['SCARD', repKey(r.id)], ['EXISTS', hideKey(r.id)]]));
+  const got = await pipeline(rows.flatMap(r => [['GET', rec(r.id)], ['SCARD', repKey(r.id)], ['GET', hideKey(r.id)]]));
   const items = [];
   rows.forEach((r, i) => {
     const o = parseRec(got[i * 3] && got[i * 3].result);
     if (!o) return;
+    const hide = got[i * 3 + 2] && got[i * 3 + 2].result;
     items.push({
       id: o.id,
       storyId: o.storyId,
@@ -258,7 +368,8 @@ async function review(req, res) {
       at: o.at,
       reportedAt: r.at,
       reports: Number(got[i * 3 + 1] && got[i * 3 + 1].result) || 0,
-      hidden: Number(got[i * 3 + 2] && got[i * 3 + 2].result) === 1
+      hidden: !!hide,
+      why: whyOf(hide)
     });
   });
   return send(res, 200, { items });
@@ -273,7 +384,12 @@ module.exports.DAILY_PER_IP = DAILY_PER_IP;
 module.exports.DAILY_PER_UID = DAILY_PER_UID;
 module.exports.STORY_PER_IP = STORY_PER_IP;
 module.exports.REPORTS_TO_HIDE = REPORTS_TO_HIDE;
+module.exports.REJECT_MSG = REJECT_MSG;
+module.exports.COOKIE_MSG = COOKIE_MSG;
 module.exports.clean = clean;
 module.exports.hasLink = hasLink;
 module.exports.sameOrigin = sameOrigin;
 module.exports.visKey = visKey;
+module.exports.ownKey = ownKey;
+module.exports.okKey = okKey;
+module.exports.whyOf = whyOf;

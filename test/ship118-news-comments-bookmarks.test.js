@@ -96,6 +96,17 @@ function call(handler, req) {
   });
 }
 const origin = { host: '127.0.0.1:3077', origin: 'http://127.0.0.1:3077' };
+function cookieHeader(setCookie) {
+  const m = String(setCookie || '').match(/(?:__Host-)?tsn_cm=([^;]+)/);
+  return m ? 'tsn_cm=' + m[1] : '';
+}
+async function withReady(C, extra) {
+  const r1 = await call(C, { method: 'POST', headers: Object.assign({}, origin, extra || {}), body: { action: 'ready' } });
+  const cookie = cookieHeader(r1.headers['set-cookie']);
+  const r2 = await call(C, { method: 'POST', headers: Object.assign({}, origin, extra || {}, { cookie }), body: { action: 'ready' } });
+  if (!r2.body || r2.body.ready !== true) throw new Error('comment cookie round-trip failed');
+  return cookie;
+}
 function seedStory(store, sid, meta) {
   const cur = store.sets.get(KEY) || new Set();
   cur.add(sid);
@@ -206,7 +217,8 @@ test('ship118: allowlist, crime, unknown, expired, XSS, links, CSRF, size, metho
   seedStory(s, good, NEWS);
   seedStory(s, crimeId, { kind: 'news', title: 'Man arrested downtown', sourceId: 'n' });
   seedStory(s, policeId, { kind: 'police', title: 'Annual report published', sourceId: 'p' });
-  const post = (body, hdr) => call(C, { method: 'POST', url: '/api/comments', headers: Object.assign({ 'x-real-ip': '1.1.1.1' }, origin, hdr || {}), body });
+  const cookie = await withReady(C);
+  const post = (body, hdr) => call(C, { method: 'POST', url: '/api/comments', headers: Object.assign({ 'x-real-ip': '1.1.1.1', cookie }, origin, hdr || {}), body });
   assert.equal((await post({ id: good, uid: 'reader-0001', text: 'Nice work.' }, { origin: '' })).code, 403, 'no origin');
   assert.equal((await post({ id: good, uid: 'reader-0001', text: 'Nice work.' }, { origin: 'https://evil.test', host: '127.0.0.1:3077' })).code, 403);
   assert.equal((await call(C, { method: 'PUT', headers: origin, body: {} })).code, 405);
@@ -248,7 +260,8 @@ test('ship118: allowlist, crime, unknown, expired, XSS, links, CSRF, size, metho
 test('ship118: classification change hides stored comments; counts skip blocked ids', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/flip');
   seedStory(s, id, NEWS);
-  const post = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '8.8.8.8' }, origin), body: { id, uid: 'reader-0001', text: 'Was fine.' } });
+  const cookie = await withReady(C);
+  const post = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '8.8.8.8', cookie }, origin), body: { id, uid: 'reader-0001', text: 'Was fine.' } });
   assert.equal(post.code, 200);
   const all = JSON.parse(s.kv.get(META));
   all[id] = { kind: 'news', title: 'Suspect arrested overnight', sourceId: 'n' };
@@ -263,7 +276,8 @@ test('ship118: classification change hides stored comments; counts skip blocked 
 test('ship118: rate limits uid+IP; report unique-IP hide; admin restore/delete; wrong key 404', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/rl');
   seedStory(s, id, NEWS);
-  const post = (uid, ip, text) => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip }, origin), body: { id, uid, text: text || 'A comment about the river.' } });
+  const cookie = await withReady(C);
+  const post = (uid, ip, text) => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip, cookie }, origin), body: { id, uid, text: text || 'A comment about the river.' } });
   for (let i = 0; i < C.STORY_PER_IP; i++) assert.equal((await post('reader-000' + i, '9.9.9.9', 'Comment number ' + i)).code, 200);
   assert.equal((await post('reader-0099', '9.9.9.9', 'One more')).code, 429);
   assert.equal((await post('reader-0099', '8.8.8.8', 'Other IP')).code, 200);
@@ -293,7 +307,8 @@ test('ship118: rate limits uid+IP; report unique-IP hide; admin restore/delete; 
 test('ship118: degraded store fail closed; concurrent reports hide once', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/deg');
   seedStory(s, id, NEWS);
-  const posted = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.4' }, origin), body: { id, uid: 'reader-0001', text: 'Hello river.' } });
+  const cookie = await withReady(C);
+  const posted = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.4', cookie }, origin), body: { id, uid: 'reader-0001', text: 'Hello river.' } });
   assert.equal(posted.code, 200);
   const cid = posted.body.comment.id;
   const real = s.fetch;
@@ -328,7 +343,8 @@ test('ship118: hasLink catches short hosts; EVAL is used for vis transitions', (
 test('ship118: concurrent reports decrement once; post+restore keep both; delete+restore cannot ghost', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/atom');
   seedStory(s, id, NEWS);
-  const post = (uid, ip, text) => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip }, origin), body: { id, uid, text } });
+  const cookie = await withReady(C);
+  const post = (uid, ip, text) => call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': ip, cookie }, origin), body: { id, uid, text } });
   const a = await post('reader-a01', '1.1.1.1', 'First live comment.');
   const b = await post('reader-b01', '1.1.1.2', 'Second live comment.');
   assert.equal(a.code, 200); assert.equal(b.code, 200);
@@ -368,9 +384,10 @@ test('ship118: concurrent reports decrement once; post+restore keep both; delete
 test('ship118: live visible count is capped and pruned; thread total is X of Y', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/page');
   seedStory(s, id, NEWS);
+  const cookie = await withReady(C);
   const post = (i) => call(C, {
     method: 'POST',
-    headers: Object.assign({ 'x-real-ip': '10.0.' + Math.floor(i / 8) + '.' + (i % 8) }, origin),
+    headers: Object.assign({ 'x-real-ip': '10.0.' + Math.floor(i / 8) + '.' + (i % 8), cookie }, origin),
     body: { id, uid: 'reader-' + String(i).padStart(4, '0'), text: 'River comment number ' + i + '.' }
   });
   for (let i = 0; i < 25; i++) assert.equal((await post(i)).code, 200);

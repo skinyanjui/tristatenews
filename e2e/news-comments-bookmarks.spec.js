@@ -126,6 +126,17 @@ async function stub(page, items, opts) {
     }
     if (req.method() === 'POST') {
       const body = req.postDataJSON() || {};
+      if (body.action === 'ready') return route.fulfill({ json: { ready: true } });
+      if (body.action === 'mine') {
+        const ids = Array.isArray(body.ids) ? body.ids : [];
+        return route.fulfill({ json: { mine: ids } });
+      }
+      if (body.action === 'delete') {
+        Object.keys(comments).forEach(sid => {
+          comments[sid] = (comments[sid] || []).filter(c => c.id !== body.id);
+        });
+        return route.fulfill({ json: { ok: true, deleted: true } });
+      }
       if (body.action === 'report') {
         if (reportFail) return route.fulfill({ status: 429, json: { error: 'too many' } });
         return route.fulfill({ json: { ok: true } });
@@ -134,6 +145,9 @@ async function stub(page, items, opts) {
       const text = String(body.text || '').replace(/[<>]/g, ' ').trim().slice(0, 300);
       if (!text) return route.fulfill({ status: 400, json: { error: 'Add a comment.' } });
       if (/https?:\/\//i.test(text)) return route.fulfill({ status: 400, json: { error: 'Links aren’t allowed.' } });
+      if (/\b(fuck|shit|asshole|nigger|faggot)\b/i.test(text)) {
+        return route.fulfill({ status: 400, json: { error: 'This comment can’t be posted.' } });
+      }
       const c = { id: commentId(), text, at: new Date().toISOString() };
       comments[id] = comments[id] || [];
       comments[id].unshift(c);
@@ -339,6 +353,36 @@ test('failed report stays Report and restores the opener', async ({ page }) => {
   await expect(rp).toBeEnabled();
   await page.keyboard.press('Escape');
   await expect(first.locator('.cm-btn')).toBeFocused();
+});
+
+test('filter reject keeps the draft; owner Delete is 44px and confirm-cancels leave the comment', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stub(page);
+  await page.goto('/');
+  await expect(page.locator('#list article.news-story h2', { hasText: 'riverfront redevelopment' })).toBeVisible({ timeout: 15000 });
+  const first = page.locator('#list article.news-story', { hasText: 'riverfront redevelopment' });
+  await first.locator('.cm-btn').click();
+  const cm = page.locator('dialog.cm-sheet');
+  await expect(cm).toBeVisible();
+  await cm.locator('textarea').fill('EXAMPLE fuck this riverfront.');
+  await cm.locator('.cm-post').click();
+  await expect(cm.locator('textarea')).toHaveValue('EXAMPLE fuck this riverfront.');
+  await expect(cm.locator('.cm-item')).toHaveCount(0);
+  await cm.locator('textarea').fill('EXAMPLE public comment I can delete.');
+  await cm.locator('.cm-post').click();
+  await expect(cm.locator('.cm-item')).toContainText('EXAMPLE public comment I can delete.');
+  const del = cm.locator('.cm-del');
+  await expect(del).toBeVisible();
+  const box = await del.boundingBox();
+  expect(box).toBeTruthy();
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  page.once('dialog', d => d.dismiss());
+  await del.click();
+  await expect(cm.locator('.cm-item')).toContainText('EXAMPLE public comment I can delete.');
+  page.once('dialog', d => d.accept());
+  await del.click();
+  await expect(cm.locator('.cm-item')).toHaveCount(0);
+  await page.keyboard.press('Escape');
 });
 
 test('no-image and long text still expose save; 44px targets at 320–1280; 200% zoom', async ({ page }) => {

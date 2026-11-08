@@ -87,7 +87,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
     <section><h2 id="orh">Orders</h2><div id="ors"></div></section>
     <section><h2 id="rvh">Reported posts</h2><p class="m">Posts reported by 3 readers are hidden from the boards until you restore or remove them. Featured (paid) posts stay up and are only listed here.</p><div id="rv"></div></section>
-    <section><h2 id="cmh">Reported comments</h2><p class="m">Public news comments hidden after 3 reports from different connections. Restore puts a comment back; Remove deletes it. Comments are anonymous: this queue never shows a name, email or IP.</p><div id="cmq"></div></section>
+    <section><h2 id="cmh">Reported comments</h2><p class="m">Public news comments hidden after 3 reports, held for review, or hidden by the word filter. Restore puts a comment back (including filter false positives); Remove deletes it. Comments are anonymous: this queue never shows a name, email, IP or cookie. The why field is reports, hold or filter — never the matched text.</p><div id="cmq"></div></section>
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
     <section id="cov"><div class="row"><h2 id="cvh">Sources &amp; Coverage</h2><button class="ghost" id="cvr" type="button">Reload</button></div>
       <p class="m">Read-only health and coverage from the stored feed state, plus the classifier review queue. A county override is written to the audit log and takes effect at the next refresh. No reader data is shown here.</p>
@@ -440,7 +440,7 @@ details summary { min-height:40px; display:flex; align-items:center; }
     if (!items.length) return empty($('cmq'), d ? 'Nothing reported.' : 'Not available.');
     items.forEach(function (x) {
       var box = mk('div');
-      line(box, (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.storyId || x.id), ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
+      line(box, (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.why || 'reports') + ' · ' + (x.storyId || x.id), ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
       var rs = mk('button', { type: 'button', class: 'ghost' }, 'Restore'), rm = mk('button', { type: 'button', class: 'ghost' }, 'Remove');
       rs.addEventListener('click', function () { rs.disabled = true; post('/api/comments', { action: 'restore', id: x.id }).then(loadComments).catch(function () { rs.disabled = false; }); });
       rm.addEventListener('click', function () {

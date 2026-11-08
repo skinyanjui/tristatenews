@@ -5,6 +5,7 @@
 
 const SCRIPT_CREATE = [
   "redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[4])",
+  "if ARGV[7] ~= nil and ARGV[7] ~= '' then redis.call('SET', KEYS[3], ARGV[7], 'EX', ARGV[4]) end",
   "redis.call('ZADD', KEYS[2], ARGV[3], ARGV[2])",
   "redis.call('ZREMRANGEBYSCORE', KEYS[2], '-inf', ARGV[5])",
   'local n = redis.call(\'ZCARD\', KEYS[2])',
@@ -37,6 +38,7 @@ const SCRIPT_RESTORE = [
   'if not rec then',
   "  redis.call('DEL', KEYS[1])",
   "  redis.call('DEL', KEYS[5])",
+  "  if KEYS[6] then redis.call('DEL', KEYS[6]) end",
   "  redis.call('ZREM', KEYS[2], ARGV[1])",
   "  redis.call('ZREM', KEYS[4], ARGV[1])",
   "  return {0, redis.call('ZCARD', KEYS[2])}",
@@ -50,6 +52,7 @@ const SCRIPT_RESTORE = [
   '  local exp = tonumber(ARGV[3]) + math.floor(((ms and ms > 0) and ms or (ttl * 1000)) / 1000)',
   "  redis.call('ZADD', KEYS[2], exp, ARGV[1])",
   "  redis.call('EXPIRE', KEYS[2], ARGV[2])",
+  "  if KEYS[6] then redis.call('SET', KEYS[6], '1', 'EX', ARGV[2]) end",
   'end',
   "return {hidden, redis.call('ZCARD', KEYS[2])}"
 ].join('\n');
@@ -58,6 +61,49 @@ const SCRIPT_DELETE = [
   "redis.call('DEL', KEYS[1])",
   "redis.call('DEL', KEYS[2])",
   "redis.call('DEL', KEYS[3])",
+  "redis.call('ZREM', KEYS[4], ARGV[1])",
+  "redis.call('ZREM', KEYS[5], ARGV[1])",
+  "if KEYS[6] then redis.call('DEL', KEYS[6]) end",
+  "if KEYS[7] then redis.call('DEL', KEYS[7]) end",
+  "return {1, redis.call('ZCARD', KEYS[4])}"
+].join('\n');
+
+const SCRIPT_HOLD = [
+  "redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[4])",
+  "redis.call('SET', KEYS[2], 'hold', 'EX', ARGV[4])",
+  "redis.call('ZADD', KEYS[3], ARGV[3], ARGV[2])",
+  "redis.call('EXPIRE', KEYS[3], ARGV[4])",
+  "if ARGV[5] ~= nil and ARGV[5] ~= '' then redis.call('SET', KEYS[4], ARGV[5], 'EX', ARGV[4]) end",
+  'return 1'
+].join('\n');
+
+const SCRIPT_AUTOHIDE = [
+  "if KEYS[5] and redis.call('EXISTS', KEYS[5]) == 1 then return {0, redis.call('ZCARD', KEYS[3])} end",
+  "if redis.call('EXISTS', KEYS[1]) == 0 then redis.call('ZREM', KEYS[3], ARGV[1]); return {0, redis.call('ZCARD', KEYS[3])} end",
+  "local ok = redis.call('SET', KEYS[2], ARGV[4], 'EX', ARGV[3], 'NX')",
+  'if ok then',
+  "  redis.call('ZREM', KEYS[3], ARGV[1])",
+  "  redis.call('ZADD', KEYS[4], ARGV[2], ARGV[1])",
+  "  redis.call('EXPIRE', KEYS[4], ARGV[3])",
+  "  return {1, redis.call('ZCARD', KEYS[3])}",
+  'end',
+  "redis.call('ZREM', KEYS[3], ARGV[1])",
+  "return {0, redis.call('ZCARD', KEYS[3])}"
+].join('\n');
+
+const SCRIPT_OWN_DELETE = [
+  "local rec = redis.call('GET', KEYS[1])",
+  "local own = redis.call('GET', KEYS[6])",
+  'if not rec then',
+  "  if own and own == ARGV[2] then redis.call('DEL', KEYS[2]); redis.call('DEL', KEYS[3]); redis.call('DEL', KEYS[6]); redis.call('DEL', KEYS[7]); redis.call('ZREM', KEYS[4], ARGV[1]); redis.call('ZREM', KEYS[5], ARGV[1]) end",
+  '  return {0}',
+  'end',
+  'if (not own) or own ~= ARGV[2] then return {0} end',
+  "redis.call('DEL', KEYS[1])",
+  "redis.call('DEL', KEYS[2])",
+  "redis.call('DEL', KEYS[3])",
+  "redis.call('DEL', KEYS[6])",
+  "redis.call('DEL', KEYS[7])",
   "redis.call('ZREM', KEYS[4], ARGV[1])",
   "redis.call('ZREM', KEYS[5], ARGV[1])",
   "return {1, redis.call('ZCARD', KEYS[4])}"
@@ -76,6 +122,7 @@ function truthy(v) { return v !== null && v !== undefined && v !== false && v !=
 
 function create(r, keys, argv) {
   r.call('SET', keys[0], argv[0], 'EX', argv[3]);
+  if (keys[2] && argv[6]) r.call('SET', keys[2], argv[6], 'EX', argv[3]);
   r.call('ZADD', keys[1], argv[2], argv[1]);
   r.call('ZREMRANGEBYSCORE', keys[1], '-inf', argv[4]);
   let n = Number(r.call('ZCARD', keys[1])) || 0;
@@ -108,6 +155,7 @@ function restore(r, keys, argv) {
   if (rec == null) {
     r.call('DEL', keys[0]);
     r.call('DEL', keys[4]);
+    if (keys[5]) r.call('DEL', keys[5]);
     r.call('ZREM', keys[1], argv[0]);
     r.call('ZREM', keys[3], argv[0]);
     return [0, Number(r.call('ZCARD', keys[1])) || 0];
@@ -121,6 +169,7 @@ function restore(r, keys, argv) {
     const exp = Number(argv[2]) + Math.floor(((ms && ms > 0) ? ms : ttl * 1000) / 1000);
     r.call('ZADD', keys[1], exp, argv[0]);
     r.call('EXPIRE', keys[1], argv[1]);
+    if (keys[5]) r.call('SET', keys[5], '1', 'EX', argv[1]);
   }
   return [hidden, Number(r.call('ZCARD', keys[1])) || 0];
 }
@@ -131,6 +180,50 @@ function del(r, keys, argv) {
   r.call('DEL', keys[2]);
   r.call('ZREM', keys[3], argv[0]);
   r.call('ZREM', keys[4], argv[0]);
+  if (keys[5]) r.call('DEL', keys[5]);
+  if (keys[6]) r.call('DEL', keys[6]);
+  return [1, Number(r.call('ZCARD', keys[3])) || 0];
+}
+
+function hold(r, keys, argv) {
+  r.call('SET', keys[0], argv[0], 'EX', argv[3]);
+  r.call('SET', keys[1], 'hold', 'EX', argv[3]);
+  r.call('ZADD', keys[2], argv[2], argv[1]);
+  r.call('EXPIRE', keys[2], argv[3]);
+  if (keys[3] && argv[4]) r.call('SET', keys[3], argv[4], 'EX', argv[3]);
+  return 1;
+}
+
+function autohide(r, keys, argv) {
+  if (keys[4] && Number(r.call('EXISTS', keys[4])) === 1) return [0, Number(r.call('ZCARD', keys[2])) || 0];
+  if (Number(r.call('EXISTS', keys[0])) === 0) {
+    r.call('ZREM', keys[2], argv[0]);
+    return [0, Number(r.call('ZCARD', keys[2])) || 0];
+  }
+  const ok = r.call('SET', keys[1], argv[3], 'EX', argv[2], 'NX');
+  if (truthy(ok)) {
+    r.call('ZREM', keys[2], argv[0]);
+    r.call('ZADD', keys[3], argv[1], argv[0]);
+    r.call('EXPIRE', keys[3], argv[2]);
+    return [1, Number(r.call('ZCARD', keys[2])) || 0];
+  }
+  r.call('ZREM', keys[2], argv[0]);
+  return [0, Number(r.call('ZCARD', keys[2])) || 0];
+}
+
+function ownDelete(r, keys, argv) {
+  const rec = r.call('GET', keys[0]);
+  const own = r.call('GET', keys[5]);
+  if (rec == null) {
+    if (own != null && own === argv[1]) {
+      r.call('DEL', keys[1]); r.call('DEL', keys[2]); r.call('DEL', keys[5]); r.call('DEL', keys[6]);
+      r.call('ZREM', keys[3], argv[0]); r.call('ZREM', keys[4], argv[0]);
+    }
+    return [0];
+  }
+  if (own == null || own !== argv[1]) return [0];
+  r.call('DEL', keys[0]); r.call('DEL', keys[1]); r.call('DEL', keys[2]); r.call('DEL', keys[5]); r.call('DEL', keys[6]);
+  r.call('ZREM', keys[3], argv[0]); r.call('ZREM', keys[4], argv[0]);
   return [1, Number(r.call('ZCARD', keys[3])) || 0];
 }
 
@@ -147,6 +240,9 @@ ATOMS[SCRIPT_REPORT] = report;
 ATOMS[SCRIPT_RESTORE] = restore;
 ATOMS[SCRIPT_DELETE] = del;
 ATOMS[SCRIPT_PRUNE] = prune;
+ATOMS[SCRIPT_HOLD] = hold;
+ATOMS[SCRIPT_AUTOHIDE] = autohide;
+ATOMS[SCRIPT_OWN_DELETE] = ownDelete;
 
 function run(script, redis, keys, argv) {
   const fn = ATOMS[script];
@@ -167,5 +263,6 @@ function wrap(runCmd) {
 
 module.exports = {
   SCRIPT_CREATE, SCRIPT_REPORT, SCRIPT_RESTORE, SCRIPT_DELETE, SCRIPT_PRUNE,
-  run, wrap, create, report, restore, del, prune
+  SCRIPT_HOLD, SCRIPT_AUTOHIDE, SCRIPT_OWN_DELETE,
+  run, wrap, create, report, restore, del, prune, hold, autohide, ownDelete
 };

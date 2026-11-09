@@ -80,11 +80,23 @@ function validate(files) {
   return problems;
 }
 
+// Feeds that are mostly obituaries (Google News obituary queries, /obituaries paths, funeral-home hosts)
+// map to kind "obits" even when the registry entry omitted kind.
+const Obit = require('../public/obit.js');
+function obitFeedSource(s) {
+  if (!s) return false;
+  if (s.funeralHome) return true;
+  if (s.kind === 'obits') return true;
+  const urls = [s.url].concat(Array.isArray(s.altUrls) ? s.altUrls : []);
+  return urls.some(u => Obit.obitFeedUrl(u));
+}
+
 // All entries in seq order, without the registry-only fields (seq, note); every other key is kept as written.
 function registry(files) {
   return (files || FILES).flatMap(f => f.sources).slice().sort((a, b) => a.seq - b.seq).map(s => {
     const o = {};
     for (const k of Object.keys(s)) if (!BATCH_ONLY.includes(k)) o[k] = s[k];
+    if (!o.kind && obitFeedSource(s)) o.kind = 'obits';
     return o;
   });
 }
@@ -120,4 +132,4 @@ try {
   }
 } catch (_) { /* ignore malformed EXTRA_FEEDS */ }
 
-module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES, BATCHES, enabledBatches, activeBatches, RATE_GROUPS };
+module.exports = { SOURCES, DISABLED_SOURCES, validate, registry, FILES, BATCHES, enabledBatches, activeBatches, RATE_GROUPS, obitFeedSource };

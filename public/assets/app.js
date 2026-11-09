@@ -592,6 +592,13 @@
     }).catch(function () { state.cmOn = false; });
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : /^ob-/.test(id || '') ? 'obits' : 'news'; } // ship91: ob-<news source> = a notice routed from a paper's news feed
+  // Item kind for tabs: registry kind, remounted ob-* ids, or the shared soft detector (stored snapshots).
+  function itemKind(it) {
+    var k = kindOf(it && it.sourceId);
+    if (k === 'obits' || k === 'events' || k === 'police' || k === 'courts' || k === 'institution') return k;
+    if (obitStory(it)) return 'obits';
+    return k;
+  }
   var CATS = [
     { id: 'news', label: 'News' },
     { id: 'institution', label: 'Institutions' },
@@ -602,13 +609,15 @@
     { id: 'classifieds', label: 'Classifieds' }
   ];
   function inCat(it, cat) {
-    var k = kindOf(it.sourceId);
+    var k = itemKind(it);
     if (cat === 'deals') return false;
     if (cat === 'events' || cat === 'jobs') return false;
     // News (the landing tab, and since the Police & courts tab was merged into it the only home of official police and
     // court items) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
     // their rules here too (makeCard decides by source kind): no photos, and "Charged or arrested, not convicted."
-    if (cat === 'news') return k === 'news' || k === 'police' || k === 'courts';
+    // Soft-detected obituaries never stay in News — they belong on /obituaries.
+    if (cat === 'news') return (k === 'news' || k === 'police' || k === 'courts');
+    if (cat === 'obits') return k === 'obits';
     return k === cat;
   }
   // News order is the API's (combine/page on the server). This only applies the open tab and the search box.
@@ -649,7 +658,7 @@
       state.alerts.forEach(function (p) { var a = BK.fromNws(p); if (a) c.push(a); });
     }
     state.items.forEach(function (it) {
-      var k = kindOf(it.sourceId); if (k === 'events' || k === 'obits') return;
+      var k = itemKind(it); if (k === 'events' || k === 'obits') return;
       var t = Date.parse(it.published); if (isNaN(t)) return;
       var hit = BK && (k === 'police' || k === 'courts') ? BK.classifyOfficial(it) : null; // keyword tiers: official sources only
       if (hit) c.push({ key: 'it:' + (it.id || it.link), kind: 'story', official: true, tier: hit.tier, label: hit.label, start: t, end: null, item: it });
@@ -2665,7 +2674,7 @@
   }
   function corpus() {
     var docs = [], today = inDays(0);
-    state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
+    state.items.forEach(function (i) { var k = itemKind(i); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
     postedEvents().concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
     boards.job.items.concat(boardSamples('job')).forEach(function (x) { docs.push(getDoc('jobs', x)); });
     boards.obit.items.forEach(function (x) { docs.push(getDoc('obits', x)); });
@@ -3395,7 +3404,7 @@
   }
   function hostName(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
   function makeCard(it, big, bk) {
-    var kd = kindOf(it.sourceId), safe = kd === 'police' || kd === 'courts';
+    var kd = itemKind(it), safe = kd === 'police' || kd === 'courts';
     if (!big && kd === 'obits') return obitRow(it);
     var card = el('article', big ? 'card breaking' : 'card news-story');
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';

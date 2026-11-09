@@ -93,7 +93,7 @@ function pick(view, cat, now) {
 function card(it, o) {
   const kd = o.kindOf(it), safe = kd === 'police' || kd === 'courts', big = !!o.brk;
   const sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
-  const pic = (safe || crime.crimeStory(it)) ? '' : (it.image || '');
+  const pic = (safe || crime.crimeStory(it) || crime.obitStory(it)) ? '' : (it.image || '');
   const logo = (o.logos[it.sourceId] || '');
   const title = big ? (it.title.replace(LEAD_RE, '') || it.title) : it.title;
   const srcCls = big ? 'src' : 'ns-src';
@@ -114,7 +114,7 @@ function card(it, o) {
   const href = safeHref(it.link);
   const share = href === '#' ? '' : '<button class="share" type="button" aria-label="' + esc('Share: ' + it.title) + '" title="Share">' + SHARE + '</button>';
   const save = '<button class="sv-btn" type="button" aria-pressed="false" aria-label="' + esc('Save: ' + it.title) + '">' + BOOKMARK + '</button>';
-  const cmOn = (kd === 'news' || kd === 'institution') && !crime.crimeStory(it);
+  const cmOn = (kd === 'news' || kd === 'institution') && !crime.crimeStory(it) && !crime.obitStory(it);
   const cm = cmOn ? '<button class="cm-btn" type="button" aria-label="' + esc('Comments: ' + it.title) + '">' + COMMENT + '<span></span></button>' : '';
   const acts = '<div class="acts"><button class="like" type="button" aria-pressed="false" aria-label="' + esc('Like: ' + it.title) + '">' + HEART + '<span></span></button>' + cm + save + share + '</div>';
   if (big) {

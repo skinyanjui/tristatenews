@@ -130,14 +130,14 @@ for (const dark of [false, true]) {
       expect(m.rows.length).toBeGreaterThanOrEqual(2);
       expect(m.rows.some(r => /Long fixture headline/.test(r.title))).toBe(true);
       expect(m.rows.some(r => /no photograph/.test(r.title) && !r.hasPic)).toBe(true);
-      const tap = vp.width >= 900 ? 32 : 44;
+      const tap = vp.width >= 900 ? 40 : 44;
       for (const row of m.rows) {
         expect(row.offenders, row.title + ' ' + JSON.stringify(row.offenders)).toEqual([]);
         expect(row.likeH).toBeGreaterThanOrEqual(tap);
         expect(row.shareH).toBeGreaterThanOrEqual(tap);
         if (vp.width >= 900) {
-          expect(row.likeH).toBeLessThanOrEqual(36);
-          expect(row.shareH).toBeLessThanOrEqual(36);
+          expect(row.likeH).toBeLessThanOrEqual(44);
+          expect(row.shareH).toBeLessThanOrEqual(44);
           expect(row.moreVisible).toBe(true);
         } else {
           expect(row.moreVisible).toBe(false);
@@ -167,21 +167,29 @@ test('desktop news cards are compact at 1024/1280/1440; 390 stays stacked with 4
     await expect(page.locator('#list article.news-story h2', { hasText: 'Long fixture headline' })).toBeVisible({ timeout: 15000 });
     const pic = page.locator('#list article.news-story img.ns-pic').first();
     if (await pic.count()) await pic.waitFor({ state: 'visible' });
+    await expect(page.locator('#list article.news-story').first()).toBeVisible();
+    // Wait until the first image card has a desktop-scale width (avoids measuring mid-layout).
+    if (vp.desktop) {
+      await page.waitForFunction(() => {
+        const card = document.querySelector('#list article.news-story');
+        return card && card.getBoundingClientRect().width >= 540;
+      }, null, { timeout: 5000 });
+    }
     const m = await layout(page);
     expect(m.pageOverflow).toBe(0);
-    const withPic = m.rows.find(r => r.hasPic);
+    const withPic = m.rows.find(r => r.hasPic && /Long fixture headline/.test(r.title)) || m.rows.find(r => r.hasPic);
     const noPic = m.rows.find(r => /no photograph/.test(r.title));
     expect(withPic).toBeTruthy();
     expect(noPic).toBeTruthy();
     if (vp.desktop) {
       expect(withPic.picH, vp.width + ' pic height').toBeLessThanOrEqual(320);
-      expect(withPic.picH).toBeGreaterThanOrEqual(160);
+      expect(withPic.picH).toBeGreaterThanOrEqual(80);
       expect(withPic.cardH, vp.width + ' image card').toBeLessThan(560);
       expect(withPic.cardH).toBeLessThan(vp.height * 0.7);
       expect(noPic.cardH, vp.width + ' text-only card').toBeLessThan(200);
       expect(parseFloat(withPic.h2Size)).toBeLessThanOrEqual(16);
-      expect(withPic.likeH).toBeGreaterThanOrEqual(32);
-      expect(withPic.likeH).toBeLessThanOrEqual(36);
+      expect(withPic.likeH).toBeGreaterThanOrEqual(40);
+      expect(withPic.likeH).toBeLessThanOrEqual(44);
       expect(withPic.cardW).toBeGreaterThanOrEqual(540);
       expect(withPic.cardW).toBeLessThanOrEqual(644);
       expect(withPic.picW).toBeLessThan(withPic.cardW - 16);

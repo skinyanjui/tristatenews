@@ -76,7 +76,7 @@ test('no sample text except the labeled placeholder sample ads; placeholders onl
 test('Privacy matches the code: every browser-storage key is described; no cookies, analytics or ad-network code', () => {
   const keys = new Set([...html.matchAll(/localStorage\.(?:getItem|setItem)\('([^']+)'/g)].map(m => m[1])
     .concat([...html.matchAll(/(?:RECENT_KEY|NL_KEY) = '([^']+)'/g)].map(m => m[1]), [...html.matchAll(/key: '(tsn\.[A-Za-z]+)'/g)].map(m => m[1])));
-  const DESCRIBED = { 'tsn.theme': 'light or dark theme', wxLoc: 'chosen weather location', 'tsn.saved': 'saved articles', 'tsn.liked': 'hearted stories', 'tsn.recent': 'recent searches',
+  const DESCRIBED = { 'tsn.theme': 'light or dark theme', 'tsn.text': 'larger text preference', wxLoc: 'chosen weather location', 'tsn.saved': 'saved articles', 'tsn.liked': 'hearted stories', 'tsn.recent': 'recent searches',
     'tsn.nl': 'whether you’ve signed up for the newsletter', 'tsn.uid': 'A random browser ID', 'tsn.mine': 'posts you made from this browser', 'tsn.mineDeals': 'posts you made from this browser',
     'tsn.mineEvents': 'posts you made from this browser', 'tsn.mineJobs': 'posts you made from this browser', 'tsn.mineObits': 'posts you made from this browser' };
   assert.deepStrictEqual([...keys].sort(), Object.keys(DESCRIBED).sort(), 'a new browser-storage key needs a line in the Privacy Policy');

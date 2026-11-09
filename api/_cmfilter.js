@@ -27,7 +27,21 @@ const HOLD_RE = [
   new RegExp('\\bi\\s+hate\\s+(?:all\\s+)?(?:' + GROUP + ')\\b', 'i')
 ];
 const MENTION_RE = /\b(?:the\s+word|word|dont\s+(?:use|say|type|write)|do\s+not\s+(?:use|say|type|write)|called\s+(?:me|him|her|them|us)|used\s+the\s+word)\b/;
-const VERSION = 2;
+// Accusations aimed at a person: hold for review (not auto-published).
+const ACCUSE_LABEL = 'thief|thieves|rapist|rapists|pedophile|pedophiles|paedophile|paedophiles|drug\\s+dealers?|murderers?|killers?|child\\s+molesters?';
+const ACCUSE_RE = [
+  new RegExp('\\b[a-z][a-z]+(?:\\s+[a-z][a-z]+)?\\s+is\\s+(?:a\\s+|an\\s+)?(?:' + ACCUSE_LABEL + ')\\b'),
+  new RegExp('\\b(?:he|she|they)\\s+is\\s+(?:a\\s+|an\\s+)?(?:' + ACCUSE_LABEL + ')\\b'),
+  /\bi\s+know\s+who\s+did\s+it(?:\s*[,:;-]?\s*it\s+was)?\b/,
+  /\bit\s+was\s+[a-z][a-z]+(?:\s+[a-z][a-z]+)?\s*(?:who|that)\b/,
+  /\b(?:he|she|they)\s+(?:killed|murdered|raped)\b/
+];
+// Clear doxxing: phone numbers, street addresses, emails → reject.
+const EMAIL_RE = /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/;
+const PHONE_RE = /(?:\+?1[\s.-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{3}[\s.-]*\d{4}\b/;
+const ADDR_RE = /\b\d{1,5}\s+[a-z0-9.'-]+(?:\s+[a-z0-9.'-]+){0,3}\s+(?:st|street|ave|avenue|rd|road|dr|drive|ln|lane|blvd|boulevard|ct|court|way|pl|place|cir|circle|ter|terrace|pkwy|parkway)\b/;
+const EMERGENCY_RE = /\b(?:call\s+)?911\b|\b9\s*1\s*1\b/;
+const VERSION = 3;
 
 function split(s) { return new Set(s.split(/\s+/).filter(Boolean)); }
 
@@ -139,7 +153,29 @@ function verdictProfanity(toks, extra, spaced) {
   return { action: 'reject', rule: 'profanity' };
 }
 
+// PII must not use leet folding: digits and @ have to survive (812-555-1212, name@host).
+function softNormalize(text) {
+  return String(text || '').normalize('NFKC').replace(ZW, '').toLowerCase();
+}
+
+function hasPersonal(soft) {
+  const scrub = soft.replace(EMERGENCY_RE, ' ');
+  if (EMAIL_RE.test(scrub)) return true;
+  if (PHONE_RE.test(scrub)) return true;
+  if (ADDR_RE.test(scrub)) return true;
+  return false;
+}
+
+function hasAccusation(spaced) {
+  for (let i = 0; i < ACCUSE_RE.length; i++) {
+    if (ACCUSE_RE[i].test(spaced)) return true;
+  }
+  return false;
+}
+
 function classify(text) {
+  // Personal details (doxxing) reject before leet fold so phone digits and @ stay intact.
+  if (hasPersonal(softNormalize(text))) return { action: 'reject', rule: 'pii' };
   const norm = normalize(text);
   const toks = tokens(norm);
   const extra = phrases(toks);
@@ -157,6 +193,8 @@ function classify(text) {
   for (const re of HOLD_RE) {
     if (re.test(spaced)) return { action: 'hold', rule: 'hate' };
   }
+  // Person-aimed accusations hold for review.
+  if (hasAccusation(spaced)) return { action: 'hold', rule: 'accusation' };
   return { action: 'ok', rule: '' };
 }
 

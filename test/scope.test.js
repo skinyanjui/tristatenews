@@ -206,7 +206,7 @@ test('home page has no Area filter: no button, sheet, county picker, My counties
   // untouched: locality label only with scopes on and not on a county page; ads and obituary rules
   assert.match(html, /if \(it\.place && SC\.on && !\/\^county:\/\.test\(SC\.key\)\)/);
   assert.match(html, /var AD_TABS = \['events', 'jobs', 'deals', 'classifieds', 'news'\]; \/\/ the only tabs with side ads/);
-  assert.match(html, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ var k = kindOf\(it\.sourceId\); return k === 'police' \|\| k === 'courts'; \}\)/);
+  assert.match(html, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ return feedSensitive\(it\); \}\)/);
   // the server side stays: scope API (including all for admin and old links), counties API, regional pages
   assert.equal(S.parse('all').key, 'all');
   assert.equal(S.parse('county:ky-henderson').key, 'county:ky-henderson');

@@ -101,7 +101,7 @@ test('News ads (our own: campaigns and samples) are drawn as story rows; no outs
   assert.match(fn, /row\.style\.setProperty\('--nact', '0'\)/, 'no buttons to make room for');
   assert.match(blk, /\.ad-row:not\(\.breaking\):has\(> \.ca\) \.src \.ad-cta \{ flex:none; margin-left:auto;/);
   // placement rules unchanged: never next to Police & courts or Breaking, none in search, none on Obituaries
-  assert.match(app, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ var k = kindOf\(it\.sourceId\); return k === 'police' \|\| k === 'courts'; \}\), TSNAds\.NEWS_EVERY\)/);
+  assert.match(app, /TSNAds\.newsSlots\(shown\.map\(function \(it\) \{ return feedSensitive\(it\); \}\), TSNAds\.NEWS_EVERY\)/);
   assert.match(app, /if \(state\.cat === 'news' && !state\.q\.trim\(\) && window\.TSNAds\)/);
   assert.match(app, /var spn = kind !== 'obit' && UI\.sponsor/);
   // no third-party ad network code anywhere the site ships

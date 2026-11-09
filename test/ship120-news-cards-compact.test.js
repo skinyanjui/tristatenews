@@ -26,9 +26,10 @@ test('ship120: large-screen news cards are a social feed; 44px taps stay for coa
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*\.ns-src \.av \{[\s\S]*width:40px; height:40px/);
   assert.match(css, /\.ns-more \{ display:none; \}/);
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*\.ns-more \{ display:block/);
-  const fine = block(/@media \(min-width:900px\) and \(pointer:fine\) \{[\s\S]*?min-height:34px[\s\S]*?\}/);
-  assert.match(fine, /min-height:34px/);
+  const fine = block(/@media \(min-width:900px\) and \(pointer:fine\) \{[\s\S]*?min-height:40px[\s\S]*?\}/);
+  assert.match(fine, /min-height:40px/);
   assert.match(fine, /pointer:fine/);
+  assert.doesNotMatch(css, /min-height:34px/);
   assert.equal((css.match(/@media \(min-width:900px\) and \(pointer:coarse\)/) || []).length, 0);
   const baseFoot = css.slice(css.indexOf('article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {'));
   assert.match(baseFoot.slice(0, 400), /min-height:44px/);

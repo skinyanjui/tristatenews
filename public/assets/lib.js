@@ -279,8 +279,8 @@
    (window.TSNAds) and the tests.
 
    - The Jobs, Deals, Classifieds and Events boards carry it, and the News feed carries in-feed cards (newsSlots: about
-     every 6th story, never next to a Police & courts item). Institutions, Obituaries, Breaking cards and search
-     results never do (fill() returns null for anything else).
+     every 6th story, never next to a sensitive item — Police & courts, crime, obituary, or death/tragedy). Institutions,
+     Obituaries, Breaking cards and search results never do (fill() returns null for anything else).
    - One card per board view: after the 6th post, or after the last one on a shorter board; none on an empty board.
    - Only approved creatives fill it. The page reads /api/creative?live=1 (api/_creative.js), which lists only what an
      admin approved in admin.html, with a reason, for that placement; ads typed into sponsors.json are never shown.
@@ -398,10 +398,11 @@
     return side === 'right' ? { type: 'house' } : { type: 'none' };
   }
   // Where the News feed's in-feed cards go: the indexes of the stories each card goes before. flags[i] is true when
-  // story i is a Police & courts item. News is one story per row at every width, so a card goes about every `every`
-  // stories (6) and never next to a Police & courts item: neither the story just before it nor the one just after it
-  // may be one; otherwise it moves down one story at a time to the next safe spot. Cards are at least `every` stories
-  // apart, never first (so never next to the Breaking card above the list), never last.
+  // story i is sensitive (Police & courts, crimeStory, obituary, or a death/tragedy headline). News is one story per
+  // row at every width, so a card goes about every `every` stories (6) and never next to a sensitive item: neither
+  // the story just before it nor the one just after it may be one; otherwise it moves down one story at a time to the
+  // next safe spot (same ad count where possible by shifting). Cards are at least `every` stories apart, never first
+  // (so never next to the Breaking card above the list), never last.
   var NEWS_EVERY = 6;
   function newsSlots(flags, every) {
     flags = Array.isArray(flags) ? flags : []; every = Math.max(2, Number(every) || NEWS_EVERY);
@@ -1023,6 +1024,308 @@
   function crimeTitle(title) { return crimeStory({ title: title }); }
 
   return { ALLOW_RE: ALLOW_RE, CRIME_RE: CRIME_RE, haystack: haystack, soften: soften, crimeText: crimeText, crimeStory: crimeStory, crimeTitle: crimeTitle };
+});
+;
+/* ---- public/obit.js ---- */
+/* Obituaries: comments off, photos off, no in-feed ad neighbors. Shared by the page (window.TSNObit),
+   first-paint cards, GET /api/comments (via api/_crime.js), and News ad adjacency. Headline, dek/summary and
+   URL are checked; Google News obituary sources and /obituar paths count too. Missing module → fail closed. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.TSNObit = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  // Soft signals in a headline or dek (Marilyn Kay Morris, age 73, … formerly of …).
+  var HINT_RE = /\b(?:age\s+\d{1,3}|passed away|formerly of|obituar(?:y|ies)|visitation|funeral|in loving memory|celebration of life)\b/i;
+  // Name + age forms that slip past kindOf (news sourceId, not ob-*): "Name, age 73, of Town".
+  var AGE_HEAD_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,6}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?(?:,\s*age\s+\d{1,3},?|\s+\(\d{1,3}\)|,\s*\d{1,3},?)\s+(?:of\s+)?[A-Z]/;
+  var NAME_AGE_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,5}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?,\s*\d{1,3},\s+(?:of\s+)?[A-Z]/;
+
+  function haystack(it) {
+    it = it || {};
+    var title = String(it.title || '');
+    var summary = String(it.summary || it.dek || '');
+    var link = String(it.link || it.url || '');
+    var slug = '';
+    try {
+      slug = decodeURIComponent(new URL(link).pathname || '');
+    } catch (e) {
+      slug = link;
+    }
+    slug = slug.replace(/\.[a-z0-9]+$/i, '').replace(/[-_+/]+/g, ' ');
+    return [title, summary, slug].join('\n');
+  }
+
+  function obitUrl(it) {
+    var link = String((it && (it.link || it.url)) || '');
+    try {
+      var u = new URL(link);
+      if (/\/obituar/i.test(u.pathname)) return true;
+      if (/news\.google\./i.test(u.hostname) && /obituar/i.test(u.href)) return true;
+    } catch (e) {
+      if (/\/obituar/i.test(link)) return true;
+    }
+    return false;
+  }
+
+  function googleObitSource(it) {
+    it = it || {};
+    var sid = String(it.sourceId || '');
+    var src = String(it.source || '');
+    if (/^ob-/i.test(sid) || /\bobits?\b/i.test(sid)) return true;
+    if (/\bobituar/i.test(src) || /\bobits?\b/i.test(src)) return true;
+    var link = String(it.link || it.url || '');
+    try {
+      var u = new URL(link);
+      if (/news\.google\./i.test(u.hostname) && (/\bobituar/i.test(u.href) || /[?&]q=[^&]*obituar/i.test(u.search))) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function obitText(s) {
+    s = String(s || '');
+    if (HINT_RE.test(s)) return true;
+    var title = s.split('\n')[0] || s;
+    if (AGE_HEAD_RE.test(title.trim()) || NAME_AGE_RE.test(title.trim())) return true;
+    return false;
+  }
+
+  function obitStory(it) {
+    it = it || {};
+    if (googleObitSource(it) || obitUrl(it)) return true;
+    return obitText(haystack(it));
+  }
+
+  function obitTitle(title) { return obitStory({ title: title }); }
+
+  return {
+    HINT_RE: HINT_RE,
+    AGE_HEAD_RE: AGE_HEAD_RE,
+    NAME_AGE_RE: NAME_AGE_RE,
+    haystack: haystack,
+    obitUrl: obitUrl,
+    googleObitSource: googleObitSource,
+    obitText: obitText,
+    obitStory: obitStory,
+    obitTitle: obitTitle
+  };
+});
+;
+/* ---- public/tragedy.js ---- */
+/* Death / tragedy headlines: in-feed ads never sit directly before or after these (with crime and obituaries).
+   Shared by the page (window.TSNTragedy) and clustering (public/cluster.js). Conservative word list. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.TSNTragedy = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var DEATH_RE = new RegExp('\\b(?:' + [
+    'died',
+    'dies',
+    'dead',
+    'death',
+    'deaths',
+    'killed',
+    'kills',
+    'killing',
+    'fatal',
+    'fatally',
+    'fatality',
+    'fatalities',
+    'crash victims?',
+    'victim(?:s)? (?:of|in) (?:a |the )?(?:crash|wreck|collision|fire|shooting)',
+    'mourns?',
+    'mourning'
+  ].join('|') + ')\\b', 'i');
+
+  // Sports/health phrases that look tragic but are not.
+  var ALLOW_RE = new RegExp([
+    '\\b(?:pacers?|aces|heat|otters|cubs|cards|reds) (?:kill(?:s|ed)? off|died? (?:in|on) (?:the )?(?:fourth|late|overtime))\\b',
+    '\\b(?:battery|batteries) (?:died|dead)\\b',
+    '\\bdead[- ](?:ball|heat|lift|center|centre|end|line)\\b',
+    '\\bkilling it\\b',
+    '\\bkilled (?:the (?:lights?|engine|power|deal|bill))\\b'
+  ].join('|'), 'gi');
+
+  function haystack(it) {
+    it = it || {};
+    return [String(it.title || ''), String(it.summary || it.dek || '')].join('\n');
+  }
+  function soften(s) {
+    ALLOW_RE.lastIndex = 0;
+    return String(s || '').replace(ALLOW_RE, ' ');
+  }
+  function deathText(s) { return DEATH_RE.test(soften(s)); }
+  function deathStory(it) { return deathText(haystack(it)); }
+  function deathTitle(title) { return deathStory({ title: title }); }
+
+  return { DEATH_RE: DEATH_RE, ALLOW_RE: ALLOW_RE, haystack: haystack, soften: soften, deathText: deathText, deathStory: deathStory, deathTitle: deathTitle };
+});
+;
+/* ---- public/utility.js ---- */
+/* Standing / utility pages that newspapers publish as “stories” (Contact Us, Privacy Policy, …).
+   Dropped at ingestion (api/news.js) and again on render. Shared as window.TSNUtility. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.TSNUtility = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  // Exact-ish standing furniture already in api/news.js STANDING_RE, plus utility/contact/legal pages.
+  var UTILITY_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside|contact(?:\s+\w+)?|contact us|about us|advertise with(?:\s+\w+)?|newsletter sign[- ]?up|privacy policy|terms of(?:\s+\w+)?|watch live|download our app)(?:\s*[:|–—-].*)?$/i;
+
+  function utilityTitle(title) {
+    var t = String(title || '').replace(/\s+/g, ' ').trim();
+    if (!t) return false;
+    // Strip a trailing " | Outlet" / " - Outlet" publisher suffix (Google News and some CMS titles).
+    t = t.replace(/\s*[|·•]\s*[^|·•]{2,40}$/, '').replace(/\s+[-–—]\s+[A-Z][^–—-]{2,40}$/, '').trim();
+    return UTILITY_RE.test(t);
+  }
+
+  function utilityStory(it) {
+    return utilityTitle(it && it.title);
+  }
+
+  return { UTILITY_RE: UTILITY_RE, utilityTitle: utilityTitle, utilityStory: utilityStory };
+});
+;
+/* ---- public/cluster.js ---- */
+/* Duplicate tragedy / crime clustering for the News feed. When two or more stories cover the same
+   incident (high title-token overlap after stopwords, within 72h), keep the newest card and link the
+   others as “Also covered by <Outlet>”. Only crime or tragedy stories merge — ordinary news stays
+   separate. Shared as window.TSNCluster. */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./crime.js'), require('./tragedy.js'), require('./obit.js'));
+  else root.TSNCluster = factory(root.TSNCrime, root.TSNTragedy, root.TSNObit);
+})(typeof self !== 'undefined' ? self : this, function (Crime, Tragedy, Obit) {
+  'use strict';
+  var STOP = {
+    a: 1, an: 1, the: 1, and: 1, or: 1, but: 1, of: 1, in: 1, on: 1, at: 1, to: 1, for: 1, from: 1,
+    by: 1, with: 1, as: 1, is: 1, was: 1, were: 1, be: 1, been: 1, are: 1, after: 1, before: 1,
+    over: 1, under: 1, into: 1, about: 1, than: 1, then: 1, that: 1, this: 1, its: 1, his: 1,
+    her: 1, their: 1, who: 1, whom: 1, which: 1, what: 1, when: 1, where: 1, how: 1, not: 1,
+    no: 1, yes: 1, man: 1, woman: 1, men: 1, women: 1, county: 1, city: 1, area: 1, local: 1,
+    say: 1, says: 1, said: 1, police: 1, according: 1, near: 1, after: 1
+  };
+  var SYN = {
+    murder: 'death', murders: 'death', murdered: 'death', homicide: 'death', homicides: 'death',
+    killing: 'death', killings: 'death', killed: 'death', kills: 'death', fatal: 'death',
+    fatally: 'death', died: 'death', dies: 'death', dead: 'death', deaths: 'death',
+    wife: 'spouse', wives: 'spouse', husband: 'spouse', husbands: 'spouse',
+    sentenced: 'sentence', sentence: 'sentence', sentencing: 'sentence',
+    cruelty: 'cruelty', cruel: 'cruelty', abuse: 'cruelty', abusing: 'cruelty', abused: 'cruelty',
+    animal: 'animal', animals: 'animal', dog: 'animal', dogs: 'animal', puppy: 'animal', cat: 'animal'
+  };
+  var WINDOW_MS = 72 * 3600 * 1000;
+  var MIN_SHARED = 3;
+  var MIN_JACCARD = 0.34;
+
+  function tokens(title) {
+    return String(title || '').toLowerCase()
+      .replace(/[^a-z0-9'\u2019]+/g, ' ')
+      .replace(/['\u2019]/g, '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(function (w) { return SYN[w] || w; })
+      .filter(function (w) { return w.length > 1 && !STOP[w] && !/^\d+$/.test(w); });
+  }
+
+  function setOf(toks) {
+    var s = {};
+    toks.forEach(function (t) { s[t] = 1; });
+    return s;
+  }
+
+  function overlap(a, b) {
+    var A = setOf(a), B = setOf(b), shared = 0, na = 0, nb = 0, k;
+    for (k in A) { if (Object.prototype.hasOwnProperty.call(A, k)) { na++; if (B[k]) shared++; } }
+    for (k in B) { if (Object.prototype.hasOwnProperty.call(B, k)) nb++; }
+    if (!shared) return { shared: 0, jaccard: 0 };
+    return { shared: shared, jaccard: shared / (na + nb - shared) };
+  }
+
+  function eligible(it) {
+    if (!it || !it.title) return false;
+    if (Obit && Obit.obitStory && Obit.obitStory(it)) return false; // obituaries stay single cards
+    var crime = Crime && Crime.crimeStory ? Crime.crimeStory(it) : false;
+    var death = Tragedy && Tragedy.deathStory ? Tragedy.deathStory(it) : false;
+    return !!(crime || death);
+  }
+
+  function pubMs(it) {
+    var t = Date.parse(it && it.published);
+    return isNaN(t) ? 0 : t;
+  }
+
+  function sameIncident(a, b) {
+    if (!eligible(a) || !eligible(b)) return false;
+    var da = Math.abs(pubMs(a) - pubMs(b));
+    if (da > WINDOW_MS) return false;
+    var o = overlap(tokens(a.title), tokens(b.title));
+    return o.shared >= MIN_SHARED && o.jaccard >= MIN_JACCARD;
+  }
+
+  // Returns a new list: clustered groups collapse to the newest item with alsoCovered: [{ source, link, title }].
+  function clusterTragedies(items) {
+    items = Array.isArray(items) ? items.slice() : [];
+    var n = items.length;
+    if (n < 2) return items;
+    var parent = [];
+    for (var i = 0; i < n; i++) parent[i] = i;
+    function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
+    function uni(a, b) {
+      a = find(a); b = find(b);
+      if (a === b) return;
+      // Prefer the newer story as root.
+      if (pubMs(items[a]) >= pubMs(items[b])) parent[b] = a;
+      else parent[a] = b;
+    }
+    for (var i = 0; i < n; i++) {
+      if (!eligible(items[i])) continue;
+      for (var j = i + 1; j < n; j++) {
+        if (!eligible(items[j])) continue;
+        if (sameIncident(items[i], items[j])) uni(i, j);
+      }
+    }
+    var groups = {};
+    for (var i = 0; i < n; i++) {
+      var r = find(i);
+      if (!groups[r]) groups[r] = [];
+      groups[r].push(i);
+    }
+    var drop = {};
+    Object.keys(groups).forEach(function (r) {
+      var g = groups[r];
+      if (g.length < 2) return;
+      g.sort(function (a, b) { return pubMs(items[b]) - pubMs(items[a]); });
+      var head = g[0];
+      var also = [];
+      for (var k = 1; k < g.length; k++) {
+        drop[g[k]] = 1;
+        var it = items[g[k]];
+        also.push({ source: it.source || 'another outlet', link: it.link || '', title: it.title || '' });
+      }
+      var lead = items[head];
+      // Shallow clone so callers can keep the original list.
+      var copy = {};
+      Object.keys(lead).forEach(function (k) { copy[k] = lead[k]; });
+      copy.alsoCovered = also;
+      items[head] = copy;
+    });
+    return items.filter(function (_, i) { return !drop[i]; });
+  }
+
+  return {
+    STOP: STOP,
+    SYN: SYN,
+    WINDOW_MS: WINDOW_MS,
+    MIN_SHARED: MIN_SHARED,
+    MIN_JACCARD: MIN_JACCARD,
+    tokens: tokens,
+    overlap: overlap,
+    eligible: eligible,
+    sameIncident: sameIncident,
+    clusterTragedies: clusterTragedies
+  };
 });
 ;
 /* each tab has its own URL: set this one's title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));

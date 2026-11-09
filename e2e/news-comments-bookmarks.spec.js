@@ -358,8 +358,12 @@ test('failed report stays Report and restores the opener', async ({ page }) => {
   const rp = cm.locator('.cm-item').first().locator('.cm-report');
   await expect(rp).toBeVisible();
   await rp.click();
+  const reasons = cm.locator('.cm-reasons');
+  await expect(reasons).toBeVisible();
+  await reasons.getByRole('button', { name: 'Spam' }).click();
   await expect(rp).toHaveText('Report');
   await expect(rp).toBeEnabled();
+  await expect(reasons).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(first.locator('.cm-btn')).toBeFocused();
 });
@@ -444,22 +448,22 @@ test('no-image and long text still expose save; 44px targets at 320–1280; 200%
       await expect(page.locator('#list article.news-story h2', { hasText: 'riverfront redevelopment' })).toBeVisible({ timeout: 15000 });
       const m = await layout(page);
       expect(m.pageOverflow).toBe(0);
-      const tap = vp.width >= 900 ? 32 : 44;
+      const tap = vp.width >= 900 ? 40 : 44;
       for (const row of m.rows) {
         expect(row.offenders, row.title + ' ' + JSON.stringify(row.offenders)).toEqual([]);
         expect(row.likeH).toBeGreaterThanOrEqual(tap);
         expect(row.shareH).toBeGreaterThanOrEqual(tap);
         expect(row.svH).toBeGreaterThanOrEqual(tap);
         if (vp.width >= 900) {
-          expect(row.likeH).toBeLessThanOrEqual(36);
-          expect(row.shareH).toBeLessThanOrEqual(36);
-          expect(row.svH).toBeLessThanOrEqual(36);
+          expect(row.likeH).toBeLessThanOrEqual(44);
+          expect(row.shareH).toBeLessThanOrEqual(44);
+          expect(row.svH).toBeLessThanOrEqual(44);
         }
         if (/arrested downtown|Annual report|allegedly killed/.test(row.title)) expect(row.hasCm).toBe(false);
         else {
           expect(row.hasCm).toBe(true);
           expect(row.cmH).toBeGreaterThanOrEqual(tap);
-          if (vp.width >= 900) expect(row.cmH).toBeLessThanOrEqual(36);
+          if (vp.width >= 900) expect(row.cmH).toBeLessThanOrEqual(44);
         }
       }
       const noimg = m.rows.find(r => /no photograph/.test(r.title));

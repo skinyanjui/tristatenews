@@ -19,7 +19,7 @@ const INDEX = path.join(__dirname, '..', 'data', 'pages', 'index.html');
 const CSS = path.join(PUB, 'assets', 'app.css');
 const JS = path.join(PUB, 'assets', 'app.js');
 const LIB = path.join(PUB, 'assets', 'lib.js');
-const LIBS = ['breaking.js', 'routes.js', 'featured.js', 'adslots.js', 'adsizes.js', 'flowers.js', 'eventtime.js', 'dedupe.js', 'crime.js'];
+const LIBS = ['breaking.js', 'routes.js', 'featured.js', 'adslots.js', 'adsizes.js', 'flowers.js', 'eventtime.js', 'dedupe.js', 'crime.js', 'obit.js', 'tragedy.js', 'utility.js', 'cluster.js'];
 const APPLY = '/* each tab has its own URL: set this one\'s title, description and canonical first */ if (window.TSNRoutes) TSNRoutes.apply(document, TSNRoutes.byPath(location.pathname));';
 
 const hash = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 10);

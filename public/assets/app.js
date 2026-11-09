@@ -2767,9 +2767,20 @@
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b }; }); });
   }
   function cmReady() {
-    return cmPost({ action: 'ready' }).then(function (o) {
-      if (o.ok && o.b && o.b.ready) return true;
-      return cmPost({ action: 'ready' }).then(function (o2) { return !!(o2.ok && o2.b && o2.b.ready); });
+    function once() {
+      return cmPost({ action: 'ready' }).then(function (o) { return !!(o.ok && o.b && o.b.ready); });
+    }
+    function again(n) {
+      if (n <= 0) return Promise.resolve(false);
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          once().then(function (ok) { resolve(ok ? true : again(n - 1)); }).catch(function () { resolve(false); });
+        }, 200);
+      });
+    }
+    return once().then(function (ok) {
+      if (ok) return true;
+      return once().then(function (ok2) { return ok2 ? true : again(5); });
     }).catch(function () { return false; });
   }
   function rememberOpener() {
@@ -2840,7 +2851,7 @@
       if (c.at) { var t = el('time'); t.dateTime = c.at; t.textContent = timeAgo(c.at); meta.appendChild(t); }
       if (pending) {
         var wait = el('span'); wait.textContent = 'Waiting for review'; meta.appendChild(wait);
-        item.appendChild(meta); addDel(item, c); return item;
+        item.appendChild(meta); return item;
       }
       var rp = el('button', 'cm-report'); rp.type = 'button'; rp.textContent = 'Report';
       rp.addEventListener('click', function () {
@@ -2931,16 +2942,17 @@
             var held = { id: o.b.id, text: text, at: new Date().toISOString(), storyId: sid };
             cmPending[o.b.id] = held;
             list.insertBefore(row(held, true), list.firstChild);
+            markMine();
             toast('Thanks \u2014 that comment is waiting for review.');
             return;
           }
           if (o.b && o.b.comment) {
             var item = row(o.b.comment);
             list.insertBefore(item, list.firstChild);
-            addDel(item, o.b.comment);
             shown += 1; totalN += 1; paintStatus();
             state.cmCounts[sid] = totalN;
             Array.prototype.forEach.call(document.querySelectorAll('button.cm-btn'), function (b) { if (b.paint) b.paint(); });
+            markMine();
           }
         }).catch(function () { go.disabled = false; toast('Couldn\u2019t post that. Try again.'); });
       });

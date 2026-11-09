@@ -1,7 +1,7 @@
 // Public anonymous comments on current non-crime news. Hosted by api/react.js (vercel rewrite /api/comments).
 //   GET  /api/comments?id=<storyId>&offset=      -> { configured, allowed, comments, count, total }
 //   GET  /api/comments?ids=<id,id>               -> { configured, counts }   (allowed stories only)
-//   POST /api/comments { action:'ready' }        -> { ready } + Set-Cookie on first issue only
+//   POST /api/comments { action:'ready' }        -> { ready } + Set-Cookie on first issue only (same-IP lock)
 //   POST /api/comments { id, uid, text }         -> { ok, comment }          (create; cookie required)
 //   POST /api/comments { action:'mine', ids }    -> { mine }                 (private; cookie hash check)
 //   POST /api/comments { action:'delete', id }   -> owner cookie delete, or admin with x-admin-key
@@ -44,6 +44,7 @@ const REPORTS_TO_HIDE = 3;
 const REPORTS_PER_IP = 10;
 const READY_PER_IP = 40;
 const MINE_PER_IP = 40;
+const ISSUE_LOCK_SEC = 3;
 const SWEEP_STORIES = 40;
 const SWEEP_HID = 50;
 const SWEEP_FLAG_CHUNK = 80;
@@ -156,6 +157,10 @@ async function ready(req, res) {
   const token = COOKIE.readToken(req);
   if (token) return send(res, 200, { ready: true });
   if (await burst(req, 'ready', READY_PER_IP)) return send(res, 429, { error: 'too many' });
+  const ip = clientIp(req) || '0';
+  const lock = 'tsn:cm:issue:' + ipHash(ip, 'cm-issue');
+  const got = await pipeline([['SET', lock, '1', 'EX', String(ISSUE_LOCK_SEC), 'NX']]);
+  if (!got[0] || !got[0].result) return send(res, 200, { ready: false });
   const issued = COOKIE.newToken();
   renewCookie(req, res, issued);
   return send(res, 200, { ready: false });
@@ -486,6 +491,7 @@ module.exports.STORY_PER_IP = STORY_PER_IP;
 module.exports.REPORTS_TO_HIDE = REPORTS_TO_HIDE;
 module.exports.READY_PER_IP = READY_PER_IP;
 module.exports.MINE_PER_IP = MINE_PER_IP;
+module.exports.ISSUE_LOCK_SEC = ISSUE_LOCK_SEC;
 module.exports.REJECT_MSG = REJECT_MSG;
 module.exports.COOKIE_MSG = COOKIE_MSG;
 module.exports.clean = clean;

@@ -101,6 +101,14 @@ function tokenOf(setCookie) {
   const m = String(setCookie || '').match(/(?:__Host-)?tsn_cm=([^;]+)/);
   return m ? m[1] : '';
 }
+function CookieJar() { this.cookie = ''; }
+CookieJar.prototype.apply = function (setCookie) {
+  const h = cookieHeader(setCookie);
+  if (h) this.cookie = h;
+};
+CookieJar.prototype.hdr = function (extra) {
+  return Object.assign({ cookie: this.cookie }, origin, extra || {});
+};
 async function issue(C, extra) {
   const r1 = await call(C, { method: 'POST', headers: Object.assign({}, origin, extra || {}), body: { action: 'ready' } });
   const cookie = cookieHeader(r1.headers['set-cookie']);
@@ -204,9 +212,9 @@ test('ship119: reject does not publish; hold is not public; owner can delete hel
 test('ship119: owner delete is hash-bound; wrong cookie and second delete are generic 404; no resurrection', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/own');
   seedStory(s, id, NEWS);
-  const a = await issue(C);
-  const b = await issue(C, { host: '127.0.0.1:3077', origin: 'http://127.0.0.1:3077' });
-  // Second issue() with no cookie on first ready overwrites? issue() always starts without cookie so B is a new token.
+  const a = await issue(C, { 'x-real-ip': '3.3.3.1' });
+  const b = await issue(C, { 'x-real-ip': '3.3.3.2' });
+  // Two browsers (different IPs) get different tokens; same-IP first-use cannot rotate.
   const posted = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '3.3.3.3', cookie: a.cookie }, origin), body: { id, uid: 'reader-0001', text: 'My comment on the river.' } });
   const cid = posted.body.comment.id;
   const wrong = await call(C, { method: 'POST', headers: Object.assign({ cookie: b.cookie }, origin), body: { action: 'delete', id: cid } });
@@ -330,34 +338,69 @@ test('ship119: public counts match the filtered thread across pages and stories;
   assert.equal(s.kv.get('tsn:cm:hide:' + okId), undefined);
 }));
 
-test('ship119: two first-time readies issue different cookies; each create binds the token on that request; other token cannot delete', () => withStore(async (s, mod) => {
+test('ship119: cookie jar last Set-Cookie wins; same-IP overlapping ready does not rotate; both tabs keep Delete', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/jar');
+  seedStory(s, id, NEWS);
+  const jar = new CookieJar();
+  const hdr = Object.assign({ 'x-real-ip': '4.4.5.9' }, origin);
+  const [t1, t2] = await Promise.all([
+    call(C, { method: 'POST', headers: hdr, body: { action: 'ready' } }),
+    call(C, { method: 'POST', headers: hdr, body: { action: 'ready' } })
+  ]);
+  jar.apply(t1.headers['set-cookie']);
+  jar.apply(t2.headers['set-cookie']);
+  const issued = [t1, t2].filter(r => r.headers['set-cookie']);
+  assert.equal(issued.length, 1, 'only one first-use Set-Cookie on the same connection');
+  assert.ok(jar.cookie);
+  const prove = await call(C, { method: 'POST', headers: jar.hdr({ 'x-real-ip': '4.4.5.9' }), body: { action: 'ready' } });
+  assert.equal(prove.body.ready, true);
+  assert.equal(prove.headers['set-cookie'], undefined);
+  const a = await call(C, { method: 'POST', headers: jar.hdr({ 'x-real-ip': '4.4.5.1' }), body: { id, uid: 'reader-j01', text: 'First after both readies.' } });
+  jar.apply(a.headers['set-cookie']);
+  const b = await call(C, { method: 'POST', headers: jar.hdr({ 'x-real-ip': '4.4.5.2' }), body: { id, uid: 'reader-j02', text: 'Second from the same jar.' } });
+  jar.apply(b.headers['set-cookie']);
+  assert.equal(a.code, 200); assert.equal(b.code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: jar.hdr(), body: { action: 'delete', id: a.body.comment.id } })).code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: jar.hdr(), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
+}));
+
+test('ship119: in-flight create keeps Delete after a second tab ready; jar last-wins does not orphan', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/inflight');
+  seedStory(s, id, NEWS);
+  const jar = new CookieJar();
+  const ip = { 'x-real-ip': '4.4.6.9' };
+  const t1 = await call(C, { method: 'POST', headers: Object.assign({}, origin, ip), body: { action: 'ready' } });
+  jar.apply(t1.headers['set-cookie']);
+  const prove = await call(C, { method: 'POST', headers: jar.hdr(ip), body: { action: 'ready' } });
+  assert.equal(prove.body.ready, true);
+  const createCookie = jar.cookie;
+  const t2 = await call(C, { method: 'POST', headers: Object.assign({}, origin, ip), body: { action: 'ready' } });
+  jar.apply(t2.headers['set-cookie']);
+  assert.equal(t2.headers['set-cookie'], undefined, 'second tab must not rotate the jar while create is in flight');
+  const posted = await call(C, { method: 'POST', headers: Object.assign({ cookie: createCookie, 'x-real-ip': '4.4.6.1' }, origin), body: { id, uid: 'reader-if1', text: 'Posted while the other tab called ready.' } });
+  jar.apply(posted.headers['set-cookie']);
+  assert.equal(posted.code, 200);
+  const mine = await call(C, { method: 'POST', headers: jar.hdr(), body: { action: 'mine', ids: [posted.body.comment.id] } });
+  assert.deepEqual(mine.body.mine, [posted.body.comment.id], 'UI may show Delete only when mine agrees with the jar');
+  assert.equal((await call(C, { method: 'POST', headers: jar.hdr(), body: { action: 'delete', id: posted.body.comment.id } })).code, 200);
+}));
+
+test('ship119: two browsers (different IPs) each get a cookie; the other cannot delete', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/race');
   seedStory(s, id, NEWS);
-  const t1 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
-  const t2 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
+  const t1 = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.1' }, origin), body: { action: 'ready' } });
+  const t2 = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.2' }, origin), body: { action: 'ready' } });
   const c1 = cookieHeader(t1.headers['set-cookie']), c2 = cookieHeader(t2.headers['set-cookie']);
   assert.notEqual(tokenOf(c1), tokenOf(c2));
-  const a = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.1', cookie: c1 }, origin), body: { id, uid: 'reader-0001', text: 'From tab one.' } });
-  const b = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.2', cookie: c2 }, origin), body: { id, uid: 'reader-0002', text: 'From tab two.' } });
+  const a = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.1', cookie: c1 }, origin), body: { id, uid: 'reader-0001', text: 'From browser one.' } });
+  const b = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.4.2', cookie: c2 }, origin), body: { id, uid: 'reader-0002', text: 'From browser two.' } });
   assert.equal(a.code, 200); assert.equal(b.code, 200);
+  const mineWrong = await call(C, { method: 'POST', headers: Object.assign({ cookie: c2 }, origin), body: { action: 'mine', ids: [a.body.comment.id] } });
+  assert.deepEqual(mineWrong.body.mine, []);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c2 }, origin), body: { action: 'delete', id: a.body.comment.id } })).code, 404);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c1 }, origin), body: { action: 'delete', id: a.body.comment.id } })).code, 200);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c1 }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 404);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c2 }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
-}));
-
-test('ship119: one cookie jar keeps the last Set-Cookie; posts after both readies share that token', () => withStore(async (s, mod) => {
-  const C = mod('_comments.js'), id = storyId('https://n.ex/jar');
-  seedStory(s, id, NEWS);
-  const t1 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
-  const t2 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
-  const jar = cookieHeader(t2.headers['set-cookie']);
-  assert.notEqual(tokenOf(cookieHeader(t1.headers['set-cookie'])), tokenOf(jar));
-  const a = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.5.1', cookie: jar }, origin), body: { id, uid: 'reader-j01', text: 'First after both readies.' } });
-  const b = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.5.2', cookie: jar }, origin), body: { id, uid: 'reader-j02', text: 'Second from the same jar.' } });
-  assert.equal(a.code, 200); assert.equal(b.code, 200);
-  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: jar }, origin), body: { action: 'delete', id: a.body.comment.id } })).code, 200);
-  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: jar }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
 }));
 
 test('ship119: malformed/duplicate/oversized cookies rejected; prod __Host- Secure; loopback not spoofable', () => withStore(async (s, mod) => {
@@ -369,14 +412,14 @@ test('ship119: malformed/duplicate/oversized cookies rejected; prod __Host- Secu
   assert.equal((await post({ cookie: 'tsn_cm=short' })).code, 400);
   assert.equal((await post({ cookie: 'x'.repeat(5000) })).code, 400);
   assert.equal((await post({ cookie })).code, 200);
-  const prod = { host: 'www.tristatenow.com', origin: 'https://www.tristatenow.com', 'x-forwarded-proto': 'https', 'x-vercel-id': 'sfo1' };
+  const prod = { host: 'www.tristatenow.com', origin: 'https://www.tristatenow.com', 'x-forwarded-proto': 'https', 'x-vercel-id': 'sfo1', 'x-real-ip': '5.5.5.80' };
   const r = await call(C, { method: 'POST', headers: Object.assign({}, origin, prod), body: { action: 'ready' } });
   assert.match(String(r.headers['set-cookie']), /__Host-tsn_cm=/);
   assert.match(String(r.headers['set-cookie']), /Secure/);
   assert.match(String(r.headers['set-cookie']), /HttpOnly/);
   assert.match(String(r.headers['set-cookie']), /SameSite=Lax/);
   assert.ok(!/Domain=/i.test(String(r.headers['set-cookie'])));
-  const spoof = await call(C, { method: 'POST', headers: { host: 'evil.test', origin: 'https://evil.test', 'x-forwarded-proto': 'https' }, body: { action: 'ready' } });
+  const spoof = await call(C, { method: 'POST', headers: { host: 'evil.test', origin: 'https://evil.test', 'x-forwarded-proto': 'https', 'x-real-ip': '5.5.5.81' }, body: { action: 'ready' } });
   assert.equal(spoof.code, 200);
   assert.ok(!/__Host-/.test(String(spoof.headers['set-cookie'] || '')));
   assert.ok(!/Secure/.test(String(spoof.headers['set-cookie'] || '')));
@@ -401,12 +444,12 @@ test('ship119: owner can delete after story becomes crime; GET stays empty and d
 
   const sid = storyId('https://n.ex/quota');
   seedStory(s, sid, NEWS);
-  const first = await issue(C);
+  const first = await issue(C, { 'x-real-ip': '9.9.9.8' });
   for (let i = 0; i < C.STORY_PER_IP; i++) {
     const r = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '9.9.9.9', cookie: first.cookie }, origin), body: { id: sid, uid: 'reader-q' + i, text: 'Quota comment ' + i } });
     assert.equal(r.code, 200);
   }
-  const fresh = await issue(C);
+  const fresh = await issue(C, { 'x-real-ip': '9.9.9.7' });
   const over = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '9.9.9.9', cookie: fresh.cookie }, origin), body: { id: sid, uid: 'reader-q99', text: 'After cookie clear' } });
   assert.equal(over.code, 429);
 }));
@@ -419,6 +462,13 @@ test('ship119: client Delete/ready/draft; legal cookie copy; admin why; no docum
   assert.match(js, /action: 'ready'/);
   assert.match(js, /action: 'mine'/);
   assert.match(js, /action: 'delete'/);
+  const readyFn = js.slice(js.indexOf('function cmReady('), js.indexOf('function rememberOpener('));
+  assert.match(readyFn, /setTimeout/, 'loser tab retries ready until the jar cookie proves');
+  const pendingRow = js.slice(js.indexOf("if (pending) {"), js.indexOf("var rp = el('button', 'cm-report')"));
+  assert.equal(pendingRow.includes('addDel'), false, 'held rows must not show Delete before mine');
+  const subAt = js.indexOf("form.addEventListener('submit'");
+  const submit = js.slice(subAt, js.indexOf('document.body.appendChild(d)', subAt));
+  assert.match(submit, /markMine\(\)/, 'create/hold re-sync Delete from mine, not from the create response');
   assert.match(js, /cm-del/);
   assert.match(js, /confirm\(/);
   assert.match(js, /credentials: 'same-origin'/);

@@ -22,7 +22,7 @@
 - 32-byte `crypto.randomBytes`, base64url, **hash-only** `sha256` at `tsn:cm:own:<cid>` (same 180d TTL). No new secret. `tsn.uid` is not auth.
 - HTTPS canonical/Vercel: `__Host-tsn_cm; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=15552000`. Loopback http: `tsn_cm` without Secure/__Host-. Host-only, no Domain. Secure bit only if loopback exception **or** (`x-forwarded-proto=https` **and** (`x-vercel-id` or Host is www/apex tristatenow.com)). Arbitrary proto spoof on other hosts → not Secure.
 - **Round-trip:** `POST {action:'ready'}`. No valid cookie → Set-Cookie, `{ready:false}` (not proven). Valid cookie present → `{ready:true}`, do not issue a second token. **Create requires a valid incoming cookie**; otherwise 400, nothing published. Never `{mine:true}` as proof the browser stored Set-Cookie. Sliding Max-Age refresh only on successful create, same token (no rotate).
-- Two first-time tabs may race two Set-Cookie; a single cookie jar keeps the last one. Ready-before-create uses that jar token, so both later posts are owned by it (no orphan in the usual two-tab ready-then-post path). Documented limit: a create **already in flight** with the first token, while another tab’s Set-Cookie overwrites the jar, can leave that one rec owned by a token the browser no longer sends. Do not issue if a valid cookie is already on the request. Ready issuance and mine have their own per-IP burst caps (not the post quota).
+- Two first-time tabs may race two Set-Cookie; a single cookie jar keeps the last one. Ready-before-create uses that jar token, so both later posts are owned by it. **Same-connection issuance is SET NX** (`tsn:cm:issue:<ipHash>`, 3s): a second ready without a cookie does not rotate the jar, so an in-flight create keeps Delete. Client retries ready until `{ready:true}` (or gives up) so the loser tab picks up the winner’s cookie. After create/hold, Delete is shown only if `POST mine` includes the id (honest if the jar ever differs). Different IPs (two browsers) still each get a cookie. Ready issuance and mine have their own per-IP burst caps (not the post quota).
 - Public GET ignores Cookie (still `s-maxage=15`, no Vary). `POST mine` / delete / ready / create: `private, no-store`. mine returns ids (and pending ids) never hashes/text.
 - Owner `POST {action:'delete', id}` without admin key: EVAL compares own-hash; mismatch or missing own-key → **no writes**, generic 404. Rec already gone → 404 (cleanup leftovers only if hash matched). Admin delete still deletes rec+own+ok+indexes.
 - Crime: new posts still fail closed. Owner/admin may delete an existing rec after the story is crime/expired; public GET still returns no text.
@@ -30,6 +30,6 @@
 
 ## UI
 
-- Comment sheet: two ready POSTs (or ready until `ready:true`) before Post enables. Cookies blocked → honest status, no fake Delete.
-- Reject: toast + rules error, textarea kept. Hold: “waiting for review” + Delete on returned id, text not shown in the public list.
-- Delete: 44px, confirm, keyboard, errors re-enable. mine on open to mark owned public rows.
+- Comment sheet: ready until `ready:true` (immediate round-trip, then short retries) before Post enables. Cookies blocked → honest status, no fake Delete.
+- Reject: toast + rules error, textarea kept. Hold: “waiting for review”; Delete only after mine confirms the jar owns the id.
+- Delete: 44px, confirm, keyboard, errors re-enable. mine on open and after create to mark owned rows.

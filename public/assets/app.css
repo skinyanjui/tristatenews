@@ -991,6 +991,32 @@ article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn)::after { c
 .sv-btn[aria-pressed="true"] svg { fill:currentColor; }
 .cm-btn svg, .sv-btn svg { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .list.news-one { gap:var(--card-gap); }
+/* Compact news cards from ~900px: cap the hero, tighten type/padding, keep 44px taps on coarse pointers.
+   Phones stay on the stacked photo-led rules above. Dark mode follows the same tokens.
+   --news-max is set with the other page-width tokens below so it wins over the 960px default. */
+@media (min-width:900px) {
+  .list.news-one { gap:var(--sp-3); }
+  article.card.news-story { contain-intrinsic-size:auto 200px; }
+  article.card.news-story .ns-src { padding:var(--sp-3) var(--sp-3) var(--sp-2); gap:var(--sp-2); }
+  article.card.news-story .ns-src .av { width:24px; height:24px; }
+  article.card.news-story .ns-src b { font-size:13px; }
+  article.card.news-story .ns-pic {
+    width:100%; max-width:100%; aspect-ratio:16/9; height:auto; max-height:300px;
+    object-fit:cover; object-position:center 30%;
+  }
+  article.card.news-story .ns-bd { gap:var(--sp-1); padding:var(--sp-2) var(--sp-3) var(--sp-1); }
+  article.card.news-story h2 { font-size:17px; line-height:22px; letter-spacing:-.01em; }
+  article.card.news-story .ns-bd p:not(.cl-note) { font-size:13px; line-height:18px; }
+  article.card.news-story .ns-foot { min-height:0; padding:var(--sp-1) var(--sp-2) var(--sp-2); }
+}
+@media (min-width:900px) and (pointer:fine) {
+  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {
+    height:32px; min-height:32px; min-width:32px;
+  }
+  article.card.news-story .ns-foot .like, article.card.news-story .ns-foot .cm-btn { padding:0 var(--sp-2); }
+  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) svg { width:16px; height:16px; }
+  article.card.news-story .ns-foot .like > span, article.card.news-story .ns-foot .cm-btn > span { font-size:12px; }
+}
 .st-sheet .st-page > .st-src { position:static; color:inherit; padding:var(--sp-6) calc(var(--sp-12) + var(--sp-6)) var(--sp-3) var(--sp-6); min-width:0; }
 .st-sheet .st-page > .st-pic { width:calc(100% - 2 * var(--sp-6)); max-width:calc(100% - 2 * var(--sp-6)); margin:0 var(--sp-6); aspect-ratio:16/9; border-radius:12px; }
 .st-sheet .st-page:has(> .st-pic)::before { display:none; }
@@ -1218,6 +1244,10 @@ article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico.on { color:var(--fo
    card still applies, and absent on Obituaries (body[data-ads] and TSNAds.railFill); News has them too. Lists gain columns
    rather than stretching; text keeps its line-length caps. */
 :root { --page-max:960px; --rail-w:160px; --rail-gap:24px; --news-max:960px; }
+@media (min-width:900px) {
+  :root { --news-max:720px; }
+  .list.news-one { max-width:var(--news-max); margin-left:auto; margin-right:auto; }
+}
 @media (min-width:1440px) { :root { --page-max:1056px; } } /* 160x600 side ads: 1056 + 2 × (160 + 24) = 1424. 120x600 is too narrow for a readable headline */
 @media (min-width:1680px) { :root { --page-max:1280px; } } /* 160x600 */
 @media (min-width:1920px) { :root { --page-max:1440px; --rail-gap:32px; } }

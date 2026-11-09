@@ -81,6 +81,12 @@ async function layout(page) {
         hasPic: !!pic,
         likeH: like ? Math.round(like.getBoundingClientRect().height / zoom) : 0,
         shareH: share ? Math.round(share.getBoundingClientRect().height / zoom) : 0,
+        cardH: Math.round(cr.height / zoom),
+        picH: pic ? Math.round(pic.getBoundingClientRect().height / zoom) : 0,
+        picW: pic ? Math.round(pic.getBoundingClientRect().width / zoom) : 0,
+        cardW: Math.round(cr.width / zoom),
+        h2Size: titleEl ? getComputedStyle(titleEl).fontSize : '',
+        dekSize: (() => { const p = card.querySelector('.ns-bd p:not(.cl-note)'); return p ? getComputedStyle(p).fontSize : ''; })(),
         offenders,
         pageOverflow: document.documentElement.scrollWidth - layoutVw
       };
@@ -118,10 +124,15 @@ for (const dark of [false, true]) {
       expect(m.rows.length).toBeGreaterThanOrEqual(2);
       expect(m.rows.some(r => /Long fixture headline/.test(r.title))).toBe(true);
       expect(m.rows.some(r => /no photograph/.test(r.title) && !r.hasPic)).toBe(true);
+      const tap = vp.width >= 900 ? 32 : 44;
       for (const row of m.rows) {
         expect(row.offenders, row.title + ' ' + JSON.stringify(row.offenders)).toEqual([]);
-        expect(row.likeH).toBeGreaterThanOrEqual(44);
-        expect(row.shareH).toBeGreaterThanOrEqual(44);
+        expect(row.likeH).toBeGreaterThanOrEqual(tap);
+        expect(row.shareH).toBeGreaterThanOrEqual(tap);
+        if (vp.width >= 900) {
+          expect(row.likeH).toBeLessThan(40);
+          expect(row.shareH).toBeLessThan(40);
+        }
       }
       if (vp.name === '390' || vp.name === '1280') {
         const pic = page.locator('#list article.news-story img.ns-pic').first();
@@ -132,6 +143,45 @@ for (const dark of [false, true]) {
     });
   }
 }
+
+test('desktop news cards are compact at 1024/1280/1440; 390 stays stacked with 44px taps', async ({ page }) => {
+  const widths = [
+    { width: 390, height: 844, desktop: false },
+    { width: 1024, height: 900, desktop: true },
+    { width: 1280, height: 900, desktop: true },
+    { width: 1440, height: 900, desktop: true }
+  ];
+  for (const vp of widths) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await stub(page);
+    await page.goto('/');
+    await expect(page.locator('#list article.news-story h2', { hasText: 'Long fixture headline' })).toBeVisible({ timeout: 15000 });
+    const pic = page.locator('#list article.news-story img.ns-pic').first();
+    if (await pic.count()) await pic.waitFor({ state: 'visible' });
+    const m = await layout(page);
+    expect(m.pageOverflow).toBe(0);
+    const withPic = m.rows.find(r => r.hasPic);
+    const noPic = m.rows.find(r => /no photograph/.test(r.title));
+    expect(withPic).toBeTruthy();
+    expect(noPic).toBeTruthy();
+    if (vp.desktop) {
+      expect(withPic.picH, vp.width + ' pic height').toBeLessThanOrEqual(320);
+      expect(withPic.picH).toBeGreaterThanOrEqual(160);
+      expect(withPic.cardH, vp.width + ' image card').toBeLessThan(560);
+      expect(withPic.cardH).toBeLessThan(vp.height * 0.7);
+      expect(noPic.cardH, vp.width + ' text-only card').toBeLessThan(200);
+      expect(parseFloat(withPic.h2Size)).toBeLessThanOrEqual(18);
+      expect(withPic.likeH).toBeGreaterThanOrEqual(32);
+      expect(withPic.likeH).toBeLessThan(40);
+      expect(withPic.cardW).toBeLessThanOrEqual(724);
+    } else {
+      expect(withPic.likeH).toBeGreaterThanOrEqual(44);
+      expect(withPic.shareH).toBeGreaterThanOrEqual(44);
+      expect(Math.abs(withPic.picW - withPic.cardW)).toBeLessThanOrEqual(2);
+      expect(parseFloat(withPic.h2Size)).toBeGreaterThanOrEqual(19);
+    }
+  }
+});
 
 test('200% zoom at 390: titles and reactions stay in the card', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

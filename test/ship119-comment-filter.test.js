@@ -39,6 +39,19 @@ test('ship119: disguises (case, leet, punct, zero-width, spaced letters)', () =>
   assert.equal(F.classify('bull shit').action, 'reject');
 });
 
+test('ship119: homoglyphs and repeated letters still match; niger the country stays ok', () => {
+  assert.equal(F.classify('nіgger').action, 'reject'); // Cyrillic і
+  assert.equal(F.classify('nıgger').action, 'reject'); // dotless i
+  assert.equal(F.classify('niggеr').action, 'reject'); // Cyrillic е
+  assert.equal(F.classify('fuuuck').action, 'reject');
+  assert.equal(F.classify('fuuck').action, 'reject');
+  assert.equal(F.classify('nnnigger').action, 'reject');
+  assert.equal(F.classify('niggger').action, 'reject');
+  assert.equal(F.classify('Trade with Niger is up').action, 'ok');
+  assert.equal(F.classify('Scunthorpe is in England').action, 'ok');
+  assert.equal(F.classify('Penistone market day').action, 'ok');
+});
+
 test('ship119: hate without slurs holds; anti-hate without a banned token is ok; not an AI', () => {
   assert.equal(F.classify('kill all jews').action, 'reject');
   assert.equal(F.classify('I hate all muslims').action, 'hold');

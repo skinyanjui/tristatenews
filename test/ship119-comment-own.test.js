@@ -29,3 +29,22 @@ test('ship119: token is 32 bytes; hash is hex; duplicates and junk are rejected'
   assert.equal(Ck.hashesEqual(Ck.tokenHash(t), Ck.tokenHash(t)), true);
   assert.equal(Ck.hashesEqual(Ck.tokenHash(t), Ck.tokenHash(Ck.newToken())), false);
 });
+
+test('ship119: prod accepts a legacy tsn_cm and migrates to __Host-; duplicates still fail', () => {
+  const t = Ck.newToken();
+  const prod = {
+    headers: {
+      host: 'www.tristatenow.com',
+      'x-forwarded-proto': 'https',
+      'x-vercel-id': 'sfo1',
+      cookie: 'tsn_cm=' + t
+    }
+  };
+  assert.equal(Ck.readToken(prod), t);
+  assert.equal(Ck.shouldMigrate(prod), true);
+  const both = { headers: Object.assign({}, prod.headers, { cookie: '__Host-tsn_cm=' + t + '; tsn_cm=' + t }) };
+  assert.equal(Ck.readToken(both), t);
+  assert.equal(Ck.shouldMigrate(both), false);
+  const dup = { headers: Object.assign({}, prod.headers, { cookie: 'tsn_cm=' + t + '; tsn_cm=' + t }) };
+  assert.equal(Ck.readToken(dup), null);
+});

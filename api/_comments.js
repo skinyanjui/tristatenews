@@ -1,7 +1,7 @@
 // Public anonymous comments on current non-crime news. Hosted by api/react.js (vercel rewrite /api/comments).
 //   GET  /api/comments?id=<storyId>&offset=      -> { configured, allowed, comments, count, total }
 //   GET  /api/comments?ids=<id,id>               -> { configured, counts }   (allowed stories only)
-//   POST /api/comments { action:'ready' }        -> { ready } + Set-Cookie on first issue only (same-IP lock)
+//   POST /api/comments { action:'ready' }        -> { ready } + Set-Cookie on first issue only (no IP lock)
 //   POST /api/comments { id, uid, text }         -> { ok, comment }          (create; cookie required)
 //   POST /api/comments { action:'mine', ids }    -> { mine }                 (private; cookie hash check)
 //   POST /api/comments { action:'delete', id }   -> owner cookie delete, or admin with x-admin-key
@@ -44,8 +44,10 @@ const REPORTS_TO_HIDE = 3;
 const REPORTS_PER_IP = 10;
 const READY_PER_IP = 40;
 const MINE_PER_IP = 40;
-const ISSUE_LOCK_SEC = 3;
 const SWEEP_STORIES = 40;
+const MAX_COUNT_STORIES = 40;
+const MAX_COUNT_RECS = 800;
+const COUNT_CACHE_TTL = 15;
 const SWEEP_HID = 50;
 const SWEEP_FLAG_CHUNK = 80;
 const REVIEW = 'tsn:cm:review';
@@ -60,6 +62,7 @@ const hideKey = id => 'tsn:cm:hide:' + id;
 const repKey = id => 'tsn:cm:rep:' + id;
 const ownKey = id => 'tsn:cm:own:' + id;
 const okKey = id => 'tsn:cm:ok:' + id;
+const nKey = id => 'tsn:cm:n:' + id;
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 // Catch pasted URLs and host-like tokens (example.co, bit.ly) without treating "U.S." / "Mr. Smith" / "ok." as links.
 const hasLink = t => /https?:\/\/|www\.|\b(?:bit\.ly|t\.co|tinyurl\.com|goo\.gl|ow\.ly|is\.gd|buff\.ly|cutt\.ly|rb\.gy|shorturl\.at|tiny\.cc)\b|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|net|org|info|biz|xyz|ru|top|shop|site|co|io|ly|me|us|cc|tv|app|dev|page|link|click|gg|to|uk|de|br|in|au|ca|edu|gov|int)\b/i.test(t);
@@ -70,7 +73,7 @@ const send = (res, code, obj, cache) => {
   res.setHeader('Cache-Control', cache || 'private, no-store');
   return res.status(code).send(JSON.stringify(obj));
 };
-const publicComment = o => o && o.id ? { id: o.id, text: o.text, at: o.at } : null;
+const publicComment = o => o && o.id ? { id: o.id, text: clean(o.text, MAX_TEXT), at: o.at } : null;
 
 function sameOrigin(req) {
   const host = String((req.headers && req.headers.host) || '').split(',')[0].trim();
@@ -124,7 +127,9 @@ async function handler(req, res) {
     if (req.method === 'GET') return await read(req, res);
     if (req.method !== 'POST') return send(res, 405, { error: 'method' });
     if (!sameOrigin(req)) return send(res, 403, { error: 'bad origin' });
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    let body;
+    try { body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}); }
+    catch (_) { return send(res, 400, { error: 'bad request' }); }
     const raw = typeof req.body === 'string' ? req.body : JSON.stringify(body);
     if (raw.length > MAX_BODY) return send(res, 413, { error: 'too large' });
     const action = String(body.action || '');
@@ -153,14 +158,18 @@ async function burst(req, kind, cap) {
   return (Number(lim[0] && lim[0].result) || 0) > cap;
 }
 
+async function dropCount(id) {
+  if (!STORY_RE.test(id)) return;
+  await pipeline([['DEL', nKey(id)]]);
+}
+
 async function ready(req, res) {
   const token = COOKIE.readToken(req);
-  if (token) return send(res, 200, { ready: true });
+  if (token) {
+    if (COOKIE.shouldMigrate(req)) renewCookie(req, res, token);
+    return send(res, 200, { ready: true });
+  }
   if (await burst(req, 'ready', READY_PER_IP)) return send(res, 429, { error: 'too many' });
-  const ip = clientIp(req) || '0';
-  const lock = 'tsn:cm:issue:' + ipHash(ip, 'cm-issue');
-  const got = await pipeline([['SET', lock, '1', 'EX', String(ISSUE_LOCK_SEC), 'NX']]);
-  if (!got[0] || !got[0].result) return send(res, 200, { ready: false });
   const issued = COOKIE.newToken();
   renewCookie(req, res, issued);
   return send(res, 200, { ready: false });
@@ -200,6 +209,7 @@ async function ownerDelete(req, res, body) {
   );
   const ok = Array.isArray(out) ? Number(out[0]) === 1 : Number(out) === 1;
   if (!ok) return send(res, 404, { error: 'not found' });
+  await dropCount(story);
   return send(res, 200, { ok: true, deleted: true });
 }
 
@@ -245,13 +255,13 @@ async function publicList(id) {
 
 async function liveThread(id, offset) {
   const vis = visKey(id);
+  // TTL expiry prune may write on GET. Filter classification never writes.
   await pipeline([['ZREMRANGEBYSCORE', vis, '-inf', String(nowSec())]]);
   const all = await publicList(id);
   return { comments: all.slice(offset, offset + MAX_THREAD), total: all.length };
 }
 
-// Homepage GET ?ids= (≤300): prune first, then rec GETs only for nonempty vis, 200 at a time.
-// Typical feed is a few stories with comments; worst case is bounded (300 × MAX_VIS).
+// Homepage GET ?ids=: prune (TTL write), then classify nonempty vis. Cache 15s. Cap stories/recs.
 async function filteredCounts(storyIds) {
   const counts = {};
   if (!storyIds.length) return counts;
@@ -311,12 +321,35 @@ async function read(req, res) {
   }
   const nonempty = Object.keys(counts);
   if (nonempty.length) {
-    const filtered = await filteredCounts(nonempty);
-    nonempty.forEach(id => {
-      const n = Number(filtered[id]) || 0;
-      if (n) counts[id] = n;
-      else delete counts[id];
+    const cached = await pipeline(nonempty.map(id => ['GET', nKey(id)]));
+    const miss = [];
+    nonempty.forEach((id, i) => {
+      const raw = cached[i] && cached[i].result;
+      if (raw != null && raw !== '') {
+        const n = Number(raw) || 0;
+        if (n) counts[id] = n;
+        else delete counts[id];
+      } else miss.push(id);
     });
+    const work = [];
+    let recs = 0;
+    for (let i = 0; i < miss.length; i++) {
+      if (work.length >= MAX_COUNT_STORIES || recs >= MAX_COUNT_RECS) break;
+      work.push(miss[i]);
+      recs += Number(counts[miss[i]]) || 0;
+    }
+    miss.forEach(id => { if (work.indexOf(id) < 0) delete counts[id]; });
+    if (work.length) {
+      const filtered = await filteredCounts(work);
+      const sets = [];
+      work.forEach(id => {
+        const n = Number(filtered[id]) || 0;
+        if (n) counts[id] = n;
+        else delete counts[id];
+        sets.push(['SET', nKey(id), String(n), 'EX', String(COUNT_CACHE_TTL)]);
+      });
+      if (sets.length) await pipeline(sets);
+    }
   }
   return send(res, 200, { configured: true, counts }, 'public, max-age=0, s-maxage=15');
 }
@@ -365,6 +398,7 @@ async function create(req, res, body) {
     [rec(cid), visKey(id), ownKey(cid)],
     [JSON.stringify(item), cid, exp, COMMENT_TTL, nowSec(), MAX_VIS, hash]
   );
+  await dropCount(id);
   renewCookie(req, res, token);
   return send(res, 200, { ok: true, comment: publicComment(item) });
 }
@@ -385,6 +419,7 @@ async function report(req, res, body) {
     [rec(id), repKey(id), hideKey(id), visKey(o.storyId), REVIEW],
     [who, id, nowSec(), COMMENT_TTL, REPORTS_TO_HIDE]
   );
+  await dropCount(o.storyId);
   return send(res, 200, { ok: true });
 }
 
@@ -426,6 +461,7 @@ async function sweep(req, res) {
           if ((Array.isArray(out) ? Number(out[0]) : Number(out)) === 1) hid++;
         }
       }
+      await dropCount(id);
       if (finished) await pipeline([['SET', flag, ver, 'EX', String(COMMENT_TTL)]]);
     }
     s += batch.length;
@@ -443,6 +479,7 @@ async function moderate(req, res, body, action) {
   const story = (o && o.storyId) || 'x';
   if (action === 'delete') {
     await evalScript(ATOM.SCRIPT_DELETE, [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW, ownKey(id), okKey(id)], [id]);
+    await dropCount(story);
     return send(res, 200, { ok: true, deleted: true });
   }
   if (!o) {
@@ -451,6 +488,7 @@ async function moderate(req, res, body, action) {
   }
   const out = await evalScript(ATOM.SCRIPT_RESTORE, [hideKey(id), visKey(o.storyId), rec(id), REVIEW, repKey(id), okKey(id)], [id, COMMENT_TTL, nowSec()]);
   const hidden = Array.isArray(out) ? Number(out[0]) : Number(out);
+  await dropCount(o.storyId);
   return send(res, 200, { ok: true, restored: hidden === 1 });
 }
 
@@ -491,7 +529,8 @@ module.exports.STORY_PER_IP = STORY_PER_IP;
 module.exports.REPORTS_TO_HIDE = REPORTS_TO_HIDE;
 module.exports.READY_PER_IP = READY_PER_IP;
 module.exports.MINE_PER_IP = MINE_PER_IP;
-module.exports.ISSUE_LOCK_SEC = ISSUE_LOCK_SEC;
+module.exports.MAX_COUNT_STORIES = MAX_COUNT_STORIES;
+module.exports.MAX_COUNT_RECS = MAX_COUNT_RECS;
 module.exports.REJECT_MSG = REJECT_MSG;
 module.exports.COOKIE_MSG = COOKIE_MSG;
 module.exports.clean = clean;

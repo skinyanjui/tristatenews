@@ -35,12 +35,15 @@ function hashesEqual(a, b) {
   return crypto.timingSafeEqual(x, y);
 }
 
-function readToken(req) {
-  const raw = req && req.headers && req.headers.cookie;
-  if (raw == null) return null;
-  const s = String(raw);
-  if (s.length > 4096) return null;
-  const name = cookieName(req);
+function validToken(found) {
+  if (!TOKEN_RE.test(found)) return null;
+  let buf;
+  try { buf = Buffer.from(found, 'base64url'); } catch (_) { return null; }
+  if (buf.length !== 32) return null;
+  return found;
+}
+
+function pickCookie(s, name) {
   const parts = s.split(';');
   let found = null, n = 0;
   for (let i = 0; i < parts.length; i++) {
@@ -50,11 +53,36 @@ function readToken(req) {
     n++;
     found = p.slice(eq + 1).trim();
   }
-  if (n !== 1 || !TOKEN_RE.test(found)) return null;
-  let buf;
-  try { buf = Buffer.from(found, 'base64url'); } catch (_) { return null; }
-  if (buf.length !== 32) return null;
-  return found;
+  if (n > 1) return null;
+  if (n === 1) return validToken(found);
+  return undefined;
+}
+
+function readToken(req) {
+  const raw = req && req.headers && req.headers.cookie;
+  if (raw == null) return null;
+  const s = String(raw);
+  if (s.length > 4096) return null;
+  const primary = cookieName(req);
+  const main = pickCookie(s, primary);
+  if (main) return main;
+  if (main === null) return null;
+  if (primary === '__Host-tsn_cm') {
+    const legacy = pickCookie(s, 'tsn_cm');
+    if (legacy) return legacy;
+  }
+  return null;
+}
+
+function shouldMigrate(req) {
+  if (!cookieSecure(req)) return false;
+  const raw = req && req.headers && req.headers.cookie;
+  if (raw == null) return false;
+  const s = String(raw);
+  if (s.length > 4096) return false;
+  const host = pickCookie(s, '__Host-tsn_cm');
+  if (host) return false;
+  return !!pickCookie(s, 'tsn_cm');
 }
 
 function setCookieHeader(req, token) {
@@ -66,5 +94,5 @@ function setCookieHeader(req, token) {
 }
 
 module.exports = {
-  MAX_AGE, cookieSecure, cookieName, newToken, tokenHash, hashesEqual, readToken, setCookieHeader
+  MAX_AGE, cookieSecure, cookieName, newToken, tokenHash, hashesEqual, readToken, setCookieHeader, shouldMigrate
 };

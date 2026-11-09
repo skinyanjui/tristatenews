@@ -6,6 +6,12 @@
 
 const ZW = /[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF\u180E]/g;
 const LEET = { '@': 'a', '4': 'a', '$': 's', '0': 'o', '1': 'i', '!': 'i', '3': 'e', '5': 's', '7': 't' };
+// Common Latin lookalikes (Cyrillic/Greek/dotless i). Not a full confusable list.
+const HOMO = {
+  'а': 'a', 'е': 'e', 'о': 'o', 'і': 'i', 'ї': 'i', 'ı': 'i', 'с': 'c', 'р': 'p', 'у': 'y', 'х': 'x',
+  'к': 'k', 'н': 'h', 'в': 'b', 'м': 'm', 'т': 't', 'ԁ': 'd', 'ɡ': 'g', 'ѕ': 's',
+  'α': 'a', 'ε': 'e', 'ο': 'o', 'ι': 'i', 'ρ': 'p', 'τ': 't', 'κ': 'k', 'χ': 'x'
+};
 
 const PROFANITY = split('fuck fucking fucked fucker fuckers motherfucker motherfuckers motherfucking shit shits bullshit asshole assholes cocksucker cocksuckers cunt cunts fck fuk');
 const SLURS = split(
@@ -27,10 +33,12 @@ function split(s) { return new Set(s.split(/\s+/).filter(Boolean)); }
 
 function leetChar(c) { return LEET[c] || c; }
 
+function foldChar(c) { return HOMO[c] || leetChar(c); }
+
 function normalize(text) {
   let s = String(text || '').normalize('NFKC').replace(ZW, '').toLowerCase();
   let out = '';
-  for (let i = 0; i < s.length; i++) out += leetChar(s[i]);
+  for (let i = 0; i < s.length; i++) out += foldChar(s[i]);
   return out;
 }
 
@@ -66,12 +74,37 @@ function phrases(toks) {
   return p;
 }
 
+function flexRe(word) {
+  let p = '', i = 0;
+  while (i < word.length) {
+    let j = i + 1;
+    while (j < word.length && word[j] === word[i]) j++;
+    const n = j - i;
+    p += word[i] + (n > 1 ? '{' + n + ',}' : '+');
+    i = j;
+  }
+  return new RegExp('^' + p + '$');
+}
+function flexIndex(set) { return [...set].map(w => [w, flexRe(w)]); }
+const PROFANITY_FLEX = flexIndex(PROFANITY);
+const SLURS_FLEX = flexIndex(SLURS);
+
+function bannedForm(t, set) {
+  if (set.has(t)) return t;
+  const idx = set === SLURS ? SLURS_FLEX : set === PROFANITY ? PROFANITY_FLEX : flexIndex(set);
+  for (let i = 0; i < idx.length; i++) {
+    if (idx[i][1].test(t)) return idx[i][0];
+  }
+  return null;
+}
+
 function bannedHits(toks, extra, set) {
   const h = [];
-  toks.forEach(t => { if (set.has(t)) h.push(t); });
+  toks.forEach(t => { const m = bannedForm(t, set); if (m) h.push(m); });
   extra.forEach(t => {
     const c = t.replace(/\s+/g, '');
-    if (set.has(t) || set.has(c)) h.push(set.has(t) ? t : c);
+    const m = bannedForm(t, set) || bannedForm(c, set);
+    if (m) h.push(m);
   });
   return h;
 }
@@ -86,7 +119,7 @@ function insulting(hits, spaced) {
 
 function onlyBanned(toks, set) {
   const content = toks.filter(t => !STOP.has(t));
-  return content.length > 0 && content.every(t => set.has(t));
+  return content.length > 0 && content.every(t => !!bannedForm(t, set));
 }
 
 function verdictSlur(toks, extra, spaced) {

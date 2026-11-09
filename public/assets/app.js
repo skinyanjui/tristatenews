@@ -2764,24 +2764,37 @@
   var cmPending = {};
   function cmPost(body) {
     return fetch('/api/comments', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b }; }); });
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var b = {};
+          try { b = t ? JSON.parse(t) : {}; } catch (e) {}
+          return { ok: r.ok, b: b };
+        });
+      });
   }
-  function cmReady() {
+  function cmReadyRoundTrip() {
     function once() {
       return cmPost({ action: 'ready' }).then(function (o) { return !!(o.ok && o.b && o.b.ready); });
     }
     function again(n) {
       if (n <= 0) return Promise.resolve(false);
       return new Promise(function (resolve) {
+        var wait = 200 + Math.floor(Math.random() * 250);
         setTimeout(function () {
           once().then(function (ok) { resolve(ok ? true : again(n - 1)); }).catch(function () { resolve(false); });
-        }, 200);
+        }, wait);
       });
     }
     return once().then(function (ok) {
       if (ok) return true;
-      return once().then(function (ok2) { return ok2 ? true : again(5); });
+      return once().then(function (ok2) { return ok2 ? true : again(12); });
     }).catch(function () { return false; });
+  }
+  function cmReady() {
+    if (navigator.locks && typeof navigator.locks.request === 'function') {
+      return navigator.locks.request('tsn-cm-ready', function () { return cmReadyRoundTrip(); });
+    }
+    return cmReadyRoundTrip();
   }
   function rememberOpener() {
     var el = document.activeElement;
@@ -2819,8 +2832,8 @@
     d.addEventListener('close', function () { d.remove(); restoreOpener(back); });
     readyWait.then(function (ok) {
       cookieOk = ok;
+      form.hidden = false;
       if (ok) return;
-      form.hidden = true;
       toast('Comments need a first-party cookie in this browser. Allow cookies for this site, then try again.');
     });
     function addDel(item, c) {
@@ -2897,7 +2910,6 @@
       if (dta.allowed === false) {
         status.textContent = 'Comments are off for this story.'; form.hidden = true; more.hidden = true; return;
       }
-      form.hidden = cookieOk === false;
       var comments = dta.comments || [];
       if (!append) { list.textContent = ''; shown = 0; }
       comments.forEach(function (c) { list.appendChild(row(c)); });
@@ -2927,13 +2939,9 @@
       e.preventDefault();
       var text = String(ta.value || '').trim();
       if (!text) { toast('Add a comment.'); return; }
+      if (go.disabled) return;
       go.disabled = true;
-      readyWait.then(function (ready) {
-        if (!ready) {
-          go.disabled = false;
-          toast('Comments need a first-party cookie in this browser. Allow cookies for this site, then try again.');
-          return;
-        }
+      function send() {
         cmPost({ id: sid, uid: uid, text: text }).then(function (o) {
           go.disabled = false;
           if (!o.ok) { toast((o.b && o.b.error) || 'Couldn\u2019t post that.'); return; }
@@ -2955,7 +2963,18 @@
             markMine();
           }
         }).catch(function () { go.disabled = false; toast('Couldn\u2019t post that. Try again.'); });
-      });
+      }
+      function goSend(ok) {
+        cookieOk = !!ok;
+        if (!cookieOk) {
+          go.disabled = false;
+          toast('Comments need a first-party cookie in this browser. Allow cookies for this site, then try again.');
+          return;
+        }
+        send();
+      }
+      if (cookieOk) { send(); return; }
+      cmReady().then(goSend).catch(function () { goSend(false); });
     });
     document.body.appendChild(d);
     if (d.showModal) d.showModal(); else d.setAttribute('open', '');

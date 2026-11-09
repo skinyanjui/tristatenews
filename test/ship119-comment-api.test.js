@@ -214,7 +214,7 @@ test('ship119: owner delete is hash-bound; wrong cookie and second delete are ge
   seedStory(s, id, NEWS);
   const a = await issue(C, { 'x-real-ip': '3.3.3.1' });
   const b = await issue(C, { 'x-real-ip': '3.3.3.2' });
-  // Two browsers (different IPs) get different tokens; same-IP first-use cannot rotate.
+  // Two browsers get different tokens; hash compare is per cookie, not per IP.
   const posted = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '3.3.3.3', cookie: a.cookie }, origin), body: { id, uid: 'reader-0001', text: 'My comment on the river.' } });
   const cid = posted.body.comment.id;
   const wrong = await call(C, { method: 'POST', headers: Object.assign({ cookie: b.cookie }, origin), body: { action: 'delete', id: cid } });
@@ -338,7 +338,7 @@ test('ship119: public counts match the filtered thread across pages and stories;
   assert.equal(s.kv.get('tsn:cm:hide:' + okId), undefined);
 }));
 
-test('ship119: cookie jar last Set-Cookie wins; same-IP overlapping ready does not rotate; both tabs keep Delete', () => withStore(async (s, mod) => {
+test('ship119: cookie jar last Set-Cookie wins; overlapping ready without a cookie may rotate; mine stays honest', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/jar');
   seedStory(s, id, NEWS);
   const jar = new CookieJar();
@@ -350,7 +350,8 @@ test('ship119: cookie jar last Set-Cookie wins; same-IP overlapping ready does n
   jar.apply(t1.headers['set-cookie']);
   jar.apply(t2.headers['set-cookie']);
   const issued = [t1, t2].filter(r => r.headers['set-cookie']);
-  assert.equal(issued.length, 1, 'only one first-use Set-Cookie on the same connection');
+  assert.equal(issued.length, 2, 'no IP issuance lock: both first-use readies may Set-Cookie');
+  assert.equal([...s.kv.keys()].some(k => String(k).includes('tsn:cm:issue:')), false);
   assert.ok(jar.cookie);
   const prove = await call(C, { method: 'POST', headers: jar.hdr({ 'x-real-ip': '4.4.5.9' }), body: { action: 'ready' } });
   assert.equal(prove.body.ready, true);
@@ -364,7 +365,7 @@ test('ship119: cookie jar last Set-Cookie wins; same-IP overlapping ready does n
   assert.equal((await call(C, { method: 'POST', headers: jar.hdr(), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
 }));
 
-test('ship119: in-flight create keeps Delete after a second tab ready; jar last-wins does not orphan', () => withStore(async (s, mod) => {
+test('ship119: ready with the jar cookie does not rotate; Delete follows mine not the in-flight Set-Cookie', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/inflight');
   seedStory(s, id, NEWS);
   const jar = new CookieJar();
@@ -374,9 +375,9 @@ test('ship119: in-flight create keeps Delete after a second tab ready; jar last-
   const prove = await call(C, { method: 'POST', headers: jar.hdr(ip), body: { action: 'ready' } });
   assert.equal(prove.body.ready, true);
   const createCookie = jar.cookie;
-  const t2 = await call(C, { method: 'POST', headers: Object.assign({}, origin, ip), body: { action: 'ready' } });
+  const t2 = await call(C, { method: 'POST', headers: jar.hdr(ip), body: { action: 'ready' } });
   jar.apply(t2.headers['set-cookie']);
-  assert.equal(t2.headers['set-cookie'], undefined, 'second tab must not rotate the jar while create is in flight');
+  assert.equal(t2.headers['set-cookie'], undefined, 'ready that already has the jar cookie must not issue a new token');
   const posted = await call(C, { method: 'POST', headers: Object.assign({ cookie: createCookie, 'x-real-ip': '4.4.6.1' }, origin), body: { id, uid: 'reader-if1', text: 'Posted while the other tab called ready.' } });
   jar.apply(posted.headers['set-cookie']);
   assert.equal(posted.code, 200);
@@ -462,13 +463,19 @@ test('ship119: client Delete/ready/draft; legal cookie copy; admin why; no docum
   assert.match(js, /action: 'ready'/);
   assert.match(js, /action: 'mine'/);
   assert.match(js, /action: 'delete'/);
-  const readyFn = js.slice(js.indexOf('function cmReady('), js.indexOf('function rememberOpener('));
-  assert.match(readyFn, /setTimeout/, 'loser tab retries ready until the jar cookie proves');
+  const readyFn = js.slice(js.indexOf('function cmReadyRoundTrip('), js.indexOf('function rememberOpener('));
+  assert.match(readyFn, /setTimeout/, 'ready retries until the jar cookie proves or the window ends');
+  assert.match(readyFn, /navigator\.locks/, 'same-browser tabs serialize ready instead of an IP lock');
+  assert.match(readyFn, /Math\.random/, 'retry delay is jittered so two devices do not sync-fail');
+  assert.match(readyFn, /again\(12\)/);
+  assert.equal(js.includes('form.hidden = cookieOk === false'), false, 'failed ready must not hide the form');
   const pendingRow = js.slice(js.indexOf("if (pending) {"), js.indexOf("var rp = el('button', 'cm-report')"));
   assert.equal(pendingRow.includes('addDel'), false, 'held rows must not show Delete before mine');
   const subAt = js.indexOf("form.addEventListener('submit'");
   const submit = js.slice(subAt, js.indexOf('document.body.appendChild(d)', subAt));
   assert.match(submit, /markMine\(\)/, 'create/hold re-sync Delete from mine, not from the create response');
+  assert.match(submit, /if \(cookieOk\) \{ send\(\); return; \}/);
+  assert.match(submit, /cmReady\(\)\.then\(goSend\)/);
   assert.match(js, /cm-del/);
   assert.match(js, /confirm\(/);
   assert.match(js, /credentials: 'same-origin'/);
@@ -482,6 +489,10 @@ test('ship119: client Delete/ready/draft; legal cookie copy; admin why; no docum
   assert.ok(!/TRISTATENOW itself doesn’t set cookies/.test(legal));
   assert.match(admin, /why/);
   assert.match(admin, /action: 'sweep'|action:'sweep'/);
+  assert.match(admin, /stays in vis until you run Apply filter|Matching stored text stays in vis/);
+  assert.match(legal, /TTL prune|timed out/);
+  assert.match(read('api/_comments.js'), /no IP lock/);
+  assert.equal(read('api/_comments.js').includes('tsn:cm:issue:'), false);
   assert.match(legal, /not a hate-speech model|not an AI|word list/i);
 });
 
@@ -502,4 +513,121 @@ test('ship119: ready issuance and mine have their own burst caps, not the post I
   }
   const mineOver = await call(C, { method: 'POST', headers: Object.assign({ cookie, 'x-real-ip': '10.9.8.8' }, origin), body: { action: 'mine', ids: ['cabc123'] } });
   assert.equal(mineOver.code, 429);
+}));
+
+test('ship119: shared-NAT devices on one public IP each get a cookie and can post', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/cgnat');
+  seedStory(s, id, NEWS);
+  const ip = { 'x-real-ip': '100.64.1.8' };
+  const a = await call(C, { method: 'POST', headers: Object.assign({}, origin, ip), body: { action: 'ready' } });
+  const b = await call(C, { method: 'POST', headers: Object.assign({}, origin, ip), body: { action: 'ready' } });
+  assert.equal(a.code, 200); assert.equal(b.code, 200);
+  assert.equal(a.body.ready, false); assert.equal(b.body.ready, false);
+  assert.ok(a.headers['set-cookie']); assert.ok(b.headers['set-cookie']);
+  assert.notEqual(tokenOf(a.headers['set-cookie']), tokenOf(b.headers['set-cookie']));
+  assert.equal([...s.kv.keys()].some(k => String(k).includes('tsn:cm:issue:')), false);
+  const ca = cookieHeader(a.headers['set-cookie']), cb = cookieHeader(b.headers['set-cookie']);
+  const pa = await call(C, { method: 'POST', headers: Object.assign({ cookie: ca, 'x-real-ip': '100.64.1.8' }, origin), body: { id, uid: 'reader-na1', text: 'From phone A on CGNAT.' } });
+  const pb = await call(C, { method: 'POST', headers: Object.assign({ cookie: cb, 'x-real-ip': '100.64.1.8' }, origin), body: { id, uid: 'reader-nb1', text: 'From phone B on CGNAT.' } });
+  assert.equal(pa.code, 200); assert.equal(pb.code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: cb }, origin), body: { action: 'delete', id: pa.body.comment.id } })).code, 404);
+  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: ca }, origin), body: { action: 'delete', id: pa.body.comment.id } })).code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: cb }, origin), body: { action: 'delete', id: pb.body.comment.id } })).code, 200);
+}));
+
+test('ship119: GET thread TTL-prunes vis; classification still does not hide; ?ids= is cached and bounded', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js');
+  const keep = storyId('https://n.ex/prune-keep');
+  seedStory(s, keep, NEWS);
+  const now = new Date().toISOString();
+  const liveId = 'clive001', deadId = 'cdead001';
+  s.kv.set('tsn:cm:' + liveId, JSON.stringify({ id: liveId, storyId: keep, text: 'Still on the river.', at: now }));
+  s.kv.set('tsn:cm:' + deadId, JSON.stringify({ id: deadId, storyId: keep, text: 'Expired row.', at: now }));
+  const vis = new Map();
+  vis.set(liveId, Math.floor(Date.now() / 1000) + 86400);
+  vis.set(deadId, 10);
+  s.z.set('tsn:cm:vis:' + keep, vis);
+  const page = await call(C, { query: { id: keep } });
+  assert.equal(page.body.total, 1);
+  assert.equal(page.body.comments[0].id, liveId);
+  assert.equal((s.z.get('tsn:cm:vis:' + keep) || new Map()).has(deadId), false, 'GET thread may TTL-prune');
+  assert.equal(s.kv.get('tsn:cm:hide:' + deadId), undefined, 'prune is not a filter hide');
+  assert.ok(s.log.some(c => c[0] === 'ZREMRANGEBYSCORE'));
+
+  const stories = [];
+  for (let i = 0; i < C.MAX_COUNT_STORIES + 1; i++) {
+    const sid = storyId('https://n.ex/count-' + i);
+    seedStory(s, sid, NEWS);
+    stories.push(sid);
+    const cid = ('cbound' + i).slice(0, 12);
+    s.kv.set('tsn:cm:' + cid, JSON.stringify({ id: cid, storyId: sid, text: 'Count bound ' + i, at: now }));
+    const z = new Map();
+    z.set(cid, Math.floor(Date.now() / 1000) + 86400);
+    s.z.set('tsn:cm:vis:' + sid, z);
+  }
+  const bounded = await call(C, { query: { ids: stories.join(',') } });
+  assert.equal(Object.keys(bounded.body.counts).length, C.MAX_COUNT_STORIES);
+  const cachedKeys = [...s.kv.keys()].filter(k => String(k).startsWith('tsn:cm:n:'));
+  assert.equal(cachedKeys.length, C.MAX_COUNT_STORIES);
+
+  const first = stories[0];
+  const extra = 'cextra01';
+  s.kv.set('tsn:cm:' + extra, JSON.stringify({ id: extra, storyId: first, text: 'After cache fill.', at: now }));
+  s.z.get('tsn:cm:vis:' + first).set(extra, Math.floor(Date.now() / 1000) + 86400);
+  const cached = await call(C, { query: { ids: first } });
+  assert.equal(cached.body.counts[first], 1, 'count cache serves until dropCount');
+  const { cookie } = await issue(C, { 'x-real-ip': '8.8.4.4' });
+  const posted = await call(C, { method: 'POST', headers: Object.assign({ cookie, 'x-real-ip': '8.8.4.4' }, origin), body: { id: first, uid: 'reader-cc1', text: 'Invalidate the count cache.' } });
+  assert.equal(posted.code, 200);
+  const fresh = await call(C, { query: { ids: first } });
+  assert.equal(fresh.body.counts[first], 3);
+}));
+
+test('ship119: GET ?ids= stops classifying once rec GETs would exceed MAX_COUNT_RECS', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js');
+  const now = new Date().toISOString();
+  const exp = Math.floor(Date.now() / 1000) + 86400;
+  const stories = [];
+  for (let i = 0; i < 5; i++) {
+    const sid = storyId('https://n.ex/recs-' + i);
+    seedStory(s, sid, NEWS);
+    stories.push(sid);
+    const z = new Map();
+    for (let j = 0; j < C.MAX_VIS; j++) {
+      const cid = ('c' + i + 'r' + String(j).padStart(4, '0')).slice(0, 12);
+      s.kv.set('tsn:cm:' + cid, JSON.stringify({ id: cid, storyId: sid, text: 'Rec ' + i + ' ' + j, at: now }));
+      z.set(cid, exp + j);
+    }
+    s.z.set('tsn:cm:vis:' + sid, z);
+  }
+  const got = await call(C, { query: { ids: stories.join(',') } });
+  const n = Object.keys(got.body.counts).length;
+  assert.ok(n >= 1 && n < 5, 'rec budget omits later stories, got ' + n);
+  assert.ok(n * C.MAX_VIS <= C.MAX_COUNT_RECS || n === Math.ceil(C.MAX_COUNT_RECS / C.MAX_VIS));
+}));
+
+test('ship119: malformed JSON is 400; prod legacy tsn_cm migrates; GET XSS-strips', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/json');
+  seedStory(s, id, NEWS);
+  const bad = await call(C, { method: 'POST', headers: origin, body: '{' });
+  assert.equal(bad.code, 400);
+  const csrf = await call(C, { method: 'POST', headers: { host: '127.0.0.1:3077', origin: 'https://evil.test' }, body: { action: 'ready' } });
+  assert.equal(csrf.code, 403);
+  const { token } = await issue(C, { 'x-real-ip': '5.5.5.70' });
+  const prod = {
+    host: 'www.tristatenow.com',
+    origin: 'https://www.tristatenow.com',
+    'x-forwarded-proto': 'https',
+    'x-vercel-id': 'sfo1',
+    'x-real-ip': '5.5.5.71',
+    cookie: 'tsn_cm=' + token
+  };
+  const mig = await call(C, { method: 'POST', headers: Object.assign({}, origin, prod), body: { action: 'ready' } });
+  assert.equal(mig.body.ready, true);
+  assert.match(String(mig.headers['set-cookie']), /__Host-tsn_cm=/);
+  const posted = await call(C, { method: 'POST', headers: Object.assign({}, origin, prod, { 'x-real-ip': '5.5.5.72' }), body: { id, uid: 'reader-leg1', text: '<script>alert(1)</script> river' } });
+  assert.equal(posted.code, 200);
+  assert.equal(posted.body.comment.text.includes('<'), false);
+  const got = await call(C, { query: { id } });
+  assert.ok(got.body.comments.every(c => !/[<>]/.test(c.text)));
 }));

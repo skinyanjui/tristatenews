@@ -87,6 +87,12 @@ async function layout(page) {
         cardW: Math.round(cr.width / zoom),
         h2Size: titleEl ? getComputedStyle(titleEl).fontSize : '',
         dekSize: (() => { const p = card.querySelector('.ns-bd p:not(.cl-note)'); return p ? getComputedStyle(p).fontSize : ''; })(),
+        moreVisible: (() => {
+          const more = card.querySelector('.ns-more-btn');
+          if (!more) return false;
+          const r = more.getBoundingClientRect();
+          return getComputedStyle(more).display !== 'none' && r.width > 0 && r.height > 0;
+        })(),
         offenders,
         pageOverflow: document.documentElement.scrollWidth - layoutVw
       };
@@ -130,8 +136,11 @@ for (const dark of [false, true]) {
         expect(row.likeH).toBeGreaterThanOrEqual(tap);
         expect(row.shareH).toBeGreaterThanOrEqual(tap);
         if (vp.width >= 900) {
-          expect(row.likeH).toBeLessThan(40);
-          expect(row.shareH).toBeLessThan(40);
+          expect(row.likeH).toBeLessThanOrEqual(36);
+          expect(row.shareH).toBeLessThanOrEqual(36);
+          expect(row.moreVisible).toBe(true);
+        } else {
+          expect(row.moreVisible).toBe(false);
         }
       }
       if (vp.name === '390' || vp.name === '1280') {
@@ -170,15 +179,19 @@ test('desktop news cards are compact at 1024/1280/1440; 390 stays stacked with 4
       expect(withPic.cardH, vp.width + ' image card').toBeLessThan(560);
       expect(withPic.cardH).toBeLessThan(vp.height * 0.7);
       expect(noPic.cardH, vp.width + ' text-only card').toBeLessThan(200);
-      expect(parseFloat(withPic.h2Size)).toBeLessThanOrEqual(18);
+      expect(parseFloat(withPic.h2Size)).toBeLessThanOrEqual(16);
       expect(withPic.likeH).toBeGreaterThanOrEqual(32);
-      expect(withPic.likeH).toBeLessThan(40);
-      expect(withPic.cardW).toBeLessThanOrEqual(724);
+      expect(withPic.likeH).toBeLessThanOrEqual(36);
+      expect(withPic.cardW).toBeGreaterThanOrEqual(540);
+      expect(withPic.cardW).toBeLessThanOrEqual(644);
+      expect(withPic.picW).toBeLessThan(withPic.cardW - 16);
+      expect(withPic.moreVisible).toBe(true);
     } else {
       expect(withPic.likeH).toBeGreaterThanOrEqual(44);
       expect(withPic.shareH).toBeGreaterThanOrEqual(44);
       expect(Math.abs(withPic.picW - withPic.cardW)).toBeLessThanOrEqual(2);
       expect(parseFloat(withPic.h2Size)).toBeGreaterThanOrEqual(19);
+      expect(withPic.moreVisible).toBe(false);
     }
   }
 });
@@ -235,4 +248,23 @@ test('failed photo collapses; sheet is accessible; Continue opens the publisher;
   expect(nav.filter(u => /14news\.com/.test(u))).toEqual([]);
   await page.mouse.click(8, 8);
   await expect(dlg).toHaveCount(0);
+});
+
+test('desktop overflow menu stays outside the sheet; 390 hides it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await stub(page);
+  await page.goto('/');
+  await expect(page.locator('#list article.news-story h2', { hasText: 'Long fixture headline' })).toBeVisible({ timeout: 15000 });
+  const first = page.locator('#list article.news-story').first();
+  const more = first.locator('.ns-more-btn');
+  await expect(more).toBeVisible();
+  await more.click();
+  const menu = first.locator('.ns-more-menu');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Open at publisher' })).toHaveAttribute('href', /14news\.com\/fixture-news-01/);
+  await expect(page.locator('dialog.st-sheet')).toHaveCount(0);
+  await first.locator('.ns-more-item', { hasText: 'Copy link' }).click();
+  await expect(menu).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(first.locator('.ns-more-btn')).toBeHidden();
 });

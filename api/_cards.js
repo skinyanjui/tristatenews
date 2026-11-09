@@ -48,6 +48,7 @@ const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-
 const SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg>';
 const BOOKMARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-3.4L6 21V4.5a1 1 0 0 1 1-1z"></path></svg>';
 const COMMENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9A1.5 1.5 0 0 1 19 16.5H9.2L4.5 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"></path></svg>';
+const MORE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"></circle><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><circle cx="19" cy="12" r="1.8" fill="currentColor"></circle></svg>';
 
 // The tab's stories, as app.js inCat() picks them (kind by source; unknown sources count as news).
 function inCat(kind, cat) {
@@ -135,8 +136,11 @@ function card(it, o) {
   if (sum) body += '<p>' + esc(sum) + '</p>';
   if (safe && it.arrest) body += '<p class="cl-note">Charged or arrested, not convicted.</p>';
   body += '</div>';
+  const more = '<div class="ns-more"><button class="ns-more-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="' + esc('More: ' + it.title) + '">' + MORE + '</button>' +
+    '<div class="ns-more-menu" role="menu" hidden><a class="ns-more-item" role="menuitem" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Open at publisher</a>' +
+    '<button class="ns-more-item" type="button" role="menuitem">Copy link</button></div></div>';
   return '<article class="card news-story" data-sec="' + sec + '"><a class="ca ns-ca' + (pic ? '' : ' noimg') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + src + img + body + '</a>' +
-    '<div class="ns-foot">' + acts + '</div></article>';
+    more + '<div class="ns-foot">' + acts + '</div></article>';
 }
 
 // The list's inner HTML for pick()'s result.

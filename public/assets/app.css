@@ -991,30 +991,74 @@ article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn)::after { c
 .sv-btn[aria-pressed="true"] svg { fill:currentColor; }
 .cm-btn svg, .sv-btn svg { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .list.news-one { gap:var(--card-gap); }
-/* Compact news cards from ~900px: cap the hero, tighten type/padding, keep 44px taps on coarse pointers.
-   Phones stay on the stacked photo-led rules above. Dark mode follows the same tokens.
-   --news-max is set with the other page-width tokens below so it wins over the 960px default. */
+.ns-more { display:none; }
+/* Social-feed news cards from ~900px (X/Threads/LinkedIn/Bluesky on desktop).
+   Phones keep the stacked photo-led rules above. Dark mode uses the same tokens. */
 @media (min-width:900px) {
-  .list.news-one { gap:var(--sp-3); }
-  article.card.news-story { contain-intrinsic-size:auto 200px; }
-  article.card.news-story .ns-src { padding:var(--sp-3) var(--sp-3) var(--sp-2); gap:var(--sp-2); }
-  article.card.news-story .ns-src .av { width:24px; height:24px; }
-  article.card.news-story .ns-src b { font-size:13px; }
-  article.card.news-story .ns-pic {
-    width:100%; max-width:100%; aspect-ratio:16/9; height:auto; max-height:300px;
-    object-fit:cover; object-position:center 30%;
+  .list.news-one { gap:var(--sp-2); }
+  article.card.news-story {
+    position:relative; contain-intrinsic-size:auto 180px; border-radius:12px;
+    box-shadow:none; overflow:visible;
   }
-  article.card.news-story .ns-bd { gap:var(--sp-1); padding:var(--sp-2) var(--sp-3) var(--sp-1); }
-  article.card.news-story h2 { font-size:17px; line-height:22px; letter-spacing:-.01em; }
+  article.card.news-story:hover { background:var(--background-subtle); border-color:var(--gray-300); }
+  article.card.news-story .ns-src {
+    padding:12px 44px 8px 12px; gap:10px; font-size:13px; line-height:18px;
+  }
+  article.card.news-story .ns-src .av {
+    width:40px; height:40px; flex:none; box-shadow:0 0 0 1px var(--gray-200);
+  }
+  article.card.news-story .ns-src:not(:has(.av))::before {
+    content:""; width:40px; height:40px; flex:none; border-radius:9999px; background:var(--gray-200);
+  }
+  article.card.news-story .ns-src b { font-size:14px; font-weight:600; }
+  article.card.news-story .ns-pic {
+    display:block; box-sizing:border-box;
+    width:calc(100% - 24px); max-width:calc(100% - 24px); margin:0 12px 8px;
+    aspect-ratio:16/9; height:auto; max-height:320px;
+    object-fit:cover; object-position:center 30%;
+    border-radius:12px; border:1px solid var(--gray-200); background:var(--gray-100);
+  }
+  article.card.news-story .ns-bd { gap:6px; padding:0 12px 8px; }
+  article.card.news-story h2 { font-size:15px; line-height:20px; font-weight:600; letter-spacing:0; -webkit-line-clamp:4; }
   article.card.news-story .ns-bd p:not(.cl-note) { font-size:13px; line-height:18px; }
-  article.card.news-story .ns-foot { min-height:0; padding:var(--sp-1) var(--sp-2) var(--sp-2); }
+  article.card.news-story .ns-foot { min-height:0; padding:0 4px 8px 8px; }
+  article.card.news-story .ns-foot .acts {
+    width:auto; flex:none; justify-content:flex-start; flex-wrap:nowrap; gap:2px;
+  }
+  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {
+    border:0; background:transparent; color:var(--text-muted);
+    height:44px; min-height:44px; min-width:44px;
+  }
+  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn):hover {
+    background:var(--gray-100); color:var(--foreground);
+  }
+  article.card.news-story:has(.ns-more-menu:not([hidden])) { z-index:5; }
+  article.card.news-story .ns-more { display:block; position:absolute; top:8px; right:6px; z-index:2; }
+  article.card.news-story .ns-more-btn {
+    width:32px; height:32px; min-height:32px; display:grid; place-items:center;
+    border:0; border-radius:9999px; background:transparent; color:var(--text-muted); cursor:pointer;
+  }
+  article.card.news-story .ns-more-btn:hover { background:var(--gray-100); color:var(--foreground); }
+  article.card.news-story .ns-more-btn svg { width:18px; height:18px; fill:currentColor; stroke:none; }
+  article.card.news-story .ns-more-menu {
+    position:absolute; top:100%; right:0; z-index:4; min-width:180px; padding:6px;
+    border:1px solid var(--gray-200); border-radius:10px; background:var(--background);
+    box-shadow:var(--shadow-md);
+  }
+  article.card.news-story .ns-more-menu[hidden] { display:none; }
+  article.card.news-story .ns-more-item {
+    display:block; width:100%; box-sizing:border-box; margin:0; padding:8px 10px;
+    border:0; border-radius:8px; background:transparent; color:var(--foreground);
+    font:inherit; font-size:13px; line-height:18px; text-align:left; cursor:pointer; text-decoration:none;
+  }
+  article.card.news-story .ns-more-item:hover { background:var(--gray-100); }
 }
 @media (min-width:900px) and (pointer:fine) {
   article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {
-    height:32px; min-height:32px; min-width:32px;
+    height:34px; min-height:34px; min-width:34px;
   }
-  article.card.news-story .ns-foot .like, article.card.news-story .ns-foot .cm-btn { padding:0 var(--sp-2); }
-  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) svg { width:16px; height:16px; }
+  article.card.news-story .ns-foot .like, article.card.news-story .ns-foot .cm-btn { padding:0 8px; }
+  article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) svg { width:18px; height:18px; }
   article.card.news-story .ns-foot .like > span, article.card.news-story .ns-foot .cm-btn > span { font-size:12px; }
 }
 .st-sheet .st-page > .st-src { position:static; color:inherit; padding:var(--sp-6) calc(var(--sp-12) + var(--sp-6)) var(--sp-3) var(--sp-6); min-width:0; }
@@ -1245,7 +1289,7 @@ article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico.on { color:var(--fo
    rather than stretching; text keeps its line-length caps. */
 :root { --page-max:960px; --rail-w:160px; --rail-gap:24px; --news-max:960px; }
 @media (min-width:900px) {
-  :root { --news-max:720px; }
+  :root { --news-max:600px; }
   .list.news-one { max-width:var(--news-max); margin-left:auto; margin-right:auto; }
 }
 @media (min-width:1440px) { :root { --page-max:1056px; } } /* 160x600 side ads: 1056 + 2 × (160 + 24) = 1424. 120x600 is too narrow for a readable headline */

@@ -451,15 +451,15 @@ test('no-image and long text still expose save; 44px targets at 320–1280; 200%
         expect(row.shareH).toBeGreaterThanOrEqual(tap);
         expect(row.svH).toBeGreaterThanOrEqual(tap);
         if (vp.width >= 900) {
-          expect(row.likeH).toBeLessThan(40);
-          expect(row.shareH).toBeLessThan(40);
-          expect(row.svH).toBeLessThan(40);
+          expect(row.likeH).toBeLessThanOrEqual(36);
+          expect(row.shareH).toBeLessThanOrEqual(36);
+          expect(row.svH).toBeLessThanOrEqual(36);
         }
         if (/arrested downtown|Annual report|allegedly killed/.test(row.title)) expect(row.hasCm).toBe(false);
         else {
           expect(row.hasCm).toBe(true);
           expect(row.cmH).toBeGreaterThanOrEqual(tap);
-          if (vp.width >= 900) expect(row.cmH).toBeLessThan(40);
+          if (vp.width >= 900) expect(row.cmH).toBeLessThanOrEqual(36);
         }
       }
       const noimg = m.rows.find(r => /no photograph/.test(r.title));

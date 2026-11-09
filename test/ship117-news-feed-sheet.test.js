@@ -44,7 +44,7 @@ test('ship117: non-Breaking news cards are stacked photo-led, not the CNN row', 
   assert.match(css, /\.news-story \.ns-pic \{[^}]*width:100%/);
   assert.match(css, /\.news-story \.ns-pic \{[^}]*aspect-ratio:16\/9/);
   assert.match(css, /\.news-story \.ns-foot [^{]*min-height:44px|\.news-story \.ns-foot :is\(\.like, \.share, \.cm-btn, \.sv-btn\) \{[^}]*min-height:44px/);
-  assert.match(css, /@media \(min-width:900px\) \{[\s\S]*max-height:300px/);
+  assert.match(css, /@media \(min-width:900px\) \{[\s\S]*max-height:320px/);
   assert.ok(!/EXAMPLE STORY/.test(js + cards));
   assert.match(mk, /newsActs\(/);
   assert.match(js, /el\('button', 'sv-btn'\)/);

@@ -23,6 +23,7 @@
   var ICON_HEART = [['path', { d: 'M12 21C6.5 17.2 2.5 13.6 2.5 8.8A5 5 0 0 1 12 6.4a5 5 0 0 1 9.5 2.4c0 4.8-4 8.4-9.5 12.2Z' }]];
   var ICON_BOOKMARK = [['path', { d: 'M7 3.5h10a1 1 0 0 1 1 1V21l-6-3.4L6 21V4.5a1 1 0 0 1 1-1z' }]];
   var ICON_COMMENT = [['path', { d: 'M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9A1.5 1.5 0 0 1 19 16.5H9.2L4.5 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z' }]];
+  var ICON_MORE = [['circle', { cx: '5', cy: '12', r: '1.8', fill: 'currentColor' }], ['circle', { cx: '12', cy: '12', r: '1.8', fill: 'currentColor' }], ['circle', { cx: '19', cy: '12', r: '1.8', fill: 'currentColor' }]];
   // A short message at the bottom of the screen (screen readers hear it too).
   var toastEl = null, toastT = 0;
   function toast(msg) {
@@ -41,6 +42,52 @@
     g.appendChild(saveBtn(it));
     g.appendChild(shareFor(it));
     return g;
+  }
+  function closeNewsMore() {
+    Array.prototype.forEach.call(document.querySelectorAll('.ns-more-menu:not([hidden])'), function (m) {
+      m.hidden = true;
+      var btn = m.parentNode && m.parentNode.querySelector('.ns-more-btn');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', closeNewsMore);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNewsMore(); });
+  function moreBtn(it) {
+    var wrap = el('div', 'ns-more');
+    var b = el('button', 'ns-more-btn');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'More: ' + it.title);
+    b.setAttribute('aria-haspopup', 'menu');
+    b.setAttribute('aria-expanded', 'false');
+    b.appendChild(svg(ICON_MORE));
+    var menu = el('div', 'ns-more-menu');
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    var href = safeHref(it.link);
+    var open = el('a', 'ns-more-item');
+    open.href = href; open.target = '_blank'; open.rel = 'noopener noreferrer';
+    open.setAttribute('role', 'menuitem');
+    open.textContent = 'Open at publisher';
+    var copy = el('button', 'ns-more-item');
+    copy.type = 'button';
+    copy.setAttribute('role', 'menuitem');
+    copy.textContent = 'Copy link';
+    copy.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      copyLink(href);
+      closeNewsMore();
+    });
+    open.addEventListener('click', function (e) { e.stopPropagation(); });
+    menu.appendChild(open); menu.appendChild(copy);
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var openNow = menu.hidden;
+      closeNewsMore();
+      if (openNow) { menu.hidden = false; b.setAttribute('aria-expanded', 'true'); }
+    });
+    wrap.addEventListener('click', function (e) { e.stopPropagation(); });
+    wrap.appendChild(b); wrap.appendChild(menu);
+    return wrap;
   }
   function saveBtn(it) {
     var b = el('button', 'sv-btn'); b.type = 'button';
@@ -3217,6 +3264,7 @@
       a.appendChild(body);
     }
     card.appendChild(a);
+    if (!big) card.appendChild(moreBtn(it));
     if (!big) card._story = { it: it, pic: pic, logo: logo, title: hTitle, heart: sb }; // ship98: the sheet's previous / next
     // ship95: a tap on the story opens its sheet over the feed (picture, headline, summary, "Continue to <publisher>");
     // a modified or middle click still opens the publisher's page directly. Heart and share sit outside the link.

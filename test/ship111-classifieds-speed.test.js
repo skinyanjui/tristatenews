@@ -187,7 +187,8 @@ test('ship111: 40 listing pages at 250ms each: cold waits for the concurrent cra
 
 test('ship111: handler returns before a stale crawl finishes; Vercel waitUntil keeps it; stale answers are no-store', async () => {
   M.reset();
-  const t0 = Date.parse('2026-11-06T12:00:00Z');
+  // Handler uses Date.now(); last-good must be older than 30 minutes and younger than STALE_DAYS.
+  const t0 = Date.now() - 31 * 60000;
   await M.load({ fetch: fakeFetch(GOOD), now: t0 });
   let finished = false, waited = null;
   const prev = globalThis[Symbol.for('@vercel/request-context')];

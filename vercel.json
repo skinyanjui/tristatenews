@@ -240,7 +240,7 @@
       ]
     },
     {
-      "source": "/(breaking.js|routes.js|featured.js|adslots.js|adsizes.js|flowers.js|eventtime.js|dedupe.js|sponsors.json|manifest.webmanifest|legal.css)",
+      "source": "/(breaking.js|routes.js|featured.js|adslots.js|adsizes.js|flowers.js|eventtime.js|dedupe.js|crime.js|sponsors.json|manifest.webmanifest|legal.css)",
       "headers": [
         {
           "key": "Cache-Control",

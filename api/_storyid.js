@@ -10,7 +10,7 @@ function storyId(link) {
   return 'h' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 // The Redis set of current story ids, rewritten by every refresh (built under TMP, then RENAMEd over KEY).
-// META is the trusted kind/title for comments (api/_comments.js): never take the client's category.
+// META is the trusted kind/title/summary/link for comments (api/_comments.js): never take the client's category.
 const KEY = 'tsn:news:ids', TMP = 'tsn:news:ids:next', META = 'tsn:news:meta';
 function metaOf(items, sources) {
   const kinds = {};
@@ -18,7 +18,13 @@ function metaOf(items, sources) {
   const out = {};
   (items || []).forEach(i => {
     if (!i || !i.link) return;
-    out[storyId(i.link)] = { kind: kinds[i.sourceId] || '', title: String(i.title || ''), sourceId: String(i.sourceId || '') };
+    out[storyId(i.link)] = {
+      kind: kinds[i.sourceId] || '',
+      title: String(i.title || ''),
+      summary: String(i.summary || ''),
+      link: String(i.link || ''),
+      sourceId: String(i.sourceId || '')
+    };
   });
   return out;
 }

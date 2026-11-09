@@ -128,9 +128,9 @@ test('ship118: still 8 functions; /api/comments is hosted by react.js', () => {
 });
 
 test('ship118: CRIME_RE matches the page; unknown metadata fail closed', () => {
-  const m = /var CRIME_RE = (\/\\b\(\?:[\s\S]*?\/i);/.exec(js);
-  assert.ok(m, 'page CRIME_RE');
-  assert.equal(String(crime.CRIME_RE), m[1]);
+  assert.match(js, /window\.TSNCrime/);
+  assert.match(js, /function crimeStory\(it\) \{ return CR \? CR\.crimeStory\(it\) : true; \}/);
+  assert.equal(crime.CRIME_RE.source, require('../public/crime.js').CRIME_RE.source);
   assert.equal(crime.commentsBlocked(null), true);
   assert.equal(crime.commentsBlocked({}), true);
   assert.equal(crime.commentsBlocked({ kind: '', title: 'Riverfront plan' }), true);
@@ -197,6 +197,8 @@ test('ship118: idsCmds writes trusted meta from sources, not the client', () => 
   assert.equal(cmds[4][1], META);
   const meta = JSON.parse(cmds[4][2]);
   assert.equal(meta[storyId('https://n.ex/a')].kind, 'news');
+  assert.equal(meta[storyId('https://n.ex/a')].title, 'Riverfront');
+  assert.equal(meta[storyId('https://n.ex/a')].link, 'https://n.ex/a');
   assert.equal(meta[storyId('https://p.ex/b')].kind, 'police');
   assert.match(read('api/news.js'), /idsCmds\(snap\.items, 2 \* 86400, snap\.sources\)/);
 });

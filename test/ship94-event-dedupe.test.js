@@ -54,14 +54,14 @@ test('ship94: Advertise cards carry no "Opening soon" tag; the page says it once
 
 test('ship94: outlet crime stories show no photo; other news keeps its picture', () => {
   const app = read('public/assets/app.js');
-  const R = eval(app.match(/var CRIME_RE = (\/.*\/i);/)[1]);
+  const C = require('../public/crime.js');
   for (const t of ['Convicted Evansville murderer to be executed in Indiana tonight', 'Registered sex offender arrested for recording children',
     'Woman charged with hiding income to pocket $12K in illegal SNAP funds', 'Evansville man charged with rape', 'Two arrested after reported bat attack, stabbing',
     'Police investigating shooting on Lincoln Ave',
-    'Woman allegedly killed by husband texted sister she was \u2018not good\u2019 days before her body was found']) assert.ok(R.test(t), t);
+    'Woman allegedly killed by husband texted sister she was \u2018not good\u2019 days before her body was found']) assert.ok(C.crimeTitle(t), t);
   for (const t of ['Mater Dei band preps for state', 'Aces shooting woes continue', 'New Kroger Marketplace opens Thursday on Fairview Drive',
     'DNC Chairman shares party message', 'SIU to host Nov. 13 small business workshop',
-    'Storm kills 3 in western Kentucky after overnight flooding', 'Pacers kill off the Heat in overtime', 'Heat wave deaths climb in the Ohio Valley']) assert.ok(!R.test(t), t);
+    'Storm kills 3 in western Kentucky after overnight flooding', 'Pacers kill off the Heat in overtime', 'Heat wave deaths climb in the Ohio Valley']) assert.ok(!C.crimeTitle(t), t);
   assert.ok(app.includes("var pic = safe ? '' : it.image;\n    if (crimeStory(it)) pic = '';"), 'Police & courts still photo-free by source kind, crime stories by headline');
 });
 

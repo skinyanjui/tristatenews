@@ -39,11 +39,24 @@ test('ship119: disguises (case, leet, punct, zero-width, spaced letters)', () =>
   assert.equal(F.classify('bull shit').action, 'reject');
 });
 
-test('ship119: hate without slurs holds; quoting a slur still rejects; not an AI', () => {
+test('ship119: hate without slurs holds; anti-hate without a banned token is ok; not an AI', () => {
   assert.equal(F.classify('kill all jews').action, 'reject');
   assert.equal(F.classify('I hate all muslims').action, 'hold');
   assert.equal(F.classify('immigrants should die').action, 'hold');
-  assert.equal(F.classify('Don’t use the word nigger here').action, 'reject');
   assert.equal(F.classify('The speaker used a homophobic slur; that was wrong').action, 'ok');
   assert.ok(!String(F.classify).includes('openai') && !String(require('fs').readFileSync(require.resolve('../api/_cmfilter.js'), 'utf8')).includes('fetch('));
+});
+
+test('ship119: ambiguous mentions hold; directed/bare slurs still reject; quote bait is not a publish bypass', () => {
+  assert.equal(F.classify('nigger').action, 'reject');
+  assert.equal(F.classify('you nigger').action, 'reject');
+  assert.equal(F.classify('those faggots').action, 'reject');
+  assert.equal(F.classify('Don’t use the word nigger here').action, 'hold');
+  assert.equal(F.classify('The word retard is outdated in medical notes.').action, 'hold');
+  assert.equal(F.classify('Growth of the downtown plan was retarded by the flood.').action, 'hold');
+  assert.equal(F.classify('They shouted “nigger” at the kids on Main.').action, 'hold');
+  assert.equal(F.classify('don’t say nigger you nigger').action, 'reject');
+  assert.equal(F.classify('don’t say nigger; kill all jews').action, 'reject');
+  assert.equal(F.classify('the word fuck is not allowed').action, 'hold');
+  assert.equal(F.classify('fuck this riverfront').action, 'reject');
 });

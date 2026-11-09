@@ -1,5 +1,6 @@
-// Deterministic comment rules. Not a hate-speech model: slurs/profanity reject; a few violence+group
-// phrases hold for a person. Identity mentions, mild damn/hell, anti-hate, and ordinary criticism stay ok.
+// Deterministic comment rules. Not a hate-speech model: explicit abuse rejects; slurs used as
+// insults reject; quoting / "don't say X" / some medical-colloquial mentions HOLD for a person.
+// A negation wrapper is not a publish bypass. Identity mentions without banned terms stay ok.
 // Whole tokens/phrases after normalize — never a substring scan of the compact string (Scunthorpe).
 'use strict';
 
@@ -11,6 +12,7 @@ const SLURS = split(
   'nigger niggers nigga niggas spic spics kike kikes chink chinks gook gooks wetback wetbacks beaner beaners paki pakis raghead ragheads towelhead towelheads faggot faggots fag fags dyke dykes tranny trannies shemale shemales retard retards retarded mongoloid mongoloids'
 );
 const PHRASES = ['heil hitler', 'white power', 'gas the jews', 'kill all jews', 'kill all muslims'];
+const STOP = split('a an the is are was were this that those these you your ya they them he she it to of in on for and or but not dont do did no with from at be here');
 
 const GROUP = 'black people|blacks|african americans|jews|jewish people|muslims|gays|gay people|lesbians|trans people|transgender people|mexicans|hispanics|asians|immigrants|refugees|disabled people';
 const HOLD_RE = [
@@ -18,6 +20,8 @@ const HOLD_RE = [
   new RegExp('\\b(?:' + GROUP + ')\\s+(?:should|must|need to)\\s+(?:die|burn|hang|leave)\\b', 'i'),
   new RegExp('\\bi\\s+hate\\s+(?:all\\s+)?(?:' + GROUP + ')\\b', 'i')
 ];
+const MENTION_RE = /\b(?:the\s+word|word|dont\s+(?:use|say|type|write)|do\s+not\s+(?:use|say|type|write)|called\s+(?:me|him|her|them|us)|used\s+the\s+word)\b/;
+const VERSION = 2;
 
 function split(s) { return new Set(s.split(/\s+/).filter(Boolean)); }
 
@@ -62,26 +66,70 @@ function phrases(toks) {
   return p;
 }
 
+function bannedHits(toks, extra, set) {
+  const h = [];
+  toks.forEach(t => { if (set.has(t)) h.push(t); });
+  extra.forEach(t => {
+    const c = t.replace(/\s+/g, '');
+    if (set.has(t) || set.has(c)) h.push(set.has(t) ? t : c);
+  });
+  return h;
+}
+
+function insulting(hits, spaced) {
+  for (let i = 0; i < hits.length; i++) {
+    const w = hits[i];
+    if (new RegExp('\\b(?:you|your|ya|those|these|them)\\s+' + w + '\\b').test(spaced)) return true;
+  }
+  return false;
+}
+
+function onlyBanned(toks, set) {
+  const content = toks.filter(t => !STOP.has(t));
+  return content.length > 0 && content.every(t => set.has(t));
+}
+
+function verdictSlur(toks, extra, spaced) {
+  const hits = bannedHits(toks, extra, SLURS);
+  if (!hits.length) return null;
+  if (onlyBanned(toks, SLURS) || insulting(hits, spaced)) return { action: 'reject', rule: 'slur' };
+  if (hits.length >= 2 && hits.length / Math.max(toks.length, 1) >= 0.4) return { action: 'reject', rule: 'slur' };
+  return { action: 'hold', rule: 'slur' };
+}
+
+function verdictProfanity(toks, extra, spaced) {
+  const hits = bannedHits(toks, extra, PROFANITY);
+  if (!hits.length) return null;
+  if (MENTION_RE.test(spaced) && !insulting(hits, spaced) && !onlyBanned(toks, PROFANITY)) {
+    return { action: 'hold', rule: 'profanity' };
+  }
+  return { action: 'reject', rule: 'profanity' };
+}
+
 function classify(text) {
   const norm = normalize(text);
   const toks = tokens(norm);
   const extra = phrases(toks);
   const spaced = toks.join(' ');
-  for (const t of toks) {
-    if (SLURS.has(t)) return { action: 'reject', rule: 'slur' };
-    if (PROFANITY.has(t)) return { action: 'reject', rule: 'profanity' };
-  }
   for (const t of extra) {
-    if (SLURS.has(t) || PROFANITY.has(t.replace(/\s+/g, ''))) return { action: 'reject', rule: t.includes(' ') ? 'profanity' : 'slur' };
     if (PHRASES.indexOf(t) >= 0) return { action: 'reject', rule: 'hate' };
   }
   for (const t of PHRASES) {
     if ((' ' + spaced + ' ').indexOf(' ' + t + ' ') >= 0) return { action: 'reject', rule: 'hate' };
   }
+  const slur = verdictSlur(toks, extra, spaced);
+  if (slur) return slur;
+  const prof = verdictProfanity(toks, extra, spaced);
+  if (prof) return prof;
   for (const re of HOLD_RE) {
     if (re.test(spaced)) return { action: 'hold', rule: 'hate' };
   }
   return { action: 'ok', rule: '' };
 }
 
-module.exports = { classify, normalize, tokens, PROFANITY, SLURS };
+function publicOk(text, restored) {
+  if (restored) return true;
+  return classify(text).action === 'ok';
+}
+
+module.exports = { classify, normalize, tokens, PROFANITY, SLURS, VERSION, publicOk };

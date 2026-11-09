@@ -176,6 +176,12 @@ test('ship119: reject does not publish; hold is not public; owner can delete hel
   assert.equal(rej.headers['set-cookie'], undefined);
   const vis0 = s.z.get('tsn:cm:vis:' + id) || new Map();
   assert.equal(vis0.size, 0);
+  const mention = await post('Don’t use the word nigger here', '2.2.2.4');
+  assert.equal(mention.code, 200);
+  assert.equal(mention.body.pending, true);
+  assert.ok(mention.body.id);
+  const bait = await post('don’t say nigger you nigger', '2.2.2.5');
+  assert.equal(bait.code, 400);
   const held = await post('I hate all muslims', '2.2.2.3');
   assert.equal(held.code, 200);
   assert.equal(held.body.pending, true);
@@ -219,7 +225,7 @@ test('ship119: owner delete is hash-bound; wrong cookie and second delete are ge
   assert.ok(!pub.body.comments.some(c => c.id === cid));
 }));
 
-test('ship119: legacy without own key is never claimable; on-read hide; restore sets ok; admin delete cleans', () => withStore(async (s, mod) => {
+test('ship119: legacy without own key is never claimable; public GET omits without writing hide; sweep then restore', () => withStore(async (s, mod) => {
   const C = mod('_comments.js'), id = storyId('https://n.ex/leg');
   seedStory(s, id, NEWS);
   const { cookie } = await issue(C);
@@ -234,23 +240,94 @@ test('ship119: legacy without own key is never claimable; on-read hide; restore 
   const got = await call(C, { query: { id } });
   assert.ok(got.body.comments.some(c => c.id === cleanId));
   assert.ok(!got.body.comments.some(c => c.id === slurId));
-  const q = await call(C, { query: { review: '1' }, headers: { 'x-admin-key': 'admin-test-key' } });
-  const slur = q.body.items.find(x => x.id === slurId);
-  assert.equal(slur && slur.why, 'filter');
+  assert.equal(got.body.total, 1);
+  assert.equal(got.body.count, 1);
+  assert.equal(s.kv.get('tsn:cm:hide:' + slurId), undefined, 'opening a thread must not hide for the first reader');
+  assert.ok((s.z.get('tsn:cm:vis:' + id) || new Map()).has(slurId), 'filter omit is a view; vis member stays until sweep');
+  const before = await call(C, { query: { review: '1' }, headers: { 'x-admin-key': 'admin-test-key' } });
+  assert.ok(!before.body.items.some(x => x.id === slurId));
   const mine = await call(C, { method: 'POST', headers: Object.assign({ cookie }, origin), body: { action: 'mine', ids: [cleanId, slurId] } });
   assert.deepEqual(mine.body.mine, []);
   const claim = await call(C, { method: 'POST', headers: Object.assign({ cookie }, origin), body: { action: 'delete', id: cleanId } });
   assert.equal(claim.code, 404);
   assert.ok(s.kv.get('tsn:cm:' + cleanId));
+  const sw = await call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'sweep' } });
+  assert.equal(sw.code, 200);
+  assert.ok(sw.body.hid >= 1);
+  const q = await call(C, { query: { review: '1' }, headers: { 'x-admin-key': 'admin-test-key' } });
+  const slur = q.body.items.find(x => x.id === slurId);
+  assert.equal(slur && slur.why, 'filter');
+  assert.ok(!s.z.get('tsn:cm:vis:' + id).has(slurId));
   const rest = await call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'restore', id: slurId } });
   assert.equal(rest.body.restored, true);
   assert.ok(s.kv.get('tsn:cm:ok:' + slurId));
   const back = await call(C, { query: { id } });
-  assert.ok(back.body.comments.some(c => c.id === slurId), 'admin restore must skip autohide');
+  assert.ok(back.body.comments.some(c => c.id === slurId), 'admin restore must skip the filter view');
+  const noKey = await call(C, { method: 'POST', headers: origin, body: { action: 'sweep' } });
+  assert.equal(noKey.code, 404);
+  const missing = await call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'restore', id: 'cmissing1' } });
+  assert.equal(missing.body.restored, false);
   await call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'delete', id: cleanId } });
   assert.equal(s.kv.get('tsn:cm:' + cleanId), undefined);
   assert.equal(s.kv.get('tsn:cm:own:' + cleanId), undefined);
   assert.equal(s.kv.get('tsn:cm:ok:' + cleanId), undefined);
+}));
+
+test('ship119: public counts match the filtered thread across pages and stories; GET is not a mod write', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js');
+  const a = storyId('https://n.ex/cnt-a'), b = storyId('https://n.ex/cnt-b');
+  seedStory(s, a, NEWS);
+  seedStory(s, b, NEWS);
+  const now = new Date().toISOString();
+  const exp = Date.now() / 1000 + 86400;
+  const visA = new Map(), visB = new Map();
+  for (let i = 0; i < 25; i++) {
+    const cid = 'cok' + String(i).padStart(4, '0');
+    s.kv.set('tsn:cm:' + cid, JSON.stringify({ id: cid, storyId: a, text: 'River comment number ' + i + '.', at: now }));
+    visA.set(cid, exp - i);
+  }
+  for (let i = 0; i < 5; i++) {
+    const cid = 'cslur' + i;
+    s.kv.set('tsn:cm:' + cid, JSON.stringify({ id: cid, storyId: a, text: 'nigger', at: now }));
+    visA.set(cid, exp + 10 + i);
+  }
+  s.z.set('tsn:cm:vis:' + a, visA);
+  const bOk = 'cbok0001', bSlur = 'cbslur01';
+  s.kv.set('tsn:cm:' + bOk, JSON.stringify({ id: bOk, storyId: b, text: 'Nice riverfront work.', at: now }));
+  s.kv.set('tsn:cm:' + bSlur, JSON.stringify({ id: bSlur, storyId: b, text: 'nigger', at: now }));
+  visB.set(bOk, exp); visB.set(bSlur, exp + 1);
+  s.z.set('tsn:cm:vis:' + b, visB);
+  const page = await call(C, { query: { id: a } });
+  assert.equal(page.body.comments.length, 20);
+  assert.equal(page.body.total, 25);
+  assert.equal(page.body.count, 25);
+  assert.ok(page.body.comments.every(c => !/nigger/i.test(c.text)));
+  const page2 = await call(C, { query: { id: a, offset: '20' } });
+  assert.equal(page2.body.comments.length, 5);
+  assert.equal(page2.body.total, 25);
+  assert.ok(page2.body.comments.every(c => !/nigger/i.test(c.text)));
+  assert.equal(s.kv.get('tsn:cm:hide:cslur0'), undefined);
+  assert.equal((s.z.get('tsn:cm:vis:' + a) || new Map()).size, 30);
+  const counts = await call(C, { query: { ids: a + ',' + b } });
+  assert.equal(counts.body.counts[a], 25);
+  assert.equal(counts.body.counts[b], 1);
+  const quoteId = 'cquote01';
+  s.kv.set('tsn:cm:' + quoteId, JSON.stringify({ id: quoteId, storyId: b, text: 'Don’t use the word nigger here', at: now }));
+  visB.set(quoteId, exp + 2);
+  const bThread = await call(C, { query: { id: b } });
+  assert.equal(bThread.body.total, 1);
+  assert.ok(!bThread.body.comments.some(c => c.id === quoteId), 'held mention is not public without review');
+  assert.equal(s.kv.get('tsn:cm:hide:' + quoteId), undefined);
+  const okId = 'cbokslur1';
+  s.kv.set('tsn:cm:' + okId, JSON.stringify({ id: okId, storyId: b, text: 'nigger', at: now }));
+  s.kv.set('tsn:cm:ok:' + okId, '1');
+  visB.set(okId, exp + 3);
+  const overridden = await call(C, { query: { id: b } });
+  assert.ok(overridden.body.comments.some(c => c.id === okId), 'admin ok-key keeps a reviewed rec public');
+  const sw = await call(C, { method: 'POST', headers: Object.assign({ 'x-admin-key': 'admin-test-key' }, origin), body: { action: 'sweep' } });
+  assert.equal(sw.code, 200);
+  assert.ok(s.z.get('tsn:cm:vis:' + b).has(okId), 'sweep must not autohide a restored rec');
+  assert.equal(s.kv.get('tsn:cm:hide:' + okId), undefined);
 }));
 
 test('ship119: two first-time readies issue different cookies; each create binds the token on that request; other token cannot delete', () => withStore(async (s, mod) => {
@@ -267,6 +344,20 @@ test('ship119: two first-time readies issue different cookies; each create binds
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c1 }, origin), body: { action: 'delete', id: a.body.comment.id } })).code, 200);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c1 }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 404);
   assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: c2 }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
+}));
+
+test('ship119: one cookie jar keeps the last Set-Cookie; posts after both readies share that token', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js'), id = storyId('https://n.ex/jar');
+  seedStory(s, id, NEWS);
+  const t1 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
+  const t2 = await call(C, { method: 'POST', headers: origin, body: { action: 'ready' } });
+  const jar = cookieHeader(t2.headers['set-cookie']);
+  assert.notEqual(tokenOf(cookieHeader(t1.headers['set-cookie'])), tokenOf(jar));
+  const a = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.5.1', cookie: jar }, origin), body: { id, uid: 'reader-j01', text: 'First after both readies.' } });
+  const b = await call(C, { method: 'POST', headers: Object.assign({ 'x-real-ip': '4.4.5.2', cookie: jar }, origin), body: { id, uid: 'reader-j02', text: 'Second from the same jar.' } });
+  assert.equal(a.code, 200); assert.equal(b.code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: jar }, origin), body: { action: 'delete', id: a.body.comment.id } })).code, 200);
+  assert.equal((await call(C, { method: 'POST', headers: Object.assign({ cookie: jar }, origin), body: { action: 'delete', id: b.body.comment.id } })).code, 200);
 }));
 
 test('ship119: malformed/duplicate/oversized cookies rejected; prod __Host- Secure; loopback not spoofable', () => withStore(async (s, mod) => {
@@ -340,4 +431,25 @@ test('ship119: client Delete/ready/draft; legal cookie copy; admin why; no docum
   assert.match(legal, /slurs|profanity|held for review/);
   assert.ok(!/TRISTATENOW itself doesn’t set cookies/.test(legal));
   assert.match(admin, /why/);
+  assert.match(admin, /action: 'sweep'|action:'sweep'/);
+  assert.match(legal, /not a hate-speech model|not an AI|word list/i);
 });
+
+test('ship119: ready issuance and mine have their own burst caps, not the post IP quota', () => withStore(async (s, mod) => {
+  const C = mod('_comments.js');
+  const hdr = Object.assign({ 'x-real-ip': '10.9.8.7' }, origin);
+  for (let i = 0; i < C.READY_PER_IP; i++) {
+    const r = await call(C, { method: 'POST', headers: hdr, body: { action: 'ready' } });
+    assert.equal(r.code, 200);
+    assert.equal(r.body.ready, false);
+  }
+  const over = await call(C, { method: 'POST', headers: hdr, body: { action: 'ready' } });
+  assert.equal(over.code, 429);
+  const { cookie } = await issue(C, { 'x-real-ip': '10.9.8.8' });
+  for (let i = 0; i < C.MINE_PER_IP; i++) {
+    const r = await call(C, { method: 'POST', headers: Object.assign({ cookie, 'x-real-ip': '10.9.8.8' }, origin), body: { action: 'mine', ids: ['cabc123'] } });
+    assert.equal(r.code, 200);
+  }
+  const mineOver = await call(C, { method: 'POST', headers: Object.assign({ cookie, 'x-real-ip': '10.9.8.8' }, origin), body: { action: 'mine', ids: ['cabc123'] } });
+  assert.equal(mineOver.code, 429);
+}));

@@ -8,10 +8,12 @@
 //   POST /api/comments { action:'report', id, uid }
 //   GET  /api/comments?review=1  + x-admin-key   -> hidden/held queue
 //   POST { action:'restore'|'delete', id } + x-admin-key
+//   POST { action:'sweep' } + x-admin-key        -> bounded AUTOHIDE of stored matches (not a public GET)
 // Trusted allowlist is tsn:news:meta + tsn:news:ids from refresh (api/_storyid.js). Client category is ignored.
 // Unknown / expired / police / courts / crime-title / missing meta: fail closed (not allowed, empty thread).
-// Visible index is tsn:cm:vis:<storyId> (ZSET, score = expiry unix). Count is ZCARD after pruning expired
-// members, not a separate n±1 key. Hide/restore/delete/create run as one Redis EVAL.
+// Visible index is tsn:cm:vis:<storyId> (ZSET, score = expiry unix). Public counts are the in-memory
+// filtered vis set (≤ MAX_VIS), not a raw ZCARD, so cards match the thread. Expiry prune may write;
+// classification on GET does not. Hide/restore/delete/create/sweep run as one Redis EVAL.
 // GET never reads Cookie and stays public/CDN-cacheable. Ownership is a first-party HttpOnly cookie
 // (see api/_cmcookie.js). Create requires a valid incoming cookie (round-trip via ready); we never
 // treat Set-Cookie on the create response as proof the browser stored it. Filter: api/_cmfilter.js.
@@ -40,6 +42,11 @@ const DAILY_PER_IP = 20;
 const STORY_PER_IP = 8;
 const REPORTS_TO_HIDE = 3;
 const REPORTS_PER_IP = 10;
+const READY_PER_IP = 40;
+const MINE_PER_IP = 40;
+const SWEEP_STORIES = 40;
+const SWEEP_HID = 50;
+const SWEEP_FLAG_CHUNK = 80;
 const REVIEW = 'tsn:cm:review';
 const PRUNE_CHUNK = 80;
 const REJECT_MSG = 'This comment can’t be posted.';
@@ -120,8 +127,9 @@ async function handler(req, res) {
     const raw = typeof req.body === 'string' ? req.body : JSON.stringify(body);
     if (raw.length > MAX_BODY) return send(res, 413, { error: 'too large' });
     const action = String(body.action || '');
-    if (action === 'ready') return ready(req, res);
+    if (action === 'ready') return await ready(req, res);
     if (action === 'mine') return await mine(req, res, body);
+    if (action === 'sweep') return await sweep(req, res);
     if (action === 'restore') return await moderate(req, res, body, action);
     if (action === 'delete') {
       if (ADMIN && same(req.headers['x-admin-key'], ADMIN)) return await moderate(req, res, body, action);
@@ -137,15 +145,24 @@ async function handler(req, res) {
   }
 }
 
-function ready(req, res) {
+async function burst(req, kind, cap) {
+  const ip = clientIp(req) || '0';
+  const k = 'tsn:cm:rl' + kind + ':' + ipHash(ip, 'cm-' + kind);
+  const lim = await pipeline([['INCR', k], ['EXPIRE', k, '60', 'NX']]);
+  return (Number(lim[0] && lim[0].result) || 0) > cap;
+}
+
+async function ready(req, res) {
   const token = COOKIE.readToken(req);
   if (token) return send(res, 200, { ready: true });
+  if (await burst(req, 'ready', READY_PER_IP)) return send(res, 429, { error: 'too many' });
   const issued = COOKIE.newToken();
   renewCookie(req, res, issued);
   return send(res, 200, { ready: false });
 }
 
 async function mine(req, res, body) {
+  if (await burst(req, 'mine', MINE_PER_IP)) return send(res, 429, { error: 'too many' });
   const token = COOKIE.readToken(req);
   if (!token) return send(res, 200, { mine: [] });
   const raw = Array.isArray(body.ids) ? body.ids : String(body.ids || '').split(',');
@@ -165,13 +182,16 @@ async function ownerDelete(req, res, body) {
   const token = COOKIE.readToken(req);
   const id = String(body.id || '');
   if (!token || !CID_RE.test(id)) return send(res, 404, { error: 'not found' });
-  const g = await pipeline([['GET', rec(id)]]);
+  const want = COOKIE.tokenHash(token);
+  const g = await pipeline([['GET', rec(id)], ['GET', ownKey(id)]]);
   const o = parseRec(g[0] && g[0].result);
+  const own = g[1] && g[1].result;
+  if (!own || !COOKIE.hashesEqual(String(own), want)) return send(res, 404, { error: 'not found' });
   const story = (o && o.storyId) || 'x';
   const out = await evalScript(
     ATOM.SCRIPT_OWN_DELETE,
     [rec(id), hideKey(id), repKey(id), visKey(story), REVIEW, ownKey(id), okKey(id)],
-    [id, COOKIE.tokenHash(token)]
+    [id, want]
   );
   const ok = Array.isArray(out) ? Number(out[0]) === 1 : Number(out) === 1;
   if (!ok) return send(res, 404, { error: 'not found' });
@@ -187,47 +207,72 @@ async function classify(id) {
   return { meta, inSet, setExists, allowed };
 }
 
+// Public view of one story: expiry prune (TTL) may write; classification never writes.
+// Filter applies to the whole bounded vis set (≤ MAX_VIS), then the 20-item page is sliced.
+async function publicList(id) {
+  const vis = visKey(id);
+  const got = await pipeline([['ZREVRANGE', vis, '0', String(MAX_VIS - 1)]]);
+  const ids = ((got[0] && got[0].result) || []).filter(x => CID_RE.test(String(x)));
+  if (!ids.length) return [];
+  const recs = await pipeline(ids.map(cid => ['GET', rec(cid)]));
+  const hold = [];
+  const keep = {};
+  ids.forEach((cid, i) => {
+    const o = parseRec(recs[i] && recs[i].result);
+    if (!o || o.storyId !== id) return;
+    const pub = publicComment(o);
+    if (!pub) return;
+    if (FILTER.classify(o.text).action === 'ok') keep[cid] = pub;
+    else hold.push(cid);
+  });
+  if (hold.length) {
+    const oks = await pipeline(hold.map(cid => ['EXISTS', okKey(cid)]));
+    hold.forEach((cid, i) => {
+      if (Number(oks[i] && oks[i].result) !== 1) return;
+      const recI = ids.indexOf(cid);
+      const o = parseRec(recs[recI] && recs[recI].result);
+      const pub = publicComment(o);
+      if (pub) keep[cid] = pub;
+    });
+  }
+  return ids.map(cid => keep[cid]).filter(Boolean);
+}
+
 async function liveThread(id, offset) {
   const vis = visKey(id);
   await pipeline([['ZREMRANGEBYSCORE', vis, '-inf', String(nowSec())]]);
-  const got = await pipeline([['ZREVRANGE', vis, String(offset), String(offset + MAX_THREAD - 1)], ['ZCARD', vis]]);
-  const ids = ((got[0] && got[0].result) || []).filter(x => CID_RE.test(String(x)));
-  let total = Number(got[1] && got[1].result) || 0;
-  if (!ids.length) return { comments: [], total };
-  const recs = await pipeline(ids.map(cid => ['GET', rec(cid)]).concat(ids.map(cid => ['EXISTS', hideKey(cid)])));
-  const slots = [], ghosts = [], scan = [];
-  ids.forEach((cid, i) => {
-    if (Number(recs[ids.length + i] && recs[ids.length + i].result)) { ghosts.push(cid); return; }
-    const o = parseRec(recs[i] && recs[i].result);
-    if (!o || o.storyId !== id) { ghosts.push(cid); return; }
-    const pub = publicComment(o);
-    if (!pub) { ghosts.push(cid); return; }
-    const hit = FILTER.classify(o.text);
-    const row = { cid, pub, hit, keep: hit.action === 'ok' };
-    slots.push(row);
-    if (hit.action !== 'ok') scan.push(row);
+  const all = await publicList(id);
+  return { comments: all.slice(offset, offset + MAX_THREAD), total: all.length };
+}
+
+// Homepage GET ?ids= (≤300): prune first, then rec GETs only for nonempty vis, 200 at a time.
+// Typical feed is a few stories with comments; worst case is bounded (300 × MAX_VIS).
+async function filteredCounts(storyIds) {
+  const counts = {};
+  if (!storyIds.length) return counts;
+  const ranges = await pipeline(storyIds.map(id => ['ZREVRANGE', visKey(id), '0', String(MAX_VIS - 1)]));
+  const flat = [];
+  storyIds.forEach((id, si) => {
+    const ids = ((ranges[si] && ranges[si].result) || []).filter(x => CID_RE.test(String(x)));
+    ids.forEach(cid => flat.push({ id, cid }));
   });
-  if (scan.length) {
-    const oks = await pipeline(scan.map(x => ['EXISTS', okKey(x.cid)]));
-    for (let i = 0; i < scan.length; i++) {
-      if (Number(oks[i] && oks[i].result) === 1) { scan[i].keep = true; continue; }
-      const reason = 'auto-' + (scan[i].hit.rule || 'filter');
-      await evalScript(
-        ATOM.SCRIPT_AUTOHIDE,
-        [rec(scan[i].cid), hideKey(scan[i].cid), vis, REVIEW, okKey(scan[i].cid)],
-        [scan[i].cid, nowSec(), COMMENT_TTL, reason]
-      );
-    }
-    const n = await pipeline([['ZCARD', vis]]);
-    total = Number(n[0] && n[0].result) || slots.filter(x => x.keep).length;
+  for (let i = 0; i < flat.length; i += 200) {
+    const slice = flat.slice(i, i + 200);
+    const recs = await pipeline(slice.map(x => ['GET', rec(x.cid)]));
+    const maybe = [];
+    slice.forEach((x, j) => {
+      const o = parseRec(recs[j] && recs[j].result);
+      if (!o || o.storyId !== x.id) return;
+      if (FILTER.classify(o.text).action === 'ok') counts[x.id] = (counts[x.id] || 0) + 1;
+      else maybe.push(x);
+    });
+    if (!maybe.length) continue;
+    const oks = await pipeline(maybe.map(x => ['EXISTS', okKey(x.cid)]));
+    maybe.forEach((x, j) => {
+      if (Number(oks[j] && oks[j].result) === 1) counts[x.id] = (counts[x.id] || 0) + 1;
+    });
   }
-  const comments = slots.filter(x => x.keep).map(x => x.pub);
-  if (ghosts.length) {
-    await pipeline(ghosts.map(cid => ['ZREM', vis, cid]));
-    const n = await pipeline([['ZCARD', vis]]);
-    total = Number(n[0] && n[0].result) || comments.length;
-  }
-  return { comments, total };
+  return counts;
 }
 
 async function read(req, res) {
@@ -257,6 +302,15 @@ async function read(req, res) {
     chunk.forEach((id, j) => {
       const n = Number(arr[j]) || 0;
       if (n > 0) counts[id] = n;
+    });
+  }
+  const nonempty = Object.keys(counts);
+  if (nonempty.length) {
+    const filtered = await filteredCounts(nonempty);
+    nonempty.forEach(id => {
+      const n = Number(filtered[id]) || 0;
+      if (n) counts[id] = n;
+      else delete counts[id];
     });
   }
   return send(res, 200, { configured: true, counts }, 'public, max-age=0, s-maxage=15');
@@ -329,6 +383,52 @@ async function report(req, res, body) {
   return send(res, 200, { ok: true });
 }
 
+async function sweep(req, res) {
+  if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(res, 404, { error: 'not found' });
+  const pre = await pipeline([['GET', META]]);
+  let map = {};
+  try { map = JSON.parse(pre[0] && pre[0].result) || {}; } catch (_) { map = {}; }
+  const ver = String(FILTER.VERSION);
+  const allowed = Object.keys(map).filter(id => STORY_RE.test(id) && map[id] && !commentsBlocked(map[id]));
+  let hid = 0, scanned = 0, more = false;
+  for (let s = 0; s < allowed.length && scanned < SWEEP_STORIES && hid < SWEEP_HID; ) {
+    const batch = allowed.slice(s, s + SWEEP_FLAG_CHUNK);
+    const flags = await pipeline(batch.map(id => ['GET', 'tsn:cm:fsweep:' + id]));
+    for (let b = 0; b < batch.length; b++) {
+      if (scanned >= SWEEP_STORIES || hid >= SWEEP_HID) { more = true; break; }
+      const id = batch[b];
+      if (String(flags[b] && flags[b].result) === ver) continue;
+      scanned++;
+      const vis = visKey(id);
+      const flag = 'tsn:cm:fsweep:' + id;
+      await pipeline([['ZREMRANGEBYSCORE', vis, '-inf', String(nowSec())]]);
+      const members = await pipeline([['ZREVRANGE', vis, '0', String(MAX_VIS - 1)]]);
+      const ids = ((members[0] && members[0].result) || []).filter(x => CID_RE.test(String(x)));
+      let finished = true;
+      if (ids.length) {
+        const recs = await pipeline(ids.map(cid => ['GET', rec(cid)]));
+        for (let i = 0; i < ids.length; i++) {
+          if (hid >= SWEEP_HID) { finished = false; more = true; break; }
+          const o = parseRec(recs[i] && recs[i].result);
+          if (!o) continue;
+          const hit = FILTER.classify(o.text);
+          if (hit.action === 'ok') continue;
+          const out = await evalScript(
+            ATOM.SCRIPT_AUTOHIDE,
+            [rec(ids[i]), hideKey(ids[i]), vis, REVIEW, okKey(ids[i])],
+            [ids[i], nowSec(), COMMENT_TTL, 'auto-' + (hit.rule || 'filter')]
+          );
+          if ((Array.isArray(out) ? Number(out[0]) : Number(out)) === 1) hid++;
+        }
+      }
+      if (finished) await pipeline([['SET', flag, ver, 'EX', String(COMMENT_TTL)]]);
+    }
+    s += batch.length;
+    if (s < allowed.length && (scanned >= SWEEP_STORIES || hid >= SWEEP_HID)) more = true;
+  }
+  return send(res, 200, { ok: true, scanned, hid, more });
+}
+
 async function moderate(req, res, body, action) {
   if (!ADMIN || !same(req.headers['x-admin-key'], ADMIN)) return send(res, 404, { error: 'not found' });
   const id = String(body.id || '');
@@ -384,6 +484,8 @@ module.exports.DAILY_PER_IP = DAILY_PER_IP;
 module.exports.DAILY_PER_UID = DAILY_PER_UID;
 module.exports.STORY_PER_IP = STORY_PER_IP;
 module.exports.REPORTS_TO_HIDE = REPORTS_TO_HIDE;
+module.exports.READY_PER_IP = READY_PER_IP;
+module.exports.MINE_PER_IP = MINE_PER_IP;
 module.exports.REJECT_MSG = REJECT_MSG;
 module.exports.COOKIE_MSG = COOKIE_MSG;
 module.exports.clean = clean;

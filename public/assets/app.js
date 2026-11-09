@@ -2797,7 +2797,7 @@
     var list = el('div', 'cm-list');
     var more = el('button', 'cm-more'); more.type = 'button'; more.textContent = 'Load more'; more.hidden = true;
     var form = el('form', 'cm-form');
-    var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.placeholder = 'Add a public comment (no links, 300 characters).';
+    var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.placeholder = 'Add a public comment (no links, 300 characters). Strong swearing and slurs aren’t posted; quoting them may be held for review.';
     var go = el('button', 'cm-post'); go.type = 'submit'; go.textContent = 'Post';
     form.appendChild(ta); form.appendChild(go);
     d.appendChild(top); d.appendChild(status); d.appendChild(list); d.appendChild(more); d.appendChild(form);

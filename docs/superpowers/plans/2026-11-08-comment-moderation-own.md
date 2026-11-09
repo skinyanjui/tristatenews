@@ -7,7 +7,7 @@
 - `api/_cmfilter.js` — classify
 - `api/_cmcookie.js` — token, parse, hash, Set-Cookie, HTTPS detection
 - `api/_cmatom.js` — CREATE+own, HOLD, AUTOHIDE, OWN_DELETE, DELETE+own/ok, RESTORE+ok
-- `api/_comments.js` — ready, mine, owner delete, filter, on-read hide
+- `api/_comments.js` — ready, mine, owner delete, filter, pure GET view, admin sweep
 - `public/assets/app.js` — ready round-trip, Delete, draft on error
 - `public/admin.html` — why category
 - `public/legal.html` + legal tests — cookie + automated rules

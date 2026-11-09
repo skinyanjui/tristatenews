@@ -86,7 +86,13 @@ function pick(news, listings, now, opts) {
   const weekAgo = now - 7 * 864e5, per = {}, headlines = [];
   // News sources only: no Police & courts items (arrests need their "not convicted" context on the site), no obituaries,
   // no crime/police-report stories (see EXCLUDE_TERMS); the next stories backfill.
-  const stories = (news.items || []).filter(i => !i.isEvent && !i.isObit && (kind[i.sourceId] || 'news') === 'news' && !excluded(i, kind[i.sourceId] || 'news', re) && safeUrl(i.link))
+  const Obit = require('../public/obit.js');
+  const stories = (news.items || []).filter(i => {
+    const k = kind[i.sourceId] || (/^ob-/.test(i.sourceId || '') ? 'obits' : 'news');
+    if (i.isEvent || i.isObit || k !== 'news') return false;
+    if (Obit.obitStory(i)) return false;
+    return !excluded(i, k, re) && safeUrl(i.link);
+  })
     .filter(i => { const t = Date.parse(i.published); return t > weekAgo && t <= now + 36e5; })
     .sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
   for (const i of stories) {

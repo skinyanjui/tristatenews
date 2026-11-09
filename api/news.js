@@ -18,6 +18,7 @@ const { SOURCES, DISABLED_SOURCES, RATE_GROUPS } = require('./_sources.js');
 const { inTriState, PLACES: PLACE_LISTS } = require('./_places.js'); // strict place filter for statewide FBI / U.S. Attorney feeds
 const LOC = () => require('./_location.js'); // loaded only when the shadow classifier runs
 const ET = require('../public/eventtime.js');
+const Obit = require('../public/obit.js');
 const FLAGS = require('./_flags.js');
 // Every publisher request goes through safeFetch (http/https only, no private or metadata addresses after DNS, at most
 // 3 redirects, each re-checked) and every body through readCapped (PR 1.3). Caps are about 3x the largest body seen
@@ -141,6 +142,9 @@ function nameWithNoticeSummary(item) {
   return /,\s*\d{1,3},\s*(?:of\s+)?[A-Z]/.test(head) && (NOTICE_DEATH_RE.test(item.summary || '') || /\bborn\b/i.test(head));
 }
 function looksLikeObit(item) {
+  // Shared soft detector (public/obit.js): name+age, /obituar|/obits/|legacy|funeral-home URLs,
+  // ≥2 weak hints + person name. Keeps title-only false positives out (age 18, funeral home fire, …).
+  if (Obit.obitStory(item)) return true;
   if (/\bobituar(?:y|ies)\b/i.test(item.title)) return true;
   if (nameAgeObit(String(item.title || '').trim()) || nameWithNoticeSummary(item)) return true;
   if (OBIT_AGE_RE.test(String(item.title || '').trim())) return true;
@@ -1437,10 +1441,49 @@ function background(promise) {
 // there are older ones, which ?before=<that ISO time> returns, NEWS_PAGE at a time, stories only. The page fetches
 // them when the reader reaches the end of News. isEvent/isObit are left out: the page tells kinds by source.
 const NEWS_PAGE = 200;
+
+// Safety net for stored snapshots: news-kind items that match the shared obituary detector are remounted as
+// ob-<sourceId> so /obituaries gets them and News drops them, without waiting for the next feed refresh.
+function remountNewsObits(items, kinds) {
+  if (!Array.isArray(items)) return items || [];
+  const out = [];
+  const seenLink = new Set();
+  const seenId = new Set();
+  const seenOb = new Set();
+  for (const raw of items) {
+    if (!raw) continue;
+    let it = raw;
+    const sid = String(it.sourceId || '');
+    const kind = kinds[sid] || (/^ob-/.test(sid) ? 'obits' : 'news');
+    const alreadyObit = it.isObit || kind === 'obits' || /^ob-/.test(sid);
+    if (!alreadyObit && kind === 'news' && Obit.obitStory(it)) {
+      const base = sid || 'news';
+      it = Object.assign({}, it, {
+        sourceId: /^ob-/.test(base) ? base : ('ob-' + base),
+        isObit: true,
+        image: ''
+      });
+    }
+    const link = String(it.link || '');
+    const id = String(it.id || '');
+    const isOb = !!(it.isObit || /^ob-/.test(String(it.sourceId || '')) || kinds[it.sourceId] === 'obits');
+    const okey = isOb && it.title ? ('ob|' + obitKey(String(it.title))) : '';
+    if (link && seenLink.has(link)) continue;
+    if (id && seenId.has(id)) continue;
+    if (okey && seenOb.has(okey)) continue;
+    if (link) seenLink.add(link);
+    if (id) seenId.add(id);
+    if (okey) seenOb.add(okey);
+    out.push(it);
+  }
+  return out;
+}
+
 function page(snap, before, now) {
   if (now == null) now = Date.now();
   if (!snap || !Array.isArray(snap.items)) return snap;
   const kinds = {}; (snap.sources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind; });
+  const remounted = remountNewsObits(snap.items, kinds);
   const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits' || /^ob-/.test(it.sourceId || '');
   const strip = it => { const o = Object.assign({}, it); delete o.isEvent; delete o.isObit; return o; };
   const t = it => Date.parse(it.published) || 0;
@@ -1451,15 +1494,15 @@ function page(snap, before, now) {
   }
   // Pages walk the dated stories by time. An undated story has no place on that walk, so it rides only on the first
   // page (ship110: it used to come back with every older page as if it were older than all of them).
-  const stories = snap.items.filter(it => !boardKind(it) && t(it) && t(it) < cut).sort((a, b) => t(b) - t(a));
+  const stories = remounted.filter(it => !boardKind(it) && t(it) && t(it) < cut).sort((a, b) => t(b) - t(a));
   const dated = stories.slice(0, NEWS_PAGE);
-  const shown = before != null ? dated : dated.concat(snap.items.filter(it => !boardKind(it) && !t(it)));
+  const shown = before != null ? dated : dated.concat(remounted.filter(it => !boardKind(it) && !t(it)));
   const more = stories.length > NEWS_PAGE ? { before: new Date(t(dated[dated.length - 1])).toISOString() } : null;
   const keep = new Set(shown);
   // ship76: an event leaves 58 minutes after its start (or at its end) at the moment of the answer, so a stored or
   // CDN-cached snapshot never serves a stale one (public/eventtime.js; the page checks again on every draw)
   const evGone = it => (it.isEvent || kinds[it.sourceId] === 'events') && ET.status({ start: it.published, end: it.end }, now).hide;
-  const items = before != null ? shown : snap.items.filter(it => (boardKind(it) && !evGone(it)) || keep.has(it));
+  const items = before != null ? shown : remounted.filter(it => (boardKind(it) && !evGone(it)) || keep.has(it));
   const out = Object.assign({}, snap, { items: items.map(strip) });
   if (before != null) delete out.sources;
   if (more) out.more = more;
@@ -1589,6 +1632,7 @@ module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
 module.exports.obitRoute = obitRoute;
 module.exports.obitKey = obitKey;
+module.exports.remountNewsObits = remountNewsObits;
 module.exports.isUtilityPage = isUtilityPage;
 module.exports.STANDING_RE = STANDING_RE;
 module.exports.outOfArea = outOfArea;

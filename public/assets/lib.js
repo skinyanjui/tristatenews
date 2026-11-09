@@ -1027,10 +1027,11 @@
 });
 ;
 /* ---- public/obit.js ---- */
-/* Obituaries: comments off, photos off, no in-feed ad neighbors. Shared by the page (window.TSNObit),
-   first-paint cards, GET /api/comments (via api/_crime.js), and News ad adjacency. Strong signals only:
-   name+age, "obituary"/obituar URL or source, or ≥2 weak hints plus a person-name pattern. Weak hints
-   alone (age N, funeral, visitation, formerly of) must not trip. Missing module → fail closed. */
+/* Obituaries: comments off, photos off, no in-feed ad neighbors; also used to route news-feed
+   death notices into the Obituaries tab (api/news.js looksLikeObit + page remount). Strong signals
+   only: name+age, "obituary"/obituar text, /obituar|/obits/|legacy|tributes|funeral-home URLs, known
+   obit sources, or ≥2 weak hints plus a person-name pattern. Weak hints alone (age N, funeral,
+   visitation, formerly of) must not trip. Missing module → fail closed. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.TSNObit = factory();
@@ -1047,6 +1048,9 @@
   var PERSON_NAME_RE = /\b(?:[A-Z][a-zA-Z.'\u2019-]+(?:\s+(?:[A-Z]\.|[A-Z][a-zA-Z.'\u2019-]+)){1,4}|(?:of|for)\s+[A-Z][a-zA-Z.'\u2019-]+)\b/;
   // Kept for callers/tests that still reference HINT_RE (union of weak + strong text).
   var HINT_RE = /\b(?:age\s+\d{1,3}|passed away|formerly of|obituar(?:y|ies)|visitation|funeral|in loving memory|celebration of life)\b/i;
+  // Path and host patterns that are strong URL signals (not title-only).
+  var OBIT_PATH_RE = /\/(?:obituar[a-z]*|obits?)(?:\/|$|[?#-])/i;
+  var OBIT_HOST_RE = /(?:^|\.)(?:legacy\.com|tributes\.com)$|(?:funeralhome|mortuary|memorialchapel|memorial-chapel)/i;
 
   function haystack(it) {
     it = it || {};
@@ -1067,10 +1071,12 @@
     var link = String((it && (it.link || it.url)) || '');
     try {
       var u = new URL(link);
-      if (/\/obituar/i.test(u.pathname)) return true;
-      if (/news\.google\./i.test(u.hostname) && /obituar/i.test(u.href)) return true;
+      var host = String(u.hostname || '').toLowerCase();
+      if (OBIT_PATH_RE.test(u.pathname || '')) return true;
+      if (OBIT_HOST_RE.test(host)) return true;
+      if (/news\.google\./i.test(host) && /obituar/i.test(u.href)) return true;
     } catch (e) {
-      if (/\/obituar/i.test(link)) return true;
+      if (OBIT_PATH_RE.test(link) || /legacy\.com|tributes\.com|funeralhome|mortuary|memorial.?chapel/i.test(link)) return true;
     }
     return false;
   }
@@ -1120,6 +1126,15 @@
 
   function obitTitle(title) { return obitStory({ title: title }); }
 
+  // Feed URL / registry helper: Google News obituary queries, /obituaries paths, funeral-home hosts.
+  function obitFeedUrl(url) {
+    var s = String(url || '');
+    if (/\/(?:obituar[a-z]*|obits?)(?:\/|$|[?#])/i.test(s)) return true;
+    if (/news\.google\.com\/rss\/search\?[^#]*obituar/i.test(s)) return true;
+    if (/(?:funeralhome|mortuary|memorialchapel|memorial-chapel|legacy\.com|tributes\.com)/i.test(s)) return true;
+    return false;
+  }
+
   return {
     HINT_RE: HINT_RE,
     WEAK_HINT_RE: WEAK_HINT_RE,
@@ -1127,6 +1142,8 @@
     PERSON_NAME_RE: PERSON_NAME_RE,
     AGE_HEAD_RE: AGE_HEAD_RE,
     NAME_AGE_RE: NAME_AGE_RE,
+    OBIT_PATH_RE: OBIT_PATH_RE,
+    OBIT_HOST_RE: OBIT_HOST_RE,
     haystack: haystack,
     obitUrl: obitUrl,
     googleObitSource: googleObitSource,
@@ -1134,7 +1151,8 @@
     hasPersonName: hasPersonName,
     obitText: obitText,
     obitStory: obitStory,
-    obitTitle: obitTitle
+    obitTitle: obitTitle,
+    obitFeedUrl: obitFeedUrl
   };
 });
 ;

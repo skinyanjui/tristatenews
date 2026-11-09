@@ -65,9 +65,10 @@ test('old All and Liked links redirect to News at /: vercel redirects, hash and 
 });
 
 test('News merges Police & courts items in feed order; their cards keep no photos and the not-convicted note; News ads never next to them', () => {
-  const src = html.slice(html.indexOf('function inCat('), html.indexOf('function filtered('));
+  const src = html.slice(html.indexOf('function itemKind('), html.indexOf('function filtered('));
   const kinds = { n: 'news', p: 'police', c: 'courts', e: 'events', o: 'obits', i: 'institution' };
-  const inCat = new Function('kindOf', src + '; return inCat;')(id => kinds[id]);
+  // Soft detector stubbed off: this test only checks registry kind merging into News.
+  const inCat = new Function('kindOf', 'obitStory', src + '; return inCat;')(id => kinds[id], () => false);
   const items = ['n', 'p', 'e', 'c', 'o', 'i', 'n'].map((k, i) => ({ sourceId: k, t: i }));
   assert.deepEqual(items.filter(i => inCat(i, 'news')).map(i => i.sourceId + i.t), ['n0', 'p1', 'c3', 'n6'], 'news + police + courts, same order');
   assert.ok(!/id: 'safety'/.test(html) && !RT.byCat('safety'), 'Police & courts has no tab of its own: its items are only in News');

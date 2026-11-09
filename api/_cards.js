@@ -51,8 +51,12 @@ const COMMENT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14A
 const MORE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"></circle><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><circle cx="19" cy="12" r="1.8" fill="currentColor"></circle></svg>';
 
 // The tab's stories, as app.js inCat() picks them (kind by source; unknown sources count as news).
-function inCat(kind, cat) {
-  if (cat === 'news') return kind === 'news' || kind === 'police' || kind === 'courts';
+// News-kind items that still match the shared obituary detector belong on Obituaries, not News.
+const Obit = require('../public/obit.js');
+function inCat(kind, cat, it) {
+  const asObit = kind === 'obits' || (it && Obit.obitStory(it) && (kind === 'news' || !kind));
+  if (cat === 'news') return !asObit && (kind === 'news' || kind === 'police' || kind === 'courts');
+  if (cat === 'obits') return asObit || kind === 'obits';
   return kind === cat;
 }
 
@@ -62,8 +66,15 @@ function pick(view, cat, now) {
   if (!view || !Array.isArray(view.items) || !Array.isArray(view.sources)) return null;
   now = now == null ? Date.now() : now;
   const kinds = {}; view.sources.forEach(s => { if (s && s.id) kinds[s.id] = s.kind || 'news'; });
-  const kindOf = it => kinds[it.sourceId] || 'news';
-  const all = view.items.filter(it => it && it.title && inCat(kindOf(it), cat));
+  // ship91 + soft detector: ob-<news source> and detector-matched notices count as obituaries.
+  const kindOf = it => {
+    const sid = it && it.sourceId;
+    if (kinds[sid]) return kinds[sid];
+    if (/^ob-/.test(sid || '')) return 'obits';
+    if (it && Obit.obitStory(it)) return 'obits';
+    return 'news';
+  };
+  const all = view.items.filter(it => it && it.title && inCat(kindOf(it), cat, it));
   if (!all.length) return null;
   let brk = { top: null, more: 0 }, cands = [];
   if (cat === 'news') {

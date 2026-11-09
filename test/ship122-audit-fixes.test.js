@@ -83,19 +83,23 @@ test('ship122: obit detector does not trip on weak hints alone', () => {
 
 test('ship122: first-paint cards omit comments and photos on news-feed obituaries', () => {
   const now = Date.parse('2026-11-09T22:00:00Z');
-  const html = Cards.cards(Cards.pick({
+  const view = {
     updatedAt: '2026-11-09T22:00:00Z',
     sources: [{ id: 'gn-hamilton', name: 'Hamilton County', kind: 'news' }, { id: 'n', name: 'N', kind: 'news' }],
     items: [
       { title: MORRIS.title, summary: MORRIS.summary, link: 'https://n.ex/morris', image: 'https://img.ex/m.jpg', published: '2026-11-09T21:00:00Z', source: 'Hamilton County', sourceId: 'gn-hamilton' },
       { title: 'Council passes riverfront plan', summary: 'A zoning vote.', link: 'https://n.ex/river', image: 'https://img.ex/r.jpg', published: '2026-11-09T20:00:00Z', source: 'N', sourceId: 'n' }
     ]
-  }, 'news', now), now);
-  const art = html.split('<article').filter(x => x.includes('Marilyn Kay Morris'))[0];
+  };
+  // Soft-detected obituaries leave the News first paint and render on Obituaries without comments/photos.
+  const newsHtml = Cards.cards(Cards.pick(view, 'news', now), now);
+  assert.doesNotMatch(newsHtml, /Marilyn Kay Morris/);
+  assert.match(newsHtml.split('<article').filter(x => x.includes('riverfront plan'))[0], /cm-btn/);
+  const obHtml = Cards.cards(Cards.pick(view, 'obits', now), now);
+  const art = obHtml.split('<article').filter(x => x.includes('Marilyn Kay Morris'))[0];
   assert.ok(art);
   assert.doesNotMatch(art, /cm-btn/);
   assert.doesNotMatch(art, /ns-pic|img\.ex\/m/);
-  assert.match(html.split('<article').filter(x => x.includes('riverfront plan'))[0], /cm-btn/);
 });
 
 test('ship122: newsSlots shifts past crime, obituary, and death/tragedy neighbors', () => {

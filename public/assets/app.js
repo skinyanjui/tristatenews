@@ -1642,17 +1642,36 @@
   function applyHref(c) { c = String(c || '').trim(); if (EMAIL_RE.test(c)) return 'mailto:' + c; if (PHONE_RE.test(c)) return 'tel:' + c.replace(/[^\d+]/g, ''); return ''; }
   function jobCard(it, b) {
     var c = el('article', 'job row-job' + (it.featured ? ' is-featured' : ''));
+    var top = el('div', 'job-top');
+    var logoWrap = el('span', 'job-logo');
+    logoWrap.appendChild(bizAvatar(it.business || it.title, it.logo));
+    top.appendChild(logoWrap);
+    var feat = featLabel(it); if (feat) top.appendChild(feat);
+    c.appendChild(top);
     var head = el('div', 'job-head');
-    head.appendChild(bizAvatar(it.business || it.title, it.logo));
     if (it.business) head.appendChild(el('span', 'job-co', it.business));
-    c.appendChild(head);
-    var feat = featLabel(it); if (feat) c.appendChild(feat);
+    var when = shortWhen(it.at) || postDay(it.at);
+    if (when) {
+      var tm = el('time', 'job-when', when);
+      if (it.at) { tm.dateTime = it.at; tm.title = postDay(it.at); }
+      head.appendChild(tm);
+    }
+    if (head.children.length) c.appendChild(head);
     c.appendChild(el('h2', 'job-title', it.title));
-    var meta = [it.town, it.jobType, it.category].filter(Boolean).join(' \u00B7 ');
-    if (meta) c.appendChild(el('p', 'job-meta', meta));
-    if (it.pay) c.appendChild(el('p', 'job-pay', it.pay));
+    var tags = [it.jobType, it.category].filter(Boolean);
+    if (tags.length) {
+      var meta = el('p', 'job-meta');
+      tags.forEach(function (t) { meta.appendChild(el('span', 'job-tag', t)); });
+      c.appendChild(meta);
+    }
     if (it.sample) c.appendChild(demoNote('job'));
-    c.appendChild(viewBtn('View job', it, 'job', b));
+    var foot = el('div', 'job-foot');
+    var footL = el('div', 'job-foot-l');
+    if (it.pay) footL.appendChild(el('p', 'job-pay', it.pay));
+    if (it.town) footL.appendChild(el('p', 'job-town', it.town));
+    if (footL.children.length) foot.appendChild(footL);
+    foot.appendChild(viewBtn('View job', it, 'job', b));
+    c.appendChild(foot);
     return c;
   }
   function boardDetails(it, kind, b, opener) {

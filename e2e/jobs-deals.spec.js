@@ -131,11 +131,19 @@ for (const board of BOARDS) {
           expect(types.wrap).toBe(false);
           expect(types.wrapStyle).not.toBe('wrap');
           expect(types.pageOverflow).toBe(0);
-          const logos = page.locator('#jb .row-job img.bav');
+          const logos = page.locator('#jb .row-job .job-logo img.bav');
           await expect(logos.first()).toBeVisible();
           expect(await logos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
-          await expect(page.locator('#jb .row-job .job-view').first()).toHaveText('View job');
+          await expect(page.locator('#jb .row-job .job-when').first()).toBeVisible();
+          await expect(page.locator('#jb .row-job .job-tag').first()).toBeVisible();
+          await expect(page.locator('#jb .row-job .job-town').first()).toBeVisible();
+          await expect(page.locator('#jb .row-job .job-foot .job-view').first()).toHaveText('View job');
           expect(await page.locator('#jb .row-job .job-view').first().evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeGreaterThanOrEqual(44);
+          if (vp.width >= 1024) {
+            const firstThreeTops = await page.evaluate(() => [...document.querySelectorAll('#jb .row-job')].slice(0, 3).map(el => Math.round(el.getBoundingClientRect().top)));
+            expect(firstThreeTops.length).toBe(3);
+            expect(Math.max(...firstThreeTops) - Math.min(...firstThreeTops)).toBeLessThanOrEqual(2);
+          }
         } else {
           const photos = page.locator('#dl .row-deal img.deal-img');
           await expect(photos.first()).toBeVisible();

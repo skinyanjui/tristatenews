@@ -1442,8 +1442,42 @@ function background(promise) {
 // them when the reader reaches the end of News. isEvent/isObit are left out: the page tells kinds by source.
 const NEWS_PAGE = 200;
 
+// Live registry kind wins over a stored snapshot kind so a bad auto-map (gn-* → obits from
+// Google News "-obituary" exclusions) corrects on serve without waiting for the next refresh.
+function effectiveKinds(snapSources) {
+  const kinds = {};
+  (snapSources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind || 'news'; });
+  SOURCES.forEach(s => {
+    if (!s || !s.id) return;
+    kinds[s.id] = s.kind || 'news';
+  });
+  // gn-* county Google News town searches are never whole-feed obituaries (they exclude with -obituary).
+  Object.keys(kinds).forEach(id => {
+    if (/^gn-/.test(id) && kinds[id] === 'obits') {
+      const live = SOURCES.find(s => s && s.id === id);
+      if (!live || live.kind !== 'obits') kinds[id] = 'news';
+    }
+  });
+  return kinds;
+}
+
+function correctSources(snapSources, kinds) {
+  return (snapSources || []).map(s => {
+    if (!s || !s.id || !Object.prototype.hasOwnProperty.call(kinds, s.id)) return s;
+    const want = kinds[s.id] || 'news';
+    const cur = s.kind || 'news';
+    // Leave matching sources alone (including explicit kind:"news"); only rewrite mismatches.
+    if (want === cur) return s;
+    const o = Object.assign({}, s);
+    if (want === 'news') delete o.kind;
+    else o.kind = want;
+    return o;
+  });
+}
+
 // Safety net for stored snapshots: news-kind items that match the shared obituary detector are remounted as
 // ob-<sourceId> so /obituaries gets them and News drops them, without waiting for the next feed refresh.
+// Sources wrongly stored as kind=obits (but effectiveKinds says news) are demoted unless the item itself matches.
 function remountNewsObits(items, kinds) {
   if (!Array.isArray(items)) return items || [];
   const out = [];
@@ -1455,14 +1489,17 @@ function remountNewsObits(items, kinds) {
     let it = raw;
     const sid = String(it.sourceId || '');
     const kind = kinds[sid] || (/^ob-/.test(sid) ? 'obits' : 'news');
-    const alreadyObit = it.isObit || kind === 'obits' || /^ob-/.test(sid);
-    if (!alreadyObit && kind === 'news' && Obit.obitStory(it)) {
-      const base = sid || 'news';
-      it = Object.assign({}, it, {
-        sourceId: /^ob-/.test(base) ? base : ('ob-' + base),
-        isObit: true,
-        image: ''
-      });
+    const match = Obit.obitStory(it);
+    // Whole-feed obituaries keep their source; soft matches from news are remounted under ob-<id>.
+    if (kind === 'news' && match && !/^ob-/.test(sid)) {
+      it = Object.assign({}, it, { sourceId: 'ob-' + (sid || 'news'), isObit: true, image: '' });
+    } else if (kind === 'obits' || /^ob-/.test(sid)) {
+      it = Object.assign({}, it, { isObit: true });
+      if (!it.image) it = Object.assign({}, it, { image: '' });
+    } else if (it.isObit && !match) {
+      // Stale isObit flag on a non-matching news item after a bad feed kind — clear it.
+      it = Object.assign({}, it);
+      delete it.isObit;
     }
     const link = String(it.link || '');
     const id = String(it.id || '');
@@ -1482,7 +1519,8 @@ function remountNewsObits(items, kinds) {
 function page(snap, before, now) {
   if (now == null) now = Date.now();
   if (!snap || !Array.isArray(snap.items)) return snap;
-  const kinds = {}; (snap.sources || []).forEach(s => { if (s && s.id) kinds[s.id] = s.kind; });
+  const kinds = effectiveKinds(snap.sources);
+  const sources = correctSources(snap.sources, kinds);
   const remounted = remountNewsObits(snap.items, kinds);
   const boardKind = it => it.isEvent || it.isObit || kinds[it.sourceId] === 'events' || kinds[it.sourceId] === 'obits' || /^ob-/.test(it.sourceId || '');
   const strip = it => { const o = Object.assign({}, it); delete o.isEvent; delete o.isObit; return o; };
@@ -1503,7 +1541,7 @@ function page(snap, before, now) {
   // CDN-cached snapshot never serves a stale one (public/eventtime.js; the page checks again on every draw)
   const evGone = it => (it.isEvent || kinds[it.sourceId] === 'events') && ET.status({ start: it.published, end: it.end }, now).hide;
   const items = before != null ? shown : remounted.filter(it => (boardKind(it) && !evGone(it)) || keep.has(it));
-  const out = Object.assign({}, snap, { items: items.map(strip) });
+  const out = Object.assign({}, snap, { sources, items: items.map(strip) });
   if (before != null) delete out.sources;
   if (more) out.more = more;
   return out;
@@ -1633,6 +1671,7 @@ module.exports.looksLikeObit = looksLikeObit;
 module.exports.obitRoute = obitRoute;
 module.exports.obitKey = obitKey;
 module.exports.remountNewsObits = remountNewsObits;
+module.exports.effectiveKinds = effectiveKinds;
 module.exports.isUtilityPage = isUtilityPage;
 module.exports.STANDING_RE = STANDING_RE;
 module.exports.outOfArea = outOfArea;

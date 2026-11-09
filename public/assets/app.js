@@ -593,9 +593,14 @@
   }
   function kindOf(id) { var s = state.sources.filter(function (x) { return x.id === id; })[0]; return s && s.kind ? s.kind : /^ob-/.test(id || '') ? 'obits' : 'news'; } // ship91: ob-<news source> = a notice routed from a paper's news feed
   // Item kind for tabs: registry kind, remounted ob-* ids, or the shared soft detector (stored snapshots).
+  // gn-* county feeds may still be stored as kind=obits from a -obituary Google News bug — demote by item.
   function itemKind(it) {
     var k = kindOf(it && it.sourceId);
-    if (k === 'obits' || k === 'events' || k === 'police' || k === 'courts' || k === 'institution') return k;
+    if (k === 'events' || k === 'police' || k === 'courts' || k === 'institution') return k;
+    if (k === 'obits') {
+      if (/^gn-/.test((it && it.sourceId) || '') && !obitStory(it)) return 'news';
+      return 'obits';
+    }
     if (obitStory(it)) return 'obits';
     return k;
   }

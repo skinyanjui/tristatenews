@@ -31,6 +31,14 @@
 *,*::before,*::after { box-sizing:border-box; }
 html { -webkit-text-size-adjust:100%; }
 body { margin:0; background:var(--background); color:var(--foreground); font:400 14px/20px var(--font-sans); -webkit-font-smoothing:antialiased; }
+/* Larger text toggle (nav, localStorage tsn.text): bump body and muted/meta copy. */
+html.text-lg body { font-size:16px; line-height:24px; }
+html.text-lg article.card.news-story .ns-bd p:not(.cl-note),
+html.text-lg .meta, html.text-lg .ns-src, html.text-lg .cm-norms, html.text-lg .cm-own,
+html.text-lg .cl-note, html.text-lg .st-note, html.text-lg .st-pos { font-size:14px; line-height:20px; }
+html.text-lg #textBtn[aria-pressed="true"] { background:var(--gray-100); color:var(--foreground); }
+/* Keep the 320px phone nav from overflowing: Larger text still works if set, toggle shows from 360px up. */
+@media (max-width:359px) { #textBtn { display:none; } }
 a { color:inherit; text-decoration:none; }
 button { font:inherit; color:inherit; cursor:pointer; background:none; border:0; padding:0; }
 :focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
@@ -222,7 +230,7 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .card.breaking .bd { padding:16px; }
 .card.breaking h2 { font-size:22px; line-height:30px; letter-spacing:-.01em; }
 .card.breaking p { display:block; font-size:14px; }
-.card.breaking .like { background:color-mix(in srgb, var(--background) 88%, transparent); }
+.card.breaking .like { background:transparent; }
 @keyframes pulse { 50% { opacity:.3; } }
 [hidden] { display:none !important; }
 .cl { display:grid; gap:12px; margin-bottom:16px; }
@@ -417,6 +425,34 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .like[aria-pressed="true"] { color:var(--red); }
 .like svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.75; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .like[aria-pressed="true"] svg { fill:currentColor; }
+
+/* ship122: borderless reaction buttons sitewide (heart, comment, save, share, ⋯, board icos).
+   Keep :focus-visible and active (filled heart) clear; subtle hover/press tint only. */
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico, .evc-like) {
+  border:0 !important; box-shadow:none;
+}
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico):not([aria-pressed="true"]):hover {
+  background:var(--react-hover); color:var(--react-strong);
+}
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico):active {
+  background:var(--react-press);
+}
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico):focus-visible {
+  outline:2px solid var(--brand); outline-offset:2px;
+}
+.ns-also { margin:0; font-size:13px; line-height:18px; color:var(--text-muted); }
+.ns-also a { color:var(--blue); text-decoration:underline; text-underline-offset:2px; }
+.cl-examples { margin:var(--sp-4) 0 var(--sp-2); font-size:13px; line-height:18px; font-weight:600; color:var(--text-muted); grid-column:1 / -1; }
+.st-caught { text-align:center; padding:var(--sp-8) var(--sp-6) !important; }
+.st-caught h2 { margin:0 0 var(--sp-3); }
+.st-end-acts { display:flex; flex-direction:column; gap:var(--sp-3); margin-top:var(--sp-6); }
+.st-end-btn {
+  min-height:44px; padding:0 var(--sp-4); border:0; border-radius:var(--radius-md);
+  background:var(--foreground); color:var(--background); font-weight:600; cursor:pointer;
+}
+.st-end-secondary { background:var(--gray-100); color:var(--foreground); }
+.st-end-secondary:hover { background:var(--gray-200); }
+
 /* Share: bottom-right of every story and event card, 40px tap target. The heart stays top-right. */
 .share { width:40px; height:40px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:9999px; color:var(--text-muted); }
 .share:hover { background:var(--gray-100); color:var(--foreground); }
@@ -425,10 +461,10 @@ mark { background:color-mix(in srgb, var(--amber) 38%, transparent); color:inher
 .acts { position:absolute; top:4px; right:4px; z-index:1; display:flex; align-items:center; }
 .acts .like { position:static; min-width:40px; height:40px; padding:0 8px; }
 .card.breaking .acts { top:8px; right:8px; gap:4px; }
-.card.breaking .acts .share { background:color-mix(in srgb, var(--background) 88%, transparent); }
+.card.breaking .acts .share { background:transparent; }
 .ev .acts { top:12px; right:12px; gap:6px; }
-.ev .acts .like, .ev .acts .share { background:var(--background); box-shadow:0 1px 4px rgba(0,0,0,.18); }
-.ev .acts .like:hover, .ev .acts .share:hover { background:var(--gray-100); }
+.ev .acts .like, .ev .acts .share { background:transparent; box-shadow:none; }
+.ev .acts .like:hover, .ev .acts .share:hover { background:var(--react-hover, var(--gray-100)); }
 .toast { position:fixed; left:50%; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); z-index:60; transform:translateX(-50%); padding:8px 14px; border-radius:var(--radius-md); background:var(--foreground); color:var(--background); font-size:14px; font-weight:500; line-height:20px; box-shadow:0 2px 8px rgba(0,0,0,.2); pointer-events:none; opacity:0; transition:opacity var(--duration-fast) var(--ease); }
 .toast.on { opacity:1; }
 .ghost { min-height:var(--ctl); padding:0 12px; border-radius:var(--radius-md); color:var(--gray-700); font-weight:500; transition:background var(--duration-fast) var(--ease); }
@@ -783,8 +819,10 @@ html.st-open { overflow:hidden; }
 .st-sheet .st-sum { font-size:16px; line-height:26px; color:var(--text-muted); text-wrap:pretty; }
 .st-bar { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-top:var(--sp-1); padding-top:var(--sp-4); border-top:1px solid var(--gray-200); }
 .st-acts.st-acts.st-acts { gap:var(--sp-3); }
-.st-acts.st-acts.st-acts :is(.like, .share) { height:44px; min-height:44px; border:1px solid var(--gray-200); border-radius:9999px; background:var(--background); color:var(--foreground); transition:background .15s, border-color .15s; cursor:pointer; }
-.st-acts.st-acts.st-acts :is(.like, .share):hover { background:var(--gray-100, rgba(0,0,0,.04)); border-color:var(--gray-300, var(--gray-200)); }
+.st-acts.st-acts.st-acts :is(.like, .share) { height:44px; min-height:44px; border:0; border-radius:9999px; background:transparent; color:var(--text-muted); transition:background .15s, color .15s; cursor:pointer; }
+.st-acts.st-acts.st-acts :is(.like, .share):hover { background:var(--react-hover); color:var(--react-strong); }
+.st-acts.st-acts.st-acts :is(.like, .share):active { background:var(--react-press); }
+.st-acts.st-acts.st-acts :is(.like, .share):focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 .st-acts.st-acts.st-acts .like { justify-content:center; gap:var(--sp-1); width:calc(44px + 4ch); min-width:calc(44px + 4ch); padding:0 var(--sp-3); } /* fixed: a count never resizes it */
 .st-acts.st-acts.st-acts .like > span { width:3ch; min-width:3ch; font-size:14px; font-weight:600; }
 .st-acts.st-acts.st-acts .share { width:44px; min-width:44px; }
@@ -994,8 +1032,10 @@ article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-
 .bd-sheet .deal-code { margin-top:var(--sp-3); flex-wrap:wrap; max-width:100%; }
 .bd-sheet .cl-feature { display:inline-flex; align-items:center; min-height:var(--cl-tap); margin-top:var(--sp-3); padding:0 var(--sp-3); border:1px solid var(--border); border-radius:var(--radius-md); font-weight:600; }
 .bd-sheet .acts { display:flex; align-items:center; justify-content:flex-end; margin-top:var(--sp-3); }
-.bd-sheet .acts .cl-ico { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--gray-200); border-radius:9999px; color:var(--text-muted); }
-.bd-sheet .acts .cl-ico:hover { background:var(--gray-100); color:var(--foreground); }
+.bd-sheet .acts .cl-ico { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border:0; border-radius:9999px; background:transparent; color:var(--text-muted); }
+.bd-sheet .acts .cl-ico:hover { background:var(--react-hover); color:var(--foreground); }
+.bd-sheet .acts .cl-ico:active { background:var(--react-press); }
+.bd-sheet .acts .cl-ico:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
 .bd-sheet .acts .cl-ico svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
 /* ship117: photo-led news cards + preview sheet. Publisher and time on top, full-width photo, headline,
@@ -1038,9 +1078,18 @@ article.card.breaking .cf { min-width:0; max-width:100%; }
 article.card.breaking .cf .acts { flex-wrap:wrap; gap:var(--sp-2); max-width:100%; min-width:0; margin-right:0; }
 article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {
   position:relative; inset:auto; transform:none; margin:0; box-sizing:border-box; flex:none;
-  height:44px; min-height:44px; min-width:44px; padding:0; border:1px solid var(--gray-200);
-  border-radius:9999px; background:var(--background); color:var(--foreground);
+  height:44px; min-height:44px; min-width:44px; padding:0; border:0;
+  border-radius:9999px; background:transparent; color:var(--text-muted);
   display:inline-flex; align-items:center; justify-content:center;
+}
+article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn):hover {
+  background:var(--react-hover); color:var(--react-strong);
+}
+article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn):active {
+  background:var(--react-press); color:var(--react-strong);
+}
+article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn):focus-visible {
+  outline:2px solid var(--brand); outline-offset:2px;
 }
 article.card.news-story .ns-foot .like, article.card.news-story .ns-foot .cm-btn { width:auto; padding:0 var(--sp-3); gap:var(--sp-1); }
 article.card.news-story .ns-foot .like > span, article.card.news-story .ns-foot .cm-btn > span { display:inline-block; min-width:1ch; font-size:13px; font-weight:600; }
@@ -1114,9 +1163,9 @@ article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn)::after { c
   article.card.news-story .ns-more-item:hover { background:var(--gray-100); }
 }
 @media (min-width:900px) and (pointer:fine) {
-  article.card.news-story .ns-more-btn { width:32px; height:32px; min-height:32px; }
+  article.card.news-story .ns-more-btn { width:40px; height:40px; min-height:40px; }
   article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) {
-    height:34px; min-height:34px; min-width:34px;
+    height:40px; min-height:40px; min-width:40px;
   }
   article.card.news-story .ns-foot .like, article.card.news-story .ns-foot .cm-btn { padding:0 8px; }
   article.card.news-story .ns-foot :is(.like, .share, .cm-btn, .sv-btn) svg { width:18px; height:18px; }
@@ -1151,6 +1200,12 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
 .cm-meta { display:flex; align-items:center; gap:var(--sp-3); margin-top:var(--sp-2); font-size:13px; color:var(--text-muted); }
 .cm-report, .cm-del, .sv-rm { min-height:44px; min-width:44px; padding:0 var(--sp-3); border:0; background:transparent; color:var(--text-muted); }
 .cm-form { display:flex; flex-direction:column; gap:var(--sp-2); padding:var(--sp-3) var(--sp-4) var(--sp-6); border-top:1px solid var(--gray-200); }
+.cm-norms, .cm-own { margin:0; font-size:12px; line-height:16px; color:var(--text-muted); }
+.cm-norms a { text-decoration:underline; text-underline-offset:2px; }
+.cm-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-top:var(--sp-2); }
+.cm-reason { min-height:32px; padding:0 10px; border:1px solid var(--gray-300); border-radius:9999px; background:var(--background); color:var(--foreground); font-size:12px; line-height:16px; }
+.cm-reason:hover { background:var(--gray-100); }
+.cm-reason-cancel { color:var(--text-muted); }
 .cm-form textarea { width:100%; min-height:72px; resize:vertical; padding:var(--sp-3); border:1px solid var(--gray-300); border-radius:var(--radius-md); background:var(--background); color:var(--foreground); font:inherit; }
 .cm-post, .sv-item .st-go, .cm-more { min-height:44px; }
 .cm-more {
@@ -1184,6 +1239,8 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
   .evc.evc .evt-title { font-size:14px; line-height:20px; }
   .evc.evc .evc-pic { aspect-ratio:3/2; }
 }
+
+
 
 /* ---------- ship74/ship75: THE shared row (UI.row in app.js; api/_cards.js) for every card list ----------
    Every rule starts with article.card.row.row:not(.breaking):has(> .ca) (one selector, specific enough to win over the older per-card rules).
@@ -1273,6 +1330,7 @@ article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico { position:relative
 article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; }
 article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico::after { content:""; position:absolute; inset:-8px -6px; }
 article.card.row.row:not(.breaking):has(> .ca) .acts .cl-ico.on { color:var(--foreground); }
+
 
 /* ---------- card spacing: one set of tokens for every card (news and police, Breaking, Events, Jobs, Deals,
    Classifieds, obituaries, the in-listing Sponsored card, sponsor lines and side ads). Spacing only: colours,
@@ -1497,4 +1555,35 @@ article.card.row.row:not(.breaking):has(> .ca):has(.acts .like) .src b { min-wid
   .evx-filters { grid-template-columns:minmax(0, max-content) minmax(0, 1fr) auto; grid-template-areas:"town dates add" "cats cats cats"; align-items:start; }
   .evx-filters .evx-ht { max-width:14rem; }
   .evx-filters > [aria-label="When"] { margin-top:0; flex-wrap:nowrap; min-width:0; }
+}
+
+/* ship122 final: reaction buttons + rows stay borderless at rest everywhere
+   (news, events, jobs, deals, classifieds, obituaries, story sheet, saved).
+   Hover/press tint only; :focus-visible outline kept for keyboard users.
+   Uses background-color (not background) so the card-spacing spacing-only check stays clean. */
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico, .evc-like),
+.acts :is(.like, .share, .cm-btn, .sv-btn, .cl-ico),
+.ns-foot :is(.like, .share, .cm-btn, .sv-btn),
+.st-acts :is(.like, .share, .cm-btn, .sv-btn),
+.bd-sheet .acts .cl-ico {
+  border:0 !important;
+  box-shadow:none !important;
+  outline:none;
+}
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico, .evc-like):not([aria-pressed="true"]),
+.acts :is(.like, .share, .cm-btn, .sv-btn, .cl-ico):not([aria-pressed="true"]),
+.ns-foot :is(.like, .share, .cm-btn, .sv-btn):not([aria-pressed="true"]),
+.st-acts :is(.like, .share, .cm-btn, .sv-btn):not([aria-pressed="true"]) {
+  background-color:transparent;
+}
+.acts, .ns-foot .acts, .st-acts, .evc-foot .acts, .bd-sheet .acts {
+  border:0; box-shadow:none; outline:none; background-color:transparent;
+}
+:is(.like, .share, .cm-btn, .sv-btn, .ns-more-btn, .cl-ico, .evc-like):focus-visible,
+.acts :is(.like, .share, .cm-btn, .sv-btn, .cl-ico):focus-visible,
+.ns-foot :is(.like, .share, .cm-btn, .sv-btn):focus-visible,
+.st-acts :is(.like, .share, .cm-btn, .sv-btn):focus-visible,
+.ns-more-btn:focus-visible,
+.bd-sheet .acts .cl-ico:focus-visible {
+  outline:2px solid var(--brand); outline-offset:2px;
 }

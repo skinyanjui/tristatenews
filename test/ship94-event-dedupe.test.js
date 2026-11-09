@@ -62,7 +62,7 @@ test('ship94: outlet crime stories show no photo; other news keeps its picture',
   for (const t of ['Mater Dei band preps for state', 'Aces shooting woes continue', 'New Kroger Marketplace opens Thursday on Fairview Drive',
     'DNC Chairman shares party message', 'SIU to host Nov. 13 small business workshop',
     'Storm kills 3 in western Kentucky after overnight flooding', 'Pacers kill off the Heat in overtime', 'Heat wave deaths climb in the Ohio Valley']) assert.ok(!C.crimeTitle(t), t);
-  assert.ok(app.includes("var pic = safe ? '' : it.image;\n    if (crimeStory(it)) pic = '';"), 'Police & courts still photo-free by source kind, crime stories by headline');
+  assert.ok(/var pic = safe \? '' : it\.image;\s*if \(crimeStory\(it\)(?: \|\| obitStory\(it\))?\) pic = '';/.test(app), 'Police & courts still photo-free by source kind, crime/obit stories by headline');
 });
 
 test('ship94: phone headlines get up to three lines, the preview one; desktop unchanged', () => {

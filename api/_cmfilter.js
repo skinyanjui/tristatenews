@@ -27,7 +27,32 @@ const HOLD_RE = [
   new RegExp('\\bi\\s+hate\\s+(?:all\\s+)?(?:' + GROUP + ')\\b', 'i')
 ];
 const MENTION_RE = /\b(?:the\s+word|word|dont\s+(?:use|say|type|write)|do\s+not\s+(?:use|say|type|write)|called\s+(?:me|him|her|them|us)|used\s+the\s+word)\b/;
-const VERSION = 2;
+// Accusations aimed at a person-like target + criminal label/act → hold for review.
+// "killer deal", "they killed it", "it was clear that…" must stay publishable.
+const ACCUSE_LABEL = 'thief|thieves|rapist|rapists|pedophile|pedophiles|paedophile|paedophiles|drug\\s+dealers?|murderers?|child\\s+molesters?';
+const NAME_CHAR = "A-Za-z.\\u2019\\u0027-";
+const PERSON_SUBJ = '(?:he|she|my\\s+neighbor|that\\s+guy|that\\s+man|that\\s+woman|this\\s+guy|[A-Z][' + NAME_CHAR + ']+(?:\\s+[A-Z][' + NAME_CHAR + ']+){0,2})';
+const ACCUSE_RE = [
+  // "John Smith is a pedophile" / "my neighbor is a drug dealer" / "She is a rapist"
+  new RegExp('\\b' + PERSON_SUBJ + '\\s+is\\s+(?:a\\s+|an\\s+)?(?:' + ACCUSE_LABEL + ')\\b'),
+  // "I know who did it, it was Mike"
+  /\bi\s+know\s+who\s+did\s+it(?:\s*[,:;-]?\s*it\s+was\s+[A-Z][a-zA-Z.'\u2019-]+)?\b/i,
+  // "it was Mike who…" — requires a capitalized name, not "clear"/"later"
+  /\bit\s+was\s+[A-Z][a-zA-Z.'\u2019-]+(?:\s+[A-Z][a-zA-Z.'\u2019-]+)?\s*(?:who|that)\b/,
+  // Person pronoun/name + criminal act on a person (not "killed it")
+  new RegExp('\\b' + PERSON_SUBJ + '\\s+(?:killed|murdered|raped)\\s+(?:him|her|them|someone|somebody|[A-Z][' + NAME_CHAR + ']+)\\b')
+];
+// Clear doxxing: phone numbers, street addresses, emails → reject.
+const EMAIL_RE = /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/i;
+const PHONE_RE = /(?:\+?1[\s.-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{3}[\s.-]*\d{4}\b/;
+// House number only: 1–5 digits + 1–3 Capitalized name words + street suffix (+ optional unit).
+// Years and counts ("200 people", "2024 basketball court", "game 7") must not match.
+const STREET_SUFFIX = 'St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Blvd|Boulevard|Ct|Court|Way|Pl|Place|Cir|Circle|Ter|Terrace|Pkwy|Parkway';
+const ADDR_RE = new RegExp(
+  '\\b(?!(?:19|20)\\d{2}\\b)\\d{1,5}\\s+(?!(?:people|fans|spectators|attendees|residents|workers|students|kids|children|guests)\\b)(?:[A-Z][A-Za-z0-9.\\u2019\\u0027-]*\\s+){1,3}(?:' + STREET_SUFFIX + ')\\b(?:\\s*(?:#|Apt\\.?|Suite|Ste\\.?)\\s*[A-Za-z0-9-]+)?'
+);
+const EMERGENCY_RE = /\b(?:call\s+)?911\b|\b9\s*1\s*1\b/i;
+const VERSION = 4;
 
 function split(s) { return new Set(s.split(/\s+/).filter(Boolean)); }
 
@@ -139,7 +164,39 @@ function verdictProfanity(toks, extra, spaced) {
   return { action: 'reject', rule: 'profanity' };
 }
 
+// PII must not use leet folding: digits and @ have to survive (812-555-1212, name@host).
+// Address checks need original capitalization, so keep a case-preserving soft form too.
+function softNormalize(text) {
+  return String(text || '').normalize('NFKC').replace(ZW, '').toLowerCase();
+}
+function softPreserve(text) {
+  return String(text || '').normalize('NFKC').replace(ZW, '');
+}
+
+function hasPersonal(text) {
+  const soft = softNormalize(text);
+  const scrub = soft.replace(EMERGENCY_RE, ' ');
+  if (EMAIL_RE.test(scrub)) return true;
+  if (PHONE_RE.test(scrub)) return true;
+  // House-number pattern needs Capitalized street words (case-preserving).
+  if (ADDR_RE.test(softPreserve(text).replace(EMERGENCY_RE, ' '))) return true;
+  return false;
+}
+
+function hasAccusation(text) {
+  // Accusations need capitalization for proper names; pronouns/labels are case-insensitive enough
+  // via the PERSON_SUBJ alternatives that are lowercase.
+  const raw = softPreserve(text);
+  for (let i = 0; i < ACCUSE_RE.length; i++) {
+    ACCUSE_RE[i].lastIndex = 0;
+    if (ACCUSE_RE[i].test(raw)) return true;
+  }
+  return false;
+}
+
 function classify(text) {
+  // Personal details (doxxing) reject before leet fold so phone digits and @ stay intact.
+  if (hasPersonal(text)) return { action: 'reject', rule: 'pii' };
   const norm = normalize(text);
   const toks = tokens(norm);
   const extra = phrases(toks);
@@ -157,6 +214,8 @@ function classify(text) {
   for (const re of HOLD_RE) {
     if (re.test(spaced)) return { action: 'hold', rule: 'hate' };
   }
+  // Person-aimed accusations hold for review.
+  if (hasAccusation(text)) return { action: 'hold', rule: 'accusation' };
   return { action: 'ok', rule: '' };
 }
 

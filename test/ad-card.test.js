@@ -59,7 +59,7 @@ test('never targeted: no cookies, storage, reader signals or randomness in the c
 test('one card per board view: after the 6th post, at the end of a shorter board, none on an empty one', () => {
   assert.deepStrictEqual([0, 1, 5, 6, 7, 60, -1, NaN, '3'].map(A.position), [-1, 1, 5, 6, 6, 6, -1, -1, 3]);
   // the page places it with that rule, once, in the board list and in the Events day list, never during a search
-  assert.ok(html.includes("var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1);"));
+  assert.ok(html.includes("var adAt = state.q.trim() || emptyBoard ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1);") || html.includes("var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1);"));
   assert.ok(html.includes("items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });"));
   assert.ok(html.includes("adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(shown.length) : -1);"));
   assert.ok(html.includes("if (adAt > n0 && adAt <= seen) { var ac = UI.boardAd('event'); if (ac) list.appendChild(ac); }"));

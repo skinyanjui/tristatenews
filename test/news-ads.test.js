@@ -58,7 +58,7 @@ test('fill(news): samples while unsold, real campaigns when present, nothing on 
 test('page wiring: News only, no search, Breaking first and ad-free, full-row ad card, no house unit in the feed', () => {
   const r = html.slice(html.indexOf('var slots = {};'), html.indexOf('if (rest.length > shown.length)'));
   assert.match(r, /state\.cat === 'news' && !state\.q\.trim\(\)/);
-  assert.match(r, /k === 'police' \|\| k === 'courts'/);
+  assert.match(r, /feedSensitive\(it\)/);
   assert.doesNotMatch(r, /matchMedia|cols/, 'no column-dependent cadence');
   assert.match(r, /TSNAds\.NEWS_EVERY\)/);
   assert.equal(html.split("listEl.classList.toggle('news-one', state.cat === 'news')").length, 3, 'set when the list and its loading skeleton render');

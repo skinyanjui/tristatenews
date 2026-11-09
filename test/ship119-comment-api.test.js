@@ -21,6 +21,7 @@ function fakeStore() {
       case 'EXPIRE': return { result: 1 };
       case 'EXISTS': return { result: kv.has(k) || sets.has(k) || z.has(k) || lists.has(k) ? 1 : 0 };
       case 'SADD': { const s = sets.get(k) || new Set(); sets.set(k, s); let n = 0; a.forEach(x => { if (!s.has(x)) { s.add(x); n++; } }); return { result: n }; }
+      case 'SMEMBERS': return { result: [...(sets.get(k) || new Set())] };
       case 'SREM': { const s = sets.get(k); let n = 0; if (s) a.forEach(x => { if (s.delete(x)) n++; }); return { result: n }; }
       case 'SCARD': return { result: (sets.get(k) || new Set()).size };
       case 'SISMEMBER': return { result: (sets.get(k) || new Set()).has(a[0]) ? 1 : 0 };

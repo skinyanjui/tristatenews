@@ -454,7 +454,9 @@ details summary { min-height:40px; display:flex; align-items:center; }
     if (!items.length) return empty($('cmq'), d ? 'Nothing reported.' : 'Not available.');
     items.forEach(function (x) {
       var box = mk('div');
-      line(box, (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.why || 'reports') + ' · ' + (x.storyId || x.id), ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
+      var whyLine = (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.why || 'reports') + ' · ' + (x.storyId || x.id);
+      if (x.reasons && x.reasons.length) whyLine += ' · ' + x.reasons.join(', ');
+      line(box, whyLine, ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
       var rs = mk('button', { type: 'button', class: 'ghost' }, 'Restore'), rm = mk('button', { type: 'button', class: 'ghost' }, 'Remove');
       rs.addEventListener('click', function () { rs.disabled = true; post('/api/comments', { action: 'restore', id: x.id }).then(loadComments).catch(function () { rs.disabled = false; }); });
       rm.addEventListener('click', function () {

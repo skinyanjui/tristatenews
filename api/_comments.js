@@ -53,7 +53,15 @@ const SWEEP_FLAG_CHUNK = 80;
 const REVIEW = 'tsn:cm:review';
 const PRUNE_CHUNK = 80;
 const REJECT_MSG = 'This comment can’t be posted.';
+const PII_MSG = 'Personal details aren’t allowed.';
 const COOKIE_MSG = 'Comments need a first-party cookie in this browser. Allow cookies for this site, then try again.';
+const REPORT_REASONS = {
+  harassment: 'Harassment or hate',
+  personal: 'Personal info',
+  accusation: 'False accusation',
+  spam: 'Spam',
+  other: 'Other'
+};
 
 const pipeline = STORE.pipeline;
 const rec = id => 'tsn:cm:' + id;
@@ -378,7 +386,10 @@ async function create(req, res, body) {
   const token = COOKIE.readToken(req);
   if (!token) return send(res, 400, { error: COOKIE_MSG });
   const hit = FILTER.classify(text);
-  if (hit.action === 'reject') return send(res, 400, { error: REJECT_MSG, field: 'text' });
+  if (hit.action === 'reject') {
+    const msg = hit.rule === 'pii' ? PII_MSG : REJECT_MSG;
+    return send(res, 400, { error: msg, field: 'text' });
+  }
   const cid = newCid();
   const now = new Date().toISOString();
   const item = { id: cid, storyId: id, text, at: now };
@@ -406,6 +417,8 @@ async function create(req, res, body) {
 async function report(req, res, body) {
   const id = String(body.id || ''), uid = String(body.uid || '');
   if (!CID_RE.test(id) || !UID_RE.test(uid)) return send(res, 400, { error: 'bad request' });
+  const reasonKey = String(body.reason || 'other');
+  const reason = Object.prototype.hasOwnProperty.call(REPORT_REASONS, reasonKey) ? reasonKey : 'other';
   const ip = clientIp(req) || uid, day = dayUtc();
   const rk = 'tsn:cm:reprl:' + ipHash(ip, 'cm-report|' + day);
   const lim = await pipeline([['INCR', rk], ['EXPIRE', rk, '86400', 'NX']]);
@@ -419,6 +432,9 @@ async function report(req, res, body) {
     [rec(id), repKey(id), hideKey(id), visKey(o.storyId), REVIEW],
     [who, id, nowSec(), COMMENT_TTL, REPORTS_TO_HIDE]
   );
+  // Store the chosen reason with the report (no IP/cookie). Auto-hide after 3 reports is unchanged.
+  const rsn = 'tsn:cm:reprsn:' + id;
+  await pipeline([['SADD', rsn, reason], ['EXPIRE', rsn, String(COMMENT_TTL)]]);
   await dropCount(o.storyId);
   return send(res, 200, { ok: true });
 }
@@ -498,21 +514,30 @@ async function review(req, res) {
   const flat = (q[0] && q[0].result) || [], rows = [];
   for (let i = 0; i < flat.length; i += 2) if (CID_RE.test(String(flat[i]))) rows.push({ id: flat[i], at: new Date(Number(flat[i + 1]) * 1000).toISOString() });
   if (!rows.length) return send(res, 200, { items: [] });
-  const got = await pipeline(rows.flatMap(r => [['GET', rec(r.id)], ['SCARD', repKey(r.id)], ['GET', hideKey(r.id)]]));
+  const got = await pipeline(rows.flatMap(r => [
+    ['GET', rec(r.id)],
+    ['SCARD', repKey(r.id)],
+    ['GET', hideKey(r.id)],
+    ['SMEMBERS', 'tsn:cm:reprsn:' + r.id]
+  ]));
   const items = [];
   rows.forEach((r, i) => {
-    const o = parseRec(got[i * 3] && got[i * 3].result);
+    const o = parseRec(got[i * 4] && got[i * 4].result);
     if (!o) return;
-    const hide = got[i * 3 + 2] && got[i * 3 + 2].result;
+    const hide = got[i * 4 + 2] && got[i * 4 + 2].result;
+    const raw = got[i * 4 + 3] && got[i * 4 + 3].result;
+    const reasons = (Array.isArray(raw) ? raw : []).filter(x => Object.prototype.hasOwnProperty.call(REPORT_REASONS, String(x)))
+      .map(x => REPORT_REASONS[String(x)]);
     items.push({
       id: o.id,
       storyId: o.storyId,
       text: o.text,
       at: o.at,
       reportedAt: r.at,
-      reports: Number(got[i * 3 + 1] && got[i * 3 + 1].result) || 0,
+      reports: Number(got[i * 4 + 1] && got[i * 4 + 1].result) || 0,
       hidden: !!hide,
-      why: whyOf(hide)
+      why: whyOf(hide),
+      reasons
     });
   });
   return send(res, 200, { items });
@@ -532,6 +557,8 @@ module.exports.MINE_PER_IP = MINE_PER_IP;
 module.exports.MAX_COUNT_STORIES = MAX_COUNT_STORIES;
 module.exports.MAX_COUNT_RECS = MAX_COUNT_RECS;
 module.exports.REJECT_MSG = REJECT_MSG;
+module.exports.PII_MSG = PII_MSG;
+module.exports.REPORT_REASONS = REPORT_REASONS;
 module.exports.COOKIE_MSG = COOKIE_MSG;
 module.exports.clean = clean;
 module.exports.hasLink = hasLink;

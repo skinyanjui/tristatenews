@@ -6,6 +6,10 @@
   var themePref = null;
   try { themePref = localStorage.getItem('tsn.theme'); } catch (e) {}
   var themeBtn = document.getElementById('themeBtn');
+  // Larger text: persistent toggle beside the theme control (localStorage, root class).
+  var textPref = false;
+  try { textPref = localStorage.getItem('tsn.text') === 'lg'; } catch (e) {}
+  var textBtn = document.getElementById('textBtn');
   function svg(d, extra) {
     var ns = 'http://www.w3.org/2000/svg', n = document.createElementNS(ns, 'svg');
     n.setAttribute('viewBox', '0 0 24 24'); n.setAttribute('aria-hidden', 'true');
@@ -452,6 +456,25 @@
   });
   applyTheme();
   if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+  var ICON_TEXT = [['path', { d: 'M4 7V5h16v2', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }], ['path', { d: 'M9 19h6', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }], ['path', { d: 'M12 5v14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]];
+  function applyTextSize() {
+    document.documentElement.classList.toggle('text-lg', !!textPref);
+    if (textBtn) {
+      textBtn.setAttribute('aria-pressed', textPref ? 'true' : 'false');
+      textBtn.setAttribute('aria-label', textPref ? 'Default text size' : 'Larger text');
+      textBtn.title = textPref ? 'Default text size' : 'Larger text';
+      textBtn.textContent = '';
+      textBtn.appendChild(svg(ICON_TEXT));
+    }
+  }
+  if (textBtn) {
+    textBtn.addEventListener('click', function () {
+      textPref = !textPref;
+      try { localStorage.setItem('tsn.text', textPref ? 'lg' : ''); } catch (e) {}
+      applyTextSize();
+    });
+  }
+  applyTextSize();
   var savedBtn = document.getElementById('savedBtn');
   if (savedBtn) {
     savedBtn.appendChild(svg(ICON_BOOKMARK));
@@ -589,8 +612,13 @@
     return k === cat;
   }
   // News order is the API's (combine/page on the server). This only applies the open tab and the search box.
+  // Utility pages (Contact Us, Privacy Policy, …) drop again on render; tragedy duplicates collapse conservatively.
   function filtered() {
-    var base = state.items.filter(function (i) { return inCat(i, state.cat); });
+    var UT = window.TSNUtility, CL = window.TSNCluster;
+    var base = state.items.filter(function (i) {
+      if (UT && UT.utilityStory && UT.utilityStory(i)) return false;
+      return inCat(i, state.cat);
+    });
     var q = state.q.trim().toLowerCase();
     if (q) {
       var words = q.split(/\s+/);
@@ -599,6 +627,7 @@
         return words.every(function (w) { return hay.indexOf(w) >= 0; });
       });
     }
+    if (state.cat === 'news' && !q && CL && CL.clusterTragedies) base = CL.clusterTragedies(base);
     return base;
   }
   function resetPaging() { state.limit = PAGE; }
@@ -1816,20 +1845,35 @@
     if (kind === 'event') root.appendChild(eventFilters(b));
     if (kind === 'job') root.appendChild(jobFilters(b));
     if (kind !== 'obit') { var cr = chips(b, kind); if (cr.children.length > 1) root.appendChild(cr); } // no lone "All" chip on an empty board
-    var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list'), items = shownItems(b, kind);
-    var adAt = state.q.trim() ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1); // one ad card per board view
+    var list = el('div', kind === 'deal' ? 'cl-list deal-grid' : kind === 'job' ? 'cl-list job-grid' : 'cl-list');
+    var samplesOnly = (kind === 'job' || kind === 'deal') ? boardSamples(kind) : [];
+    // Jobs/Deals with zero real posts: lead with an empty state + post CTA, then labeled sample examples.
+    var emptyBoard = (kind === 'job' || kind === 'deal') && !state.q.trim() && !(b.jt || b.town || b.filter) && !b.items.length;
+    var items = emptyBoard ? [] : shownItems(b, kind);
+    var adAt = state.q.trim() || emptyBoard ? -1 : (window.TSNAds ? TSNAds.position(items.length) : -1); // one ad card per board view
     items.forEach(function (it, i) { list.appendChild(card(it, kind, b)); if (i + 1 === adAt) { var ac = UI.boardAd(kind); if (ac) list.appendChild(ac); } });
     if (!items.length && kind === 'obit') { if (!b.form) root.appendChild(el('p', 'cl-note', 'Funeral homes and families can post an obituary here for free. Obituaries from local newspapers appear below.')); return root; }
     if (!items.length && kind === 'item') {
       if (fillItemEmpty(list, b)) root.appendChild(list);
       return root;
     }
-    if (!items.length) {
+    if (emptyBoard) {
       var emp = el('div', 'cl-empty');
-      emp.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : b.items.length ? 'Nothing in this category yet.' : 'Nothing posted yet. Be the first.'));
-      if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); })); }
-      if ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
+      emp.appendChild(el('p', null, 'No local listings yet. Post the first one.'));
+      if (b.configured !== false) {
+        emp.appendChild(UI.button(kind === 'job' ? 'Post a job' : 'Post a deal', 'primary', function () { b.form = true; drawBoard(kind); }));
+      }
       list.appendChild(emp);
+      if (samplesOnly.length) {
+        list.appendChild(el('p', 'cl-examples', 'Examples of what listings look like'));
+        samplesOnly.forEach(function (it) { list.appendChild(card(it, kind, b)); });
+      }
+    } else if (!items.length) {
+      var emp2 = el('div', 'cl-empty');
+      emp2.appendChild(el('p', null, state.q.trim() ? 'Nothing matches your search.' : (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) ? 'No events match these filters.' : ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) ? 'No posts match these filters.' : b.items.length ? 'Nothing in this category yet.' : 'Nothing posted yet. Be the first.'));
+      if (kind === 'event' && (b.when && b.when !== 'any' || b.town || b.filter)) { emp2.appendChild(UI.button('Clear filters', 'primary', function () { b.when = 'any'; b.town = ''; b.filter = ''; drawBoard('event'); })); }
+      if ((kind === 'job' || kind === 'deal') && (b.jt || b.town || b.filter)) { emp2.appendChild(UI.button('Clear filters', 'primary', function () { b.jt = ''; b.town = ''; b.filter = ''; drawBoard(kind); })); }
+      list.appendChild(emp2);
     }
     root.appendChild(list);
     return root;
@@ -2831,15 +2875,23 @@
     if (!leadPic) { im.loading = 'lazy'; return; }
     leadPic = false; im.loading = 'eager'; im.setAttribute('fetchpriority', 'high');
   }
-  // ship94/ship121: an outlet's crime story is shown without its photo and with comments off. The matcher is
-  // public/crime.js (window.TSNCrime): headline, dek and URL slug, fail closed; sports/health allowlist. Missing
-  // module → comments off (fail closed).
+  // ship94/ship121/ship122: crime and obituary stories are shown without photos and with comments off.
+  // Matchers: public/crime.js (window.TSNCrime) and public/obit.js (window.TSNObit). Missing module → fail closed.
   var CR = window.TSNCrime;
+  var OB = window.TSNObit;
+  var TR = window.TSNTragedy;
   function crimeStory(it) { return CR ? CR.crimeStory(it) : true; }
-  // Same photo rule as makeCard: Police & courts and crime headlines never keep a picture in Saved (mugshots).
+  function obitStory(it) { return OB ? OB.obitStory(it) : true; }
+  function deathStory(it) { return TR ? TR.deathStory(it) : false; }
+  function feedSensitive(it) {
+    var kd = kindOf(it && it.sourceId);
+    if (kd === 'police' || kd === 'courts') return true;
+    return crimeStory(it) || obitStory(it) || deathStory(it);
+  }
+  // Same photo rule as makeCard: Police & courts, crime, and obituaries never keep a picture in Saved.
   function savedPic(it) {
     var kd = kindOf(it && it.sourceId);
-    if (kd === 'police' || kd === 'courts' || crimeStory(it)) return '';
+    if (kd === 'police' || kd === 'courts' || crimeStory(it) || obitStory(it)) return '';
     return (it && it.image) || '';
   }
   function scrubSavedPics() {
@@ -2851,7 +2903,8 @@
     var kd = kindOf(it && it.sourceId);
     if (kd === 'police' || kd === 'courts' || kd === 'obits' || kd === 'events') return false;
     if (kd !== 'news' && kd !== 'institution') return false;
-    return !crimeStory(it);
+    if (crimeStory(it) || obitStory(it)) return false;
+    return true;
   }
   var cmPending = {};
   function cmPost(body) {
@@ -2913,9 +2966,15 @@
     var list = el('div', 'cm-list');
     var more = el('button', 'cm-more'); more.type = 'button'; more.textContent = 'Load more'; more.hidden = true;
     var form = el('form', 'cm-form');
-    var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.placeholder = 'Add a public comment (no links, 300 characters). Strong swearing and slurs aren’t posted; quoting them may be held for review.';
+    var norms = el('p', 'cm-norms');
+    norms.id = 'cm-norms';
+    norms.appendChild(document.createTextNode('Comments are public and anonymous. You must be 18 or older. Naming a private person as a criminal, or posting addresses or phone numbers, isn\u2019t allowed. See '));
+    var legalA = el('a', null, 'our policies'); legalA.href = '/legal'; norms.appendChild(legalA);
+    norms.appendChild(document.createTextNode('.'));
+    var ownNote = el('p', 'cm-own'); ownNote.textContent = 'Only this browser can delete its comments.';
+    var ta = el('textarea'); ta.maxLength = 300; ta.rows = 3; ta.setAttribute('aria-label', 'Write a comment'); ta.setAttribute('aria-describedby', 'cm-norms'); ta.placeholder = 'Add a public comment (no links, 300 characters). Strong swearing and slurs aren’t posted; quoting them may be held for review.';
     var go = el('button', 'cm-post'); go.type = 'submit'; go.textContent = 'Post';
-    form.appendChild(ta); form.appendChild(go);
+    form.appendChild(norms); form.appendChild(ownNote); form.appendChild(ta); form.appendChild(go);
     d.appendChild(top); d.appendChild(status); d.appendChild(list); d.appendChild(more); d.appendChild(form);
     var shown = 0, totalN = 0, sid = storyId(it.link), cookieOk = null, readyWait = cmReady();
     function close() { if (d.open) d.close(); else d.remove(); }
@@ -2960,19 +3019,39 @@
       }
       var rp = el('button', 'cm-report'); rp.type = 'button'; rp.textContent = 'Report';
       rp.addEventListener('click', function () {
+        if (item.querySelector('.cm-reasons')) return;
         rp.disabled = true;
-        cmPost({ action: 'report', id: c.id, uid: uid })
-          .then(function (o) {
-            if (!o.ok) {
-              rp.disabled = false;
-              var err = (o.b && o.b.error) || 'Couldn\u2019t report that.';
-              toast(err);
-              status.setAttribute('role', 'status');
-              return;
-            }
-            rp.textContent = 'Reported'; toast('Reported');
-          })
-          .catch(function () { rp.disabled = false; toast('Couldn\u2019t report that. Try again.'); });
+        var box = el('div', 'cm-reasons');
+        box.setAttribute('role', 'group');
+        box.setAttribute('aria-label', 'Why are you reporting this?');
+        [
+          { k: 'harassment', l: 'Harassment or hate' },
+          { k: 'personal', l: 'Personal info' },
+          { k: 'accusation', l: 'False accusation' },
+          { k: 'spam', l: 'Spam' },
+          { k: 'other', l: 'Other' }
+        ].forEach(function (r) {
+          var b = el('button', 'cm-reason'); b.type = 'button'; b.textContent = r.l;
+          b.addEventListener('click', function () {
+            Array.prototype.forEach.call(box.querySelectorAll('button'), function (x) { x.disabled = true; });
+            cmPost({ action: 'report', id: c.id, uid: uid, reason: r.k })
+              .then(function (o) {
+                if (!o.ok) {
+                  rp.disabled = false; box.remove();
+                  toast((o.b && o.b.error) || 'Couldn\u2019t report that.');
+                  return;
+                }
+                box.remove();
+                rp.textContent = 'Reported'; toast('Reported');
+              })
+              .catch(function () { rp.disabled = false; box.remove(); toast('Couldn\u2019t report that. Try again.'); });
+          });
+          box.appendChild(b);
+        });
+        var cancel = el('button', 'cm-reason cm-reason-cancel'); cancel.type = 'button'; cancel.textContent = 'Cancel';
+        cancel.addEventListener('click', function () { box.remove(); rp.disabled = false; });
+        box.appendChild(cancel);
+        item.appendChild(box);
       });
       meta.appendChild(rp); item.appendChild(meta); return item;
     }
@@ -3130,10 +3209,8 @@
   // ship96: the feed's longer text when it gives more than the card's blurb (it.more, never fetched from the article);
   // the heart and share in the sheet (the card row's own buttons: same state, same calls, the card's heart repaints);
   // Continue is the main action, with the outlet's logo.
-  // ship98: swipe left / right (phones) or the arrow keys and the small Previous / Next buttons (desktop) move to the
-  // next / previous news story of the list that opened the sheet (the cards in it, in order; ads and other kinds are
-  // skipped). It stops at either end with a little resistance. A swipe only counts once it is clearly sideways, so
-  // scrolling a long summary never turns the page.
+  // ship98/ship122: swipe or Previous/Next move through the loaded list. At the end, a calm “You’re all caught up”
+  // card (no loop) offers Back to top and Show older stories. A swipe only counts once it is clearly sideways.
   var ST_SWIPE_LOCK = 12, ST_SWIPE_GO = 60;
   function storySheet(it, pic, logo, title, cardHeart, card) {
     var back = document.activeElement;
@@ -3141,13 +3218,44 @@
     var at = list.indexOf(card);
     if (at < 0) { list = []; at = 0; } // the Breaking card opens on its own
     if (!list.length) list = [{ _story: { it: it, pic: pic, logo: logo, title: title, heart: cardHeart } }];
+    var endMode = false;
     var d = el('dialog', 'st-sheet'); d.setAttribute('aria-labelledby', 'st-sheet-h');
     var x = el('button', 'st-x'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.appendChild(svg([['path', { d: 'M6 6l12 12M18 6L6 18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }]]));
     function navBtn(cls, label, path) { var b = el('button', 'st-nav ' + cls); b.type = 'button'; b.setAttribute('aria-label', label); b.appendChild(svg([['path', { d: path, fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }]])); return b; }
     var prev = navBtn('st-prev', 'Previous story', 'M15 5l-7 7 7 7'), next = navBtn('st-next', 'Next story', 'M9 5l7 7-7 7');
     var page = el('div', 'st-page'), go = null;
     d.appendChild(el('div', 'st-grab')); d.appendChild(x); d.appendChild(page); d.appendChild(prev); d.appendChild(next);
+    function showEnd() {
+      endMode = true;
+      while (page.firstChild) page.removeChild(page.firstChild);
+      d.scrollTop = 0; d.classList.add('st-nopic'); d.classList.add('st-end');
+      var bd = el('div', 'st-bd st-caught');
+      var h = el('h2', null, 'You\u2019re all caught up'); h.id = 'st-sheet-h'; bd.appendChild(h);
+      bd.appendChild(el('p', 'st-sum', 'That\u2019s the end of the stories loaded on this page.'));
+      var actions = el('div', 'st-end-acts');
+      var top = el('button', 'st-end-btn'); top.type = 'button'; top.textContent = 'Back to top';
+      top.addEventListener('click', function () {
+        d.close();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        var first = list[0] && list[0].querySelector && list[0].querySelector('a.ca');
+        if (first && first.focus) first.focus({ preventScroll: true });
+      });
+      var older = el('button', 'st-end-btn st-end-secondary'); older.type = 'button'; older.textContent = 'Show older stories';
+      older.addEventListener('click', function () {
+        d.close();
+        var moreEl = document.getElementById('more');
+        var ob = moreEl && moreEl.querySelector('button');
+        if (ob) ob.click();
+        else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
+      actions.appendChild(top); actions.appendChild(older); bd.appendChild(actions);
+      page.appendChild(bd);
+      go = top;
+      prev.disabled = false; next.disabled = true;
+      prev.hidden = next.hidden = list.length < 2;
+    }
     function show(i) {
+      endMode = false; d.classList.remove('st-end');
       at = i; var S = list[i]._story, it = S.it, pic = S.pic, logo = S.logo, title = S.title, cardHeart = S.heart;
       while (page.firstChild) page.removeChild(page.firstChild);
       d.scrollTop = 0;
@@ -3180,7 +3288,7 @@
       bd.appendChild(go);
       bd.appendChild(el('p', 'st-note', 'Opens ' + (hostName(it.link) || 'the publisher\u2019s site') + ' in a new tab.'));
       page.appendChild(bd);
-      prev.disabled = i === 0; next.disabled = i === list.length - 1;
+      prev.disabled = i === 0; next.disabled = false;
       prev.hidden = next.hidden = list.length < 2;
     }
     // ship99: the page slides: the old story leaves the way the finger (or arrow) points and fades, the next one
@@ -3188,14 +3296,52 @@
     var busy = false, REDUCE = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     var EASE_OUT = 'cubic-bezier(.4,0,1,1)', SPRING = 'cubic-bezier(.22,1.18,.36,1)';
     function setT(tr, op, tx) { page.style.transition = tr; page.style.transform = tx ? 'translate3d(' + tx + 'px,0,0)' : ''; page.style.opacity = op === 1 ? '' : String(op); }
+    function paint(i) {
+      if (i >= list.length) showEnd();
+      else show(i);
+    }
     function step(n) {
-      var i = at + n; if (i < 0 || i >= list.length) { nudge(n); return false; }
+      if (endMode) {
+        if (n < 0) {
+          if (busy) return false;
+          if (REDUCE) { paint(list.length - 1); setT('none', 1, 0); if (go && d.open) go.focus({ preventScroll: true }); return true; }
+          busy = true; var w0 = page.offsetWidth || d.clientWidth || 360;
+          setT('transform .18s ' + EASE_OUT + ', opacity .18s ' + EASE_OUT, 0, Math.round(w0 * 0.5));
+          setTimeout(function () {
+            paint(list.length - 1);
+            setT('none', 0, -Math.round(w0 * 0.3));
+            void page.offsetWidth;
+            setT('transform .44s ' + SPRING + ', opacity .24s ease-out', 1, 0);
+            if (go && d.open) go.focus({ preventScroll: true });
+            setTimeout(function () { busy = false; }, 160);
+          }, 170);
+          return true;
+        }
+        nudge(n); return false;
+      }
+      var i = at + n;
+      if (i < 0) { nudge(n); return false; }
+      if (i >= list.length) {
+        if (busy) return false;
+        if (REDUCE) { paint(list.length); setT('none', 1, 0); if (go && d.open) go.focus({ preventScroll: true }); return true; }
+        busy = true; var w1 = page.offsetWidth || d.clientWidth || 360;
+        setT('transform .18s ' + EASE_OUT + ', opacity .18s ' + EASE_OUT, 0, -Math.round(w1 * 0.5));
+        setTimeout(function () {
+          paint(list.length);
+          setT('none', 0, Math.round(w1 * 0.3));
+          void page.offsetWidth;
+          setT('transform .44s ' + SPRING + ', opacity .24s ease-out', 1, 0);
+          if (go && d.open) go.focus({ preventScroll: true });
+          setTimeout(function () { busy = false; }, 160);
+        }, 170);
+        return true;
+      }
       if (busy) return false;
-      if (REDUCE) { show(i); setT('none', 1, 0); if (go && d.open) go.focus({ preventScroll: true }); return true; }
+      if (REDUCE) { paint(i); setT('none', 1, 0); if (go && d.open) go.focus({ preventScroll: true }); return true; }
       busy = true; var w = page.offsetWidth || d.clientWidth || 360;
       setT('transform .18s ' + EASE_OUT + ', opacity .18s ' + EASE_OUT, 0, (n > 0 ? -1 : 1) * Math.round(w * 0.5));
       setTimeout(function () {
-        show(i);
+        paint(i);
         setT('none', 0, (n > 0 ? 1 : -1) * Math.round(w * 0.3));
         void page.offsetWidth; // start the entrance from there
         setT('transform .44s ' + SPRING + ', opacity .24s ease-out', 1, 0);
@@ -3219,7 +3365,7 @@
       if (!t0) return; var dx = e.touches[0].clientX - t0.x, dy = e.touches[0].clientY - t0.y;
       if (t0.side === null) { if (Math.abs(dx) < ST_SWIPE_LOCK && Math.abs(dy) < ST_SWIPE_LOCK) return; t0.side = Math.abs(dx) > Math.abs(dy) * 1.5; }
       if (!t0.side) return;
-      var end = (dx < 0 && at === list.length - 1) || (dx > 0 && at === 0);
+      var end = (dx < 0 && (endMode || at === list.length - 1)) || (dx > 0 && !endMode && at === 0);
       if (busy) return;
       var w = page.offsetWidth || 360, tx = Math.round(end ? dx * 0.25 : dx); // follow the finger; resistance at the ends
       t0.lastX = e.touches[0].clientX; t0.lastT = Date.now();
@@ -3229,8 +3375,8 @@
       if (!t0) return; var T = t0, side = T.side, dx = (e.changedTouches[0] || {}).clientX - T.x; t0 = null;
       if (!side || busy) { if (side) setT('transform .4s ' + SPRING, 1, 0); return; }
       var dt = Math.max(1, Date.now() - (T.lastT || Date.now())), v = T.lastT ? ((e.changedTouches[0] || {}).clientX - T.lastX) / dt : 0;
-      var n = dx < 0 ? 1 : -1, i = at + n, flick = Math.abs(v) > 0.5 && Math.abs(dx) > ST_SWIPE_LOCK * 2;
-      if ((Math.abs(dx) >= ST_SWIPE_GO || flick) && i >= 0 && i < list.length) step(n);
+      var n = dx < 0 ? 1 : -1, flick = Math.abs(v) > 0.5 && Math.abs(dx) > ST_SWIPE_LOCK * 2;
+      if (Math.abs(dx) >= ST_SWIPE_GO || flick) step(n);
       else setT('transform .42s ' + SPRING + ', opacity .2s ease-out', 1, 0); // spring back
     });
     d.addEventListener('touchcancel', function () { t0 = null; setT('transform .3s ' + SPRING, 1, 0); });
@@ -3253,9 +3399,9 @@
     if (!big && kd === 'obits') return obitRow(it);
     var card = el('article', big ? 'card breaking' : 'card news-story');
     card.dataset.sec = safe ? 'safety' : kd === 'institution' ? 'institution' : 'news';
-    // Police & courts cards never show photos (no mugshots); ship94: nor does an outlet's crime story (CRIME_RE).
+    // Police & courts cards never show photos (no mugshots); ship94/ship122: nor crime or obituary stories.
     var pic = safe ? '' : it.image;
-    if (crimeStory(it)) pic = '';
+    if (crimeStory(it) || obitStory(it)) pic = '';
     var logo = logoMap[it.sourceId] || '';
     var a = el('a', big ? 'ca' : 'ca ns-ca');
     a.href = safeHref(it.link); a.target = '_blank'; a.rel = 'noopener noreferrer';
@@ -3277,6 +3423,20 @@
     }
     var sum = DD.preview(hTitle, it.summary); if (sum) body.appendChild(el('p', null, sum));
     if (safe && it.arrest) body.appendChild(el('p', 'cl-note', 'Charged or arrested, not convicted.'));
+    if (!big && it.alsoCovered && it.alsoCovered.length) {
+      var also = el('p', 'ns-also');
+      also.appendChild(document.createTextNode('Also covered by '));
+      it.alsoCovered.forEach(function (o, i) {
+        if (i) also.appendChild(document.createTextNode(', '));
+        var href = safeHref(o.link);
+        if (href && href !== '#') {
+          var a2 = el('a', null, o.source || 'another outlet');
+          a2.href = href; a2.target = '_blank'; a2.rel = 'noopener noreferrer';
+          also.appendChild(a2);
+        } else also.appendChild(document.createTextNode(o.source || 'another outlet'));
+      });
+      body.appendChild(also);
+    }
     var src = el('div', big ? 'src' : 'ns-src');
     if (logo) {
       var av = el('img', 'av'); av.src = logo; av.alt = ''; av.loading = 'lazy'; av.referrerPolicy = 'no-referrer';
@@ -3439,7 +3599,7 @@
     listEl.classList.toggle('news-one', state.cat === 'news');
     var slots = {};
     if (state.cat === 'news' && !state.q.trim() && window.TSNAds) {
-      TSNAds.newsSlots(shown.map(function (it) { var k = kindOf(it.sourceId); return k === 'police' || k === 'courts'; }), TSNAds.NEWS_EVERY).forEach(function (i) { slots[i] = 1; });
+      TSNAds.newsSlots(shown.map(function (it) { return feedSensitive(it); }), TSNAds.NEWS_EVERY).forEach(function (i) { slots[i] = 1; });
     }
     var adN = 0; // ship90: each in-feed card gets the next sample, so the same sample never repeats down the feed
     shown.forEach(function (it, i) {

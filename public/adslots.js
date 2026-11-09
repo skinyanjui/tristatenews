@@ -2,8 +2,8 @@
    (window.TSNAds) and the tests.
 
    - The Jobs, Deals, Classifieds and Events boards carry it, and the News feed carries in-feed cards (newsSlots: about
-     every 6th story, never next to a Police & courts item). Institutions, Obituaries, Breaking cards and search
-     results never do (fill() returns null for anything else).
+     every 6th story, never next to a sensitive item — Police & courts, crime, obituary, or death/tragedy). Institutions,
+     Obituaries, Breaking cards and search results never do (fill() returns null for anything else).
    - One card per board view: after the 6th post, or after the last one on a shorter board; none on an empty board.
    - Only approved creatives fill it. The page reads /api/creative?live=1 (api/_creative.js), which lists only what an
      admin approved in admin.html, with a reason, for that placement; ads typed into sponsors.json are never shown.
@@ -121,10 +121,11 @@
     return side === 'right' ? { type: 'house' } : { type: 'none' };
   }
   // Where the News feed's in-feed cards go: the indexes of the stories each card goes before. flags[i] is true when
-  // story i is a Police & courts item. News is one story per row at every width, so a card goes about every `every`
-  // stories (6) and never next to a Police & courts item: neither the story just before it nor the one just after it
-  // may be one; otherwise it moves down one story at a time to the next safe spot. Cards are at least `every` stories
-  // apart, never first (so never next to the Breaking card above the list), never last.
+  // story i is sensitive (Police & courts, crimeStory, obituary, or a death/tragedy headline). News is one story per
+  // row at every width, so a card goes about every `every` stories (6) and never next to a sensitive item: neither
+  // the story just before it nor the one just after it may be one; otherwise it moves down one story at a time to the
+  // next safe spot (same ad count where possible by shifting). Cards are at least `every` stories apart, never first
+  // (so never next to the Breaking card above the list), never last.
   var NEWS_EVERY = 6;
   function newsSlots(flags, every) {
     flags = Array.isArray(flags) ? flags : []; every = Math.max(2, Number(every) || NEWS_EVERY);

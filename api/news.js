@@ -185,6 +185,9 @@ function isWire(item) {
 
 // Standing page furniture some papers publish as articles every day (not stories).
 const STANDING_RE = /^(?:billboard|calendar|scoreboard|looking back|real estate transfers|community events|funeral services?|town crier|a1 teaser|inside)$/i;
+// Utility / contact / legal pages (Contact Us, Privacy Policy, Watch live, …). Shared matcher: public/utility.js.
+const Utility = require('../public/utility.js');
+const isUtilityPage = it => Utility.utilityStory(it) || STANDING_RE.test(String(it && it.title || '').trim());
 
 // The wire, region, obituary, out-of-area and standing-page filters. tryUrl() runs them on every fetch, and
 // combine() runs them again on stored stories, so stories saved before a filter existed (or changed) drop out
@@ -200,7 +203,7 @@ function passesFilters(it, source, viaGoogle) {
   // its news section still come through, as in print); wire, obituary and out-of-area checks still apply.
   if (source.strictGeo) { if (!inTriState(it, source.strictGeo)) return false; }
   else if ((source.geo || (viaGoogle && news && !source.localSection)) && !inRegion(it, source.geoTerms)) return false;
-  return !news || (!looksLikeObit(it) && !outOfArea(it, source.geoTerms) && !STANDING_RE.test(it.title.trim()));
+  return !news || (!looksLikeObit(it) && !outOfArea(it, source.geoTerms) && !isUtilityPage(it));
 }
 // ship91: a death notice in a news source's feed goes to Obituaries instead of being dropped. It is filed under
 // "ob-<source id>" (the page reads any ob- id as an obituary source), keeps its paper's name, and is deduped by name
@@ -1586,6 +1589,8 @@ module.exports.background = background;
 module.exports.looksLikeObit = looksLikeObit;
 module.exports.obitRoute = obitRoute;
 module.exports.obitKey = obitKey;
+module.exports.isUtilityPage = isUtilityPage;
+module.exports.STANDING_RE = STANDING_RE;
 module.exports.outOfArea = outOfArea;
 module.exports.titleWords = titleWords;
 module.exports.sameStory = sameStory;

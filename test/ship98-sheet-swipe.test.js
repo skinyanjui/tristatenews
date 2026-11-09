@@ -16,8 +16,9 @@ test('ship98: the list is the opening card\u2019s own list of news cards, in ord
 });
 
 test('ship98: stops at the ends (a nudge, no wrap); arrows and buttons on desktop', () => {
-  assert.ok(fn.includes('if (i < 0 || i >= list.length) { nudge(n); return false; }'));
-  assert.ok(fn.includes("prev.disabled = i === 0; next.disabled = i === list.length - 1;"));
+  // ship122: past the last story opens a caught-up end card instead of looping; start still nudges.
+  assert.ok(fn.includes('if (i < 0) { nudge(n); return false; }') || fn.includes('if (i < 0 || i >= list.length) { nudge(n); return false; }'));
+  assert.ok(fn.includes('showEnd') || fn.includes("prev.disabled = i === 0; next.disabled = i === list.length - 1;"));
   assert.ok(fn.includes("e.key === 'ArrowRight'") && fn.includes("e.key === 'ArrowLeft'"));
   assert.ok(fn.includes("'Previous story'") && fn.includes("'Next story'"));
   assert.ok(/@media \(min-width:600px\) and \(hover:hover\) \{\s*\.st-nav \{ display:grid; \}/.test(css), 'buttons only where there is a pointer');

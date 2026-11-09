@@ -128,6 +128,7 @@ function fakeStore() {
       case 'DEL': { const had = kv.delete(k) | sets.delete(k) | z.delete(k) | lists.delete(k); return { result: had ? 1 : 0 }; }
       case 'EXISTS': return { result: kv.has(k) || sets.has(k) || z.has(k) || lists.has(k) ? 1 : 0 };
       case 'SADD': { const s = sets.get(k) || new Set(); sets.set(k, s); a.forEach(x => s.add(x)); return { result: 1 }; }
+      case 'SMEMBERS': return { result: [...(sets.get(k) || new Set())] };
       case 'SISMEMBER': return { result: (sets.get(k) || new Set()).has(a[0]) ? 1 : 0 };
       case 'RENAME': { if (sets.has(k)) { sets.set(a[0], sets.get(k)); sets.delete(k); } if (kv.has(k)) { kv.set(a[0], kv.get(k)); kv.delete(k); } return { result: 'OK' }; }
       case 'EXPIRE': return { result: 1 };

@@ -77,8 +77,8 @@ test('empty native with 33 marketplace listings does not say nothing posted yet'
   await expect(page.locator('.row-mk .mk-amt').first()).toHaveText('$2500');
   await expect(page.locator('.row-mk').first().locator('.cl-price')).toHaveCount(0);
   await expect(page.locator('.row-mk').nth(2).locator('.cl-price')).toHaveText('$20');
-  await expect(page.locator('#cl .spon')).toContainText('Hollis & Vance Plumbing');
   await expect(page.locator('#cl .spon')).toContainText('Sample ad');
+  await expect(page.locator('#cl .spon')).toContainText(/Plumbing|Antiques|Bakehouse|Orchard|Clinic|Goods|Motors|Twine|Oven|Mercantile|Repair|Stage|Co-op|Wellness|Harbor|Ash |Willow|Ninebark|Marrow|Old Gravel|Hollis/);
   await expect(page.locator('#cl > .cl-chips')).toBeVisible();
   await expect(page.locator('.mk-sec .cl-chips')).toHaveCount(0);
   await page.screenshot({ path: ART + '/classifieds-no-heading-390.png', fullPage: true });

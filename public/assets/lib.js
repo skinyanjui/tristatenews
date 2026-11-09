@@ -1028,18 +1028,25 @@
 ;
 /* ---- public/obit.js ---- */
 /* Obituaries: comments off, photos off, no in-feed ad neighbors. Shared by the page (window.TSNObit),
-   first-paint cards, GET /api/comments (via api/_crime.js), and News ad adjacency. Headline, dek/summary and
-   URL are checked; Google News obituary sources and /obituar paths count too. Missing module → fail closed. */
+   first-paint cards, GET /api/comments (via api/_crime.js), and News ad adjacency. Strong signals only:
+   name+age, "obituary"/obituar URL or source, or ≥2 weak hints plus a person-name pattern. Weak hints
+   alone (age N, funeral, visitation, formerly of) must not trip. Missing module → fail closed. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.TSNObit = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  // Soft signals in a headline or dek (Marilyn Kay Morris, age 73, … formerly of …).
-  var HINT_RE = /\b(?:age\s+\d{1,3}|passed away|formerly of|obituar(?:y|ies)|visitation|funeral|in loving memory|celebration of life)\b/i;
+  // Weak soft signals — need a partner hint + person name, never alone.
+  var WEAK_HINT_RE = /\b(?:age\s+\d{1,3}|passed away|formerly of|visitation|funeral|in loving memory|celebration of life)\b/gi;
+  // Strong text: the word obituary / obituaries.
+  var STRONG_TEXT_RE = /\bobituar(?:y|ies)\b/i;
   // Name + age forms that slip past kindOf (news sourceId, not ob-*): "Name, age 73, of Town".
   var AGE_HEAD_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,6}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?(?:,\s*age\s+\d{1,3},?|\s+\(\d{1,3}\)|,\s*\d{1,3},?)\s+(?:of\s+)?[A-Z]/;
   var NAME_AGE_RE = /^(?:["\u201c(]?[A-Z][A-Za-z.'\u2019\u201d"()-]*\s+){1,5}[A-Z][A-Za-z.'\u2019-]+(?:,? (?:Jr|Sr|II|III|IV)\.?)?,\s*\d{1,3},\s+(?:of\s+)?[A-Z]/;
+  // Person-like name in a headline/dek (First Last, or "of Name" memorial form).
+  var PERSON_NAME_RE = /\b(?:[A-Z][a-zA-Z.'\u2019-]+(?:\s+(?:[A-Z]\.|[A-Z][a-zA-Z.'\u2019-]+)){1,4}|(?:of|for)\s+[A-Z][a-zA-Z.'\u2019-]+)\b/;
+  // Kept for callers/tests that still reference HINT_RE (union of weak + strong text).
+  var HINT_RE = /\b(?:age\s+\d{1,3}|passed away|formerly of|obituar(?:y|ies)|visitation|funeral|in loving memory|celebration of life)\b/i;
 
   function haystack(it) {
     it = it || {};
@@ -1082,11 +1089,26 @@
     return false;
   }
 
+  function weakHintCount(s) {
+    WEAK_HINT_RE.lastIndex = 0;
+    var n = 0, m;
+    while ((m = WEAK_HINT_RE.exec(s))) n++;
+    return n;
+  }
+
+  function hasPersonName(s) {
+    return PERSON_NAME_RE.test(String(s || ''));
+  }
+
   function obitText(s) {
     s = String(s || '');
-    if (HINT_RE.test(s)) return true;
-    var title = s.split('\n')[0] || s;
-    if (AGE_HEAD_RE.test(title.trim()) || NAME_AGE_RE.test(title.trim())) return true;
+    var title = (s.split('\n')[0] || s).trim();
+    // Strong: classic name + age headline forms.
+    if (AGE_HEAD_RE.test(title) || NAME_AGE_RE.test(title)) return true;
+    // Strong: the word obituary / obituaries in title, dek, or slug text.
+    if (STRONG_TEXT_RE.test(s)) return true;
+    // Weak path: at least two weak hints AND a person-name pattern.
+    if (weakHintCount(s) >= 2 && hasPersonName(s)) return true;
     return false;
   }
 
@@ -1100,11 +1122,16 @@
 
   return {
     HINT_RE: HINT_RE,
+    WEAK_HINT_RE: WEAK_HINT_RE,
+    STRONG_TEXT_RE: STRONG_TEXT_RE,
+    PERSON_NAME_RE: PERSON_NAME_RE,
     AGE_HEAD_RE: AGE_HEAD_RE,
     NAME_AGE_RE: NAME_AGE_RE,
     haystack: haystack,
     obitUrl: obitUrl,
     googleObitSource: googleObitSource,
+    weakHintCount: weakHintCount,
+    hasPersonName: hasPersonName,
     obitText: obitText,
     obitStory: obitStory,
     obitTitle: obitTitle
@@ -1190,9 +1217,10 @@
 ;
 /* ---- public/cluster.js ---- */
 /* Duplicate tragedy / crime clustering for the News feed. When two or more stories cover the same
-   incident (high title-token overlap after stopwords, within 72h), keep the newest card and link the
-   others as “Also covered by <Outlet>”. Only crime or tragedy stories merge — ordinary news stays
-   separate. Shared as window.TSNCluster. */
+   incident (token overlap + a shared distinctive token, within 72h), keep the newest card and link
+   the others as “Also covered by <Outlet>”. Prefer missing a merge over a wrong one. Dog/cat are
+   not collapsed to a generic animal. Links attach only to a lead story (no transitive union-find).
+   Shared as window.TSNCluster. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./crime.js'), require('./tragedy.js'), require('./obit.js'));
   else root.TSNCluster = factory(root.TSNCrime, root.TSNTragedy, root.TSNObit);
@@ -1206,14 +1234,22 @@
     no: 1, yes: 1, man: 1, woman: 1, men: 1, women: 1, county: 1, city: 1, area: 1, local: 1,
     say: 1, says: 1, said: 1, police: 1, according: 1, near: 1, after: 1
   };
+  // Synonyms for overlap only. Do NOT fold dog/cat → animal (different cruelty cases stay separate).
   var SYN = {
     murder: 'death', murders: 'death', murdered: 'death', homicide: 'death', homicides: 'death',
     killing: 'death', killings: 'death', killed: 'death', kills: 'death', fatal: 'death',
     fatally: 'death', died: 'death', dies: 'death', dead: 'death', deaths: 'death',
     wife: 'spouse', wives: 'spouse', husband: 'spouse', husbands: 'spouse',
     sentenced: 'sentence', sentence: 'sentence', sentencing: 'sentence',
-    cruelty: 'cruelty', cruel: 'cruelty', abuse: 'cruelty', abusing: 'cruelty', abused: 'cruelty',
-    animal: 'animal', animals: 'animal', dog: 'animal', dogs: 'animal', puppy: 'animal', cat: 'animal'
+    cruelty: 'cruelty', cruel: 'cruelty', abuse: 'cruelty', abusing: 'cruelty', abused: 'cruelty'
+  };
+  // Common capitalized openers that are not distinctive place/person tokens.
+  var WEAK_CAP = {
+    Man: 1, Woman: 1, Men: 1, Women: 1, Couple: 1, Pair: 1, Police: 1, Sheriff: 1, Deputies: 1,
+    County: 1, City: 1, Local: 1, Area: 1, Update: 1, Breaking: 1, Officials: 1, Authorities: 1,
+    Person: 1, People: 1, Suspect: 1, Victim: 1, Victims: 1, Driver: 1, Teen: 1, Teenager: 1,
+    // Route words alone are not distinctive — the number from hwy/route patterns is.
+    Highway: 1, Hwy: 1, Route: 1, Interstate: 1, Crash: 1, Accident: 1, Collision: 1
   };
   var WINDOW_MS = 72 * 3600 * 1000;
   var MIN_SHARED = 3;
@@ -1243,6 +1279,36 @@
     return { shared: shared, jaccard: shared / (na + nb - shared) };
   }
 
+  // Distinctive tokens: place/person caps, highway/route ids, sentence lengths. Checked on title+summary.
+  function distinctive(it) {
+    var text = [String((it && it.title) || ''), String((it && (it.summary || it.dek)) || '')].join('\n');
+    var out = {};
+    function add(k) {
+      k = String(k || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if (k.length > 1) out[k] = 1;
+    }
+    var m;
+    var hwy = /\b(?:i-?\d+|us-?\d+|hwy\.?\s*\d+|highway\s+\d+|route\s+\d+|rt\.?\s*\d+)\b/gi;
+    while ((m = hwy.exec(text))) add(m[0]);
+    var years = /\b(\d{1,3})\s*years?\b/gi;
+    while ((m = years.exec(text))) add(m[1] + 'years');
+    var wordRe = /\b[A-Z][a-zA-Z'’.-]+\b/g;
+    while ((m = wordRe.exec(text))) {
+      if (WEAK_CAP[m[0]]) continue;
+      if (/^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December)$/.test(m[0])) continue;
+      add(m[0]);
+    }
+    return out;
+  }
+
+  function sharedDistinctive(a, b) {
+    var A = distinctive(a), B = distinctive(b), k;
+    for (k in A) {
+      if (Object.prototype.hasOwnProperty.call(A, k) && B[k]) return true;
+    }
+    return false;
+  }
+
   function eligible(it) {
     if (!it || !it.title) return false;
     if (Obit && Obit.obitStory && Obit.obitStory(it)) return false; // obituaries stay single cards
@@ -1261,67 +1327,62 @@
     var da = Math.abs(pubMs(a) - pubMs(b));
     if (da > WINDOW_MS) return false;
     var o = overlap(tokens(a.title), tokens(b.title));
-    return o.shared >= MIN_SHARED && o.jaccard >= MIN_JACCARD;
+    if (!(o.shared >= MIN_SHARED && o.jaccard >= MIN_JACCARD)) return false;
+    // Require a shared distinctive token so Highway 41 ≠ Highway 66, Patoka ≠ Warrick, etc.
+    return sharedDistinctive(a, b);
   }
 
-  // Returns a new list: clustered groups collapse to the newest item with alsoCovered: [{ source, link, title }].
+  // Star-to-lead: each older story may attach only to a newer lead it directly matches.
+  // No union-find chaining (A~B and B~C does not force A~C).
   function clusterTragedies(items) {
     items = Array.isArray(items) ? items.slice() : [];
     var n = items.length;
     if (n < 2) return items;
-    var parent = [];
-    for (var i = 0; i < n; i++) parent[i] = i;
-    function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
-    function uni(a, b) {
-      a = find(a); b = find(b);
-      if (a === b) return;
-      // Prefer the newer story as root.
-      if (pubMs(items[a]) >= pubMs(items[b])) parent[b] = a;
-      else parent[a] = b;
-    }
-    for (var i = 0; i < n; i++) {
-      if (!eligible(items[i])) continue;
-      for (var j = i + 1; j < n; j++) {
-        if (!eligible(items[j])) continue;
-        if (sameIncident(items[i], items[j])) uni(i, j);
-      }
-    }
-    var groups = {};
-    for (var i = 0; i < n; i++) {
-      var r = find(i);
-      if (!groups[r]) groups[r] = [];
-      groups[r].push(i);
-    }
-    var drop = {};
-    Object.keys(groups).forEach(function (r) {
-      var g = groups[r];
-      if (g.length < 2) return;
-      g.sort(function (a, b) { return pubMs(items[b]) - pubMs(items[a]); });
-      var head = g[0];
+    var order = [];
+    for (var i = 0; i < n; i++) order.push(i);
+    order.sort(function (a, b) { return pubMs(items[b]) - pubMs(items[a]); });
+    var used = {};
+    var alsoFor = {};
+    for (var oi = 0; oi < order.length; oi++) {
+      var hi = order[oi];
+      if (used[hi] || !eligible(items[hi])) continue;
       var also = [];
-      for (var k = 1; k < g.length; k++) {
-        drop[g[k]] = 1;
-        var it = items[g[k]];
-        also.push({ source: it.source || 'another outlet', link: it.link || '', title: it.title || '' });
+      for (var oj = oi + 1; oj < order.length; oj++) {
+        var ji = order[oj];
+        if (used[ji] || !eligible(items[ji])) continue;
+        if (sameIncident(items[hi], items[ji])) {
+          also.push(ji);
+          used[ji] = 1;
+        }
       }
+      if (also.length) alsoFor[hi] = also;
+    }
+    Object.keys(alsoFor).forEach(function (hs) {
+      var head = +hs;
+      var also = alsoFor[hs].map(function (ix) {
+        var it = items[ix];
+        return { source: it.source || 'another outlet', link: it.link || '', title: it.title || '' };
+      });
       var lead = items[head];
-      // Shallow clone so callers can keep the original list.
       var copy = {};
       Object.keys(lead).forEach(function (k) { copy[k] = lead[k]; });
       copy.alsoCovered = also;
       items[head] = copy;
     });
-    return items.filter(function (_, i) { return !drop[i]; });
+    return items.filter(function (_, i) { return !used[i]; });
   }
 
   return {
     STOP: STOP,
     SYN: SYN,
+    WEAK_CAP: WEAK_CAP,
     WINDOW_MS: WINDOW_MS,
     MIN_SHARED: MIN_SHARED,
     MIN_JACCARD: MIN_JACCARD,
     tokens: tokens,
     overlap: overlap,
+    distinctive: distinctive,
+    sharedDistinctive: sharedDistinctive,
     eligible: eligible,
     sameIncident: sameIncident,
     clusterTragedies: clusterTragedies

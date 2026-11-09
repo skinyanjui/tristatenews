@@ -52,12 +52,33 @@ test('ship122: Marilyn Kay Morris and obituary patterns fail closed for comments
   assert.equal(crime.obitStory({ title: 'Council passes riverfront plan' }), false);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Council passes riverfront plan' }), false);
   assert.equal(O.obitStory({ title: 'Local news brief', link: 'https://paper.example/obituaries/jane-doe' }), true);
-  assert.equal(O.obitStory({ title: 'In loving memory of Sam', summary: '' }), true);
-  assert.equal(O.obitStory({ title: 'Celebration of life set for Friday' }), true);
+  // Strong text "obituary" still trips; a lone memorial phrase without a second hint does not.
+  assert.equal(O.obitStory({ title: 'Obituary: Sam Rivera of Evansville' }), true);
+  assert.equal(O.obitStory({ title: 'Jane Doe funeral visitation set Saturday' }), true);
+  assert.equal(O.obitStory({ title: 'Celebration of life set for Friday' }), false);
   const js = read('public/assets/app.js');
   assert.match(js, /function obitStory\(it\)/);
   assert.match(js, /crimeStory\(it\) \|\| obitStory\(it\)/);
   assert.match(js, /if \(crimeStory\(it\) \|\| obitStory\(it\)\) return false;/);
+});
+
+test('ship122: obit detector does not trip on weak hints alone', () => {
+  for (const title of [
+    'New policy requires age 18 and older to attend',
+    'Voters must be age 21 to purchase cannabis',
+    'Funeral home fire destroys historic building',
+    'School sets visitation day for incoming freshmen',
+    'The plant, formerly of Evansville, is relocating'
+  ]) {
+    assert.equal(O.obitStory({ title }), false, title);
+    assert.equal(crime.commentsBlocked({ kind: 'news', title }), false, title);
+  }
+  // Marilyn Kay Morris (gn-hamilton news kind) still detected via name+age.
+  assert.equal(O.obitStory(MORRIS), true);
+  assert.equal(O.obitStory({
+    title: 'Community calendar',
+    summary: 'Visitation and funeral for Mary Ellen Brooks of Princeton are Saturday.'
+  }), true);
 });
 
 test('ship122: first-paint cards omit comments and photos on news-feed obituaries', () => {
@@ -101,7 +122,7 @@ test('ship122: comment norms and browser-delete note in the composer', () => {
 });
 
 test('ship122: PII rejects; accusations hold; false positives stay ok', () => {
-  assert.equal(F.VERSION, 3);
+  assert.equal(F.VERSION, 4);
   assert.equal(F.classify('Call me at 812-555-1212 tonight').action, 'reject');
   assert.equal(F.classify('Call me at 812-555-1212 tonight').rule, 'pii');
   assert.equal(F.classify('Email jane.doe@example.com for details').action, 'reject');
@@ -110,10 +131,38 @@ test('ship122: PII rejects; accusations hold; false positives stay ok', () => {
   assert.equal(F.classify('John is a thief').rule, 'accusation');
   assert.equal(F.classify('I know who did it, it was Mike').action, 'hold');
   assert.equal(F.classify('She is a pedophile').action, 'hold');
+  assert.equal(F.classify('my neighbor is a drug dealer').action, 'hold');
   assert.equal(F.classify('Please call 911 if you see smoke').action, 'ok');
   assert.equal(F.classify('Looking ahead to 2026 and the riverfront').action, 'ok');
   assert.equal(F.classify('Main Street festival starts Saturday').action, 'ok');
   assert.equal(F.classify('Great game last night').action, 'ok');
+});
+
+test('ship122: address reject is house-number only; years and crowds post', () => {
+  for (const text of [
+    'There were 200 people on Main Street',
+    'the 2024 basketball court was packed',
+    'I watched game 7 at the basketball court'
+  ]) {
+    assert.equal(F.classify(text).action, 'ok', text);
+  }
+  assert.equal(F.classify('He lives at 123 Main Street').action, 'reject');
+  assert.equal(F.classify('Meet at 45 Oak Avenue Apt 2').action, 'reject');
+});
+
+test('ship122: accusation hold needs a person target; metaphors publish', () => {
+  for (const text of [
+    'It was clear that the council voted no',
+    'It was later that I found out',
+    'They killed it last night',
+    'This is a killer deal',
+    'The heat is a killer'
+  ]) {
+    assert.equal(F.classify(text).action, 'ok', text);
+  }
+  assert.equal(F.classify('John Smith is a pedophile').action, 'hold');
+  assert.equal(F.classify('my neighbor is a drug dealer').action, 'hold');
+  assert.equal(F.classify('I know who did it, it was Mike').action, 'hold');
 });
 
 test('ship122: report reasons UI, API store, and admin display', () => {
@@ -129,7 +178,7 @@ test('ship122: report reasons UI, API store, and admin display', () => {
   assert.match(read('public/admin.html'), /x\.reasons/);
 });
 
-test('ship122: tragedy clustering keeps newest and links the other outlet', () => {
+test('ship122: tragedy clustering needs a distinctive shared token', () => {
   const a = {
     title: "Patoka man sentenced to 45 years for wife's death",
     published: '2026-11-08T18:00:00Z',
@@ -151,8 +200,13 @@ test('ship122: tragedy clustering keeps newest and links the other outlet', () =
     link: 'https://n.ex/river',
     sourceId: 'n'
   };
-  assert.equal(CL.sameIncident(a, b), true);
-  const out = CL.clusterTragedies([a, b, c]);
+  // Title-only Patoka vs Gibson: no shared place/name/term of years → stay separate.
+  assert.equal(CL.sameIncident(a, b), false);
+  assert.equal(CL.clusterTragedies([a, b, c]).length, 3);
+  // Distinctive link via "45 years" in the other outlet's summary may cluster.
+  const bLinked = Object.assign({}, b, { summary: 'A Gibson County man received 45 years in his wife\'s murder.' });
+  assert.equal(CL.sameIncident(a, bLinked), true);
+  const out = CL.clusterTragedies([a, bLinked, c]);
   assert.equal(out.length, 2);
   const lead = out.find(x => /Patoka/.test(x.title));
   assert.ok(lead);
@@ -163,14 +217,27 @@ test('ship122: tragedy clustering keeps newest and links the other outlet', () =
   assert.match(read('public/assets/app.js'), /alsoCovered/);
 });
 
-test('ship122: animal-cruelty duplicates cluster; unrelated crime does not', () => {
-  const a = { title: 'Couple charged with animal cruelty after dogs found in home', published: '2026-11-07T10:00:00Z', source: 'A', link: 'https://a.ex/1', sourceId: 'a' };
-  const b = { title: 'Evansville couple charged in animal cruelty case at home', published: '2026-11-07T14:00:00Z', source: 'B', link: 'https://b.ex/2', sourceId: 'b' };
-  const c = { title: 'Man arrested in downtown burglary', published: '2026-11-07T12:00:00Z', source: 'C', link: 'https://c.ex/3', sourceId: 'c' };
-  assert.equal(CL.sameIncident(a, b), true);
-  assert.equal(CL.sameIncident(a, c), false);
-  const out = CL.clusterTragedies([a, b, c]);
-  assert.equal(out.length, 2);
+test('ship122: clustering keeps unrelated tragedies and cruelty cases separate', () => {
+  const hwyA = { title: 'Man killed in crash on Highway 41 near Evansville', published: '2026-11-07T10:00:00Z', source: 'A', link: 'https://a.ex/41', sourceId: 'a' };
+  const hwyB = { title: 'Woman killed in crash on Highway 66 near Princeton', published: '2026-11-07T11:00:00Z', source: 'B', link: 'https://b.ex/66', sourceId: 'b' };
+  assert.equal(CL.sameIncident(hwyA, hwyB), false);
+
+  const patoka = { title: "Patoka man sentenced to 45 years for wife's death", published: '2026-11-08T18:00:00Z', source: 'A', link: 'https://a.ex/p', sourceId: 'a' };
+  const warrick = { title: "Warrick man sentenced in wife's death", published: '2026-11-08T12:00:00Z', source: 'B', link: 'https://b.ex/w', sourceId: 'b' };
+  assert.equal(CL.sameIncident(patoka, warrick), false);
+
+  const dog = { title: 'Couple charged with animal cruelty after dogs found in home', published: '2026-11-07T10:00:00Z', source: 'A', link: 'https://a.ex/1', sourceId: 'a' };
+  const cat = { title: 'Evansville couple charged in animal cruelty case involving cats', published: '2026-11-07T14:00:00Z', source: 'B', link: 'https://b.ex/2', sourceId: 'b' };
+  assert.equal(CL.sameIncident(dog, cat), false);
+  assert.equal(CL.SYN.dog, undefined);
+  assert.equal(CL.SYN.cat, undefined);
+
+  // Same distinctive place may still cluster two cruelty writeups.
+  const dogEv = { title: 'Evansville couple charged with animal cruelty after dogs found', published: '2026-11-07T10:00:00Z', source: 'A', link: 'https://a.ex/1', sourceId: 'a' };
+  const dogEv2 = { title: 'Evansville pair charged in animal cruelty case after dogs seized', published: '2026-11-07T14:00:00Z', source: 'B', link: 'https://b.ex/2', sourceId: 'b' };
+  assert.equal(CL.sameIncident(dogEv, dogEv2), true);
+  const out = CL.clusterTragedies([dogEv, dogEv2, hwyA, hwyB]);
+  assert.equal(out.length, 3);
 });
 
 test('ship122: utility pages drop at ingestion matcher and on render', () => {

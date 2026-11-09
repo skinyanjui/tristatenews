@@ -71,4 +71,8 @@ test('ship116: View opens a local dialog; samples cannot apply or redeem; real C
   assert.strictEqual(fs.readdirSync(API).filter(f => f.endsWith('.js') && !f.startsWith('_')).length, 8);
   assert.ok((js.match(/id: 'sjob\d+'/g) || []).length >= 8);
   assert.ok((js.match(/id: 'sdeal\d+'/g) || []).length >= 8);
+  assert.match(css, /--radius-sm:6px; --radius-md:8px; --radius-lg:16px; --radius-xl:16px;/);
+  assert.match(css, /\.row-job, \.row-deal/);
+  assert.match(css, /\.bd-sheet \.acts \.cl-ico svg \{/);
+  assert.match(fnOf('corpus'), /if \(!x\.ends \|\| x\.ends >= today\) docs\.push\(getDoc\('deals', x\)\)/);
 });

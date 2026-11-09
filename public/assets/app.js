@@ -1514,7 +1514,7 @@
       act.disabled = true;
       var req = mine ? fetch('/api/listings?kind=' + kind + '&id=' + encodeURIComponent(it.id) + '&uid=' + encodeURIComponent(uid), { method: 'DELETE' })
                      : fetch('/api/listings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: kind, action: 'report', id: it.id, uid: uid }) });
-      req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); renderTabs(); drawBoard(kind); } else { act.title = 'Reported'; act.setAttribute('aria-label', 'Reported'); act.classList.add('on'); } }).catch(function () { act.disabled = false; });
+      req.then(function () { if (mine) { b.items = b.items.filter(function (x) { return x.id !== it.id; }); var dlg = act.closest && act.closest('dialog'); if (dlg && dlg.open) dlg.close(); renderTabs(); drawBoard(kind); if (state.q.trim() && state.cat !== 'submit') renderSearch(state.q.trim()); } else { act.title = 'Reported'; act.setAttribute('aria-label', 'Reported'); act.classList.add('on'); } }).catch(function () { act.disabled = false; });
     });
     out.acts = el('div', 'acts'); out.acts.appendChild(act);
     var pr = PAY.prices[kind];
@@ -1578,7 +1578,7 @@
     var when = shortWhen(it.at) || postDay(it.at);
     if (when) {
       var tm = el('time', 'deal-when', when);
-      if (it.at) { tm.dateTime = it.at; tm.title = postDay(it.at); }
+      if (it.at) { tm.dateTime = it.at; tm.dataset.ago = 'time'; tm.title = postDay(it.at); }
       head.appendChild(tm);
     }
     if (head.children.length) body.appendChild(head);
@@ -1681,7 +1681,7 @@
     var when = shortWhen(it.at) || postDay(it.at);
     if (when) {
       var tm = el('time', 'job-when', when);
-      if (it.at) { tm.dateTime = it.at; tm.title = postDay(it.at); }
+      if (it.at) { tm.dateTime = it.at; tm.dataset.ago = 'time'; tm.title = postDay(it.at); }
       head.appendChild(tm);
     }
     if (head.children.length) c.appendChild(head);
@@ -2620,13 +2620,13 @@
     return mkDoc(type, it);
   }
   function corpus() {
-    var docs = [];
+    var docs = [], today = inDays(0);
     state.items.forEach(function (i) { var k = kindOf(i.sourceId); if (k === 'events') return; docs.push(getDoc(k === 'obits' ? 'obits' : 'news', i)); });
     postedEvents().concat(feedEvents()).forEach(function (e) { docs.push(getDoc('events', e)); });
     boards.job.items.concat(boardSamples('job')).forEach(function (x) { docs.push(getDoc('jobs', x)); });
     boards.obit.items.forEach(function (x) { docs.push(getDoc('obits', x)); });
     boards.item.items.forEach(function (x) { docs.push(getDoc('classifieds', x)); });
-    boards.deal.items.concat(boardSamples('deal')).forEach(function (x) { docs.push(getDoc('deals', x)); });
+    boards.deal.items.concat(boardSamples('deal')).forEach(function (x) { if (!x.ends || x.ends >= today) docs.push(getDoc('deals', x)); });
     return docs;
   }
   function scoreDoc(d, qs) {
@@ -2680,7 +2680,7 @@
     if (last < text.length) out.appendChild(document.createTextNode(text.slice(last)));
     node.textContent = ''; node.appendChild(out);
   }
-  function hlCard(c, words) { c.querySelectorAll('h2, h3 a, h3, .evt-title a, .evt-title, .ev-desc, .ev-row span, .cl-desc, .card p').forEach(function (n) { if (!n.children.length) highlight(n, words); }); }
+  function hlCard(c, words) { c.querySelectorAll('h2, h3 a, h3, .evt-title a, .evt-title, .ev-desc, .ev-row span, .cl-desc, .card p, .job-co, .deal-biz, .job-tag, .deal-tag, .job-pay, .deal-perk, .job-town, .deal-town').forEach(function (n) { if (!n.children.length) highlight(n, words); }); }
 
   var srEl = document.getElementById('sr');
   function renderSearch(sq) {

@@ -67,12 +67,13 @@ function pick(view, cat, now) {
   now = now == null ? Date.now() : now;
   const kinds = {}; view.sources.forEach(s => { if (s && s.id) kinds[s.id] = s.kind || 'news'; });
   // ship91 + soft detector: ob-<news source> and detector-matched notices count as obituaries.
+  // gn-* stored as kind=obits from the -obituary feed bug are demoted unless the item itself matches.
   const kindOf = it => {
     const sid = it && it.sourceId;
-    if (kinds[sid]) return kinds[sid];
-    if (/^ob-/.test(sid || '')) return 'obits';
-    if (it && Obit.obitStory(it)) return 'obits';
-    return 'news';
+    const k = kinds[sid] || (/^ob-/.test(sid || '') ? 'obits' : 'news');
+    if (k === 'obits' && /^gn-/.test(sid || '') && !(it && Obit.obitStory(it))) return 'news';
+    if (k !== 'obits' && it && Obit.obitStory(it)) return 'obits';
+    return k;
   };
   const all = view.items.filter(it => it && it.title && inCat(kindOf(it), cat, it));
   if (!all.length) return null;

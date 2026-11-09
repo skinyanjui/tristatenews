@@ -1018,7 +1018,7 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
 .cm-list, .sv-list { padding:0 var(--sp-4) var(--sp-4); overflow:auto; display:flex; flex-direction:column; gap:var(--sp-4); }
 .cm-item p { margin:0; white-space:pre-wrap; word-break:break-word; }
 .cm-meta { display:flex; align-items:center; gap:var(--sp-3); margin-top:var(--sp-2); font-size:13px; color:var(--text-muted); }
-.cm-report, .sv-rm { min-height:44px; min-width:44px; padding:0 var(--sp-3); border:0; background:transparent; color:var(--text-muted); }
+.cm-report, .cm-del, .sv-rm { min-height:44px; min-width:44px; padding:0 var(--sp-3); border:0; background:transparent; color:var(--text-muted); }
 .cm-form { display:flex; flex-direction:column; gap:var(--sp-2); padding:var(--sp-3) var(--sp-4) var(--sp-6); border-top:1px solid var(--gray-200); }
 .cm-form textarea { width:100%; min-height:72px; resize:vertical; padding:var(--sp-3); border:1px solid var(--gray-300); border-radius:8px; background:var(--background); color:var(--foreground); font:inherit; }
 .cm-post, .sv-item .st-go, .cm-more { min-height:44px; }

@@ -86,7 +86,7 @@ test('Privacy matches the code: every browser-storage key is described; no cooki
     const src = read('public/' + f);
     assert.ok(!/document\.cookie|sessionStorage|googletagmanager|google-analytics|gtag\(|_vercel\/insights|adsbygoogle|pagead2/.test(src), f);
   }
-  assert.ok(t.includes('TRISTATENOW itself doesn’t set cookies') && t.includes('We don’t use visitor analytics tools') && t.includes('Page-speed measurements (Vercel Speed Insights)') && t.includes('We don’t use any third-party ad network today'));
+  assert.ok(t.includes('TRISTATENOW sets one first-party cookie') && t.includes('__Host-tsn_cm') && t.includes('180 days after the last successful comment') && t.includes('not an account') && t.includes('We don’t use visitor analytics tools') && t.includes('Page-speed measurements (Vercel Speed Insights)') && t.includes('We don’t use any third-party ad network today'));
   assert.ok(t.includes('we do not store it on the comment') && t.includes('daily comment and report counters for that browser ID expire after 24 hours'));
 });
 

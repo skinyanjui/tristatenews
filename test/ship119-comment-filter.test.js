@@ -1,0 +1,75 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const F = require('../api/_cmfilter.js');
+
+test('ship119: strong profanity rejects; damn/hell/crap allowed', () => {
+  assert.equal(F.classify('fuck this riverfront').action, 'reject');
+  assert.equal(F.classify('What a load of bullshit.').action, 'reject');
+  assert.equal(F.classify('motherfucker').action, 'reject');
+  assert.equal(F.classify('You asshole').action, 'reject');
+  assert.equal(F.classify('cocksucker').action, 'reject');
+  assert.equal(F.classify('this is shit').action, 'reject');
+  assert.equal(F.classify('Damn, that meeting ran long.').action, 'ok');
+  assert.equal(F.classify('Hell of a game last night.').action, 'ok');
+  assert.equal(F.classify('That plan is crap but legal.').action, 'ok');
+});
+
+test('ship119: slurs reject; whole-word Scunthorpe and identity mentions stay ok', () => {
+  assert.equal(F.classify('nigger').rule, 'slur');
+  assert.equal(F.classify('faggot').action, 'reject');
+  assert.equal(F.classify('retard').action, 'reject');
+  assert.equal(F.classify('kike').action, 'reject');
+  assert.equal(F.classify('Scunthorpe is in England').action, 'ok');
+  assert.equal(F.classify('I assume the classic assistant class passed.').action, 'ok');
+  assert.equal(F.classify('Black-owned bakery opens downtown').action, 'ok');
+  assert.equal(F.classify('Jewish community center hosts a market').action, 'ok');
+  assert.equal(F.classify('Muslim students won the debate').action, 'ok');
+  assert.equal(F.classify('Racism has no place in Evansville').action, 'ok');
+  assert.equal(F.classify('The council’s policy is a disaster for Main Street').action, 'ok');
+});
+
+test('ship119: disguises (case, leet, punct, zero-width, spaced letters)', () => {
+  assert.equal(F.classify('FuCk').action, 'reject');
+  assert.equal(F.classify('f.u.c.k').action, 'reject');
+  assert.equal(F.classify('f u c k').action, 'reject');
+  assert.equal(F.classify('f*ck').action, 'reject');
+  assert.equal(F.classify('f\u200buck').action, 'reject');
+  assert.equal(F.classify('a$$hole').action, 'reject');
+  assert.equal(F.classify('bull shit').action, 'reject');
+});
+
+test('ship119: homoglyphs and repeated letters still match; niger the country stays ok', () => {
+  assert.equal(F.classify('nіgger').action, 'reject'); // Cyrillic і
+  assert.equal(F.classify('nıgger').action, 'reject'); // dotless i
+  assert.equal(F.classify('niggеr').action, 'reject'); // Cyrillic е
+  assert.equal(F.classify('fuuuck').action, 'reject');
+  assert.equal(F.classify('fuuck').action, 'reject');
+  assert.equal(F.classify('nnnigger').action, 'reject');
+  assert.equal(F.classify('niggger').action, 'reject');
+  assert.equal(F.classify('Trade with Niger is up').action, 'ok');
+  assert.equal(F.classify('Scunthorpe is in England').action, 'ok');
+  assert.equal(F.classify('Penistone market day').action, 'ok');
+});
+
+test('ship119: hate without slurs holds; anti-hate without a banned token is ok; not an AI', () => {
+  assert.equal(F.classify('kill all jews').action, 'reject');
+  assert.equal(F.classify('I hate all muslims').action, 'hold');
+  assert.equal(F.classify('immigrants should die').action, 'hold');
+  assert.equal(F.classify('The speaker used a homophobic slur; that was wrong').action, 'ok');
+  assert.ok(!String(F.classify).includes('openai') && !String(require('fs').readFileSync(require.resolve('../api/_cmfilter.js'), 'utf8')).includes('fetch('));
+});
+
+test('ship119: ambiguous mentions hold; directed/bare slurs still reject; quote bait is not a publish bypass', () => {
+  assert.equal(F.classify('nigger').action, 'reject');
+  assert.equal(F.classify('you nigger').action, 'reject');
+  assert.equal(F.classify('those faggots').action, 'reject');
+  assert.equal(F.classify('Don’t use the word nigger here').action, 'hold');
+  assert.equal(F.classify('The word retard is outdated in medical notes.').action, 'hold');
+  assert.equal(F.classify('Growth of the downtown plan was retarded by the flood.').action, 'hold');
+  assert.equal(F.classify('They shouted “nigger” at the kids on Main.').action, 'hold');
+  assert.equal(F.classify('don’t say nigger you nigger').action, 'reject');
+  assert.equal(F.classify('don’t say nigger; kill all jews').action, 'reject');
+  assert.equal(F.classify('the word fuck is not allowed').action, 'hold');
+  assert.equal(F.classify('fuck this riverfront').action, 'reject');
+});

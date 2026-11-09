@@ -87,7 +87,10 @@ details summary { min-height:40px; display:flex; align-items:center; }
     <section><h2 id="ath">Orders needing attention</h2><p class="m">Refunds due, amount mismatches, disputes, partial refunds, and posts removed by reports or an admin while Featured (the Terms owe the unused part back unless the post broke them). Refund in the Stripe dashboard: a full refund of a payment takes that payment off this list. Removal records stay listed for reference.</p><div id="at"></div></section>
     <section><h2 id="orh">Orders</h2><div id="ors"></div></section>
     <section><h2 id="rvh">Reported posts</h2><p class="m">Posts reported by 3 readers are hidden from the boards until you restore or remove them. Featured (paid) posts stay up and are only listed here.</p><div id="rv"></div></section>
-    <section><h2 id="cmh">Reported comments</h2><p class="m">Public news comments hidden after 3 reports from different connections. Restore puts a comment back; Remove deletes it. Comments are anonymous: this queue never shows a name, email or IP.</p><div id="cmq"></div></section>
+    <section><h2 id="cmh">Reported comments</h2><p class="m">Public news comments hidden after 3 reports, held for review, or hidden by the word filter. Opening a story does not hide comments — the public list just omits matches (including older ones past the first 20). Matching stored text stays in vis until you run Apply filter (ops: click it; if it says there is more, click again). That writes AUTOHIDE into this queue. Expired comments drop off on GET because their TTL score passed, not because of the word list. Restore puts a comment back (including filter false positives); Remove deletes it. Comments are anonymous: this queue never shows a name, email, IP or cookie. The why field is reports, hold or filter — never the matched text. The filter is a word list, not an AI.</p>
+      <p class="row"><button type="button" class="ghost" id="cmsweep">Apply filter to stored comments</button></p>
+      <p class="m" id="cmsweepmsg" role="status"></p>
+      <div id="cmq"></div></section>
     <section><h2 id="tph">News tips</h2><div id="tp"></div></section>
     <section id="cov"><div class="row"><h2 id="cvh">Sources &amp; Coverage</h2><button class="ghost" id="cvr" type="button">Reload</button></div>
       <p class="m">Read-only health and coverage from the stored feed state, plus the classifier review queue. A county override is written to the audit log and takes effect at the next refresh. No reader data is shown here.</p>
@@ -435,12 +438,23 @@ details summary { min-height:40px; display:flex; align-items:center; }
   function loadComments() {
     return get('/api/comments?review=1').then(drawComments).catch(function () { drawComments(null); });
   }
+  $('cmsweep').addEventListener('click', function () {
+    var b = $('cmsweep'), msg = $('cmsweepmsg');
+    b.disabled = true; msg.textContent = 'Applying the word filter…';
+    post('/api/comments', { action: 'sweep' }).then(function (d) {
+      b.disabled = false;
+      msg.textContent = d && d.ok
+        ? ('Looked at ' + (d.scanned || 0) + ' stories, hid ' + (d.hid || 0) + (d.more ? '. Click again for the rest.' : '.'))
+        : 'Couldn’t apply the filter.';
+      return loadComments();
+    }).catch(function () { b.disabled = false; msg.textContent = 'Couldn’t apply the filter.'; });
+  });
   function drawComments(d) {
     var items = d ? d.items : []; $('cmh').textContent = 'Reported comments (' + items.length + ')'; $('cmq').textContent = '';
     if (!items.length) return empty($('cmq'), d ? 'Nothing reported.' : 'Not available.');
     items.forEach(function (x) {
       var box = mk('div');
-      line(box, (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.storyId || x.id), ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
+      line(box, (x.hidden ? 'hidden' : 'shown') + ' · ' + (x.why || 'reports') + ' · ' + (x.storyId || x.id), ct(x.reportedAt || x.at) + ' · ' + (x.reports || 0) + ' reports', x.text || '');
       var rs = mk('button', { type: 'button', class: 'ghost' }, 'Restore'), rm = mk('button', { type: 'button', class: 'ghost' }, 'Remove');
       rs.addEventListener('click', function () { rs.disabled = true; post('/api/comments', { action: 'restore', id: x.id }).then(loadComments).catch(function () { rs.disabled = false; }); });
       rm.addEventListener('click', function () {

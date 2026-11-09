@@ -126,6 +126,10 @@ test('tabs are built once and updated in place, with aria-controls and labelled 
   assert.match(fn, /b\.setAttribute\('aria-controls', TAB_PANEL\[c\.id\]\)/);
   assert.match(fn, /p\.setAttribute\('role', 'tabpanel'\)/); assert.match(fn, /p\.setAttribute\('aria-labelledby', 'tab-' \+ by\)/);
   assert.match(fn, /back\.focus\(\)/, 'focus kept across a rebuild');
+  assert.match(fn, /window\.scrollTo\(\{ top: 0 \}\)/, 'switching tabs scrolls to the top');
+  const sync = js.slice(js.indexOf('function syncRoute()'), js.indexOf('var AD_TABS ='));
+  assert.match(sync, /if \(pushed\) window\.scrollTo\(\{ top: 0 \}\)/);
+  assert.match(sync, /resetPaging\(\); render\(\); window\.scrollTo\(\{ top: 0 \}\);/);
   const html = read('data/pages/index.html');
   for (const id of ['list', 'ev', 'ob', 'jb', 'dl', 'cl']) assert.match(html, new RegExp('id="' + id + '"'), id);
 });

@@ -884,7 +884,7 @@
         var b = el('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'tab-' + c.id;
         b.setAttribute('aria-controls', TAB_PANEL[c.id]); b.dataset.cat = c.id; b.dataset.sec = c.id;
         b.appendChild(el('span', null, c.label));
-        b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); });
+        b.addEventListener('click', function () { state.cat = c.id; if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; } resetPaging(); render(); window.scrollTo({ top: 0 }); });
         tabsEl.appendChild(b);
       });
       tabsKey = key;
@@ -2698,12 +2698,12 @@
       box.appendChild(row); srEl.appendChild(box); return;
     }
     var bar = el('div', 'sr-bar'), allBtn = el('button', 'cl-chip', 'All ' + res.total); allBtn.type = 'button'; allBtn.setAttribute('aria-pressed', String(state.sf === 'all'));
-    allBtn.addEventListener('click', function () { state.sf = 'all'; state.srl = PAGE; renderSearch(sq); });
+    allBtn.addEventListener('click', function () { state.sf = 'all'; state.srl = PAGE; renderSearch(sq); window.scrollTo({ top: 0 }); });
     bar.appendChild(allBtn);
     TYPES.forEach(function (t) {
       var n = res.groups[t[0]].length; if (!n) return;
       var b = el('button', 'cl-chip', t[1] + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(state.sf === t[0]));
-      b.addEventListener('click', function () { state.sf = t[0]; state.srl = PAGE; renderSearch(sq); });
+      b.addEventListener('click', function () { state.sf = t[0]; state.srl = PAGE; renderSearch(sq); window.scrollTo({ top: 0 }); });
       bar.appendChild(b);
     });
     srEl.appendChild(bar);
@@ -3354,7 +3354,9 @@
     if (SC.geo) { SC.geo = null; if (SC.key !== 'tristate') { SC.key = 'tristate'; load(false); } } // leaving a county page: back to Tri-State
     var r = RT.byCat(state.cat); if (!r) return;
     if (RT.norm(location.pathname) !== r.path) {
-      try { history[ROUTE_SYNCED ? 'pushState' : 'replaceState']({ cat: state.cat }, '', r.path + (ROUTE_SYNCED ? '' : location.search) + location.hash); } catch (e) {}
+      var pushed = ROUTE_SYNCED;
+      try { history[pushed ? 'pushState' : 'replaceState']({ cat: state.cat }, '', r.path + (pushed ? '' : location.search) + location.hash); } catch (e) {}
+      if (pushed) window.scrollTo({ top: 0 });
     }
     ROUTE_SYNCED = true;
     RT.apply(document, r);
@@ -3366,7 +3368,7 @@
     if (g) { SC.geo = g.path; SC.key = g.scope; } else if (SC.geo) { SC.geo = null; SC.key = 'tristate'; }
     if (SC.key !== was) { load(false); }
     if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
-    resetPaging(); render();
+    resetPaging(); render(); window.scrollTo({ top: 0 });
   });
   var AD_TABS = ['events', 'jobs', 'deals', 'classifieds', 'news']; // the only tabs with side ads (Advertising policy); never Obituaries
   function render() {
@@ -3469,7 +3471,7 @@
     var gp = key !== 'tristate' && SC.routes && RT && RT.geoPath ? RT.geoPath(key) : null;
     SC.key = gp ? key : 'tristate'; SC.geo = gp; state.cat = 'news';
     try { history.pushState({ cat: 'news' }, '', gp || '/'); } catch (e) {}
-    resetPaging(); skeletons(); load(false);
+    resetPaging(); skeletons(); window.scrollTo({ top: 0 }); load(false);
   }
   function scopeEmpty() {
     var info = SC.info || {}, srcs = info.sources || [], label = info.label || 'this area';

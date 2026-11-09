@@ -1112,7 +1112,7 @@
   var clEl = document.getElementById('cl');
   var boards = {
     item: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mine', cats: CATS_ITEM, el: clEl },
-    deal: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, el: document.getElementById('dl') },
+    deal: { items: [], loaded: false, configured: null, form: false, filter: '', town: '', mine: [], key: 'tsn.mineDeals', cats: CATS_DEAL, el: document.getElementById('dl') },
     event: { items: [], loaded: false, configured: null, form: false, filter: '', mine: [], key: 'tsn.mineEvents', cats: CATS_EVENT, el: document.getElementById('ev') },
     obit: { items: [], loaded: false, configured: null, form: false, filter: '', town: '', mine: [], key: 'tsn.mineObits', cats: [], el: document.getElementById('ob') },
     job: { items: [], loaded: false, configured: null, form: false, filter: '', jt: '', town: '', mine: [], key: 'tsn.mineJobs', cats: CATS_JOB, el: document.getElementById('jb') }
@@ -1175,7 +1175,8 @@
     var real = kind === 'event' ? postedEvents() : b.items.slice();
     if (kind === 'event') real = real.concat(feedEvents());
     var all = real.concat(boardSamples(kind));
-    if (kind === 'job') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
+    if (kind === 'job' || kind === 'deal') all.sort(function (x, y) { return x.at < y.at ? 1 : -1; });
+    if (kind === 'deal') all = all.filter(function (x) { return !x.ends || x.ends >= inDays(0); });
     if (kind === 'event') all.sort(function (x, y) { return (x.date + (x.time || '')) < (y.date + (y.time || '')) ? -1 : 1; });
     if (b.filter) all = all.filter(function (x) { return x.category === b.filter; });
     if (kind === 'event' && !ignoreQ) {
@@ -1187,7 +1188,7 @@
     var q = ignoreQ ? '' : state.q.trim().toLowerCase();
     if (q && kind !== 'item') {
       var words = q.split(/\s+/);
-      all = all.filter(function (x) { var hay = [x.title, x.business, x.desc, x.town, x.place, x.category, x.jobType, x.pay].join(' ').toLowerCase(); return words.every(function (w) { return hay.indexOf(w) >= 0; }); });
+      all = all.filter(function (x) { var hay = [x.title, x.business, x.desc, x.town, x.place, x.category, x.jobType, x.pay, x.code].join(' ').toLowerCase(); return words.every(function (w) { return hay.indexOf(w) >= 0; }); });
     }
     return all;
   }
@@ -1451,6 +1452,11 @@
     function clientCheck() {
       var e = {};
       if (isDeal && els.business.value.trim().length < 2) e.business = 'Add the business name.';
+      if (isDeal) {
+        var cd = els.code.value.trim().toUpperCase();
+        if (cd && !/^[A-Z0-9-]{2,20}$/.test(cd)) e.code = 'Coupon codes use letters, numbers and dashes.';
+        if (els.ends.value && (els.ends.value < inDays(0) || els.ends.value > inDays(120))) e.ends = 'Pick an end date from today to 4 months out.';
+      }
       if (isJob && els.employer.value.trim().length < 2) e.employer = 'Add the employer name.';
       if (isJob && !els.jobType.value) e.jobType = 'Choose full-time, part-time, seasonal or contract.';
       if (isJob && els.pay.value.trim() && !/\d|negotiable|competitive|commission|tips?/i.test(els.pay.value)) e.pay = 'Pay should look like $18-22/hr or $55,000/yr.';
@@ -1561,16 +1567,38 @@
       c.appendChild(im);
     }
     var body = el('div', 'deal-body');
+    var top = el('div', 'deal-top');
+    var logoWrap = el('span', 'deal-logo');
+    logoWrap.appendChild(bizAvatar(it.business || it.title, it.logo));
+    top.appendChild(logoWrap);
+    var feat = featLabel(it); if (feat) top.appendChild(feat);
+    body.appendChild(top);
     var head = el('div', 'deal-head');
-    head.appendChild(bizAvatar(it.business || it.title, it.logo));
     if (it.business) head.appendChild(el('span', 'deal-biz', it.business));
-    body.appendChild(head);
-    var feat = featLabel(it); if (feat) body.appendChild(feat);
+    var when = shortWhen(it.at) || postDay(it.at);
+    if (when) {
+      var tm = el('time', 'deal-when', when);
+      if (it.at) { tm.dateTime = it.at; tm.title = postDay(it.at); }
+      head.appendChild(tm);
+    }
+    if (head.children.length) body.appendChild(head);
     body.appendChild(el('h2', 'deal-offer', it.title));
-    var cond = [it.town, it.category, endsLabel(it)].filter(Boolean).join(' \u00B7 ');
-    if (cond) body.appendChild(el('p', 'deal-cond', cond));
+    var ends = endsLabel(it);
+    var tags = [it.category, it.code ? ends : ''].filter(Boolean);
+    if (tags.length) {
+      var cond = el('p', 'deal-cond');
+      tags.forEach(function (t) { cond.appendChild(el('span', 'deal-tag', t)); });
+      body.appendChild(cond);
+    }
     if (it.sample) body.appendChild(demoNote('deal'));
-    body.appendChild(viewBtn('View deal', it, 'deal', b));
+    var foot = el('div', 'deal-foot');
+    var footL = el('div', 'deal-foot-l');
+    var perk = it.code ? 'Code ' + it.code : (ends || 'Local offer');
+    if (perk) footL.appendChild(el('p', 'deal-perk', perk));
+    if (it.town) footL.appendChild(el('p', 'deal-town', it.town));
+    if (footL.children.length) foot.appendChild(footL);
+    foot.appendChild(viewBtn('View deal', it, 'deal', b));
+    body.appendChild(foot);
     c.appendChild(body);
     return c;
   }
@@ -2584,7 +2612,7 @@
     var f;
     if (type === 'news' || type === 'obits') f = { t: toks(it.title), v: toks(areaOf(it.sourceId) || it.town), s: toks(it.source || it.business), b: toks(it.summary || it.desc) };
     else if (type === 'events') f = { t: toks(it.title), v: toks([it.place, it.town, it.category].join(' ')), s: toks(it.source || ''), b: toks(it.desc) };
-    else f = { t: toks(it.title), v: toks([it.town, it.category, it.jobType, it.pay].filter(Boolean).join(' ')), s: toks(it.business || ''), b: toks(it.desc) };
+    else f = { t: toks(it.title), v: toks([it.town, it.category, it.jobType, it.pay, it.code].filter(Boolean).join(' ')), s: toks(it.business || ''), b: toks(it.desc) };
     return { type: type, it: it, f: f, title: norm(it.title) };
   }
   function getDoc(type, it) {

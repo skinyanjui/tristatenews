@@ -909,43 +909,42 @@ article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-
   box-sizing:border-box; border:1px solid var(--border); border-radius:var(--radius-lg);
   background:var(--background);
 }
-#jb .job {
-  padding:var(--sp-4); gap:var(--sp-2);
+#jb .job, #dl .deal {
   border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.04);
   transition:border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
 }
-#jb .job:hover { border-color:var(--gray-400); box-shadow:var(--shadow-md); }
-#dl .deal { padding:0; }
-#dl .deal-body { display:flex; flex-direction:column; gap:var(--sp-2); padding:var(--sp-4); min-width:0; }
-#jb .job-top { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); min-width:0; margin-bottom:var(--sp-1); }
-#jb .job-logo {
+#jb .job { padding:var(--sp-4); gap:var(--sp-2); }
+#jb .job:hover, #dl .deal:hover { border-color:var(--gray-400); box-shadow:var(--shadow-md); }
+#dl .deal { padding:0; gap:0; }
+#dl .deal-body { flex:1 1 auto; display:flex; flex-direction:column; gap:var(--sp-2); padding:var(--sp-4); min-width:0; }
+#jb .job-top, #dl .deal-top { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); min-width:0; margin-bottom:var(--sp-1); }
+#jb .job-logo, #dl .deal-logo {
   width:42px; height:42px; flex:none; border-radius:9999px;
   border:1px solid var(--gray-200); background:var(--background);
   display:inline-flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;
 }
-#jb .job-logo .bav { width:100%; height:100%; border:0; font-size:12px; }
-#jb .job-top .bd-feat {
+#jb .job-logo .bav, #dl .deal-logo .bav { width:100%; height:100%; border:0; font-size:12px; }
+#jb .job-top .bd-feat, #dl .deal-top .bd-feat {
   margin:0 0 0 auto; padding:4px 8px; border-radius:6px;
   border:1px solid var(--gray-200); background:var(--gray-100);
   font-size:11px; line-height:14px; font-weight:600; color:var(--foreground);
 }
 #jb .job-head, #dl .deal-head, .bd-sheet .bd-co { display:flex; align-items:center; gap:var(--sp-2); min-width:0; }
-#jb .job-head { align-items:baseline; flex-wrap:wrap; gap:4px 8px; }
+#jb .job-head, #dl .deal-head { align-items:baseline; flex-wrap:wrap; gap:4px 8px; }
 #jb .job-co, #dl .deal-biz { min-width:0; overflow-wrap:anywhere; }
-#jb .job-co { font-size:14px; line-height:20px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--foreground); }
-#jb .job-when { font-size:12px; line-height:16px; font-weight:400; color:var(--text-muted); white-space:nowrap; }
+#jb .job-co, #dl .deal-biz { font-size:14px; line-height:20px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--foreground); }
+#jb .job-when, #dl .deal-when { font-size:12px; line-height:16px; font-weight:400; color:var(--text-muted); white-space:nowrap; }
 #jb .job-title, #dl .deal-offer { margin:0; font-size:20px; line-height:26px; font-weight:600; overflow-wrap:anywhere; color:var(--foreground); }
-#jb .job-title { font-size:19px; line-height:24px; font-weight:700; letter-spacing:-.015em; }
-#dl .deal-offer { font-size:22px; line-height:28px; letter-spacing:-.015em; }
+#jb .job-title, #dl .deal-offer { font-size:19px; line-height:24px; font-weight:700; letter-spacing:-.015em; }
 #jb .job-meta, #dl .deal-cond, .bd-sheet .bd-meta, .bd-sheet .bd-desc { margin:0; font-size:14px; line-height:20px; color:var(--text-muted); overflow-wrap:anywhere; }
-#jb .job-meta { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 var(--sp-2); }
-#jb .job-tag {
+#jb .job-meta, #dl .deal-cond { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 var(--sp-2); }
+#jb .job-tag, #dl .deal-tag {
   display:inline-flex; align-items:center; padding:4px 10px;
   border-radius:6px; background:var(--gray-100); color:var(--foreground);
   font-size:12px; line-height:16px; font-weight:500; overflow-wrap:anywhere;
 }
-#jb .job-pay { margin:0; font-family:var(--font-sans); font-size:16px; line-height:22px; font-weight:700; color:var(--foreground); overflow-wrap:anywhere; }
-#jb .job-town { margin:0; font-size:12px; line-height:16px; color:var(--text-muted); overflow-wrap:anywhere; }
+#jb .job-pay, #dl .deal-perk { margin:0; font-family:var(--font-sans); font-size:16px; line-height:22px; font-weight:700; color:var(--foreground); overflow-wrap:anywhere; }
+#jb .job-town, #dl .deal-town { margin:0; font-size:12px; line-height:16px; color:var(--text-muted); overflow-wrap:anywhere; }
 #jb .bd-demo, #dl .bd-demo, .bd-sheet .bd-demo { margin:0; font-size:12px; line-height:16px; color:var(--red); }
 #jb .bd-feat, #dl .bd-feat, .bd-sheet .bd-feat { margin:0; font-size:12px; line-height:16px; font-weight:600; color:var(--text-muted); }
 #jb .job-view, #dl .deal-view {
@@ -955,22 +954,22 @@ article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-
   border-radius:var(--radius-md); background:var(--foreground); color:var(--background);
   font-weight:600; font-size:14px;
 }
-#jb .job-foot {
+#jb .job-foot, #dl .deal-foot {
   margin-top:auto; padding-top:var(--sp-3); border-top:1px solid var(--gray-200);
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-2) var(--sp-3); min-width:0;
 }
-#jb .job-foot-l { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto; }
-#jb .job-foot > .job-view {
+#jb .job-foot-l, #dl .deal-foot-l { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto; }
+#jb .job-foot > .job-view, #dl .deal-foot > .deal-view {
   width:auto; max-width:100%; flex:none; margin-top:0; padding:0 14px;
   border-radius:8px; font-size:13px;
 }
-#jb .job-foot > .job-view:hover { opacity:.9; }
+#jb .job-foot > .job-view:hover, #dl .deal-foot > .deal-view:hover { opacity:.9; }
 #jb .job-grid > .job, #dl .deal-grid > .deal { min-width:0; max-width:100%; }
-.job-grid > .card.ad-row, .job-grid > .ad-card { grid-column:1 / -1; }
+.job-grid > .card.ad-row, .job-grid > .ad-card, .deal-grid > .card.ad-row, .deal-grid > .ad-card { grid-column:1 / -1; }
 @media (min-width:1024px) {
-  .job-grid, #jb .job-grid { grid-template-columns:1fr 1fr 1fr; }
+  .job-grid, #jb .job-grid, .deal-grid, #dl .deal-grid { grid-template-columns:1fr 1fr 1fr; }
 }
-#dl .deal-img { display:block; width:100%; max-width:100%; aspect-ratio:16/9; max-height:180px; object-fit:cover; background:var(--gray-100); border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
+#dl .deal-img { display:block; width:100%; max-width:100%; aspect-ratio:16/9; max-height:160px; object-fit:cover; background:var(--gray-100); border-radius:15px 15px 0 0; }
 .bd-sheet { width:min(480px, calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow:auto; box-sizing:border-box; padding:var(--sp-6); border:1px solid var(--gray-200); border-radius:16px; background:var(--background); color:var(--foreground); }
 .bd-sheet::backdrop { background:rgba(0,0,0,.45); }
 .bd-sheet h2 { margin:var(--sp-2) 0; font-size:22px; line-height:28px; font-weight:600; overflow-wrap:anywhere; }

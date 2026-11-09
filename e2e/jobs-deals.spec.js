@@ -148,8 +148,18 @@ for (const board of BOARDS) {
           const photos = page.locator('#dl .row-deal img.deal-img');
           await expect(photos.first()).toBeVisible();
           expect(await photos.first().getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
-          await expect(page.locator('#dl .row-deal img.bav').first()).toBeVisible();
-          await expect(page.locator('#dl .row-deal .deal-view').first()).toHaveText('View deal');
+          await expect(page.locator('#dl .row-deal .deal-logo img.bav').first()).toBeVisible();
+          await expect(page.locator('#dl .row-deal .deal-when').first()).toBeVisible();
+          await expect(page.locator('#dl .row-deal .deal-tag').first()).toBeVisible();
+          await expect(page.locator('#dl .row-deal .deal-perk').first()).toBeVisible();
+          await expect(page.locator('#dl .row-deal .deal-town').first()).toBeVisible();
+          await expect(page.locator('#dl .row-deal .deal-foot .deal-view').first()).toHaveText('View deal');
+          expect(await page.locator('#dl .row-deal .deal-view').first().evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeGreaterThanOrEqual(44);
+          if (vp.width >= 1024) {
+            const firstThreeTops = await page.evaluate(() => [...document.querySelectorAll('#dl .row-deal')].slice(0, 3).map(el => Math.round(el.getBoundingClientRect().top)));
+            expect(firstThreeTops.length).toBe(3);
+            expect(Math.max(...firstThreeTops) - Math.min(...firstThreeTops)).toBeLessThanOrEqual(2);
+          }
         }
 
         const tag = board.tab.toLowerCase() + '-' + (dark ? 'dark' : 'light') + '-' + vp.name;

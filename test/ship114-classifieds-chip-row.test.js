@@ -22,7 +22,7 @@ test('ship114: Classifieds, Jobs, Deals and Events chip rows are one non-wrappin
   assert.match(row, /touch-action:pan-x/);
   assert.match(css, /#cl \.cl-chips, #jb \.cl-chips, #dl \.cl-chips \{ padding-block:2px; \}/);
   assert.match(css, /#cl \.cl-chips \.cl-chip, #jb \.cl-chips \.cl-chip, #dl \.cl-chips \.cl-chip, #ev \.cl-chips \.cl-chip \{ white-space:nowrap;/);
-  assert.match(css, /#cl \.cl-chip, #jb \.cl-chip, #dl \.cl-chip, #ev \.cl-chip \{ min-height:var\(--cl-tap\); \}/);
+  assert.match(css, /#cl \.cl-chip, #jb \.cl-chip, #dl \.cl-chip, #ev \.cl-chip \{ min-height:var\(--chip-h\); \}/);
   assert.match(css, /#cl, #jb, #dl, #ev \{ --cl-tap: 44px; \}/);
   assert.ok(!/#jb \.cl-chips, #dl \.cl-chips \{ flex-wrap:wrap/.test(css));
   assert.match(css, /\.evx-filters > \[aria-label="When"\] \{ margin-top:0; flex-wrap:nowrap; min-width:0; \}/);

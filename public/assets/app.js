@@ -1006,7 +1006,8 @@
     var ctls = el('div', 'wxp-map-ctls');
     var zIn = el('button', 'wxp-map-btn', '+'); zIn.type = 'button'; zIn.setAttribute('aria-label', 'Zoom in');
     var zOut = el('button', 'wxp-map-btn', '\u2212'); zOut.type = 'button'; zOut.setAttribute('aria-label', 'Zoom out');
-    var zHome = el('button', 'wxp-map-btn', '\u2316'); zHome.type = 'button'; zHome.setAttribute('aria-label', 'Center on selected town'); zHome.title = 'Center map';
+    var zHome = el('button', 'wxp-map-btn'); zHome.type = 'button'; zHome.setAttribute('aria-label', 'Center on selected town'); zHome.title = 'Center map';
+    zHome.appendChild(svg([['circle', { cx: '12', cy: '12', r: '6' }], ['path', { d: 'M12 2v4M12 18v4M2 12h4M18 12h4' }]]));
     ctls.appendChild(zIn); ctls.appendChild(zOut); ctls.appendChild(zHome);
     vp.appendChild(baseLayer); vp.appendChild(radarLayer); vp.appendChild(pinsLayer); vp.appendChild(ctls);
     card.appendChild(vp);
@@ -1044,6 +1045,8 @@
               if (!img.dataset.fb) {
                 img.dataset.fb = '1';
                 img.src = 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/' + tz + '/' + ty2 + '/' + tx2;
+              } else {
+                img.remove();
               }
             });
           })(im, z, wx, ty);

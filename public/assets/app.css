@@ -4,6 +4,7 @@
 @font-face { font-family:'Geist Mono'; font-style:normal; font-weight:500; font-display:swap; src:url('/assets/fonts/geist-mono-1.8.2-500-latin.woff2') format('woff2'); }
 :root {
   --ctl: 32px; /* control height: no button is taller than the weather button in the nav */
+  --chip-h:36px; /* scroll / filter controls (chips, arrows, map buttons): always shorter than the Post buttons (--cl-tap, 44px) */
   --background:#fff; --background-subtle:#fafafa; --foreground:#171717;
   --gray-100:#f2f2f2; --gray-200:#ebebeb; --gray-300:#e0e0e0; --gray-400:#c9c9c9;
   --gray-500:#a8a8a8; --gray-600:#8f8f8f; --gray-700:#666; --gray-800:#444; --gray-900:#2e2e2e; --gray-1000:#171717;
@@ -276,12 +277,12 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 .pill-red { background:#c4262c; border-color:transparent; color:#fff; }
 .cl-chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
 .cl-chips::-webkit-scrollbar { display:none; }
-.cl-chip { flex:none; min-height:32px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
+.cl-chip { flex:none; min-height:var(--chip-h); padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-md); font-weight:500; font-size:12px; color:var(--text-muted); }
 .cl-chip[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
 /* Board tap targets (Classifieds, Jobs, Deals): town menu, Post button and chips. --ctl stays 32px in the nav. */
 #cl, #jb, #dl, #ev { --cl-tap: 44px; }
-#sr { --cl-tap: 44px; }
-#cl .cl-bar, #jb .cl-bar, #dl .cl-bar { align-items:stretch; }
+#sr, #ob { --cl-tap: 44px; }
+#cl .cl-bar, #jb .cl-bar, #dl .cl-bar, #ob .cl-bar { align-items:stretch; }
 #cl .cl-bar .ev-town, #jb .cl-bar .ev-town, #dl .cl-bar .ev-town { display:block; width:100%; min-width:0; }
 #cl .cl-bar .ev-town select.ui-select,
 #jb .cl-bar .ev-town select.ui-select,
@@ -296,12 +297,13 @@ h1 { margin:0; font-size:24px; line-height:32px; font-weight:600; letter-spacing
 #cl .cl-bar > .cl-go:focus-visible,
 #jb .cl-bar > .cl-go:focus-visible,
 #dl .cl-bar > .cl-go:focus-visible,
+#ob .cl-bar > .cl-go:focus-visible,
 #cl .cl-chip:focus-visible, #jb .cl-chip:focus-visible, #dl .cl-chip:focus-visible, #ev .cl-chip:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
-#cl .cl-bar > .cl-go, #jb .cl-bar > .cl-go, #dl .cl-bar > .cl-go {
+#cl .cl-bar > .cl-go, #jb .cl-bar > .cl-go, #dl .cl-bar > .cl-go, #ob .cl-bar > .cl-go {
   box-sizing:border-box; height:var(--cl-tap); min-height:var(--cl-tap);
   display:inline-flex; align-items:center; white-space:nowrap;
 }
-#cl .cl-chip, #jb .cl-chip, #dl .cl-chip, #ev .cl-chip { min-height:var(--cl-tap); }
+#cl .cl-chip, #jb .cl-chip, #dl .cl-chip, #ev .cl-chip { min-height:var(--chip-h); }
 /* Category/filter chip rows (Classifieds, Jobs, Deals, Events): one non-wrapping row. On a narrow
    screen the row scrolls sideways so every chip stays reachable without widening the page. */
 #cl, #jb, #dl, #ev { min-width:0; }
@@ -576,8 +578,12 @@ body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
 .tab { padding:0 8px; gap:6px; }
 .tab::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--c); flex:none; }
 .tab[aria-selected="true"] { color:var(--foreground); border-bottom-color:var(--c); }
-.cl-go, .primary, .ev-go, .job-apply a { background:var(--brand); color:var(--brand-fg); }
-.cl-go:hover, .primary:hover, .ev-go:hover, .job-apply a:hover { background:color-mix(in srgb, var(--brand) 85%, var(--foreground)); }
+.cl-go, .primary { background:var(--foreground); color:var(--background); }
+.cl-go:hover, .primary:hover { background:var(--gray-900); }
+[data-theme="dark"] .cl-go:hover, [data-theme="dark"] .primary:hover { background:var(--gray-800); }
+.cl-empty .primary, .evx-empty .primary { min-height:var(--cl-tap, 44px); }
+.ev-go, .job-apply a { background:var(--brand); color:var(--brand-fg); }
+.ev-go:hover, .job-apply a:hover { background:color-mix(in srgb, var(--brand) 85%, var(--foreground)); }
 .card { border-color:color-mix(in srgb, var(--c, var(--c-news)) 45%, var(--background)); }
 .card:hover { border-color:var(--c, var(--c-news)); }
 .spon { background:var(--brand-subtle); border-color:color-mix(in srgb, var(--brand) 45%, var(--background)); }
@@ -585,6 +591,10 @@ body .sn-sec > button.tsz-toggle:hover { background:var(--gray-100); }
 .deal-offer { color:var(--c-deals); }
 .job-pay { color:var(--c-jobs); }
 .cl-chip[aria-pressed="true"] { background:var(--brand); border-color:var(--brand); color:var(--brand-fg); }
+/* Two colour families: Post / Add buttons are the dark foreground; scroll and filter controls (chips, side-scroller
+   arrows, weather layer and map buttons) are brand teal, so the two kinds of control are never mistaken for each other. */
+.cl-chip:not([aria-pressed="true"]) { border-color:color-mix(in srgb, var(--brand) 40%, var(--border)); color:var(--brand); }
+.cl-chip:not([aria-pressed="true"]):hover { background:var(--brand-subtle); }
 .card .src b { color:var(--foreground); }
 
 /* ===== option B: ad-card style ===== */
@@ -627,7 +637,7 @@ body:not([data-ads]) .rail { display:none !important; }
 .evx-near select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; }
 label.evx-near:hover { background:var(--gray-100); border-color:var(--gray-400); }
 label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px; }
-.evx-head .cl-go { flex:none; }
+.evx-head .cl-go { flex:none; min-height:var(--cl-tap, 44px); }
 .evx-filters { display:grid; gap:8px; min-width:0; }
 .evx-filters .cl-chips { position:relative; min-width:0; }
 .evx-pick { position:relative; display:inline-flex; align-items:center; gap:6px; }
@@ -639,8 +649,8 @@ label.evx-near:focus-within { outline:2px solid var(--brand); outline-offset:2px
 .evx-sh { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; }
 .evx-sh h3 { margin:0; font-size:18px; line-height:24px; font-weight:600; letter-spacing:-.01em; }
 .evx-arrows { display:none; gap:4px; }
-.evx-arrows button { width:var(--ctl); height:var(--ctl); display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:9999px; background:var(--background); color:var(--foreground); }
-.evx-arrows button:hover { background:var(--gray-100); }
+.evx-arrows button { width:var(--chip-h); height:var(--chip-h); display:inline-flex; align-items:center; justify-content:center; border:1px solid color-mix(in srgb, var(--brand) 40%, var(--border)); border-radius:9999px; background:var(--background); color:var(--brand); }
+.evx-arrows button:hover { background:var(--brand-subtle); }
 .evx-arrows svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 @media (min-width:640px) { .evx-arrows { display:flex; } }
 .evx-rail { display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-padding-inline:16px; margin:0 -16px; padding:4px 16px 8px; scrollbar-width:none; }
@@ -1248,7 +1258,7 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
   max-width:100%; min-width:0; padding-bottom:2px; scrollbar-width:none;
 }
 #wxp .cl-chips::-webkit-scrollbar { display:none; }
-#wxp .cl-chip { min-height:var(--cl-tap); padding:0 12px; font-size:12px; flex:none; }
+#wxp .cl-chip { min-height:var(--chip-h); padding:0 12px; font-size:12px; flex:none; }
 .wxp-search-wrap { position:relative; width:100%; min-width:0; }
 .wxp-search {
   width:100%; min-height:var(--cl-tap); padding:0 12px; box-sizing:border-box;
@@ -1318,10 +1328,11 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
 .wxp-map-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
 .wxp-layers { display:flex; flex-wrap:wrap; gap:4px; }
 .wxp-layer-btn {
-  min-height:36px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md);
-  background:var(--background); color:var(--text-muted); font-size:12px; font-weight:600;
+  min-height:var(--chip-h); padding:0 10px; border:1px solid color-mix(in srgb, var(--brand) 40%, var(--border)); border-radius:var(--radius-md);
+  background:var(--background); color:var(--brand); font-size:12px; font-weight:600;
 }
-.wxp-layer-btn[aria-pressed="true"] { background:var(--foreground); color:var(--background); border-color:var(--foreground); }
+.wxp-layer-btn:hover { background:var(--brand-subtle); }
+.wxp-layer-btn[aria-pressed="true"] { background:var(--brand); color:var(--brand-fg); border-color:var(--brand); }
 .wxp-map-vp {
   position:relative; width:100%; height:220px; flex:none; overflow:hidden;
   border:1px solid var(--gray-200); border-radius:var(--radius-md); background:var(--gray-100);
@@ -1352,12 +1363,13 @@ dialog.cm-sheet .st-x:hover, dialog.sv-sheet .st-x:hover { background:var(--gray
   display:flex; flex-direction:column; gap:4px;
 }
 .wxp-map-btn {
-  width:36px; height:36px; display:grid; place-items:center;
-  border:1px solid var(--border); border-radius:var(--radius-md);
-  background:color-mix(in srgb, var(--background) 94%, transparent); color:var(--foreground);
+  width:var(--chip-h); height:var(--chip-h); display:grid; place-items:center;
+  border:1px solid color-mix(in srgb, var(--brand) 40%, var(--border)); border-radius:var(--radius-md);
+  background:color-mix(in srgb, var(--background) 94%, transparent); color:var(--brand);
   box-shadow:var(--shadow-md); font-size:15px; font-weight:600; line-height:1;
 }
-.wxp-map-btn:hover { background:var(--gray-100); }
+.wxp-map-btn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.wxp-map-btn:hover { background:var(--brand-subtle); }
 .wxp-map-foot {
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;
   font-size:11px; line-height:14px; color:var(--text-muted);

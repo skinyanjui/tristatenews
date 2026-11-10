@@ -80,5 +80,9 @@ test('ship116: View opens a local dialog; samples cannot apply or redeem; real C
   assert.match(js, /tile\.openstreetmap\.org/);
   assert.match(js, /opengeo\.ncep\.noaa\.gov/);
   assert.match(js, /https:\/\/api\.weather\.gov\/points\//);
+  assert.match(js, /navigator\.serviceWorker\.register\('\/sw\.js'\)/);
+  assert.match(css, /min-height:calc\(100dvh - var\(--nav-h\) - 112px\)/);
+  assert.match(read('public/sw.js'), /tsn-pwa-v1/);
+  assert.match(read('public/manifest.webmanifest'), /"shortcuts":\[/);
   assert.match(read('data/pages/index.html'), /id="wxp"[^>]*aria-label="Weather"/);
 });

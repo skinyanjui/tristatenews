@@ -611,11 +611,12 @@
     { id: 'obits', label: 'Obituaries' },
     { id: 'jobs', label: 'Jobs' },
     { id: 'deals', label: 'Deals' },
-    { id: 'classifieds', label: 'Classifieds' }
+    { id: 'classifieds', label: 'Classifieds' },
+    { id: 'weather', label: 'Weather' }
   ];
   function inCat(it, cat) {
     var k = itemKind(it);
-    if (cat === 'deals') return false;
+    if (cat === 'deals' || cat === 'weather') return false;
     if (cat === 'events' || cat === 'jobs') return false;
     // News (the landing tab, and since the Police & courts tab was merged into it the only home of official police and
     // court items) merges news outlets with Police & courts items, in the feed's time order. Those cards keep
@@ -812,12 +813,26 @@
   }
   var wxBtn = document.getElementById('wxBtn');
   var wxPop = document.getElementById('wxPop');
+  var wxpEl = document.getElementById('wxp');
+  var wxPageData = { locKey: '', om: null, nws: null, station: null, reg: {}, layer: 'radar', zoom: 8, centerLat: wxLoc.lat, centerLon: wxLoc.lon };
 
   function shortName(n) { return n.split(',')[0]; }
+  function openWeatherPage() {
+    setWx(false);
+    state.cat = 'weather';
+    if (state.q) { clearTimeout(qTimer); qEl.value = ''; state.q = ''; }
+    resetPaging();
+    render();
+    window.scrollTo({ top: 0 });
+  }
   function setLoc(l) {
     wxLoc = l;
+    wxPageData.centerLat = l.lat;
+    wxPageData.centerLon = l.lon;
+    wxPageData.locKey = '';
     try { localStorage.setItem('wxLoc', JSON.stringify(l)); } catch (e) {}
     loadWeather();
+    if (state.cat === 'weather') renderWeatherPage(true);
   }
   function showPicker() {
     wxPop.textContent = '';
@@ -878,6 +893,8 @@
       wxPop.appendChild(loc);
       var head = el('div', 'wx-head');
       head.appendChild(el('b', null, Math.round(cur.temperature_2m) + '°F · ' + wxText(cur.weather_code)));
+      head.title = 'Open Weather page';
+      head.addEventListener('click', function (e) { e.stopPropagation(); openWeatherPage(); });
       wxPop.appendChild(head);
       for (var i = 0; i < dly.time.length; i++) {
         var row = el('div', 'wx-row');
@@ -892,8 +909,17 @@
         }
         row.appendChild(pe);
         row.appendChild(el('div', 't', Math.round(dly.temperature_2m_max[i]) + '° / ' + Math.round(dly.temperature_2m_min[i]) + '°'));
+        row.addEventListener('click', function (e) { e.stopPropagation(); openWeatherPage(); });
         wxPop.appendChild(row);
       }
+      var full = el('a', 'wx-full', 'Full weather & radar map');
+      full.href = '/weather';
+      full.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault(); e.stopPropagation();
+        openWeatherPage();
+      });
+      wxPop.appendChild(full);
     }).catch(function () {
       wxBtn.textContent = '';
       wxBtn.appendChild(el('span', 'wx-cond', 'Weather unavailable')); wxBtn.setAttribute('aria-label', 'Weather unavailable');
@@ -902,17 +928,544 @@
     });
   }
   function setWx(open) { wxPop.classList.toggle('open', open); wxBtn.setAttribute('aria-expanded', String(open)); }
-  wxBtn.addEventListener('click', function (e) { e.stopPropagation(); setWx(!wxPop.classList.contains('open')); });
+  wxBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (wxPop.classList.contains('open')) { openWeatherPage(); return; }
+    setWx(true);
+  });
 
   document.addEventListener('click', function () { if (wxPop.classList.contains('open')) setWx(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setWx(false); });
+
+  /* ---------- Weather Page (#wxp): OpenStreetMap + NOAA/NWS Radar & api.weather.gov + Open-Meteo ---------- */
+  var WX_HUBS = LOCS.slice(0, 12);
+  function windDirText(deg) {
+    if (deg == null || isNaN(deg)) return '';
+    var dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+  }
+  function uvLabel(u) {
+    if (u == null || isNaN(u)) return '';
+    if (u < 3) return 'Low';
+    if (u < 6) return 'Moderate';
+    if (u < 8) return 'High';
+    if (u < 11) return 'Very high';
+    return 'Extreme';
+  }
+  function fmtClock(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  function lon2px(lon, z) { return ((lon + 180) / 360) * Math.pow(2, z) * 256; }
+  function lat2px(lat, z) {
+    var s = Math.max(-85.0511, Math.min(85.0511, lat)) * Math.PI / 180;
+    return (1 - Math.log(Math.tan(s) + 1 / Math.cos(s)) / Math.PI) * 0.5 * Math.pow(2, z) * 256;
+  }
+  function px2lon(px, z) { return (px / (Math.pow(2, z) * 256)) * 360 - 180; }
+  function px2lat(py, z) {
+    var n = Math.PI - (2 * Math.PI * py) / (Math.pow(2, z) * 256);
+    return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+  }
+  function wmsTileUrl(layer, x, y, z) {
+    var R = 20037508.342789244, span = (2 * R) / Math.pow(2, z);
+    var xmin = -R + x * span, xmax = xmin + span;
+    var ymax = R - y * span, ymin = ymax - span;
+    var bbox = xmin.toFixed(2) + ',' + ymin.toFixed(2) + ',' + xmax.toFixed(2) + ',' + ymax.toFixed(2);
+    if (layer === 'alerts') {
+      return 'https://opengeo.ncep.noaa.gov/geoserver/wwa/warnings/ows?service=WMS&version=1.1.1&request=GetMap&layers=warnings&styles=&format=image/png&transparent=true&srs=EPSG:3857&width=256&height=256&bbox=' + bbox;
+    }
+    return 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows?service=WMS&version=1.1.1&request=GetMap&layers=conus_bref_qcd&styles=&format=image/png&transparent=true&srs=EPSG:3857&width=256&height=256&bbox=' + bbox;
+  }
+  function buildWxMap(card) {
+    var bar = el('div', 'wxp-map-bar');
+    var hWrap = el('div', 'wxp-card-h');
+    hWrap.appendChild(el('h2', null, 'Interactive Radar & OpenStreetMap'));
+    bar.appendChild(hWrap);
+    var layers = el('div', 'wxp-layers');
+    [
+      { id: 'radar', label: 'NWS Radar (NEXRAD)' },
+      { id: 'alerts', label: 'NWS Watches & Warnings' },
+      { id: 'street', label: 'Street Map Only' }
+    ].forEach(function (ly) {
+      var b = el('button', 'wxp-layer-btn', ly.label);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(wxPageData.layer === ly.id));
+      b.addEventListener('click', function () {
+        wxPageData.layer = ly.id;
+        Array.prototype.forEach.call(layers.children, function (c, idx) {
+          c.setAttribute('aria-pressed', String(['radar', 'alerts', 'street'][idx] === ly.id));
+        });
+        drawTiles();
+      });
+      layers.appendChild(b);
+    });
+    bar.appendChild(layers);
+    card.appendChild(bar);
+
+    var vp = el('div', 'wxp-map-vp');
+    vp.setAttribute('role', 'region');
+    vp.setAttribute('aria-label', 'Interactive OpenStreetMap and NOAA weather radar map');
+    var baseLayer = el('div', 'wxp-tile-layer');
+    var radarLayer = el('div', 'wxp-tile-layer');
+    var pinsLayer = el('div', 'wxp-pins');
+    var ctls = el('div', 'wxp-map-ctls');
+    var zIn = el('button', 'wxp-map-btn', '+'); zIn.type = 'button'; zIn.setAttribute('aria-label', 'Zoom in');
+    var zOut = el('button', 'wxp-map-btn', '\u2212'); zOut.type = 'button'; zOut.setAttribute('aria-label', 'Zoom out');
+    var zHome = el('button', 'wxp-map-btn', '\u2316'); zHome.type = 'button'; zHome.setAttribute('aria-label', 'Center on selected town'); zHome.title = 'Center on ' + wxLoc.name;
+    ctls.appendChild(zIn); ctls.appendChild(zOut); ctls.appendChild(zHome);
+    vp.appendChild(baseLayer); vp.appendChild(radarLayer); vp.appendChild(pinsLayer); vp.appendChild(ctls);
+    card.appendChild(vp);
+
+    var foot = el('div', 'wxp-map-foot');
+    var leg = el('div', 'wxp-legend');
+    leg.appendChild(el('span', null, 'Light'));
+    leg.appendChild(el('span', 'wxp-legend-bar'));
+    leg.appendChild(el('span', null, 'Severe dBZ'));
+    foot.appendChild(leg);
+    var attr = el('span');
+    attr.appendChild(document.createTextNode('Map © '));
+    var osmA = el('a', null, 'OpenStreetMap'); osmA.href = 'https://www.openstreetmap.org/copyright'; osmA.target = '_blank'; osmA.rel = 'noopener noreferrer';
+    attr.appendChild(osmA);
+    attr.appendChild(document.createTextNode(' · Radar & alerts: '));
+    var nwsA = el('a', null, 'NOAA / NWS'); nwsA.href = 'https://radar.weather.gov/'; nwsA.target = '_blank'; nwsA.rel = 'noopener noreferrer';
+    attr.appendChild(nwsA);
+    foot.appendChild(attr);
+    card.appendChild(foot);
+
+    function drawTiles() {
+      var w = vp.clientWidth || 540, h = vp.clientHeight || 360;
+      var z = wxPageData.zoom || 8, maxT = Math.pow(2, z);
+      var cx = lon2px(wxPageData.centerLon, z), cy = lat2px(wxPageData.centerLat, z);
+      var x0 = Math.floor((cx - w / 2) / 256), x1 = Math.floor((cx + w / 2) / 256);
+      var y0 = Math.floor((cy - h / 2) / 256), y1 = Math.floor((cy + h / 2) / 256);
+      baseLayer.textContent = '';
+      radarLayer.textContent = '';
+      for (var ty = y0; ty <= y1; ty++) {
+        if (ty < 0 || ty >= maxT) continue;
+        for (var tx = x0; tx <= x1; tx++) {
+          var wx = ((tx % maxT) + maxT) % maxT;
+          var left = Math.round(w / 2 + tx * 256 - cx);
+          var top = Math.round(h / 2 + ty * 256 - cy);
+          var im = el('img', 'wxp-tile wxp-tile-base');
+          im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer';
+          im.style.left = left + 'px'; im.style.top = top + 'px';
+          im.src = 'https://tile.openstreetmap.org/' + z + '/' + wx + '/' + ty + '.png';
+          baseLayer.appendChild(im);
+          if (wxPageData.layer !== 'street') {
+            var rm = el('img', 'wxp-tile wxp-tile-radar');
+            rm.alt = ''; rm.decoding = 'async'; rm.referrerPolicy = 'no-referrer';
+            rm.style.left = left + 'px'; rm.style.top = top + 'px';
+            rm.src = wmsTileUrl(wxPageData.layer, wx, ty, z);
+            rm.addEventListener('error', function () { this.remove(); });
+            radarLayer.appendChild(rm);
+          }
+        }
+      }
+      pinsLayer.textContent = '';
+      var pinLocs = WX_HUBS.slice();
+      if (!pinLocs.some(function (p) { return p.name === wxLoc.name; })) pinLocs.unshift(wxLoc);
+      pinLocs.forEach(function (loc) {
+        var px = lon2px(loc.lon, z), py = lat2px(loc.lat, z);
+        var vx = Math.round(w / 2 + px - cx), vy = Math.round(h / 2 + py - cy);
+        if (vx < -40 || vx > w + 40 || vy < -20 || vy > h + 20) return;
+        var pin = el('button', 'wxp-pin' + (loc.name === wxLoc.name ? ' is-active' : ''));
+        pin.type = 'button';
+        pin.style.left = vx + 'px'; pin.style.top = vy + 'px';
+        pin.appendChild(el('span', null, shortName(loc.name)));
+        var rt = wxPageData.reg[loc.name];
+        if (rt && rt.temp != null) pin.appendChild(el('span', 'wxp-pin-t', Math.round(rt.temp) + '°'));
+        else if (loc.name === wxLoc.name && wxPageData.om && wxPageData.om.current) pin.appendChild(el('span', 'wxp-pin-t', Math.round(wxPageData.om.current.temperature_2m) + '°'));
+        pin.setAttribute('aria-label', loc.name + (rt && rt.temp != null ? ', ' + Math.round(rt.temp) + ' degrees' : ''));
+        pin.addEventListener('click', function (e) { e.stopPropagation(); setLoc(loc); });
+        pinsLayer.appendChild(pin);
+      });
+    }
+    zIn.addEventListener('click', function (e) { e.stopPropagation(); wxPageData.zoom = Math.min(12, (wxPageData.zoom || 8) + 1); drawTiles(); });
+    zOut.addEventListener('click', function (e) { e.stopPropagation(); wxPageData.zoom = Math.max(6, (wxPageData.zoom || 8) - 1); drawTiles(); });
+    zHome.addEventListener('click', function (e) { e.stopPropagation(); wxPageData.centerLat = wxLoc.lat; wxPageData.centerLon = wxLoc.lon; wxPageData.zoom = 8; drawTiles(); });
+
+    var drag = null;
+    vp.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button')) return;
+      drag = { x: e.clientX, y: e.clientY, z: wxPageData.zoom || 8, cx: lon2px(wxPageData.centerLon, wxPageData.zoom || 8), cy: lat2px(wxPageData.centerLat, wxPageData.zoom || 8) };
+      if (vp.setPointerCapture) try { vp.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    vp.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      wxPageData.centerLon = Math.max(-130, Math.min(-60, px2lon(drag.cx - dx, drag.z)));
+      wxPageData.centerLat = Math.max(24, Math.min(50, px2lat(drag.cy - dy, drag.z)));
+      drawTiles();
+    });
+    function endDrag() { drag = null; }
+    vp.addEventListener('pointerup', endDrag);
+    vp.addEventListener('pointercancel', endDrag);
+    requestAnimationFrame(drawTiles);
+    return { redraw: drawTiles };
+  }
+
+  function wxPageOmUrl(l) {
+    return 'https://api.open-meteo.com/v1/forecast?latitude=' + l.lat + '&longitude=' + l.lon +
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,visibility,uv_index,precipitation' +
+      '&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset' +
+      '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7&forecast_hours=24';
+  }
+
+  function loadWxPageData() {
+    var key = wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
+    wxPageData.locKey = key;
+    fetch(wxPageOmUrl(wxLoc)).then(function (r) { if (!r.ok) throw new Error('om'); return r.json(); }).then(function (d) {
+      if (wxPageData.locKey !== key) return;
+      wxPageData.om = d;
+      if (d && d.current) {
+        wxPageData.reg[wxLoc.name] = {
+          temp: d.current.temperature_2m,
+          code: d.current.weather_code,
+          wind: d.current.wind_speed_10m,
+          hi: d.daily && d.daily.temperature_2m_max ? d.daily.temperature_2m_max[0] : null,
+          lo: d.daily && d.daily.temperature_2m_min ? d.daily.temperature_2m_min[0] : null
+        };
+      }
+      if (state.cat === 'weather') paintWxPageContent();
+    }).catch(function () {});
+
+    // Official U.S. Government National Weather Service API (api.weather.gov)
+    var ptUrl = 'https://api.weather.gov/points/' + wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
+    fetch(ptUrl, { headers: { accept: 'application/geo+json' } }).then(function (r) { if (!r.ok) throw new Error('nws'); return r.json(); }).then(function (pt) {
+      if (wxPageData.locKey !== key) return;
+      var props = (pt && pt.properties) || {};
+      var office = props.cwa || props.gridId || 'PAH';
+      var rel = (props.relativeLocation && props.relativeLocation.properties) || {};
+      wxPageData.nws = { office: office, city: rel.city || shortName(wxLoc.name), state: rel.state || '', periods: [], stationId: '', stationName: '', obs: null };
+      if (props.forecast && /^https:\/\/api\.weather\.gov\//.test(props.forecast)) {
+        fetch(props.forecast, { headers: { accept: 'application/geo+json' } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (fc) {
+          if (wxPageData.locKey !== key || !fc || !fc.properties) return;
+          wxPageData.nws.periods = (fc.properties.periods || []).slice(0, 10);
+          if (state.cat === 'weather') paintWxPageContent();
+        }).catch(function () {});
+      }
+      if (props.observationStations && /^https:\/\/api\.weather\.gov\//.test(props.observationStations)) {
+        fetch(props.observationStations, { headers: { accept: 'application/geo+json' } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (st) {
+          if (wxPageData.locKey !== key || !st || !Array.isArray(st.features) || !st.features.length) return;
+          var sp = st.features[0].properties || {};
+          var sid = sp.stationIdentifier || '';
+          wxPageData.nws.stationId = sid;
+          wxPageData.nws.stationName = sp.name || sid;
+          if (sid) {
+            fetch('https://api.weather.gov/stations/' + encodeURIComponent(sid) + '/observations/latest', { headers: { accept: 'application/geo+json' } })
+              .then(function (r) { return r.ok ? r.json() : null; }).then(function (ob) {
+                if (wxPageData.locKey !== key || !ob || !ob.properties) return;
+                wxPageData.nws.obs = ob.properties;
+                if (state.cat === 'weather') paintWxPageContent();
+              }).catch(function () {});
+          }
+          if (state.cat === 'weather') paintWxPageContent();
+        }).catch(function () {});
+      }
+    }).catch(function () {});
+
+    // Load regional Tri-State hub conditions in a single Open-Meteo batch request
+    if (!wxPageData.regLoaded) {
+      wxPageData.regLoaded = true;
+      var lats = WX_HUBS.map(function (h) { return h.lat; }).join(',');
+      var lons = WX_HUBS.map(function (h) { return h.lon; }).join(',');
+      var regUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + lats + '&longitude=' + lons +
+        '&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=1';
+      fetch(regUrl).then(function (r) { return r.ok ? r.json() : null; }).then(function (arr) {
+        if (!Array.isArray(arr)) return;
+        arr.forEach(function (d, idx) {
+          var hub = WX_HUBS[idx];
+          if (!hub || !d || !d.current) return;
+          wxPageData.reg[hub.name] = {
+            temp: d.current.temperature_2m,
+            code: d.current.weather_code,
+            wind: d.current.wind_speed_10m,
+            hi: d.daily && d.daily.temperature_2m_max ? d.daily.temperature_2m_max[0] : null,
+            lo: d.daily && d.daily.temperature_2m_min ? d.daily.temperature_2m_min[0] : null
+          };
+        });
+        if (state.cat === 'weather') paintWxPageContent();
+      }).catch(function () { wxPageData.regLoaded = false; });
+    }
+  }
+
+  var wxMapHandle = null, wxContentEl = null;
+  function paintWxPageContent() {
+    if (!wxContentEl) return;
+    if (wxMapHandle && wxMapHandle.redraw) wxMapHandle.redraw();
+    var subEl = wxpEl && wxpEl.querySelector('.wxp-sub');
+    if (subEl) {
+      var stTxt = wxPageData.nws && wxPageData.nws.stationId ? ' · Official NWS Station: ' + wxPageData.nws.stationId + ' (' + wxPageData.nws.stationName + ') · Forecast Office: NWS ' + wxPageData.nws.office : ' · Live National Weather Service (api.weather.gov) & OpenStreetMap radar';
+      subEl.textContent = wxLoc.lat.toFixed(2) + '°N, ' + Math.abs(wxLoc.lon).toFixed(2) + '°W' + stTxt;
+    }
+    var curBox = wxpEl && wxpEl.querySelector('.wxp-cur-body');
+    if (curBox) {
+      curBox.textContent = '';
+      var om = wxPageData.om, cur = om && om.current, dly = om && om.daily;
+      if (!cur) {
+        curBox.appendChild(el('p', 'wxp-now-sub', 'Loading current conditions for ' + wxLoc.name + '\u2026'));
+      } else {
+        var main = el('div', 'wxp-now-main');
+        main.appendChild(el('div', 'wxp-now-temp', Math.round(cur.temperature_2m) + '°F'));
+        var right = el('div');
+        right.appendChild(el('div', 'wxp-now-cond', wxText(cur.weather_code)));
+        var feels = Math.round(cur.apparent_temperature != null ? cur.apparent_temperature : cur.temperature_2m);
+        var hiLo = dly && dly.temperature_2m_max ? ' · H: ' + Math.round(dly.temperature_2m_max[0]) + '° L: ' + Math.round(dly.temperature_2m_min[0]) + '°' : '';
+        right.appendChild(el('div', 'wxp-now-sub', 'Feels like ' + feels + '°F' + hiLo));
+        main.appendChild(right);
+        curBox.appendChild(main);
+
+        var metrics = el('div', 'wxp-metrics');
+        function addMetric(label, val, note) {
+          var m = el('div', 'wxp-metric');
+          m.appendChild(el('span', null, label));
+          m.appendChild(el('b', null, val));
+          if (note) m.appendChild(el('small', null, note));
+          metrics.appendChild(m);
+        }
+        var wDir = windDirText(cur.wind_direction_10m);
+        var gust = cur.wind_gusts_10m != null ? 'Gusts up to ' + Math.round(cur.wind_gusts_10m) + ' mph' : '';
+        addMetric('Wind', Math.round(cur.wind_speed_10m || 0) + ' mph' + (wDir ? ' ' + wDir : ''), gust);
+        addMetric('Humidity', (cur.relative_humidity_2m != null ? Math.round(cur.relative_humidity_2m) + '%' : '—'), cur.dew_point_2m != null ? 'Dew point ' + Math.round(cur.dew_point_2m) + '°F' : '');
+        var pop0 = dly && dly.precipitation_probability_max ? dly.precipitation_probability_max[0] : 0;
+        var pSum = dly && dly.precipitation_sum && dly.precipitation_sum[0] != null ? dly.precipitation_sum[0].toFixed(2) + ' in today' : '';
+        addMetric('Precipitation', (pop0 != null ? pop0 + '% chance' : '0% chance'), pSum);
+        var uv = cur.uv_index != null ? cur.uv_index : (dly && dly.uv_index_max ? dly.uv_index_max[0] : null);
+        addMetric('UV Index', uv != null ? Math.round(uv) + ' (' + uvLabel(uv) + ')' : '—', dly && dly.uv_index_max && dly.uv_index_max[0] != null ? 'Max today ' + Math.round(dly.uv_index_max[0]) : '');
+        var inhg = cur.surface_pressure != null ? (cur.surface_pressure * 0.02953).toFixed(2) + ' inHg' : '—';
+        var visMi = cur.visibility != null ? Math.round(cur.visibility / 1609.34) + ' mi visibility' : '';
+        addMetric('Pressure', inhg, visMi);
+        var sr = dly && dly.sunrise ? fmtClock(dly.sunrise[0]) : '—';
+        var ss = dly && dly.sunset ? fmtClock(dly.sunset[0]) : '—';
+        addMetric('Sun', sr, 'Sunset ' + ss);
+        curBox.appendChild(metrics);
+      }
+    }
+
+    wxContentEl.textContent = '';
+    // Active NWS Weather Alerts banner
+    var alertsWrap = el('div', 'wxp-alert-list');
+    if (state.alerts && state.alerts.length) {
+      state.alerts.forEach(function (a) {
+        var box = el('div', 'wxp-alert');
+        var hd = el('div', 'wxp-alert-head');
+        hd.appendChild(el('span', 'wxp-badge', (a.severity ? a.severity + ' · ' : '') + (a.event || 'Weather Alert')));
+        if (a.senderName) hd.appendChild(el('small', null, a.senderName));
+        box.appendChild(hd);
+        if (a.headline) box.appendChild(el('b', null, a.headline));
+        if (a.areaDesc) box.appendChild(el('small', null, 'Areas: ' + spell(a.areaDesc)));
+        var desc = String(a.description || a.instruction || '').trim();
+        if (desc) box.appendChild(el('p', 'wxp-alert-body', desc.slice(0, 520) + (desc.length > 520 ? '\u2026' : '')));
+        alertsWrap.appendChild(box);
+      });
+    } else {
+      var okBox = el('div', 'wxp-alert wxp-alert-ok');
+      okBox.appendChild(el('span', 'wxp-badge wxp-badge-ok', 'NWS Active Alerts: None'));
+      okBox.appendChild(el('span', 'wxp-now-sub', 'No active National Weather Service watches, warnings or advisories for ' + spell(wxLoc.name) + '.'));
+      alertsWrap.appendChild(okBox);
+    }
+    wxContentEl.appendChild(alertsWrap);
+
+    // 24-Hour Hourly Forecast
+    var om = wxPageData.om;
+    if (om && om.hourly && Array.isArray(om.hourly.time) && om.hourly.time.length) {
+      var hrCard = el('section', 'wxp-card');
+      var hrH = el('div', 'wxp-card-h');
+      hrH.appendChild(el('h2', null, '24-Hour Forecast'));
+      hrH.appendChild(el('small', null, spell(wxLoc.name)));
+      hrCard.appendChild(hrH);
+      var strip = el('div', 'wxp-hourly');
+      var count = Math.min(24, om.hourly.time.length);
+      for (var i = 0; i < count; i++) {
+        var hBox = el('div', 'wxp-hour');
+        var dt = new Date(om.hourly.time[i]);
+        var lbl = i === 0 ? 'Now' : dt.toLocaleTimeString('en-US', { hour: 'numeric' });
+        hBox.appendChild(el('span', 'wxp-hour-t', lbl));
+        hBox.appendChild(el('span', 'wxp-hour-temp', Math.round(om.hourly.temperature_2m[i]) + '°'));
+        hBox.appendChild(el('span', 'wxp-hour-cond', wxText(om.hourly.weather_code[i])));
+        var hp = om.hourly.precipitation_probability ? om.hourly.precipitation_probability[i] : 0;
+        hBox.appendChild(el('span', 'wxp-hour-pop', hp >= 15 ? hp + '% rain' : ''));
+        strip.appendChild(hBox);
+      }
+      hrCard.appendChild(strip);
+      wxContentEl.appendChild(hrCard);
+    }
+
+    // 7-Day Daily Forecast
+    if (om && om.daily && Array.isArray(om.daily.time) && om.daily.time.length) {
+      var dyCard = el('section', 'wxp-card');
+      var dyH = el('div', 'wxp-card-h');
+      dyH.appendChild(el('h2', null, '7-Day Outlook'));
+      dyH.appendChild(el('small', null, 'High / Low & rain probability'));
+      dyCard.appendChild(dyH);
+      var days = el('div', 'wxp-days');
+      var mins = om.daily.temperature_2m_min, maxs = om.daily.temperature_2m_max;
+      var wkMin = Math.min.apply(null, mins), wkMax = Math.max.apply(null, maxs), span = Math.max(1, wkMax - wkMin);
+      for (var d = 0; d < om.daily.time.length; d++) {
+        var row = el('div', 'wxp-day');
+        var dt2 = new Date(om.daily.time[d] + 'T12:00:00');
+        row.appendChild(el('div', 'wxp-day-name', d === 0 ? 'Today' : dt2.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })));
+        row.appendChild(el('div', 'wxp-day-cond', wxText(om.daily.weather_code[d])));
+        var pop = om.daily.precipitation_probability_max ? om.daily.precipitation_probability_max[d] : 0;
+        row.appendChild(el('div', 'wxp-day-pop', pop >= 15 ? pop + '% rain' : ''));
+        var bWrap = el('div', 'wxp-day-bar-wrap');
+        var bar = el('div', 'wxp-day-bar');
+        var leftPct = Math.max(0, Math.min(100, ((mins[d] - wkMin) / span) * 100));
+        var widthPct = Math.max(8, Math.min(100 - leftPct, ((maxs[d] - mins[d]) / span) * 100));
+        bar.style.left = leftPct.toFixed(1) + '%';
+        bar.style.width = widthPct.toFixed(1) + '%';
+        bWrap.appendChild(bar);
+        row.appendChild(bWrap);
+        row.appendChild(el('div', 'wxp-day-temps', Math.round(mins[d]) + '° / ' + Math.round(maxs[d]) + '°'));
+        days.appendChild(row);
+      }
+      dyCard.appendChild(days);
+      wxContentEl.appendChild(dyCard);
+    }
+
+    // Official National Weather Service (api.weather.gov) Detailed Text Forecast
+    if (wxPageData.nws && Array.isArray(wxPageData.nws.periods) && wxPageData.nws.periods.length) {
+      var nwsCard = el('section', 'wxp-card');
+      var nwsH = el('div', 'wxp-card-h');
+      nwsH.appendChild(el('h2', null, 'National Weather Service Detailed Forecast'));
+      nwsH.appendChild(el('small', null, 'Official U.S. Government forecast · api.weather.gov (NWS ' + wxPageData.nws.office + ')'));
+      nwsCard.appendChild(nwsH);
+      var pGrid = el('div', 'wxp-nws-grid');
+      wxPageData.nws.periods.forEach(function (p) {
+        var box = el('article', 'wxp-nws-period');
+        var hd2 = el('div', 'wxp-nws-head');
+        hd2.appendChild(el('b', null, p.name || 'Forecast'));
+        hd2.appendChild(el('span', null, (p.temperature != null ? p.temperature + '°' + (p.temperatureUnit || 'F') : '') + (p.windSpeed ? ' · ' + p.windSpeed + (p.windDirection ? ' ' + p.windDirection : '') : '')));
+        box.appendChild(hd2);
+        box.appendChild(el('p', null, p.detailedForecast || p.shortForecast || ''));
+        pGrid.appendChild(box);
+      });
+      nwsCard.appendChild(pGrid);
+      wxContentEl.appendChild(nwsCard);
+    }
+
+    // Tri-State Regional Hub Conditions Grid
+    var regCard = el('section', 'wxp-card');
+    var regH = el('div', 'wxp-card-h');
+    regH.appendChild(el('h2', null, 'Tri-State Regional Conditions'));
+    regH.appendChild(el('small', null, 'Click any town to view its local radar and forecast'));
+    regCard.appendChild(regH);
+    var rGrid = el('div', 'wxp-reg-grid');
+    WX_HUBS.forEach(function (hub) {
+      var btn = el('button', 'wxp-reg-item' + (hub.name === wxLoc.name ? ' is-active' : ''));
+      btn.type = 'button';
+      var l = el('div', 'wxp-reg-l');
+      l.appendChild(el('b', null, spell(hub.name)));
+      var rd = wxPageData.reg[hub.name];
+      l.appendChild(el('span', null, rd ? wxText(rd.code) + (rd.hi != null ? ' · H: ' + Math.round(rd.hi) + '° L: ' + Math.round(rd.lo) + '°' : '') : 'Select town'));
+      btn.appendChild(l);
+      btn.appendChild(el('span', 'wxp-reg-r', rd && rd.temp != null ? Math.round(rd.temp) + '°F' : '—'));
+      btn.addEventListener('click', function () { setLoc(hub); window.scrollTo({ top: 0 }); });
+      rGrid.appendChild(btn);
+    });
+    regCard.appendChild(rGrid);
+    wxContentEl.appendChild(regCard);
+  }
+
+  function renderWeatherPage(force) {
+    if (!wxpEl) return;
+    var key = wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
+    if (!force && wxpEl.children.length && wxPageData.locKey === key) {
+      paintWxPageContent();
+      return;
+    }
+    wxpEl.textContent = '';
+    wxPageData.centerLat = wxLoc.lat;
+    wxPageData.centerLon = wxLoc.lon;
+
+    // Header + Town selector + Quick-pick chips
+    var top = el('div', 'wxp-top');
+    var topRow = el('div', 'wxp-top-row');
+    var tWrap = el('div', 'wxp-title-wrap');
+    tWrap.appendChild(el('h1', 'wxp-title', 'Weather · ' + spell(wxLoc.name)));
+    tWrap.appendChild(el('p', 'wxp-sub', wxLoc.lat.toFixed(2) + '°N, ' + Math.abs(wxLoc.lon).toFixed(2) + '°W · Live National Weather Service (api.weather.gov) & OpenStreetMap radar'));
+    topRow.appendChild(tWrap);
+
+    var sWrap = el('div', 'wxp-search-wrap');
+    var sIn = el('input', 'wxp-search');
+    sIn.type = 'search';
+    sIn.placeholder = 'Search Tri-State or U.S. city\u2026';
+    sIn.setAttribute('aria-label', 'Search for a weather location');
+    var sug = el('div', 'wxp-sug');
+    sug.hidden = true;
+    function fillSug(items) {
+      sug.textContent = '';
+      if (!items.length) { sug.hidden = true; return; }
+      items.slice(0, 8).forEach(function (l) {
+        var b = el('button'); b.type = 'button';
+        b.appendChild(el('span', null, l.name));
+        b.addEventListener('click', function () { sug.hidden = true; sIn.value = ''; setLoc(l); });
+        sug.appendChild(b);
+      });
+      sug.hidden = false;
+    }
+    var sTimer = null;
+    sIn.addEventListener('input', function () {
+      clearTimeout(sTimer);
+      var q = sIn.value.trim();
+      if (!q) { sug.hidden = true; return; }
+      var ql = q.toLowerCase();
+      var hit = LOCS.filter(function (l) { return l.name.toLowerCase().indexOf(ql) >= 0; });
+      if (hit.length) { fillSug(hit); return; }
+      if (q.length < 2) { sug.hidden = true; return; }
+      sTimer = setTimeout(function () {
+        fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=en&format=json&name=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); }).then(function (g) {
+            var res = (g.results || []).filter(function (x) { return x.country_code === 'US'; }).map(function (x) {
+              return { name: x.name + (x.admin1 ? ', ' + x.admin1 : ''), lat: x.latitude, lon: x.longitude };
+            });
+            fillSug(res);
+          }).catch(function () { sug.hidden = true; });
+      }, 250);
+    });
+    sWrap.appendChild(sIn);
+    sWrap.appendChild(sug);
+    topRow.appendChild(sWrap);
+    top.appendChild(topRow);
+
+    var chipItems = WX_HUBS.slice(0, 10).map(function (l) { return { value: l.name, label: shortName(l.name) }; });
+    top.appendChild(UI.chipRow(chipItems, wxLoc.name, function (val) {
+      var found = LOCS.filter(function (l) { return l.name === val; })[0];
+      if (found) setLoc(found);
+    }, 'Tri-State towns'));
+    wxpEl.appendChild(top);
+
+    // Hero grid: Current Conditions card + Interactive OpenStreetMap & NOAA Radar card
+    var hero = el('div', 'wxp-hero-grid');
+    var curCard = el('section', 'wxp-card wxp-cur-card');
+    var curH = el('div', 'wxp-card-h');
+    curH.appendChild(el('h2', null, 'Current Conditions'));
+    curH.appendChild(el('small', null, 'Open-Meteo & NWS'));
+    curCard.appendChild(curH);
+    var curBody = el('div', 'wxp-cur-body');
+    curCard.appendChild(curBody);
+    hero.appendChild(curCard);
+
+    var mapCard = el('section', 'wxp-card wxp-map-card');
+    wxMapHandle = buildWxMap(mapCard);
+    hero.appendChild(mapCard);
+    wxpEl.appendChild(hero);
+
+    wxContentEl = el('div', 'wxp-alert-list');
+    wxpEl.appendChild(wxContentEl);
+
+    paintWxPageContent();
+    loadWxPageData();
+  }
 
   /* ---------- tabs and search ---------- */
   var tabsEl = document.getElementById('tabs');
   // The tab row is built once (and again only when a tab appears or hides: News and Institutions hide when empty), then
   // each render only updates aria-selected and the roving tabindex, so keyboard focus on a tab survives redraws. Each
   // tab names the part of the page it shows (aria-controls); those parts are tabpanels labelled by the selected tab.
-  var TAB_PANEL = { news: 'list', institution: 'list', events: 'ev', obits: 'ob list', jobs: 'jb', deals: 'dl', classifieds: 'cl' };
+  var TAB_PANEL = { news: 'list', institution: 'list', events: 'ev', obits: 'ob list', jobs: 'jb', deals: 'dl', classifieds: 'cl', weather: 'wxp' };
   var tabsKey = null;
   function renderTabs() {
     var vis = CATS.filter(function (c) {
@@ -3558,18 +4111,19 @@
   }
   function renderList() {
     renderTabs();
-    var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isSn;
+    var isCl = state.cat === 'classifieds', isDl = state.cat === 'deals', isEv = state.cat === 'events', isJb = state.cat === 'jobs', isWx = state.cat === 'weather', isSn = state.cat === 'submit', board = isCl || isDl || isEv || isJb || isWx || isSn;
     nlEl.hidden = NL_WAS || !(state.cat === 'news') || !!state.q.trim();
-    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; boards.obit.el.hidden = state.cat !== 'obits'; listEl.hidden = board; document.getElementById('more').hidden = board;
+    snEl.hidden = !isSn; clEl.hidden = !isCl; dlEl.hidden = !isDl; boards.event.el.hidden = !isEv; boards.job.el.hidden = !isJb; if (wxpEl) wxpEl.hidden = !isWx; boards.obit.el.hidden = state.cat !== 'obits'; listEl.hidden = board; document.getElementById('more').hidden = board;
     var srQ = state.q.trim();
     srEl.hidden = !(srQ && !isSn);
     if (srQ && !isSn) {
-      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = boards.job.el.hidden = boards.obit.el.hidden = listEl.hidden = true; document.getElementById('more').hidden = true;
+      snEl.hidden = clEl.hidden = dlEl.hidden = boards.event.el.hidden = boards.job.el.hidden = boards.obit.el.hidden = listEl.hidden = true; if (wxpEl) wxpEl.hidden = true; document.getElementById('more').hidden = true;
       if (state.loaded) { if (!boards.item.loaded) loadBoard('item'); if (!boards.deal.loaded) loadBoard('deal'); if (!boards.event.loaded) loadBoard('event'); if (!boards.job.loaded) loadBoard('job'); if (!boards.obit.loaded) loadBoard('obit'); renderSearch(srQ); }
       else { srEl.textContent = ''; metaEl.textContent = ''; }
       return;
     }
     if (isSn) { renderSubmit(); metaEl.textContent = ''; return; }
+    if (isWx) { renderWeatherPage(); metaEl.textContent = ''; return; }
     if (isCl) {
       metaEl.textContent = '';
       // News snapshot loads must not rebuild native cards (load() calls render while Classifieds is open).

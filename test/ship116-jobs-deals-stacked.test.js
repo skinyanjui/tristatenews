@@ -75,4 +75,10 @@ test('ship116: View opens a local dialog; samples cannot apply or redeem; real C
   assert.match(css, /\.row-job, \.row-deal/);
   assert.match(css, /\.bd-sheet \.acts \.cl-ico svg \{/);
   assert.match(fnOf('corpus'), /if \(!x\.ends \|\| x\.ends >= today\) docs\.push\(getDoc\('deals', x\)\)/);
+  assert.match(js, /function openWeatherPage\(\)/);
+  assert.match(js, /function renderWeatherPage\(/);
+  assert.match(js, /tile\.openstreetmap\.org/);
+  assert.match(js, /opengeo\.ncep\.noaa\.gov/);
+  assert.match(js, /https:\/\/api\.weather\.gov\/points\//);
+  assert.match(read('data/pages/index.html'), /id="wxp"[^>]*aria-label="Weather"/);
 });

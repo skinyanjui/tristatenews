@@ -27,7 +27,9 @@
     { cat: 'deals', path: '/deals', index: true, title: 'Deals · ' + SITE,
       desc: 'Coupons and specials from local Tri-State businesses.' },
     { cat: 'classifieds', path: '/classifieds', index: true, title: 'Classifieds · ' + SITE,
-      desc: 'Free local classifieds: furniture, electronics, vehicles and more for sale across the Tri-State.' }
+      desc: 'Free local classifieds: furniture, electronics, vehicles and more for sale across the Tri-State.' },
+    { cat: 'weather', path: '/weather', index: false, title: 'Weather · ' + SITE,
+      desc: 'Live Tri-State weather, radar map, hourly forecast, 7-day National Weather Service outlook and active weather alerts for Evansville, Henderson, Owensboro and nearby towns.' }
   ];
   // Retired tab paths: the All tab (it duplicated News), the Liked page (removed), the old /news path and the
   // Police & courts tab (merged into News, where its items keep their rules).

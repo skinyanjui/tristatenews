@@ -26,7 +26,7 @@
       "permanent": true
     },
     {
-      "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)/",
+      "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds|weather)/",
       "destination": "/:tab",
       "permanent": true
     },
@@ -139,7 +139,7 @@
       "destination": "/api/news?__route=tabpage&p=/"
     },
     {
-      "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds)",
+      "source": "/:tab(institutions|events|obituaries|jobs|deals|classifieds|weather)",
       "destination": "/api/news?__route=tabpage&p=/:tab"
     },
     {

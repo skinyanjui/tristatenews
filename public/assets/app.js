@@ -832,7 +832,7 @@
     wxPageData.locKey = '';
     try { localStorage.setItem('wxLoc', JSON.stringify(l)); } catch (e) {}
     loadWeather();
-    if (state.cat === 'weather') renderWeatherPage(true);
+    if (state.cat === 'weather') switchWxLoc();
   }
   function showPicker() {
     wxPop.textContent = '';
@@ -1059,6 +1059,12 @@
           }
         }
       }
+      drawPins();
+    }
+    function drawPins() {
+      var w = vp.clientWidth || 320, h = vp.clientHeight || 220;
+      var z = wxPageData.zoom || 8;
+      var cx = lon2px(wxPageData.centerLon, z), cy = lat2px(wxPageData.centerLat, z);
       pinsLayer.textContent = '';
       var pinLocs = [wxLoc].concat(WX_HUBS.slice(0, 7).filter(function (p) { return p.name !== wxLoc.name; }));
       var placed = [];
@@ -1106,7 +1112,7 @@
       ro.observe(vp);
     }
     requestAnimationFrame(drawTiles);
-    return { redraw: drawTiles };
+    return { redraw: drawTiles, pins: drawPins };
   }
 
   function wxPageOmUrl(l) {
@@ -1122,6 +1128,7 @@
     fetch(wxPageOmUrl(wxLoc)).then(function (r) { if (!r.ok) throw new Error('om'); return r.json(); }).then(function (d) {
       if (wxPageData.locKey !== key) return;
       wxPageData.om = d;
+      if (wxpEl) wxpEl.classList.remove('is-loading');
       if (d && d.current) {
         wxPageData.reg[wxLoc.name] = {
           temp: d.current.temperature_2m,
@@ -1130,7 +1137,7 @@
         };
       }
       if (state.cat === 'weather') paintWxPageContent();
-    }).catch(function () {});
+    }).catch(function () { if (wxpEl) wxpEl.classList.remove('is-loading'); });
 
     // Official U.S. Government National Weather Service API (api.weather.gov)
     var ptUrl = 'https://api.weather.gov/points/' + wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
@@ -1138,7 +1145,8 @@
       if (wxPageData.locKey !== key) return;
       var props = (pt && pt.properties) || {};
       var office = props.cwa || props.gridId || 'PAH';
-      wxPageData.nws = { office: office, periods: [] };
+      wxPageData.nws = { office: office, periods: wxPageData.nws && wxPageData.nws.periods ? wxPageData.nws.periods : [] };
+      if (!(props.forecast && /^https:\/\/api\.weather\.gov\//.test(props.forecast))) wxPageData.nws.periods = [];
       if (props.forecast && /^https:\/\/api\.weather\.gov\//.test(props.forecast)) {
         fetch(props.forecast, { headers: { accept: 'application/geo+json' } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (fc) {
           if (wxPageData.locKey !== key || !fc || !fc.properties) return;
@@ -1171,7 +1179,7 @@
   var wxMapHandle = null, wxContentEl = null;
   function paintWxPageContent() {
     if (!wxContentEl) return;
-    if (wxMapHandle && wxMapHandle.redraw) wxMapHandle.redraw();
+    if (wxMapHandle && wxMapHandle.pins) wxMapHandle.pins(); // pins only: tiles are not rebuilt on every data arrival
 
     // Active NWS Weather Alerts banner (only shown when an alert is active)
     wxContentEl.textContent = '';
@@ -1184,9 +1192,9 @@
       });
     }
 
-    var curBox = wxpEl && wxpEl.querySelector('.wxp-cur-body');
+    var curReal = wxpEl && wxpEl.querySelector('.wxp-cur-body');
+    var curBox = curReal ? el('div') : null; // built detached, swapped in one step: no empty frame
     if (curBox) {
-      curBox.textContent = '';
       var om = wxPageData.om, cur = om && om.current, dly = om && om.daily;
       if (!cur) {
         curBox.appendChild(el('p', 'wxp-now-sub', 'Loading\u2026'));
@@ -1230,7 +1238,7 @@
           for (var d = 0; d < dly.time.length; d++) {
             var row = el('div', 'wxp-day');
             var dt2 = new Date(dly.time[d] + 'T12:00:00');
-            row.appendChild(el('div', 'wxp-day-name', d === 0 ? 'Today' : dt2.toLocaleDateString('en-US', { weekday: 'short' })));
+            row.appendChild(el('div', 'wxp-day-name', d === 0 ? 'Today' : dt2.toLocaleDateString('en-US', { weekday: 'long' })));
             row.appendChild(el('div', 'wxp-day-cond', wxText(dly.weather_code[d])));
             var pop = dly.precipitation_probability_max ? dly.precipitation_probability_max[d] : 0;
             row.appendChild(el('div', 'wxp-day-pop', pop >= 15 ? pop + '%' : ''));
@@ -1248,9 +1256,30 @@
           curBox.appendChild(days);
         }
       }
+      curReal.replaceChildren.apply(curReal, Array.prototype.slice.call(curBox.childNodes));
     }
   }
 
+  function wxChipRow() {
+    var hubs = WX_HUBS.slice(0, 8);
+    if (!hubs.some(function (l) { return l.name === wxLoc.name; })) hubs = [wxLoc].concat(hubs.slice(0, 7));
+    var chipItems = hubs.map(function (l) { return { value: l.name, label: shortName(l.name) }; });
+    return UI.chipRow(chipItems, wxLoc.name, function (val) {
+      var found = LOCS.filter(function (l) { return l.name === val; })[0] || (wxLoc.name === val ? wxLoc : null);
+      if (found) setLoc(found);
+    }, 'Tri-State towns');
+  }
+  // A town was picked while the page is showing: update it in place (chips, map, data). The page is not torn down and
+  // rebuilt, so its height never collapses and the scroll position never jumps; the old numbers stay, dimmed, until the
+  // new ones arrive.
+  function switchWxLoc() {
+    if (!wxpEl || !wxpEl.children.length || !wxContentEl) { renderWeatherPage(true); return; }
+    var old = wxpEl.querySelector('.wxp-bar > .cl-chips'), fresh = wxChipRow();
+    if (old) { var sl = old.scrollLeft; old.replaceWith(fresh); fresh.scrollLeft = sl; }
+    wxpEl.classList.add('is-loading');
+    if (wxMapHandle && wxMapHandle.redraw) wxMapHandle.redraw();
+    loadWxPageData();
+  }
   function renderWeatherPage(force) {
     if (!wxpEl) return;
     var key = wxLoc.lat.toFixed(4) + ',' + wxLoc.lon.toFixed(4);
@@ -1264,13 +1293,7 @@
 
     // Borderless filter bar: Quick-pick town chips (selected town highlighted) + City search
     var top = el('div', 'wxp-bar');
-    var hubs = WX_HUBS.slice(0, 8);
-    if (!hubs.some(function (l) { return l.name === wxLoc.name; })) hubs = [wxLoc].concat(hubs.slice(0, 7));
-    var chipItems = hubs.map(function (l) { return { value: l.name, label: shortName(l.name) }; });
-    top.appendChild(UI.chipRow(chipItems, wxLoc.name, function (val) {
-      var found = LOCS.filter(function (l) { return l.name === val; })[0] || (wxLoc.name === val ? wxLoc : null);
-      if (found) setLoc(found);
-    }, 'Tri-State towns'));
+    top.appendChild(wxChipRow());
 
     var sWrap = el('div', 'wxp-search-wrap');
     var sIn = el('input', 'wxp-search');

@@ -82,6 +82,8 @@ test('ship116: View opens a local dialog; samples cannot apply or redeem; real C
   assert.match(js, /https:\/\/api\.weather\.gov\/points\//);
   assert.match(js, /navigator\.serviceWorker\.register\('\/sw\.js'\)/);
   assert.match(css, /\.wxp-bar \{/);
+  assert.match(css, /--phi:1\.618; --golden-sm:38\.2%; --golden-lg:61\.8%; --ratio-phi:1\.618 \/ 1;/);
+  assert.match(css, /@media \(min-width:1024px\) \{\s*\.wxp-hero-grid \{ grid-template-columns:minmax\(0, 1fr\) minmax\(0, 2fr\); \}/);
   assert.match(css, /\.wxp-map-vp \{[\s\S]*?height:220px;/);
   assert.ok(!/class="wxp-top"|el\('div', 'wxp-top'\)/.test(js), 'no location card wrapper');
   assert.match(read('public/sw.js'), /tsn-pwa-v1/);

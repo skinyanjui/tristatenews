@@ -912,7 +912,7 @@
         row.addEventListener('click', function (e) { e.stopPropagation(); openWeatherPage(); });
         wxPop.appendChild(row);
       }
-      var full = el('a', 'wx-full', 'Full weather & radar map');
+      var full = el('a', 'wx-full', 'Weather & radar');
       full.href = '/weather';
       full.addEventListener('click', function (e) {
         if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -944,14 +944,6 @@
     var dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
   }
-  function uvLabel(u) {
-    if (u == null || isNaN(u)) return '';
-    if (u < 3) return 'Low';
-    if (u < 6) return 'Moderate';
-    if (u < 8) return 'High';
-    if (u < 11) return 'Very high';
-    return 'Extreme';
-  }
   function fmtClock(iso) {
     if (!iso) return '—';
     var d = new Date(iso);
@@ -979,9 +971,6 @@
   }
   function buildWxMap(card) {
     var bar = el('div', 'wxp-map-bar');
-    var hWrap = el('div', 'wxp-card-h');
-    hWrap.appendChild(el('h2', null, 'Radar & Map'));
-    bar.appendChild(hWrap);
     var layers = el('div', 'wxp-layers');
     [
       { id: 'radar', label: 'Radar' },
@@ -1001,6 +990,11 @@
       layers.appendChild(b);
     });
     bar.appendChild(layers);
+    var leg = el('div', 'wxp-legend');
+    leg.appendChild(el('span', null, 'Light'));
+    leg.appendChild(el('span', 'wxp-legend-bar'));
+    leg.appendChild(el('span', null, 'Severe'));
+    bar.appendChild(leg);
     card.appendChild(bar);
 
     var vp = el('div', 'wxp-map-vp');
@@ -1012,17 +1006,12 @@
     var ctls = el('div', 'wxp-map-ctls');
     var zIn = el('button', 'wxp-map-btn', '+'); zIn.type = 'button'; zIn.setAttribute('aria-label', 'Zoom in');
     var zOut = el('button', 'wxp-map-btn', '\u2212'); zOut.type = 'button'; zOut.setAttribute('aria-label', 'Zoom out');
-    var zHome = el('button', 'wxp-map-btn', '\u2316'); zHome.type = 'button'; zHome.setAttribute('aria-label', 'Center on selected town'); zHome.title = 'Center on ' + wxLoc.name;
+    var zHome = el('button', 'wxp-map-btn', '\u2316'); zHome.type = 'button'; zHome.setAttribute('aria-label', 'Center on selected town'); zHome.title = 'Center map';
     ctls.appendChild(zIn); ctls.appendChild(zOut); ctls.appendChild(zHome);
     vp.appendChild(baseLayer); vp.appendChild(radarLayer); vp.appendChild(pinsLayer); vp.appendChild(ctls);
     card.appendChild(vp);
 
     var foot = el('div', 'wxp-map-foot');
-    var leg = el('div', 'wxp-legend');
-    leg.appendChild(el('span', null, 'Light'));
-    leg.appendChild(el('span', 'wxp-legend-bar'));
-    leg.appendChild(el('span', null, 'Severe dBZ'));
-    foot.appendChild(leg);
     var attr = el('span');
     attr.appendChild(document.createTextNode('© '));
     var osmA = el('a', null, 'OpenStreetMap'); osmA.href = 'https://www.openstreetmap.org/copyright'; osmA.target = '_blank'; osmA.rel = 'noopener noreferrer';
@@ -1034,7 +1023,7 @@
     card.appendChild(foot);
 
     function drawTiles() {
-      var w = vp.clientWidth || 520, h = vp.clientHeight || 300;
+      var w = vp.clientWidth || 320, h = vp.clientHeight || 220;
       var z = wxPageData.zoom || 8, maxT = Math.pow(2, z);
       var cx = lon2px(wxPageData.centerLon, z), cy = lat2px(wxPageData.centerLat, z);
       var x0 = Math.floor((cx - w / 2) / 256), x1 = Math.floor((cx + w / 2) / 256);
@@ -1054,11 +1043,11 @@
             img.addEventListener('error', function () {
               if (!img.dataset.fb) {
                 img.dataset.fb = '1';
-                img.src = 'https://basemaps.cartocdn.com/rastertiles/voyager/' + tz + '/' + tx2 + '/' + ty2 + '.png';
+                img.src = 'https://tile.openstreetmap.org/' + tz + '/' + tx2 + '/' + ty2 + '.png';
               }
             });
           })(im, z, wx, ty);
-          im.src = 'https://tile.openstreetmap.org/' + z + '/' + wx + '/' + ty + '.png';
+          im.src = 'https://basemaps.cartocdn.com/rastertiles/voyager/' + z + '/' + wx + '/' + ty + '.png';
           baseLayer.appendChild(im);
           if (wxPageData.layer !== 'street') {
             var rm = el('img', 'wxp-tile wxp-tile-radar');
@@ -1071,20 +1060,23 @@
         }
       }
       pinsLayer.textContent = '';
-      var pinLocs = WX_HUBS.slice();
-      if (!pinLocs.some(function (p) { return p.name === wxLoc.name; })) pinLocs.unshift(wxLoc);
+      var pinLocs = [wxLoc].concat(WX_HUBS.slice(0, 7).filter(function (p) { return p.name !== wxLoc.name; }));
+      var placed = [];
       pinLocs.forEach(function (loc) {
         var px = lon2px(loc.lon, z), py = lat2px(loc.lat, z);
         var vx = Math.round(w / 2 + px - cx), vy = Math.round(h / 2 + py - cy);
-        if (vx < -40 || vx > w + 40 || vy < -20 || vy > h + 20) return;
+        if (vx < 24 || vx > w - 24 || vy < 20 || vy > h - 10) return;
+        if (placed.some(function (pt) { return Math.abs(pt.x - vx) < 46 && Math.abs(pt.y - vy) < 26; })) return;
+        var rt = wxPageData.reg[loc.name];
+        var tVal = rt && rt.temp != null ? Math.round(rt.temp) : (loc.name === wxLoc.name && wxPageData.om && wxPageData.om.current ? Math.round(wxPageData.om.current.temperature_2m) : null);
+        if (tVal == null) return;
+        placed.push({ x: vx, y: vy });
         var pin = el('button', 'wxp-pin' + (loc.name === wxLoc.name ? ' is-active' : ''));
         pin.type = 'button';
         pin.style.left = vx + 'px'; pin.style.top = vy + 'px';
-        pin.appendChild(el('span', null, shortName(loc.name)));
-        var rt = wxPageData.reg[loc.name];
-        if (rt && rt.temp != null) pin.appendChild(el('span', 'wxp-pin-t', Math.round(rt.temp) + '°'));
-        else if (loc.name === wxLoc.name && wxPageData.om && wxPageData.om.current) pin.appendChild(el('span', 'wxp-pin-t', Math.round(wxPageData.om.current.temperature_2m) + '°'));
-        pin.setAttribute('aria-label', loc.name + (rt && rt.temp != null ? ', ' + Math.round(rt.temp) + ' degrees' : ''));
+        pin.appendChild(el('span', 'wxp-pin-t', tVal + '°'));
+        pin.title = loc.name + ' · ' + tVal + '°F';
+        pin.setAttribute('aria-label', loc.name + ', ' + tVal + ' degrees');
         pin.addEventListener('click', function (e) { e.stopPropagation(); setLoc(loc); });
         pinsLayer.appendChild(pin);
       });
@@ -1180,10 +1172,6 @@
   function paintWxPageContent() {
     if (!wxContentEl) return;
     if (wxMapHandle && wxMapHandle.redraw) wxMapHandle.redraw();
-    var subEl = wxpEl && wxpEl.querySelector('.wxp-sub');
-    if (subEl) {
-      subEl.textContent = wxPageData.nws && wxPageData.nws.office ? 'NWS ' + wxPageData.nws.office : 'NWS & OpenStreetMap';
-    }
 
     // Active NWS Weather Alerts banner (only shown when an alert is active)
     wxContentEl.textContent = '';
@@ -1201,7 +1189,7 @@
       curBox.textContent = '';
       var om = wxPageData.om, cur = om && om.current, dly = om && om.daily;
       if (!cur) {
-        curBox.appendChild(el('p', 'wxp-now-sub', 'Loading weather for ' + wxLoc.name + '\u2026'));
+        curBox.appendChild(el('p', 'wxp-now-sub', 'Loading\u2026'));
       } else {
         var main = el('div', 'wxp-now-main');
         main.appendChild(el('div', 'wxp-now-temp', Math.round(cur.temperature_2m) + '°F'));
@@ -1274,16 +1262,13 @@
     wxPageData.centerLat = wxLoc.lat;
     wxPageData.centerLon = wxLoc.lon;
 
-    // Compact single-row Header + Quick-pick chips + City search
-    var top = el('div', 'wxp-top');
-    var tWrap = el('div', 'wxp-title-wrap');
-    tWrap.appendChild(el('h1', 'wxp-title', spell(wxLoc.name)));
-    tWrap.appendChild(el('p', 'wxp-sub', 'NWS & OpenStreetMap'));
-    top.appendChild(tWrap);
-
-    var chipItems = WX_HUBS.slice(0, 8).map(function (l) { return { value: l.name, label: shortName(l.name) }; });
+    // Borderless filter bar: Quick-pick town chips (selected town highlighted) + City search
+    var top = el('div', 'wxp-bar');
+    var hubs = WX_HUBS.slice(0, 8);
+    if (!hubs.some(function (l) { return l.name === wxLoc.name; })) hubs = [wxLoc].concat(hubs.slice(0, 7));
+    var chipItems = hubs.map(function (l) { return { value: l.name, label: shortName(l.name) }; });
     top.appendChild(UI.chipRow(chipItems, wxLoc.name, function (val) {
-      var found = LOCS.filter(function (l) { return l.name === val; })[0];
+      var found = LOCS.filter(function (l) { return l.name === val; })[0] || (wxLoc.name === val ? wxLoc : null);
       if (found) setLoc(found);
     }, 'Tri-State towns'));
 
@@ -1335,10 +1320,6 @@
     // Single-screen 2-column grid: Current + 7-Day Forecast on left, OpenStreetMap + NOAA Radar on right
     var hero = el('div', 'wxp-hero-grid');
     var curCard = el('section', 'wxp-card wxp-cur-card');
-    var curH = el('div', 'wxp-card-h');
-    curH.appendChild(el('h2', null, 'Current & 7-Day Forecast'));
-    curH.appendChild(el('small', null, 'NWS & Open-Meteo'));
-    curCard.appendChild(curH);
     var curBody = el('div', 'wxp-cur-body');
     curCard.appendChild(curBody);
     hero.appendChild(curCard);

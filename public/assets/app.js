@@ -1048,13 +1048,21 @@
           var left = Math.round(w / 2 + tx * 256 - cx);
           var top = Math.round(h / 2 + ty * 256 - cy);
           var im = el('img', 'wxp-tile wxp-tile-base');
-          im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer';
+          im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'origin';
           im.style.left = left + 'px'; im.style.top = top + 'px';
+          (function (img, tz, tx2, ty2) {
+            img.addEventListener('error', function () {
+              if (!img.dataset.fb) {
+                img.dataset.fb = '1';
+                img.src = 'https://basemaps.cartocdn.com/rastertiles/voyager/' + tz + '/' + tx2 + '/' + ty2 + '.png';
+              }
+            });
+          })(im, z, wx, ty);
           im.src = 'https://tile.openstreetmap.org/' + z + '/' + wx + '/' + ty + '.png';
           baseLayer.appendChild(im);
           if (wxPageData.layer !== 'street') {
             var rm = el('img', 'wxp-tile wxp-tile-radar');
-            rm.alt = ''; rm.decoding = 'async'; rm.referrerPolicy = 'no-referrer';
+            rm.alt = ''; rm.decoding = 'async'; rm.referrerPolicy = 'origin';
             rm.style.left = left + 'px'; rm.style.top = top + 'px';
             rm.src = wmsTileUrl(wxPageData.layer, wx, ty, z);
             rm.addEventListener('error', function () { this.remove(); });

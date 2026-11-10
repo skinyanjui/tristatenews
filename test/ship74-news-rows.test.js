@@ -64,7 +64,7 @@ test('CSS: one shared row (ship75: every list); square rounded thumbnail; divide
   const blk = css.slice(css.indexOf('/* ---------- ship74/ship75:'), css.indexOf('/* ---------- card spacing'));
   assert.ok(blk.length > 200);
   for (const line of blk.split('\n').filter(l => /^\s*[.a:]/.test(l) && l.includes('{') && !/^\s*@/.test(l))) assert.match(line, /^\s*(article\.card\.row\.row(\.ad-row)?:not\(\.breaking\):has\(> \.ca\)|:is\(\.list, \.cl-list, \.evx-day, \.evx-sec\):has\(> \.card\.row\))/, line);
-  assert.match(blk, /\.ca > \.th \{[^}]*width:var\(--pic\); height:var\(--pic\); aspect-ratio:1\/1; border-radius:8px; object-fit:cover;/);
+  assert.match(blk, /\.ca > \.th \{[^}]*width:var\(--pic\); height:var\(--pic\); aspect-ratio:1\/1; border-radius:var\(--radius-md\); object-fit:cover;/);
   assert.match(blk, /--pic:96px/); assert.match(blk, /--pic:112px/);
   assert.match(blk, /border-bottom:1px solid var\(--gray-200\)/);
   assert.match(blk, /\.ca\.noimg \{ grid-template-columns:minmax\(0, 1fr\); \}/);

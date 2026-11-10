@@ -21,7 +21,7 @@ test('ship120: large-screen news cards are a social feed; 44px taps stay for coa
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*\.list\.news-one \{ max-width:var\(--news-max\)/);
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*\.ns-pic \{[\s\S]*max-height:320px/);
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*width:calc\(100% - 24px\)/);
-  assert.match(css, /@media \(min-width:900px\) \{[\s\S]*border-radius:12px; border:1px solid var\(--gray-200\)/);
+  assert.match(css, /@media \(min-width:900px\) \{[\s\S]*border-radius:var\(--radius-md\); border:1px solid var\(--gray-200\)/);
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*article\.card\.news-story h2 \{ font-size:15px/);
   assert.match(css, /@media \(min-width:900px\) \{[\s\S]*\.ns-src \.av \{[\s\S]*width:40px; height:40px/);
   assert.match(css, /\.ns-more \{ display:none; \}/);

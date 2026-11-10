@@ -32,7 +32,7 @@ test('ship95: the sheet: card picture rules, headline, RSS summary, one Continue
 test('ship95: sheet styles: bottom sheet on phones, centred card from 600px, spacing tokens', () => {
   const blk = css.slice(css.indexOf('/* ship95'), css.indexOf('/* ship95') + 6000);
   assert.ok(blk.includes('.st-sheet::backdrop {') && blk.includes('html.st-open { overflow:hidden; }'));
-  assert.ok(/@media \(max-width:599\.98px\) \{\s*\.st-sheet \{ width:100vw;[^}]*margin:auto 0 0; border-radius:16px 16px 0 0;/.test(blk));
+  assert.ok(/@media \(max-width:599\.98px\) \{\s*\.st-sheet \{ width:100vw;[^}]*margin:auto 0 0; border-radius:var\(--radius-lg\) var\(--radius-lg\) 0 0;/.test(blk));
   assert.ok(!/var\(--sp-5\)/.test(blk), 'only defined spacing tokens');
   assert.ok(css.indexOf('/* ship95') < css.indexOf('/* ---------- card spacing'));
 });

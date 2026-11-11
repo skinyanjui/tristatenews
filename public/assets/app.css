@@ -1003,15 +1003,15 @@ article.card.row.row:has(> .ca) .acts.acts .like { font-size:13px; font-variant-
   box-sizing:border-box; width:100%; min-height:var(--cl-tap);
   margin-top:var(--sp-1); padding:0 var(--sp-4);
   display:inline-flex; align-items:center; justify-content:center;
-  border-radius:var(--radius-md); background:var(--foreground); color:var(--background);
-  font-weight:600; font-size:14px;
+  border:0; border-radius:var(--radius-md); background:var(--foreground); color:var(--background);
+  font-weight:600; font-size:14px; text-decoration:none; cursor:pointer;
 }
 .row-job .job-view, .row-deal .deal-view {
   box-sizing:border-box; width:100%; min-height:var(--cl-tap);
   margin-top:var(--sp-1); padding:0 var(--sp-4);
   display:inline-flex; align-items:center; justify-content:center;
-  border-radius:var(--radius-md); background:var(--foreground); color:var(--background);
-  font-weight:600; font-size:14px;
+  border:0; border-radius:var(--radius-md); background:var(--foreground); color:var(--background);
+  font-weight:600; font-size:14px; text-decoration:none; cursor:pointer;
 }
 #jb .job-foot, #dl .deal-foot, .row-job .job-foot, .row-deal .deal-foot {
   margin-top:auto; padding-top:var(--sp-3); border-top:1px solid var(--gray-200);

@@ -55,7 +55,9 @@ test('ship113: labeled Jobs and Deals samples cover types, photos, logos, coupon
   assert.match(js, /sample: true/);
   assert.match(js, /Demo listing/);
   assert.match(js, /if \(it\.feed \|\| it\.sample\) return out/);
-  assert.match(js, /viewBtn\('View job', it, 'job'/);
+  assert.match(js, /jobApplyBtn\(it, b\)/);
+  assert.match(js, /function jobApplyBtn\(/);
+  assert.match(js, /el\('a', 'job-view bd-view', 'Apply'\)/);
   assert.match(js, /el\('a', 'bd-quiet', 'Advertise a job'\)/);
   assert.match(js, /ap\.href = '\/advertise'/);
   assert.match(js, /else if \(href\) \{[\s\S]*'Apply'/);

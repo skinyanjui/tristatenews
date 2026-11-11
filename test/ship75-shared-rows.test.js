@@ -53,7 +53,7 @@ test('per-type rules kept: obituaries one bottom row and no ads; police photo-fr
   assert.ok(app.includes("var pic = safe ? '' : it.image;"));
   assert.match(fnOf('kick'), /filter\(Boolean\)/, 'empty label parts are dropped');
   assert.match(fnOf('cardBase'), /el\('b', 'cl-price', priceText\(it\.price\)\)/);
-  assert.match(fnOf('jobCard'), /View job/);
+  assert.match(fnOf('jobCard'), /jobApplyBtn\(it, b\)/);
   assert.match(fnOf('dealCard'), /View deal/);
   assert.match(fnOf('boardDetails'), /'Apply'/);
   assert.match(fnOf('boardDetails'), /'deal-code'/);

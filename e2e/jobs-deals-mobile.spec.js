@@ -158,7 +158,7 @@ for (const board of [
           expect(row.ctaInView, row.title + ' CTA in viewport').toBe(true);
         }
         if (board.tab === 'Jobs') {
-          expect(m.rows.every(r => r.cta === 'View job')).toBe(true);
+          expect(m.rows.every(r => r.cta === 'Apply')).toBe(true);
           expect(await page.locator('#jb')).toContainText('Featured · Paid');
           expect(await page.locator('#jb')).toContainText('Sample featured placement');
           expect(await page.locator('#jb')).toContainText('Demo listing');
@@ -195,17 +195,15 @@ test('200% zoom at 375: View buttons and titles stay in the card', async ({ page
   await page.screenshot({ path: ART + '/stacked-jobs-375-zoom200.png', fullPage: false });
 });
 
-test('real job Apply and real deal Copy code only in the detail dialog', async ({ page }) => {
+test('real job Apply links to the listing contact; real deal Copy code stays in the detail dialog', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await stub(page);
   await page.goto('/jobs');
-  await page.locator('#jb .row-job', { hasText: 'Overnight licensed' }).locator('.job-view').click();
-  const jobDlg = page.locator('dialog.bd-sheet');
-  await expect(jobDlg).toBeVisible();
-  await expect(jobDlg).toContainText('Featured · Paid');
-  await expect(jobDlg.locator('a.bd-act', { hasText: 'Apply' })).toHaveAttribute('href', /tel:/);
-  await expect(jobDlg).not.toContainText('This is a demo listing');
-  await jobDlg.locator('.bd-x').click();
+  const jobApply = page.locator('#jb .row-job', { hasText: 'Overnight licensed' }).locator('a.job-view');
+  await expect(jobApply).toHaveText('Apply');
+  await expect(jobApply).toHaveAttribute('href', /tel:/);
+  await expect(page.locator('#jb .row-job', { hasText: 'Overnight licensed' })).toContainText('Featured · Paid');
+  await expect(page.locator('#jb .row-job', { hasText: 'Overnight licensed' })).not.toContainText('This is a demo listing');
   await page.goto('/deals');
   await page.locator('#dl .row-deal', { hasText: 'Holiday pastry' }).locator('.deal-view').click();
   const dealDlg = page.locator('dialog.bd-sheet');

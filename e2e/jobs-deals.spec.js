@@ -137,7 +137,7 @@ for (const board of BOARDS) {
           await expect(page.locator('#jb .row-job .job-when').first()).toBeVisible();
           await expect(page.locator('#jb .row-job .job-tag').first()).toBeVisible();
           await expect(page.locator('#jb .row-job .job-town').first()).toBeVisible();
-          await expect(page.locator('#jb .row-job .job-foot .job-view').first()).toHaveText('View job');
+          await expect(page.locator('#jb .row-job .job-foot .job-view').first()).toHaveText('Apply');
           expect(await page.locator('#jb .row-job .job-view').first().evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeGreaterThanOrEqual(44);
           if (vp.width >= 1024) {
             const firstThreeTops = await page.evaluate(() => [...document.querySelectorAll('#jb .row-job')].slice(0, 3).map(el => Math.round(el.getBoundingClientRect().top)));
@@ -170,7 +170,7 @@ for (const board of BOARDS) {
   }
 }
 
-test('Jobs View job opens a demo dialog; Advertise a job is in the sheet; Part-time filter works', async ({ page }) => {
+test('Jobs Apply opens a demo dialog; Advertise a job is in the sheet; Part-time filter works', async ({ page }) => {
   const hits = await stub(page);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto('/jobs');
@@ -182,12 +182,13 @@ test('Jobs View job opens a demo dialog; Advertise a job is in the sheet; Part-t
   await page.locator('#jb .cl-chip', { hasText: 'Any type' }).click();
   await expect(page.locator('#jb .row-job')).toHaveCount(8);
   const view = page.locator('#jb .row-job .job-view').first();
+  await expect(view).toHaveText('Apply');
   await view.focus();
   await page.keyboard.press('Enter');
   const dlg = page.locator('dialog.bd-sheet');
   await expect(dlg).toBeVisible();
   await expect(dlg).toContainText('This is a demo listing');
-  await expect(dlg).not.toContainText('Apply');
+  await expect(dlg.locator('a.bd-act')).toHaveCount(0);
   await expect(dlg.locator('a.bd-quiet')).toHaveAttribute('href', '/advertise');
   await page.keyboard.press('Escape');
   await expect(dlg).toHaveCount(0);

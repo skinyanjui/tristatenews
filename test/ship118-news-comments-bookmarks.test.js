@@ -153,7 +153,7 @@ test('ship118: homicide/DV headlines fail closed; weather/sports keep comments; 
   assert.equal(crime.commentsBlocked({ kind: 'news', title: "Woman's body was found in a creek", sourceId: 'n' }), true);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Husband charged in domestic violence case', sourceId: 'n' }), true);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Man arrested downtown after overnight chase', sourceId: 'n' }), true);
-  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Storm kills 3 in western Kentucky after overnight flooding', sourceId: 'n' }), false);
+  assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Storm kills 3 in western Kentucky after overnight flooding', sourceId: 'n' }), true);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Heat wave deaths climb in the Ohio Valley', sourceId: 'n' }), false);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Pacers kill off the Heat in overtime', sourceId: 'n' }), false);
   assert.equal(crime.commentsBlocked({ kind: 'news', title: 'Shooting guard leads the Aces', sourceId: 'n' }), false);

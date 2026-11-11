@@ -1010,6 +1010,38 @@
     'domestic(?:ally)?(?:-|\\s+)(?:violence|abuse|assault|battery)'
   ].join('|') + ')\\b', 'i');
 
+  // "killer"/"killers" alone are often slang (killer deals, killer performance). Only count them when
+  // the same softened text also has police/court/investigation context.
+  var KILLER_RE = /\bkillers?\b/i;
+  var KILLER_CTX_RE = new RegExp('\\b(?:' + [
+    'police',
+    'sheriff',
+    'deputies',
+    'arrested',
+    'arrest',
+    'charged',
+    'charges',
+    'suspects?',
+    'victims?',
+    'murders?',
+    'homicides?',
+    'shootings?',
+    'manhunts?',
+    'serial',
+    'convicted',
+    'sentenced',
+    'trials?',
+    'jury',
+    'courts?',
+    'prisons?',
+    'jails?',
+    'coroners?',
+    'investigations?',
+    'wanted',
+    'fled',
+    'at large'
+  ].join('|') + ')\\b', 'i');
+
   function haystack(it) {
     it = it || {};
     var title = String(it.title || '');
@@ -1028,11 +1060,25 @@
     ALLOW_RE.lastIndex = 0;
     return String(s || '').replace(ALLOW_RE, ' ');
   }
-  function crimeText(s) { return CRIME_RE.test(soften(s)); }
+  function crimeText(s) {
+    var soft = soften(s);
+    if (CRIME_RE.test(soft)) return true;
+    return KILLER_RE.test(soft) && KILLER_CTX_RE.test(soft);
+  }
   function crimeStory(it) { return crimeText(haystack(it)); }
   function crimeTitle(title) { return crimeStory({ title: title }); }
 
-  return { ALLOW_RE: ALLOW_RE, CRIME_RE: CRIME_RE, haystack: haystack, soften: soften, crimeText: crimeText, crimeStory: crimeStory, crimeTitle: crimeTitle };
+  return {
+    ALLOW_RE: ALLOW_RE,
+    CRIME_RE: CRIME_RE,
+    KILLER_RE: KILLER_RE,
+    KILLER_CTX_RE: KILLER_CTX_RE,
+    haystack: haystack,
+    soften: soften,
+    crimeText: crimeText,
+    crimeStory: crimeStory,
+    crimeTitle: crimeTitle
+  };
 });
 ;
 /* ---- public/obit.js ---- */

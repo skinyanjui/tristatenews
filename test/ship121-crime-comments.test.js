@@ -86,14 +86,18 @@ const CRIME = [
   'Incident report: damaged mailbox',
   'Woman allegedly killed by husband texted sister she was \u2018not good\u2019 days before her body was found',
   'Man arrested downtown after overnight chase',
-  'Registered sex offender arrested for recording children'
+  'Registered sex offender arrested for recording children',
+  'Man killed in explosion at industrial plant',
+  'Son stabs his mom during argument',
+  'Storm kills 3 in western Kentucky after overnight flooding',
+  'Woman slain in downtown parking garage',
+  'Suspect killing under investigation'
 ];
 
 const KEEP = [
   'Shooting guard leads the Aces',
   'Aces shooting woes continue',
   'Aces shooting percentage drops in November',
-  'Storm kills 3 in western Kentucky after overnight flooding',
   'Pacers kill off the Heat in overtime',
   'Heat wave deaths climb in the Ohio Valley',
   'Council passes riverfront plan',
@@ -115,7 +119,8 @@ const KEEP = [
   'Help wanted at the bakery',
   'Restaurant fully booked for Saturday',
   'In pursuit of a state title',
-  'Annual report published'
+  'Annual report published',
+  'Killer deals on tires this weekend'
 ];
 
 function fakeStore() {

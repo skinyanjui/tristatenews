@@ -1578,9 +1578,9 @@
   var CATS_JOB = ['Healthcare', 'Trades & construction', 'Retail & food service', 'Warehouse & driving', 'Office & admin', 'Education', 'Other'];
   var JOB_TYPES = ['Full-time', 'Part-time', 'Seasonal', 'Contract'];
   // Labeled Jobs/Deals placeholders (same idea as Sample ad / Test listing): drawn on the page only, never written
-  // to Redis. The card button is View job / View deal. Sample details cannot apply or redeem; a sample job may
-  // offer Advertise a job (/advertise). Report and Feature are omitted. A featured sample is labeled
-  // "Sample featured placement", never "Featured · Paid".
+  // to Redis. Job cards say Apply (linking to the listing apply URL when present); deal cards say View deal.
+  // Sample details cannot apply or redeem; a sample job may offer Advertise a job (/advertise). Report and
+  // Feature are omitted. A featured sample is labeled "Sample featured placement", never "Featured · Paid".
   // Set on: false to hide them.
   var BOARD_SAMPLES = { on: true,
     jobs: [
@@ -2053,6 +2053,25 @@
     bt.addEventListener('click', function () { boardDetails(it, kind, b, bt); });
     return bt;
   }
+  // Job card CTA: Apply → listing application URL (http(s)/mailto/tel). No apply URL → existing dialog;
+  // samples still say Apply for consistency.
+  function jobApplyHref(it) {
+    if (!it || it.sample) return '';
+    var ext = safeHref(it.link || it.url || it.apply || '');
+    if (ext && ext !== '#') return ext;
+    return applyHref(it.contact);
+  }
+  function jobApplyBtn(it, b) {
+    var href = jobApplyHref(it);
+    if (href) {
+      var a = el('a', 'job-view bd-view', 'Apply');
+      a.href = href;
+      a.setAttribute('aria-label', 'Apply for ' + it.title + (it.business ? ' at ' + it.business : ''));
+      if (/^https?:/i.test(href)) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+      return a;
+    }
+    return viewBtn('Apply', it, 'job', b);
+  }
   function dealCard(it, b) {
     var c = el('article', 'deal row-deal' + (it.featured ? ' is-featured' : ''));
     var pic = photoSrc(it);
@@ -2193,7 +2212,7 @@
     if (it.pay) footL.appendChild(el('p', 'job-pay', it.pay));
     if (it.town) footL.appendChild(el('p', 'job-town', it.town));
     if (footL.children.length) foot.appendChild(footL);
-    foot.appendChild(viewBtn('View job', it, 'job', b));
+    foot.appendChild(jobApplyBtn(it, b));
     c.appendChild(foot);
     return c;
   }

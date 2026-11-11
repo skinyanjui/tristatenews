@@ -28,7 +28,10 @@
     '\\bbatter(?:y|ies)[- ](?:powered|life|pack|storage|charger|electric)\\b',
     '\\bhelp wanted\\b',
     '\\bfully booked\\b',
-    '\\bbooked (?:a |an |the )?(?:table|flight|gig|show|ticket|room|hotel|appointment|slot|stay|tour|event|vacation)\\b'
+    '\\bbooked (?:a |an |the )?(?:table|flight|gig|show|ticket|room|hotel|appointment|slot|stay|tour|event|vacation)\\b',
+    // Sports / sales slang that would otherwise trip whole-word kill/killer matching.
+    '\\bkills? off\\b',
+    '\\bkiller (?:deals?|prices?|savings?|discounts?|appetites?|bees|whales?)\\b'
   ].join('|'), 'gi');
 
   var CRIME_RE = new RegExp('\\b(?:' + [
@@ -62,7 +65,8 @@
     'wanted',
     'kidnapp(?:ed|ing|er|ers)?',
     'abduct(?:ed|ion|ions|ing)?',
-    'stabb(?:ed|ing|ings)',
+    // stab / stabs / stabbed / stabbing(s) — whole word only (does not match "establish").
+    'stab(?:s|bed|bing|bings)?',
     'robber(?:y|ies)',
     'robbed',
     'robbing',
@@ -81,6 +85,10 @@
     'shot',
     'shot and killed',
     'fatally shot',
+    // kill / kills / killed / killing — whole word; "killer" does not match (no boundary after kill).
+    'kill(?:s|ed|ing)?',
+    'slain',
+    'slay(?:s|ing|ings)?',
     'overdose(?:s|d)?',
     'overdosed',
     '(?:dui|owi|dwi)s?',
@@ -98,7 +106,6 @@
     '(?:police|sheriff(?:[\'’]?s)?|fire|ems|emt)(?:\\s*(?:&|and|/)\\s*(?:emt|ems|fire|ambulance))*(?:\\s+(?:department|dept\\.?|office|activity))?\\s+(?:logs?|blotters?|runs)',
     'deputies say',
     'police say',
-    'alleged(?:ly)? kill(?:ed|ing)',
     'killed by (?:her |his |their )?(?:husband|wife|boyfriend|girlfriend|fianc[eé]e?|partner|ex)',
     'kills? (?:her |his |their )?(?:husband|wife|boyfriend|girlfriend|fianc[eé]e?|partner|ex)',
     '(?:her|his|their) body (?:was |were )?found',

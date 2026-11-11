@@ -22,7 +22,7 @@ test('ship116: Jobs and Deals cards are stacked, not the news footer row', () =>
   assert.ok(!/UI\.row\(/.test(deal), 'dealCard is a stacked card');
   assert.match(job, /el\('article', 'job row-job'/);
   assert.match(deal, /el\('article', 'deal row-deal'/);
-  assert.match(job, /View job/);
+  assert.match(job, /jobApplyBtn\(it, b\)/);
   assert.match(deal, /View deal/);
   assert.match(js, /Demo listing/);
   assert.match(job, /el\('div', 'job-top'\)/);
@@ -38,7 +38,11 @@ test('ship116: Jobs and Deals cards are stacked, not the news footer row', () =>
   assert.match(deal, /el\('div', 'deal-foot'\)/);
   assert.match(deal, /el\('p', 'deal-perk'/);
   assert.match(deal, /el\('p', 'deal-town'/);
-  assert.match(job, /viewBtn\('View job', it, 'job'/);
+  assert.match(js, /function jobApplyBtn\(/);
+  assert.match(js, /el\('a', 'job-view bd-view', 'Apply'\)/);
+  assert.match(js, /viewBtn\('Apply', it, 'job'/);
+  assert.match(js, /a\.target = '_blank'/);
+  assert.match(js, /a\.rel = 'noopener noreferrer'/);
   assert.match(deal, /viewBtn\('View deal', it, 'deal'/);
   assert.match(css, /#jb \.job-view, #dl \.deal-view \{/);
   const btn = css.slice(css.indexOf('#jb .job-view, #dl .deal-view {'), css.indexOf('#jb .job-view, #dl .deal-view {') + 280);
